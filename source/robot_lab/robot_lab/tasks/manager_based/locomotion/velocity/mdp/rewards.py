@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import torch
 from typing import TYPE_CHECKING
+from torch import distributions
 
 import isaaclab.utils.math as math_utils
 from isaaclab.assets import Articulation, RigidObject
@@ -17,7 +18,7 @@ from isaaclab.utils.math import quat_apply_inverse, yaw_quat
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
-
+    from isaaclab.managers import RewardTermCfg
 
 def track_lin_vel_xy_exp(
     env: ManagerBasedRLEnv, std: float, command_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
@@ -676,5 +677,275 @@ def flat_orientation_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = Scen
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
     reward = torch.sum(torch.square(asset.data.projected_gravity_b[:, :2]), dim=1)
+    reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
+    return reward
+
+def keep_ankle_pitch_zero_in_air(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    sensor_cfg: SceneEntityCfg = SceneEntityCfg("contact_sensor", body_names=[""]),
+    left_ankle_joint_index: int = 9,
+    right_ankle_joint_index: int = 4,
+    force_threshold: float = 2.0,
+    pitch_scale: float = 0.2
+) -> torch.Tensor:
+    """Reward for keeping ankle pitch angle close to zero when foot is in the air.
+    
+    Args:
+        env: The environment object.
+        asset_cfg: Configuration for the robot asset containing DOF positions.
+        sensor_cfg: Configuration for the contact force sensor.
+        force_threshold: Threshold value for contact detection (in Newtons).
+        pitch_scale: Scaling factor for the exponential reward.
+        
+    Returns:
+        The computed reward tensor.
+    """
+    asset = env.scene[asset_cfg.name]
+    contact_forces_history = env.scene.sensors[sensor_cfg.name].data.net_forces_w_history[:, :, sensor_cfg.body_ids]
+    current_contact = torch.norm(contact_forces_history[:, -1], dim=-1) > force_threshold
+    last_contact = torch.norm(contact_forces_history[:, -2], dim=-1) > force_threshold
+    contact_filt = torch.logical_or(current_contact, last_contact)
+    ankle_pitch_left = torch.abs(asset.data.joint_pos[:, left_ankle_joint_index]) * ~contact_filt[:, 0]
+    ankle_pitch_right = torch.abs(asset.data.joint_pos[:, right_ankle_joint_index]) * ~contact_filt[:, 1]
+    weighted_ankle_pitch = ankle_pitch_left + ankle_pitch_right
+    return torch.exp(-weighted_ankle_pitch / pitch_scale)
+
+class BipedalGaitReward(ManagerTermBase):
+    def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):
+        """Initialize the term.
+
+        Args:
+            cfg: The configuration of the reward.
+            env: The RL environment instance.
+        """
+        super().__init__(cfg, env)
+
+        self.sensor_cfg = cfg.params["sensor_cfg"]
+        self.asset_cfg = cfg.params["asset_cfg"]
+        self.height_sensor_cfg = cfg.params["height_sensor_cfg"]
+        self.target_height = cfg.params["base_target_height"]
+
+        # extract the used quantities (to enable type-hinting)
+        self.contact_sensor: ContactSensor = env.scene.sensors[self.sensor_cfg.name]
+        self.asset: Articulation = env.scene[self.asset_cfg.name]
+
+        # Store configuration parameters
+        self.force_scale = float(cfg.params["tracking_contacts_shaped_force"])
+        self.vel_scale = float(cfg.params["tracking_contacts_shaped_vel"])
+        self.force_sigma = cfg.params["gait_force_sigma"]
+        self.vel_sigma = cfg.params["gait_vel_sigma"]
+        self.kappa_gait_probs = cfg.params["kappa_gait_probs"]
+        self.vel_command_name = cfg.params["vel_command_name"]
+        self.command_name = cfg.params["command_name"]
+        self.dt = env.step_dt
+
+        # self.gait_param_cfg = list(cfg.params["gait_param_cfg"]) # 频率 偏置 周期
+
+    def __call__(
+        self,
+        env: ManagerBasedRLEnv,
+        tracking_contacts_shaped_force,
+        tracking_contacts_shaped_vel,
+        gait_force_sigma,
+        gait_vel_sigma,
+        kappa_gait_probs,
+        vel_command_name,
+        command_name,
+        sensor_cfg,
+        asset_cfg,
+        height_sensor_cfg,
+        base_target_height,
+        # gait_param_cfg,
+    ) -> torch.Tensor:
+        """Compute the reward.
+
+        The reward combines force-based and velocity-based terms to encourage desired gait patterns.
+
+        Args:
+            env: The RL environment instance.
+
+        Returns:
+            The reward value.
+        """
+
+        gait_params = env.command_manager.get_command(self.command_name)
+        # gait_row = torch.tensor([float(self.gait_param_cfg[0]), float(self.gait_param_cfg[1]), float(self.gait_param_cfg[2])], 
+        #                           device=self.device, dtype=torch.float32)
+        # gait_params = gait_row.view(1, 3).expand(self.num_envs, 3).contiguous() 
+
+        # Update contact targets
+        foot_indices, desired_contact_states = self.compute_contact_targets(gait_params)
+
+        # Force-based reward
+        foot_forces = torch.norm(self.contact_sensor.data.net_forces_w[:, self.sensor_cfg.body_ids], dim=-1)
+        force_reward = self._compute_force_reward(foot_forces, desired_contact_states)
+
+        # Velocity-based reward
+        foot_velocities = torch.norm(self.asset.data.body_lin_vel_w[:, self.asset_cfg.body_ids], dim=-1)
+        velocity_reward = self._compute_velocity_reward(foot_velocities, desired_contact_states)
+
+        # 抬脚高度奖励（惩罚在摆动期间未抬脚到目标高度）
+        if self.height_sensor_cfg is not None:
+            height_sensor: RayCaster = env.scene[self.height_sensor_cfg.name]
+            # 获取击中点的世界坐标 Z
+            ray_hits_w = height_sensor.data.ray_hits_w[..., 2]
+            
+            # 计算掩码：标记 NaN, Inf 以及 距离过远 的异常值
+            invalid_mask = torch.isnan(ray_hits_w) | torch.isinf(ray_hits_w) | (torch.abs(ray_hits_w) > 1e6)
+            
+            # 估算地面高度：Fallback
+            fallback_ground_z = self.asset.data.root_link_pos_w[:, 2] - self.target_height
+            
+            clean_hits = ray_hits_w.clone()
+            # 将所有被标记为 invalid 的值（包括 Inf 和 >1e6）都强制设为 NaN
+            # 这样 torch.nanmean 就会忽略它们
+            clean_hits[invalid_mask] = float('nan') 
+            
+            # 计算均值 (忽略 NaN)
+            row_means = torch.nanmean(clean_hits, dim=1)
+            
+            # 处理整行都是无效值的情况
+            # 如果某行全部是 NaN (即所有射线都无效)，nanmean 会返回 NaN
+            bad_envs = torch.isnan(row_means)
+            ground_z_est = row_means
+            ground_z_est[bad_envs] = fallback_ground_z[bad_envs]
+        else:
+            # 默认平地 Z=0
+            ground_z_est = torch.zeros(self.num_envs, device=self.device)
+
+        # 4. 计算高度奖励 (传入纯净的 ground_z_est)
+        foot_height_reward = self._compute_foot_height_reward(
+            gait_params, 
+            foot_indices, 
+            ground_z_est, 
+            desired_contact_states
+        )
+
+        # Combine rewards
+        total_reward = force_reward + velocity_reward  # + foot_height_reward
+        # print(force_reward)
+        # print(velocity_reward)
+        # print(foot_height_reward)
+        total_reward *= torch.norm(env.command_manager.get_command(self.vel_command_name)[:, :2], dim=1) > 0.1
+        total_reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
+        return total_reward 
+
+    def compute_contact_targets(self, gait_params):
+        """Calculate desired contact states for the current timestep."""
+        frequencies = gait_params[:, 0]
+        offsets = gait_params[:, 1]
+        durations = torch.cat(
+            [
+                gait_params[:, 2].view(self.num_envs, 1),
+                gait_params[:, 2].view(self.num_envs, 1),
+            ],
+            dim=1,
+        )
+
+        assert torch.all(frequencies > 0), "Frequencies must be positive"
+        assert torch.all((offsets >= 0) & (offsets <= 1)), "Offsets must be between 0 and 1"
+        assert torch.all((durations > 0) & (durations < 1)), "Durations must be between 0 and 1"
+
+        gait_indices = torch.remainder(self._env.episode_length_buf * self.dt * frequencies, 1.0)
+
+        # Calculate foot indices
+        foot_indices = torch.remainder(
+            torch.cat(
+                [gait_indices.view(self.num_envs, 1), (gait_indices + offsets + 1).view(self.num_envs, 1)],
+                dim=1,
+            ),
+            1.0,
+        )
+
+        # Determine stance and swing phases
+        stance_idxs = foot_indices < durations
+        swing_idxs = foot_indices > durations
+
+        # Adjust foot indices based on phase
+        foot_indices[stance_idxs] = torch.remainder(foot_indices[stance_idxs], 1) * (0.5 / durations[stance_idxs])
+        foot_indices[swing_idxs] = 0.5 + (torch.remainder(foot_indices[swing_idxs], 1) - durations[swing_idxs]) * (
+            0.5 / (1 - durations[swing_idxs])
+        )
+
+        # Calculate desired contact states using von mises distribution
+        smoothing_cdf_start = distributions.normal.Normal(0, self.kappa_gait_probs).cdf
+        desired_contact_states = smoothing_cdf_start(foot_indices) * (
+            1 - smoothing_cdf_start(foot_indices - 0.5)
+        ) + smoothing_cdf_start(foot_indices - 1) * (1 - smoothing_cdf_start(foot_indices - 1.5))
+
+        return foot_indices, desired_contact_states
+
+    def _compute_force_reward(self, forces: torch.Tensor, desired_contacts: torch.Tensor) -> torch.Tensor:
+        """Compute force-based reward component."""
+        reward = torch.zeros_like(forces[:, 0])
+        if self.force_scale < 0:  # Negative scale means penalize unwanted contact
+            for i in range(forces.shape[1]):
+                reward += (1 - desired_contacts[:, i]) * (1 - torch.exp(-forces[:, i] ** 2 / self.force_sigma))
+        else:  # Positive scale means reward desired contact
+            for i in range(forces.shape[1]):
+                reward += (1 - desired_contacts[:, i]) * torch.exp(-forces[:, i] ** 2 / self.force_sigma)
+
+        return (reward / forces.shape[1]) * self.force_scale
+
+    def _compute_velocity_reward(self, velocities: torch.Tensor, desired_contacts: torch.Tensor) -> torch.Tensor:
+        """Compute velocity-based reward component."""
+        reward = torch.zeros_like(velocities[:, 0])
+        if self.vel_scale < 0:  # Negative scale means penalize movement during contact
+            for i in range(velocities.shape[1]):
+                reward += desired_contacts[:, i] * (1 - torch.exp(-velocities[:, i] ** 2 / self.vel_sigma))
+        else:  # Positive scale means reward movement during swing
+            for i in range(velocities.shape[1]):
+                reward += desired_contacts[:, i] * torch.exp(-velocities[:, i] ** 2 / self.vel_sigma)
+
+        return (reward / velocities.shape[1]) * self.vel_scale
+    
+    def _compute_foot_height_reward(self, gait_params, foot_indices, ground_z, desired_contacts: torch.Tensor) -> torch.Tensor:
+        """计算抬脚高度误差惩罚"""
+        # 维度对齐
+        # ground_z: [env] -> [env, 1]
+        ground_z = ground_z.view(-1, 1)
+        # gait_params[:, 3]: [env] -> [env, 1]
+        foot_target_height = gait_params[:, 3].view(-1, 1)
+
+        # 计算摆动相位 (Swing Phase)
+        # 将 [0.5, 1.0] 映射到 [0, 1.0]，并在 clamp 后计算
+        swing_phase = (foot_indices - 0.5) * 2.0
+        swing_phase = torch.clamp(swing_phase, 0.0, 1.0)
+
+        # 计算相对高度偏移 (Sine Wave)
+        # [Num_Envs, 1] * [Num_Envs, Num_Feet] -> PyTorch 自动广播为 [Num_Envs, Num_Feet]
+        # sin(0)=0 (刚抬起), sin(pi/2)=1 (最高点), sin(pi)=0 (落地)
+        sine_height = foot_target_height * torch.sin(swing_phase * torch.pi)
+
+        # 应用 Mask (只在摆动相应用正弦波，支撑相高度为0)
+        is_swing = foot_indices > 0.5
+        ref_height_offset = torch.where(is_swing, sine_height, torch.zeros_like(sine_height))
+
+        # 计算绝对目标 World Z
+        target_pos_z = ground_z + ref_height_offset
+
+        # 获取当前脚的实际 World Z
+        current_foot_height = self.asset.data.body_pos_w[:, self.asset_cfg.body_ids, 2]
+
+        # 使用平方误差，并用 exp 转换为 [0, 1] 的系数
+        height_error = torch.square(current_foot_height - target_pos_z)
+        rew = 1.0 - torch.exp(-height_error / 0.0025)
+
+        return -torch.mean(rew, dim=1) * 2.0  # scale
+
+def feet_distance_penalize(env: ManagerBasedRLEnv,
+                  asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+                  feet_links_name: list[str]=["foot_[RL]_Link"],
+                  min_feet_distance: float = 0.1,
+                  max_feet_distance: float = 1.5,)-> torch.Tensor:
+    # Penalize base height away from target
+    asset: Articulation = env.scene[asset_cfg.name]
+    feet_links_idx = asset.find_bodies(feet_links_name)[0]
+    feet_pos = asset.data.body_link_pos_w[:,feet_links_idx]
+    # feet distance on x-y plane
+    feet_distance = torch.norm(feet_pos[:, 0, :2] - feet_pos[:, 1, :2], dim=-1)
+    reward = torch.clip(min_feet_distance - feet_distance, 0, 1)
+    reward += torch.clip(feet_distance - max_feet_distance, 0, 1)
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
