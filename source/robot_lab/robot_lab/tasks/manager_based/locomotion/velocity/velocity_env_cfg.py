@@ -73,7 +73,7 @@ class MySceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Robot/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
         ray_alignment="yaw",
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=(1.6, 1.0)),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
     )
@@ -111,13 +111,12 @@ class CommandsCfg:
         rel_standing_envs=0.02,
         rel_heading_envs=1.0,
         heading_command=True,
-        heading_control_stiffness=0.5,
+        heading_control_stiffness=1.0, # 0.5
         debug_vis=True,
         ranges=mdp.UniformThresholdVelocityCommandCfg.Ranges(
             lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
         ),
     )
-
 
 @configclass
 class ActionsCfg:
