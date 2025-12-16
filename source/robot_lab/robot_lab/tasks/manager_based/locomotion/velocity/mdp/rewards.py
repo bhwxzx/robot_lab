@@ -14,7 +14,7 @@ from isaaclab.managers import ManagerTermBase
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor, RayCaster
-from isaaclab.utils.math import quat_apply_inverse, yaw_quat
+from isaaclab.utils.math import quat_apply_inverse, yaw_quat, euler_xyz_from_quat
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -100,6 +100,31 @@ def stand_still(
     reward *= torch.norm(env.command_manager.get_command(command_name), dim=1) < command_threshold
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
+
+def stop_motion(
+    env, lin_threshold: float = 0.05, ang_threshold: float = 0.05, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """
+    penalizing linear and angular motion when command velocities are near zero.
+    """
+
+    asset = env.scene[asset_cfg.name]
+    base_lin_vel = asset.data.root_lin_vel_w[:, :2]
+    base_ang_vel = asset.data.root_ang_vel_w[:, -1]
+
+    commands = env.command_manager.get_command("base_velocity")
+
+    lin_commands = commands[:, :2]
+    ang_commands = commands[:, 2]
+
+    reward_lin = torch.sum(
+        torch.abs(base_lin_vel) * (torch.norm(lin_commands, dim=1, keepdim=True) < lin_threshold), dim=-1
+    )
+
+    reward_ang = torch.abs(base_ang_vel) * (torch.abs(ang_commands) < ang_threshold)
+
+    total_reward = reward_lin + reward_ang
+    return total_reward
 
 
 def joint_pos_penalty(
@@ -680,36 +705,71 @@ def flat_orientation_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = Scen
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
-def keep_ankle_pitch_zero_in_air(
+# def keep_ankle_pitch_zero_in_air(
+#     env: ManagerBasedRLEnv,
+#     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+#     sensor_cfg: SceneEntityCfg = SceneEntityCfg("contact_sensor", body_names=[""]),
+#     left_ankle_joint_index: int = 9,
+#     right_ankle_joint_index: int = 4,
+#     force_threshold: float = 2.0,
+#     pitch_scale: float = 0.2
+# ) -> torch.Tensor:
+#     """Reward for keeping ankle pitch angle close to zero when foot is in the air.
+    
+#     Args:
+#         env: The environment object.
+#         asset_cfg: Configuration for the robot asset containing DOF positions.
+#         sensor_cfg: Configuration for the contact force sensor.
+#         force_threshold: Threshold value for contact detection (in Newtons).
+#         pitch_scale: Scaling factor for the exponential reward.
+        
+#     Returns:
+#         The computed reward tensor.
+#     """
+#     asset = env.scene[asset_cfg.name]
+#     contact_forces_history = env.scene.sensors[sensor_cfg.name].data.net_forces_w_history[:, :, sensor_cfg.body_ids]
+#     current_contact = torch.norm(contact_forces_history[:, -1], dim=-1) > force_threshold
+#     last_contact = torch.norm(contact_forces_history[:, -2], dim=-1) > force_threshold
+#     contact_filt = torch.logical_or(current_contact, last_contact)
+#     ankle_pitch_left = torch.abs(asset.data.joint_pos[:, left_ankle_joint_index]) * ~contact_filt[:, 0]
+#     ankle_pitch_right = torch.abs(asset.data.joint_pos[:, right_ankle_joint_index]) * ~contact_filt[:, 1]
+#     weighted_ankle_pitch = ankle_pitch_left + ankle_pitch_right
+#     return torch.exp(-weighted_ankle_pitch / pitch_scale)
+
+def keep_foot_pitch_zero_in_world(
     env: ManagerBasedRLEnv,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     sensor_cfg: SceneEntityCfg = SceneEntityCfg("contact_sensor", body_names=[""]),
-    left_ankle_joint_index: int = 9,
-    right_ankle_joint_index: int = 4,
+    foot_body_names: list[str] = [".*_foot_link"], # 需要指定脚部刚体的名字
     force_threshold: float = 2.0,
     pitch_scale: float = 0.2
 ) -> torch.Tensor:
-    """Reward for keeping ankle pitch angle close to zero when foot is in the air.
     
-    Args:
-        env: The environment object.
-        asset_cfg: Configuration for the robot asset containing DOF positions.
-        sensor_cfg: Configuration for the contact force sensor.
-        force_threshold: Threshold value for contact detection (in Newtons).
-        pitch_scale: Scaling factor for the exponential reward.
-        
-    Returns:
-        The computed reward tensor.
-    """
     asset = env.scene[asset_cfg.name]
+    
+    # 获取接触历史
     contact_forces_history = env.scene.sensors[sensor_cfg.name].data.net_forces_w_history[:, :, sensor_cfg.body_ids]
     current_contact = torch.norm(contact_forces_history[:, -1], dim=-1) > force_threshold
     last_contact = torch.norm(contact_forces_history[:, -2], dim=-1) > force_threshold
-    contact_filt = torch.logical_or(current_contact, last_contact)
-    ankle_pitch_left = torch.abs(asset.data.joint_pos[:, left_ankle_joint_index]) * ~contact_filt[:, 0]
-    ankle_pitch_right = torch.abs(asset.data.joint_pos[:, right_ankle_joint_index]) * ~contact_filt[:, 1]
-    weighted_ankle_pitch = ankle_pitch_left + ankle_pitch_right
-    return torch.exp(-weighted_ankle_pitch / pitch_scale)
+    contact_filt = torch.logical_or(current_contact, last_contact) # [env_num, 2]
+    
+    # 获取脚部刚体在世界坐标系下的四元数
+    foot_indices, _ = asset.find_bodies(foot_body_names)
+    foot_quats = asset.data.body_quat_w[:, foot_indices, :] # [env_num, 2, 4]
+    
+    # 将四元数转换为欧拉角 (Roll, Pitch, Yaw)
+    roll, pitch, yaw = euler_xyz_from_quat(foot_quats) 
+    
+    # pitch 现在的维度应该是 [env_num, 2] (对应两只脚)
+    
+    # 计算奖励
+    # 只惩罚空中的脚 (~contact_filt)
+    # 希望 pitch 接近 0
+    foot_pitch_error = torch.abs(pitch) * ~contact_filt
+    
+    weighted_pitch_error = torch.sum(foot_pitch_error, dim=1) # 左右脚误差求和
+    
+    return torch.exp(-weighted_pitch_error / pitch_scale)
 
 class BipedalGaitReward(ManagerTermBase):
     def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):
@@ -827,7 +887,7 @@ class BipedalGaitReward(ManagerTermBase):
         # print(force_reward)
         # print(velocity_reward)
         # print(foot_height_reward)
-        total_reward *= torch.norm(env.command_manager.get_command(self.vel_command_name)[:, :2], dim=1) > 0.1
+        total_reward *= torch.norm(env.command_manager.get_command(self.vel_command_name), dim=1) > 0.1
         total_reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
         return total_reward 
 
@@ -949,3 +1009,93 @@ def feet_distance_penalize(env: ManagerBasedRLEnv,
     reward += torch.clip(feet_distance - max_feet_distance, 0, 1)
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
+
+def leg_symmetry(env: ManagerBasedRLEnv,
+    std: float,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),) -> torch.Tensor:
+    """Reward regulate abad joint position."""
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject | Articulation = env.scene[asset_cfg.name]
+    feet_pos_w = asset.data.body_link_pos_w[:, asset_cfg.body_ids]
+    base_quat = asset.data.root_link_quat_w.unsqueeze(1).expand(-1, 2, -1)
+    # assert (compute_rotation_distance(asset.data.root_com_quat_w, asset.data.root_link_quat_w) < 0.1).all()
+    base_pos = asset.data.root_link_state_w[:, :3].unsqueeze(1).expand(-1, 2, -1)
+    feet_pos_b = math_utils.quat_rotate_inverse(
+        base_quat,
+        feet_pos_w - base_pos,
+    )
+    leg_symmetry_err = torch.abs(feet_pos_b[:, 0, 1]) - torch.abs(feet_pos_b[:, 1, 1])
+
+    return torch.exp(-leg_symmetry_err ** 2 / std**2)
+
+def same_feet_x_position(env: ManagerBasedRLEnv,
+                  asset_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Reward regulate abad joint position."""
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject | Articulation = env.scene[asset_cfg.name]
+    feet_pos_w = asset.data.body_link_pos_w[:, asset_cfg.body_ids]
+    base_quat = asset.data.root_link_quat_w.unsqueeze(1).expand(-1, 2, -1)
+    # assert (compute_rotation_distance(asset.data.root_com_quat_w, asset.data.root_link_quat_w) < 0.1).all()
+    base_pos = asset.data.root_link_state_w[:, :3].unsqueeze(1).expand(-1, 2, -1)
+    feet_pos_b = math_utils.quat_rotate_inverse(
+        base_quat,
+        feet_pos_w - base_pos,
+    )
+    feet_x_distance = torch.abs(feet_pos_b[:, 0, 0] - feet_pos_b[:, 1, 0])
+    # return torch.exp(-feet_x_distance / 0.2)
+    return feet_x_distance
+
+class ActionSmoothnessPenalty(ManagerTermBase):
+    """
+    A reward term for penalizing large instantaneous changes in the network action output.
+    This penalty encourages smoother actions over time.
+    """
+
+    def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):
+        """Initialize the term.
+
+        Args:
+            cfg: The configuration of the reward term.
+            env: The RL environment instance.
+        """
+        super().__init__(cfg, env)
+        self.dt = env.step_dt
+        self.prev_prev_action = None
+        self.prev_action = None
+        # self.__name__ = "action_smoothness_penalty"
+
+    def __call__(self, env: ManagerBasedRLEnv) -> torch.Tensor:
+        """Compute the action smoothness penalty.
+
+        Args:
+            env: The RL environment instance.
+
+        Returns:
+            The penalty value based on the action smoothness.
+        """
+        # Get the current action from the environment's action manager
+        current_action = env.action_manager.action.clone()
+
+        # If this is the first call, initialize the previous actions
+        if self.prev_action is None:
+            self.prev_action = current_action
+            return torch.zeros(current_action.shape[0], device=current_action.device)
+
+        if self.prev_prev_action is None:
+            self.prev_prev_action = self.prev_action
+            self.prev_action = current_action
+            return torch.zeros(current_action.shape[0], device=current_action.device)
+
+        # Compute the smoothness penalty
+        penalty = torch.sum(torch.square(current_action - 2 * self.prev_action + self.prev_prev_action), dim=1)
+
+        # Update the previous actions for the next call
+        self.prev_prev_action = self.prev_action
+        self.prev_action = current_action
+
+        # Apply a condition to ignore penalty during the first few episodes
+        startup_env_mask = env.episode_length_buf < 3
+        penalty[startup_env_mask] = 0
+
+        # Return the penalty scaled by the configured weight
+        return penalty
