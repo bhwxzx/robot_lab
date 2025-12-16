@@ -371,6 +371,22 @@ class EventCfg:
         params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
     )
 
+    push_robot_hard = EventTerm(
+        func=mdp.apply_external_force_torque_stochastic,
+        mode="interval",
+        interval_range_s=(0.0, 0.0),
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),
+            "force_range": {
+                "x": (-500.0, 500.0),
+                "y": (-500.0, 500.0),
+                "z": (-0.0, 0.0),
+            },  # force = mass * dv / dt
+            "torque_range": {"x": (-50.0, 50.0), "y": (-50.0, 50.0), "z": (-0.0, 0.0)},
+            "probability": 0.002,  # Expect step = 1 / probability
+        },
+    )
+
 
 @configclass
 class RewardsCfg:
@@ -449,7 +465,7 @@ class RewardsCfg:
         params={
             "command_name": "base_velocity",
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "stand_still_scale": 5.0,
+            "stand_still_scale": 5.0, 
             "velocity_threshold": 0.5,
             "command_threshold": 0.1,
         },
@@ -514,7 +530,7 @@ class RewardsCfg:
         weight=0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=""),
-            "threshold": 1.0,
+            "threshold": 10.0,
         },
     )
     contact_forces = RewTerm(
