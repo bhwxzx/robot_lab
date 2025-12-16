@@ -6,6 +6,8 @@ from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+from isaaclab.utils.noise import AdditiveGaussianNoiseCfg as GaussianNoise
+from isaaclab.sensors import patterns
 
 import robot_lab.tasks.manager_based.locomotion.velocity.mdp as mdp
 from robot_lab.tasks.manager_based.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg
@@ -13,7 +15,7 @@ from robot_lab.tasks.manager_based.locomotion.velocity.velocity_env_cfg import L
 ##
 # Pre-defined configs
 ##
-from robot_lab.assets.LW import LW_CFG
+from robot_lab.assets.LW import LW_LEG_CFG
 from robot_lab.tasks.manager_based.locomotion.velocity.mdp.terrains.terrains_cfg import BLIND_ROUGH_TERRAINS_CFG, BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG
 import robot_lab.tasks.manager_based.locomotion.velocity.mdp as mdp
 from robot_lab.tasks.manager_based.locomotion.velocity.velocity_env_cfg import (
@@ -35,13 +37,13 @@ class LWLegObservationsCfg(ObservationsCfg):
         # observation terms (order preserved)
         base_ang_vel = ObsTerm(
             func=mdp.base_ang_vel,
-            noise=Unoise(n_min=-0.2, n_max=0.2),
+            noise=GaussianNoise(mean=0.0, std=0.05),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.05, n_max=0.05),
+            noise=GaussianNoise(mean=0.0, std=0.025),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -54,14 +56,14 @@ class LWLegObservationsCfg(ObservationsCfg):
         joint_pos = ObsTerm(
             func=mdp.joint_pos_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-0.01, n_max=0.01),
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         joint_vel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-1.5, n_max=1.5),
+            noise=GaussianNoise(mean=0.0, std=0.02),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -77,8 +79,8 @@ class LWLegObservationsCfg(ObservationsCfg):
         # Privileged observation
         base_lin_vel = ObsTerm(
             func=mdp.base_lin_vel,
-            clip=(-100.0, 100.0),
             scale=1.0,
+            clip=(-100.0, 100.0),
         )
         height_scan = ObsTerm(
             func=mdp.height_scan,
@@ -152,8 +154,8 @@ class LWLegObservationsCfg(ObservationsCfg):
         # Privileged observation
         base_lin_vel = ObsTerm(
             func=mdp.base_lin_vel,
-            clip=(-100.0, 100.0),
             scale=1.0,
+            clip=(-100.0, 100.0),
         )
         height_scan = ObsTerm(
             func=mdp.height_scan,
@@ -239,10 +241,9 @@ class LWLegRewardsCfg(RewardsCfg):
     )
 
     rew_keep_ankle_pitch_zero_in_air = RewTerm(
-        func=mdp.keep_ankle_pitch_zero_in_air, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot" , joint_names=".*", preserve_order=True),
-                                                                   "left_ankle_joint_index": 7,
-                                                                   "right_ankle_joint_index": 6,
-                                                                   "sensor_cfg": SceneEntityCfg("contact_forces", body_names=["right_foot_link", "left_foot_link"])}
+        func=mdp.keep_foot_pitch_zero_in_world, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot"),
+                                                                    "sensor_cfg": SceneEntityCfg("contact_forces", 
+                                                                                  body_names=["right_foot_link", "left_foot_link"])}
     )
 
     bipedal_gait_reward = RewTerm(
@@ -269,6 +270,13 @@ class LWLegRewardsCfg(RewardsCfg):
         weight=0.0,
         params={"min_feet_distance": 0.115,"feet_links_name": [".*_foot_link"]}
     )
+
+    stop_motion = RewTerm(
+        func=mdp.stop_motion,
+        weight=0.0
+    )
+
+    action_smoothness = RewTerm(func=mdp.ActionSmoothnessPenalty, weight=0.0)
 
 @configclass
 class LWLegRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
@@ -303,11 +311,12 @@ class LWLegRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         super().__post_init__()
 
         # ------------------------------Sence------------------------------
-        self.scene.robot = LW_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot = LW_LEG_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
+        # self.scene.height_scanner.pattern_cfg = patterns.GridPatternCfg(resolution=0.05, size=(0.8, 0.5)),
         self.scene.height_scanner_base.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
         self.scene.terrain.terrain_generator = BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG
-        self.scene.terrain.max_init_terrain_level = 0
+        # self.scene.terrain.max_init_terrain_level = 0
 
         # ------------------------------Observations------------------------------
         self.observations.policy.joint_pos.func = mdp.joint_pos_rel_without_wheel
@@ -329,6 +338,10 @@ class LWLegRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.critic.joint_pos.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.joint_vel.params["asset_cfg"].joint_names = self.joint_names
 
+        # for blind
+        self.observations.policy.height_scan = None
+        self.observations.critic.height_scan = None
+
         # ------------------------------Actions------------------------------
         # reduce action scale
         self.actions.joint_pos.scale = {".*_hip_joint": 0.125, "^(?!.*_hip_joint).*": 0.25}
@@ -349,8 +362,11 @@ class LWLegRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
             "right_.*", "left_.*",
         ]
         self.events.randomize_com_positions.params["asset_cfg"].body_names = [self.base_link_name]
-        self.events.randomize_reset_joints.params["velocity_range"] = (-0.1, 0.1)
+        self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
+        self.events.randomize_reset_joints.params["position_range"] = (-0.1, 0.1)
+        self.events.randomize_reset_joints.params["velocity_range"] = (-0.2, 0.2)
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
+        self.events.push_robot_hard.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.randomize_apply_external_force_torque = None
 
         # ------------------------------Rewards------------------------------
@@ -362,71 +378,67 @@ class LWLegRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         # Root penalties
         self.rewards.lin_vel_z_l2.weight = -1.0 #-1.0
         self.rewards.ang_vel_xy_l2.weight = -0.05 # -0.05
-        self.rewards.flat_orientation_l2.weight = -5.0
+        self.rewards.flat_orientation_l2.weight = -2.5 # -5.0
         self.rewards.base_height_l2.weight = -50.0
         self.rewards.base_height_l2.params["target_height"] = 0.69 # 0.647
         self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
 
         # Joint penalties
-        self.rewards.joint_torques_l2.weight = -2.5e-5 # 1.25e-5
+        self.rewards.joint_torques_l2.weight = -8e-5 # 1.25e-5
         self.rewards.joint_torques_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
-        self.rewards.joint_torques_wheel_l2.weight = -2.5e-5
+        self.rewards.joint_torques_wheel_l2.weight = -1.6e-4
         self.rewards.joint_torques_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
         
-        self.rewards.joint_acc_l2.weight = -1.25e-7
+        self.rewards.joint_acc_l2.weight = -1e-6 # -1.25e-7
         self.rewards.joint_acc_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
-        self.rewards.joint_acc_wheel_l2.weight = -1.25e-7
+        self.rewards.joint_acc_wheel_l2.weight = -1.5e-7 # -1.25e-7
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
 
-        self.rewards.joint_vel_l2.weight = -5e-4
-        self.rewards.joint_vel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
+        self.rewards.joint_vel_l2.weight = -5e-5
+        self.rewards.joint_vel_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_vel_wheel_l2.weight = -5e-3
+        self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
 
-        self.rewards.joint_vel_limits.weight = -1.0
-        self.rewards.joint_vel_limits.params["asset_cfg"].joint_names = self.wheel_joint_names
-
-        # self.rewards.create_joint_deviation_l1_rewterm("joint_deviation_hip_l1", -1.0, [".*hip_joint"])
-        # self.rewards.create_joint_deviation_l1_rewterm(
-        #     "joint_deviation_thigh_l1", -1.0, [".*thigh_joint"]
-        # )
-        # self.rewards.create_joint_deviation_l1_rewterm(
-        #     "joint_deviation_ankle_l1", -0.3, [".*foot_joint"]
-        # )
-        # self.rewards.create_joint_deviation_l1_rewterm("joint_deviation_shank_l1", -1.0, [".*shank_joint"])
-
-        self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.5
-        self.rewards.rew_keep_ankle_pitch_zero_in_air.params["asset_cfg"].joint_names = self.joint_names
+        # self.rewards.joint_vel_limits.weight = -1.0
+        # self.rewards.joint_vel_limits.params["asset_cfg"].joint_names = self.wheel_joint_names
 
         self.rewards.joint_pos_limits.weight = -2.0
         self.rewards.joint_pos_limits.params["asset_cfg"].joint_names = self.joint_names_without_wheels
 
-        # self.rewards.joint_powers_l1.weight = -2e-5
-        self.rewards.stand_still.weight = -3.0
-        self.rewards.stand_still.params["asset_cfg"].joint_names = self.joint_names_without_wheels
-        self.rewards.joint_pos_penalty.weight = -1.0 # -2.0
-        self.rewards.joint_pos_penalty.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_power.weight = -2e-5
+
+        self.rewards.stop_motion.weight = -5.0
+
+        # self.rewards.stand_still.weight = -3.0
+        # self.rewards.stop_motion.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+
+        # self.rewards.joint_pos_penalty.weight = -0.1 # -2.0
+        # self.rewards.joint_pos_penalty.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        # self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
 
         # Action penalties
         self.rewards.action_rate_l2.weight = -0.01 # -0.01
-        # self.rewards.action_smoothness.weight = -0.06 
+        self.rewards.action_smoothness.weight = -0.03 # -0.03 
 
         # Contact sensorstand_still
-        self.rewards.undesired_contacts.weight = -10.0
+        self.rewards.undesired_contacts.weight = -0.25
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link", ".*wheel_link"]
         # self.rewards.contact_forces.weight = 0
         # self.rewards.contact_forces.params["sensor_cfg"].body_names = [self.foot_link_name]
 
         # Velocity-tracking rewards
-        self.rewards.track_lin_vel_xy_exp.weight = 5.0
+        self.rewards.track_lin_vel_xy_exp.weight = 3.0
         self.rewards.track_lin_vel_xy_exp.func = mdp.track_lin_vel_xy_yaw_frame_exp
-        self.rewards.track_ang_vel_z_exp.weight = 5.0 # 8.0
+        self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.2)
+        self.rewards.track_ang_vel_z_exp.weight = 2.5 
         self.rewards.track_ang_vel_z_exp.func = mdp.track_ang_vel_z_world_exp
 
         # Others
-        self.rewards.bipedal_gait_reward.weight = 1.0
-        # self.rewards.feet_air_time.weight = 30.0
-        # self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
-        # self.rewards.feet_air_time.params["threshold"] = 0.2
-        # self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
+        self.rewards.bipedal_gait_reward.weight = 2.0
+        self.rewards.feet_air_time.weight = 1.0
+        self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
+        self.rewards.feet_air_time.params["threshold"] = 0.4
+        self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_air_only_one.weight = -40.0
 
         # self.rewards.feet_air_time_variance.weight = -30.0
@@ -434,18 +446,18 @@ class LWLegRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_contact.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_contact_without_cmd.weight = 0
         # self.rewards.feet_contact_without_cmd.params["sensor_c fg"].body_names = [self.foot_link_name]
-        # self.rewards.feet_stumble.weight = 0
-        # self.rewards.feet_stumble.params["sensor_cfg"].body_names = [self.foot_link_name]
+        self.rewards.feet_stumble.weight = -2.0
+        self.rewards.feet_stumble.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_slide.weight = -0.25
         self.rewards.feet_slide.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_slide.params["asset_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_height.weight = 0
         # self.rewards.feet_height.params["target_height"] = 0.05
         # self.rewards.feet_height.params["asset_cfg"].body_names = [self.foot_link_name]
-        # self.rewards.feet_height_body.weight = -20.0
-        # self.rewards.feet_height_body.params["target_height"] = -0.3
+        # self.rewards.feet_height_body.weight = -1.0
+        # self.rewards.feet_height_body.params["target_height"] = -0.45
         # self.rewards.feet_height_body.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_distance_y_exp.weight = 10.0
+        self.rewards.feet_distance_y_exp.weight = 2.0
         self.rewards.feet_distance_y_exp.params["stance_width"] = 0.42 # 0.42
         self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_distance_penalize.weight = -100.0
@@ -478,7 +490,7 @@ class LWLegRoughTeacherEnvCfg_Play(LWLegRoughTeacherEnvCfg):
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
         self.commands.gait_command.ranges.frequencies = (1.2, 1.2)
-        self.commands.gait_command.ranges.swing_height = (0.25, 0.25)
+        self.commands.gait_command.ranges.swing_height = (0.2, 0.2)
         self.events.randomize_actuator_gains = None
         self.events.randomize_apply_external_force_torque = None
 
@@ -487,7 +499,7 @@ class LWLegRoughTeacherEnvCfg_Play(LWLegRoughTeacherEnvCfg):
             self.disable_zero_weight_rewards()
 
 @configclass
-class LWLegRoughStudentObservationsCfg(ObservationsCfg):
+class LWLegRoughStudentObservationsCfg:
 
     @configclass
     class PolicyCfg(ObsGroup):
@@ -496,13 +508,13 @@ class LWLegRoughStudentObservationsCfg(ObservationsCfg):
         # observation terms (order preserved)
         base_ang_vel = ObsTerm(
             func=mdp.base_ang_vel,
-            noise=Unoise(n_min=-0.2, n_max=0.2),
+            noise=GaussianNoise(mean=0.0, std=0.05),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.05, n_max=0.05),
+            noise=GaussianNoise(mean=0.0, std=0.025),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -515,14 +527,14 @@ class LWLegRoughStudentObservationsCfg(ObservationsCfg):
         joint_pos = ObsTerm(
             func=mdp.joint_pos_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-0.01, n_max=0.01),
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         joint_vel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-1.5, n_max=1.5),
+            noise=GaussianNoise(mean=0.0, std=0.02),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -546,13 +558,13 @@ class LWLegRoughStudentObservationsCfg(ObservationsCfg):
 
         base_ang_vel = ObsTerm(
             func=mdp.base_ang_vel,
-            noise=Unoise(n_min=-0.2, n_max=0.2),
             clip=(-100.0, 100.0),
+            noise=GaussianNoise(mean=0.0, std=0.05),
             scale=1.0,
         )
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.05, n_max=0.05),
+            noise=GaussianNoise(mean=0.0, std=0.025),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -565,14 +577,14 @@ class LWLegRoughStudentObservationsCfg(ObservationsCfg):
         joint_pos = ObsTerm(
             func=mdp.joint_pos_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-0.01, n_max=0.01),
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         joint_vel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-1.5, n_max=1.5),
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -618,8 +630,10 @@ class LWLegRoughStudentObservationsCfg(ObservationsCfg):
             self.enable_corruption = False
             self.concatenate_terms = True
 
+
     policy: PolicyCfg = PolicyCfg()
     teacher: TeacherCfg = TeacherCfg()
+
 
 @configclass
 class LWLegRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
@@ -654,11 +668,12 @@ class LWLegRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
         super().__post_init__()
 
         # ------------------------------Sence------------------------------
-        self.scene.robot = LW_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot = LW_LEG_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
+        # self.scene.height_scanner.pattern_cfg = patterns.GridPatternCfg(resolution=0.05, size=(0.8, 0.5)),
         self.scene.height_scanner_base.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
         self.scene.terrain.terrain_generator = BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG
-        self.scene.terrain.max_init_terrain_level = 0
+        # self.scene.terrain.max_init_terrain_level = 0
 
         # ------------------------------Observations------------------------------
         self.observations.policy.joint_pos.func = mdp.joint_pos_rel_without_wheel
@@ -680,6 +695,9 @@ class LWLegRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.teacher.joint_pos.params["asset_cfg"].joint_names = self.joint_names
         self.observations.teacher.joint_vel.params["asset_cfg"].joint_names = self.joint_names
 
+        # for blind
+        self.observations.teacher.height_scan = None
+
         # ------------------------------Actions------------------------------
         # reduce action scale
         self.actions.joint_pos.scale = {".*_hip_joint": 0.125, "^(?!.*_hip_joint).*": 0.25}
@@ -700,8 +718,11 @@ class LWLegRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
             "right_.*", "left_.*",
         ]
         self.events.randomize_com_positions.params["asset_cfg"].body_names = [self.base_link_name]
-        self.events.randomize_reset_joints.params["velocity_range"] = (-0.1, 0.1)
+        self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
+        self.events.randomize_reset_joints.params["position_range"] = (-0.1, 0.1)
+        self.events.randomize_reset_joints.params["velocity_range"] = (-0.2, 0.2)
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
+        self.events.push_robot_hard.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.randomize_apply_external_force_torque = None
 
         # If the weight of rewards is 0, set rewards to None
@@ -732,7 +753,7 @@ class LWLegRoughStudentEnvCfg_Play(LWLegRoughStudentEnvCfg):
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
         self.commands.gait_command.ranges.frequencies = (1.2, 1.2)
-        self.commands.gait_command.ranges.swing_height = (0.1, 0.25)
+        self.commands.gait_command.ranges.swing_height = (0.2, 0.2)
         self.events.randomize_actuator_gains = None
         self.events.randomize_apply_external_force_torque = None
 
