@@ -42,7 +42,7 @@ class LWRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 class LWRoughDistillationRunnerCfg(RslRlDistillationRunnerCfg):
 
     num_steps_per_env = 24
-    max_iterations = 20000  
+    max_iterations = 30000  
     save_interval = 1000
     experiment_name = "LW_leg_rough_teacher"  # 会去这里寻找load_run
     obs_groups = {
