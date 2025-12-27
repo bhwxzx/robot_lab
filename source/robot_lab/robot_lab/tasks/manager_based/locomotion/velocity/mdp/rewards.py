@@ -705,71 +705,74 @@ def flat_orientation_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = Scen
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
-# def keep_ankle_pitch_zero_in_air(
-#     env: ManagerBasedRLEnv,
-#     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-#     sensor_cfg: SceneEntityCfg = SceneEntityCfg("contact_sensor", body_names=[""]),
-#     left_ankle_joint_index: int = 9,
-#     right_ankle_joint_index: int = 4,
-#     force_threshold: float = 2.0,
-#     pitch_scale: float = 0.2
-# ) -> torch.Tensor:
-#     """Reward for keeping ankle pitch angle close to zero when foot is in the air.
-    
-#     Args:
-#         env: The environment object.
-#         asset_cfg: Configuration for the robot asset containing DOF positions.
-#         sensor_cfg: Configuration for the contact force sensor.
-#         force_threshold: Threshold value for contact detection (in Newtons).
-#         pitch_scale: Scaling factor for the exponential reward.
-        
-#     Returns:
-#         The computed reward tensor.
-#     """
-#     asset = env.scene[asset_cfg.name]
-#     contact_forces_history = env.scene.sensors[sensor_cfg.name].data.net_forces_w_history[:, :, sensor_cfg.body_ids]
-#     current_contact = torch.norm(contact_forces_history[:, -1], dim=-1) > force_threshold
-#     last_contact = torch.norm(contact_forces_history[:, -2], dim=-1) > force_threshold
-#     contact_filt = torch.logical_or(current_contact, last_contact)
-#     ankle_pitch_left = torch.abs(asset.data.joint_pos[:, left_ankle_joint_index]) * ~contact_filt[:, 0]
-#     ankle_pitch_right = torch.abs(asset.data.joint_pos[:, right_ankle_joint_index]) * ~contact_filt[:, 1]
-#     weighted_ankle_pitch = ankle_pitch_left + ankle_pitch_right
-#     return torch.exp(-weighted_ankle_pitch / pitch_scale)
-
-def keep_foot_pitch_zero_in_world(
+def keep_ankle_pitch_zero_in_air(
     env: ManagerBasedRLEnv,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     sensor_cfg: SceneEntityCfg = SceneEntityCfg("contact_sensor", body_names=[""]),
-    foot_body_names: list[str] = [".*_foot_link"], # 需要指定脚部刚体的名字
+    left_ankle_joint_index: int = 7,
+    right_ankle_joint_index: int = 6,
     force_threshold: float = 2.0,
     pitch_scale: float = 0.2
 ) -> torch.Tensor:
+    """Reward for keeping ankle pitch angle close to zero when foot is in the air.
     
+    Args:
+        env: The environment object.
+        asset_cfg: Configuration for the robot asset containing DOF positions.
+        sensor_cfg: Configuration for the contact force sensor.
+        force_threshold: Threshold value for contact detection (in Newtons).
+        pitch_scale: Scaling factor for the exponential reward.
+        
+    Returns:
+        The computed reward tensor.
+    """
     asset = env.scene[asset_cfg.name]
-    
-    # 获取接触历史
     contact_forces_history = env.scene.sensors[sensor_cfg.name].data.net_forces_w_history[:, :, sensor_cfg.body_ids]
     current_contact = torch.norm(contact_forces_history[:, -1], dim=-1) > force_threshold
     last_contact = torch.norm(contact_forces_history[:, -2], dim=-1) > force_threshold
-    contact_filt = torch.logical_or(current_contact, last_contact) # [env_num, 2]
+    contact_filt = torch.logical_or(current_contact, last_contact)
+    ankle_pitch_left = torch.abs(asset.data.joint_pos[:, left_ankle_joint_index]) * ~contact_filt[:, 0]
+    ankle_pitch_right = torch.abs(asset.data.joint_pos[:, right_ankle_joint_index]) * ~contact_filt[:, 1]
+    weighted_ankle_pitch = ankle_pitch_left + ankle_pitch_right
+    return torch.exp(-weighted_ankle_pitch / pitch_scale)
+
+# def keep_foot_pitch_zero_in_world(
+#     env: ManagerBasedRLEnv,
+#     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+#     sensor_cfg: SceneEntityCfg = SceneEntityCfg("contact_sensor", body_names=[""]),
+#     foot_body_names: list[str] = [".*_foot_link"], # 需要指定脚部刚体的名字
+#     force_threshold: float = 2.0,
+#     pitch_scale: float = 0.2
+# ) -> torch.Tensor:
     
-    # 获取脚部刚体在世界坐标系下的四元数
-    foot_indices, _ = asset.find_bodies(foot_body_names)
-    foot_quats = asset.data.body_quat_w[:, foot_indices, :] # [env_num, 2, 4]
+#     asset = env.scene[asset_cfg.name]
     
-    # 将四元数转换为欧拉角 (Roll, Pitch, Yaw)
-    roll, pitch, yaw = euler_xyz_from_quat(foot_quats) 
+#     # 获取接触历史
+#     contact_forces_history = env.scene.sensors[sensor_cfg.name].data.net_forces_w_history[:, :, sensor_cfg.body_ids]
+#     current_contact = torch.norm(contact_forces_history[:, -1], dim=-1) > force_threshold
+#     last_contact = torch.norm(contact_forces_history[:, -2], dim=-1) > force_threshold
+#     contact_filt = torch.logical_or(current_contact, last_contact) # [env_num, 2]
     
-    # pitch 现在的维度应该是 [env_num, 2] (对应两只脚)
+#     # 获取脚部刚体在世界坐标系下的四元数
+#     foot_indices, _ = asset.find_bodies(foot_body_names)
+#     foot_quats = asset.data.body_quat_w[:, foot_indices, :] # [env_num, 2, 4]
     
-    # 计算奖励
-    # 只惩罚空中的脚 (~contact_filt)
-    # 希望 pitch 接近 0
-    foot_pitch_error = torch.abs(pitch) * ~contact_filt
+#     # 展平张量以适配 euler_xyz_from_quat
+#     # 将 [env_num, 2, 4] -> [env_num * 2, 4]
+#     B, F, _ = foot_quats.shape 
+#     foot_quats_flat = foot_quats.view(B * F, 4)
     
-    weighted_pitch_error = torch.sum(foot_pitch_error, dim=1) # 左右脚误差求和
+#     # 计算欧拉角
+#     roll_flat, pitch_flat, yaw_flat = euler_xyz_from_quat(foot_quats_flat)
     
-    return torch.exp(-weighted_pitch_error / pitch_scale)
+#     # 将结果恢复维度 [env_num * 2] -> [env_num, 2]
+#     pitch = pitch_flat.view(B, F)
+    
+#     # 计算奖励 
+#     foot_pitch_error = torch.abs(pitch) * ~contact_filt
+#     weighted_pitch_error = torch.sum(foot_pitch_error, dim=1) 
+    
+#     return torch.exp(-weighted_pitch_error / pitch_scale)
 
 class BipedalGaitReward(ManagerTermBase):
     def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):

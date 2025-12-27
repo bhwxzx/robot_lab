@@ -245,7 +245,7 @@ class LWWheelRewardsCfg(RewardsCfg):
     feet_distance_penalize = RewTerm(
         func=mdp.feet_distance_penalize,
         weight=0.0,
-        params={"min_feet_distance": 0.115, "max_feet_distance": 0.51 "feet_links_name": [".*_wheel_link"]}
+        params={"min_feet_distance": 0.115, "max_feet_distance": 0.51, "feet_links_name": [".*_wheel_link"]}
     )
 
 @configclass
@@ -321,10 +321,10 @@ class LWWheelRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.actions.joint_vel.joint_names = self.wheel_joint_names
 
         # ------------------------------Events------------------------------
-        self.events.randomize_rigid_body_material.params["static_friction_range"] = (0.4, 1.0)
-        self.events.randomize_rigid_body_material.params["dynamic_friction_range"] = (0.4, 0.8)
-        self.events.randomize_rigid_body_material.params["restitution_range"] = (0.0, 1.0)
-        self.events.randomize_rigid_body_material.params["num_buckets"] = 48
+        # self.events.randomize_rigid_body_material.params["static_friction_range"] = (0.4, 1.0)
+        # self.events.randomize_rigid_body_material.params["dynamic_friction_range"] = (0.4, 0.8)
+        # self.events.randomize_rigid_body_material.params["restitution_range"] = (0.0, 1.0)
+        # self.events.randomize_rigid_body_material.params["num_buckets"] = 48
 
         self.events.randomize_rigid_body_mass_base.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.randomize_rigid_body_mass_others.params["asset_cfg"].body_names = [
@@ -334,9 +334,10 @@ class LWWheelRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
         self.events.randomize_reset_joints.params["position_range"] = (-0.1, 0.1)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.2, 0.2)
-        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
-        self.events.push_robot_hard.params["asset_cfg"].body_names = [self.base_link_name]
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
+        # self.events.push_robot_hard.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.randomize_apply_external_force_torque = None
+        self.events.push_robot_hard = None
 
          # ------------------------------Rewards------------------------------
         # General
@@ -362,10 +363,10 @@ class LWWheelRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
 
         self.rewards.joint_vel_l2.weight = -0.03
-        self.rewards.joint_vel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
+        self.rewards.joint_vel_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
 
         self.rewards.joint_vel_wheel_l2.weight = -5e-3
-        self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
 
         self.rewards.joint_pos_limits.weight = -2.0
         self.rewards.joint_pos_limits.params["asset_cfg"].joint_names = self.joint_names_without_wheels
@@ -377,16 +378,16 @@ class LWWheelRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.stand_still.weight = -3.0
         # self.rewards.stand_still.params["asset_cfg"].joint_names = self.joint_names_without_wheels
 
-        # self.rewards.joint_pos_penalty.weight = -0.1 # -2.0
-        # self.rewards.joint_pos_penalty.params["asset_cfg"].joint_names = self.joint_names_without_wheels
-        # self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
+        self.rewards.joint_pos_penalty.weight = -0.1 # -2.0
+        self.rewards.joint_pos_penalty.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
 
         # Action penalties
         self.rewards.action_rate_l2.weight = -0.3 # -0.01
         self.rewards.action_smoothness.weight = -0.03 
 
         # Contact sensorstand_still
-        self.rewards.undesired_contacts.weight = -0.25
+        self.rewards.undesired_contacts.weight = -1.0
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link", ".*wheel_link"]
         # self.rewards.contact_forces.weight = 0
         # self.rewards.contact_forces.params["sensor_cfg"].body_names = [self.foot_link_name]
@@ -400,7 +401,9 @@ class LWWheelRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # Others
         self.rewards.leg_symmetry.weight = 0.5
+        self.rewards.leg_symmetry.params["asset_cfg"].body_names = [self.wheel_link_name]
         self.rewards.same_foot_x_position.weight = -50.0
+        self.rewards.same_foot_x_position.params["asset_cfg"].body_names = [self.wheel_link_name]
 
         # self.rewards.feet_distance_y_exp.weight = 10.0
         # self.rewards.feet_distance_y_exp.params["stance_width"] = 0.42 # 0.42
@@ -527,7 +530,7 @@ class LWWheelRoughStudentObservationsCfg:
         joint_vel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=GaussianNoise(mean=0.0, std=0.01),
+            noise=GaussianNoise(mean=0.0, std=0.02),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -646,10 +649,10 @@ class LWWheelRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.actions.joint_vel.joint_names = self.wheel_joint_names
 
         # ------------------------------Events------------------------------
-        self.events.randomize_rigid_body_material.params["static_friction_range"] = (0.4, 1.0)
-        self.events.randomize_rigid_body_material.params["dynamic_friction_range"] = (0.4, 0.8)
-        self.events.randomize_rigid_body_material.params["restitution_range"] = (0.0, 1.0)
-        self.events.randomize_rigid_body_material.params["num_buckets"] = 48
+        # self.events.randomize_rigid_body_material.params["static_friction_range"] = (0.4, 1.0)
+        # self.events.randomize_rigid_body_material.params["dynamic_friction_range"] = (0.4, 0.8)
+        # self.events.randomize_rigid_body_material.params["restitution_range"] = (0.0, 1.0)
+        # self.events.randomize_rigid_body_material.params["num_buckets"] = 48
 
         self.events.randomize_rigid_body_mass_base.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.randomize_rigid_body_mass_others.params["asset_cfg"].body_names = [
@@ -659,9 +662,10 @@ class LWWheelRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
         self.events.randomize_reset_joints.params["position_range"] = (-0.1, 0.1)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.2, 0.2)
-        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
-        self.events.push_robot_hard.params["asset_cfg"].body_names = [self.base_link_name]
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
+        # self.events.push_robot_hard.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.randomize_apply_external_force_torque = None
+        self.events.push_robot_hard = None
 
         # If the weight of rewards is 0, set rewards to None
         if self.__class__.__name__ == "LWWheelRoughTeacherEnvCfg":
