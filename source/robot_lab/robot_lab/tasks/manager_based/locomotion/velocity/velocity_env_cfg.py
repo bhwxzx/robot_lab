@@ -530,7 +530,7 @@ class RewardsCfg:
         weight=0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=""),
-            "threshold": 10.0,
+            "threshold": 1.0,
         },
     )
     contact_forces = RewTerm(
