@@ -49,4 +49,24 @@ gym.register(
     },
 )
 
+gym.register(
+    id="RobotLab-Isaac-Velocity-Rough-LW-leg-normal-ppo-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rough_env_cfg:LWLegRoughNormalPPOEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:LWRoughNormalPPORunnerCfg",
+    },
+)
+
+gym.register(
+    id="RobotLab-Isaac-Velocity-Rough-LW-leg-normal-ppo-Play-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rough_env_cfg:LWLegRoughNormalPPOEnvCfg_Play",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:LWRoughNormalPPORunnerCfg",
+    },
+)
+
 
