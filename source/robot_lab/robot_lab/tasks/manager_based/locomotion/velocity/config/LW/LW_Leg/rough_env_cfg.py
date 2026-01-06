@@ -39,13 +39,13 @@ class LWLegObservationsCfg(ObservationsCfg):
         # observation terms (order preserved)
         base_ang_vel = ObsTerm(
             func=mdp.base_ang_vel,
-            noise=Unoise(n_min=-0.2, n_max=0.2),
+            noise=GaussianNoise(mean=0.0, std=0.2),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.05, n_max=0.05),
+            noise=GaussianNoise(mean=0.0, std=0.05),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -58,14 +58,14 @@ class LWLegObservationsCfg(ObservationsCfg):
         joint_pos = ObsTerm(
             func=mdp.joint_pos_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-0.01, n_max=0.01),
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         joint_vel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-1.5, n_max=1.5),
+            noise=GaussianNoise(mean=0.0, std=1.5),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -377,7 +377,7 @@ class LWLegRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
         self.events.randomize_reset_joints.params["position_range"] = (-0.1, 0.1)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.2, 0.2)
-        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
         
         self.events.push_robot_hard = None
         self.events.randomize_apply_external_force_torque = None 
@@ -525,13 +525,13 @@ class LWLegRoughStudentObservationsCfg:
         # observation terms (order preserved)
         base_ang_vel = ObsTerm(
             func=mdp.base_ang_vel,
-            noise=Unoise(n_min=-0.2, n_max=0.2),
+            noise=GaussianNoise(mean=0.0, std=0.2),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.05, n_max=0.05),
+            noise=GaussianNoise(mean=0.0, std=0.05),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -544,14 +544,14 @@ class LWLegRoughStudentObservationsCfg:
         joint_pos = ObsTerm(
             func=mdp.joint_pos_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-0.01, n_max=0.01),
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         joint_vel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-1.5, n_max=1.5),
+            noise=GaussianNoise(mean=0.0, std=1.5),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -576,12 +576,12 @@ class LWLegRoughStudentObservationsCfg:
         base_ang_vel = ObsTerm(
             func=mdp.base_ang_vel,
             clip=(-100.0, 100.0),
-            noise=Unoise(n_min=-0.2, n_max=0.2),
+            noise=GaussianNoise(mean=0.0, std=0.2),
             scale=1.0,
         )
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.05, n_max=0.05),
+            noise=GaussianNoise(mean=0.0, std=0.05),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -594,14 +594,14 @@ class LWLegRoughStudentObservationsCfg:
         joint_pos = ObsTerm(
             func=mdp.joint_pos_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-0.01, n_max=0.01),
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         joint_vel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-1.5, n_max=1.5),
+            noise=GaussianNoise(mean=0.0, std=1.5),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -740,7 +740,7 @@ class LWLegRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
         self.events.randomize_reset_joints.params["position_range"] = (-0.1, 0.1)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.2, 0.2)
-        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
         self.events.push_robot_hard = None
         self.events.randomize_apply_external_force_torque = None
 
@@ -791,13 +791,13 @@ class LWLegNormalPPOObservationsCfg(ObservationsCfg):
         # observation terms (order preserved)
         base_ang_vel = ObsTerm(
             func=mdp.base_ang_vel,
-            noise=Unoise(n_min=-0.2, n_max=0.2),
+            noise=GaussianNoise(mean=0.0, std=0.2),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.05, n_max=0.05),
+            noise=GaussianNoise(mean=0.0, std=0.05),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -810,14 +810,14 @@ class LWLegNormalPPOObservationsCfg(ObservationsCfg):
         joint_pos = ObsTerm(
             func=mdp.joint_pos_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-0.01, n_max=0.01),
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
         joint_vel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
-            noise=Unoise(n_min=-1.5, n_max=1.5),
+            noise=GaussianNoise(mean=0.0, std=1.5),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -922,7 +922,7 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
         # self.scene.height_scanner.pattern_cfg = patterns.GridPatternCfg(resolution=0.05, size=(0.8, 0.5)),
         self.scene.height_scanner_base.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
-        self.scene.terrain.terrain_generator = BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG
+        self.scene.terrain.terrain_generator = BLIND_HARD_ROUGH_TERRAINS_CFG
         # self.scene.terrain.max_init_terrain_level = 0
 
         # ------------------------------Observations------------------------------
@@ -974,7 +974,7 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
         self.events.randomize_reset_joints.params["position_range"] = (-0.1, 0.1)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.2, 0.2)
-        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
         
         self.events.push_robot_hard = None
         self.events.randomize_apply_external_force_torque = None 
@@ -1027,7 +1027,7 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
 
         # Action penalties
-        self.rewards.action_rate_l2.weight = -0.01 # -0.01 
+        self.rewards.action_rate_l2.weight = -0.25 # -0.01 
         # self.rewards.action_smoothness.weight = -0.06 # -0.15 
 
         # Contact sensorstand_still
