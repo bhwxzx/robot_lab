@@ -74,7 +74,7 @@ LW_LEG_CFG = ArticulationCfg(
             ],
             effort_limit=120.0,
             velocity_limit=20.0,
-            stiffness=105.0, # 70.0
+            stiffness=70.0,
             damping=3.0,
             armature=ARMATURE_10010,
             min_delay=0,
@@ -88,7 +88,7 @@ LW_LEG_CFG = ArticulationCfg(
             effort_limit=40.0,
             velocity_limit=33.0,
             stiffness=0.0,
-            damping=0.8, # 0.4
+            damping=0.4,
             armature=ARMATURE_8009,
             min_delay=0,
             max_delay=5
@@ -100,8 +100,8 @@ LW_LEG_CFG = ArticulationCfg(
             ],
             effort_limit=27.0,
             velocity_limit=10.0,
-            stiffness=20.0, # 10.0
-            damping=0.8, 
+            stiffness=10.0,
+            damping=0.8,
             armature=ARMATURE_4310,
             min_delay=0,
             max_delay=5
@@ -161,7 +161,7 @@ LW_WHEEL_CFG = ArticulationCfg(
             velocity_limit=20.0,
             stiffness=70.0,
             damping=3.0,
-            friction=0.0,
+            armature=ARMATURE_10010,
             min_delay=0,
             max_delay=5
         ),
@@ -174,7 +174,7 @@ LW_WHEEL_CFG = ArticulationCfg(
             velocity_limit=33.0,
             stiffness=0.0,
             damping=0.4,
-            friction=0.0,
+            armature=ARMATURE_8009,
             min_delay=0,
             max_delay=5
         ),
@@ -187,7 +187,7 @@ LW_WHEEL_CFG = ArticulationCfg(
             velocity_limit=10.0,
             stiffness=10.0,
             damping=0.8,
-            friction=0.0,
+            armature=ARMATURE_4310,
             min_delay=0,
             max_delay=5
         )
