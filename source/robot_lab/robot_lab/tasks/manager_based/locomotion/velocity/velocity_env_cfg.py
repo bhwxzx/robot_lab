@@ -263,9 +263,9 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "static_friction_range": (0.3, 1.0),
-            "dynamic_friction_range": (0.3, 0.8),
-            "restitution_range": (0.0, 0.5),
+            "static_friction_range": (0.3, 1.2), # (0.3, 1.0)
+            "dynamic_friction_range": (0.3, 1.0), # (0.3, 0.8)
+            "restitution_range": (0.0, 0.5), # (0.0, 0.5)
             "num_buckets": 64,
         },
     )
@@ -275,7 +275,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=""),
-            "mass_distribution_params": (-1.0, 3.0),
+            "mass_distribution_params": (-1.0, 3.0),  # (-1.0, 3.0)
             "operation": "add",
             "recompute_inertia": True,
         },
@@ -289,6 +289,17 @@ class EventCfg:
             "mass_distribution_params": (0.7, 1.3),
             "operation": "scale",
             "recompute_inertia": True,
+        },
+    )
+
+    randomize_joint_parameters = EventTerm(
+        func=mdp.randomize_joint_parameters,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
+            "friction_distribution_params": (1.0, 1.0),
+            "armature_distribution_params": (0.5, 1.5),
+            "operation": "scale",
         },
     )
 
@@ -308,7 +319,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "com_range": {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)},
+            "com_range": {"x": (-0.075, 0.075), "y": (-0.05, 0.05), "z": (-0.05, 0.05)},
         },
     )
 
@@ -338,8 +349,8 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "stiffness_distribution_params": (0.5, 2.0),
-            "damping_distribution_params": (0.5, 2.0),
+            "stiffness_distribution_params": (0.8, 1.2), # (0.5, 2.0)
+            "damping_distribution_params": (0.8, 1.2), # (0.5, 2.0)
             "operation": "scale",
             "distribution": "uniform",
         },
@@ -624,6 +635,18 @@ class RewardsCfg:
         },
     )
 
+    feet_clearance = RewTerm(
+        func=mdp.feet_clearance_reward,
+        weight=0.0,
+        params={
+            "std": 0.05,
+            "tanh_mult": 2.0,
+            "target_height": 0.1,
+            "asset_cfg": SceneEntityCfg("robot", body_names=""),
+            "command_name": "base_velocity",
+        },
+    )
+
     feet_height_body = RewTerm(
         func=mdp.feet_height_body,
         weight=0.0,
@@ -655,6 +678,14 @@ class RewardsCfg:
     #         "stance_width": float,
     #     },
     # )
+
+    feet_landing_vel = RewTerm(
+        func=mdp.foot_landing_vel,
+        weight=0.0,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=""),
+                "sensor_cfg": SceneEntityCfg("contact_forces", body_names=""),
+                 "foot_radius": 0.071, "about_landing_threshold": 0.08},
+    )
 
     upward = RewTerm(func=mdp.upward, weight=0.0)
 
