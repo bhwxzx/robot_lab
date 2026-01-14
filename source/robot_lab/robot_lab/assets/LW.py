@@ -40,24 +40,24 @@ LW_LEG_CFG = ArticulationCfg(
         ),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
             enabled_self_collisions=False,
-            solver_position_iteration_count=4,
-            solver_velocity_iteration_count=0,
+            solver_position_iteration_count=8,
+            solver_velocity_iteration_count=4,
         ),
         activate_contact_sensors=True,
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.75),
+        pos=(0.0, 0.0, 0.725),
         joint_pos={
             "right_hip_joint": 0.0,
             "left_hip_joint": 0.0,
-            "right_thigh_joint": -0.3491,
-            "left_thigh_joint": 0.3491,
-            "right_shank_joint": -2.269,
-            "left_shank_joint": 2.269,
+            "right_thigh_joint": -0.4363,
+            "left_thigh_joint": 0.4363,
+            "right_shank_joint": -2.234,
+            "left_shank_joint": 2.234,
             "right_wheel_joint": 0.0,
             "left_wheel_joint": 0.0,
-            "right_foot_joint": -0.5236,
-            "left_foot_joint": 0.5236,
+            "right_foot_joint": -0.4712,
+            "left_foot_joint": 0.4712,
         },
         joint_vel={".*": 0.0},
     ),
@@ -74,11 +74,11 @@ LW_LEG_CFG = ArticulationCfg(
             ],
             effort_limit=120.0,
             velocity_limit=20.0,
-            stiffness=70.0,
-            damping=3.0,
-            armature=ARMATURE_10010,
-            min_delay=0,
-            max_delay=5
+            stiffness=90.0, # 70.0
+            damping=3.0,  # 2.3
+            armature=0.01,
+            min_delay=1,
+            max_delay=6
         ),
         "wheels": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -88,10 +88,10 @@ LW_LEG_CFG = ArticulationCfg(
             effort_limit=40.0,
             velocity_limit=33.0,
             stiffness=0.0,
-            damping=0.4,
-            armature=ARMATURE_8009,
-            min_delay=0,
-            max_delay=5
+            damping=0.5, # 0.4
+            armature=0.01,
+            min_delay=1,
+            max_delay=6
         ),
         "foots": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -100,11 +100,11 @@ LW_LEG_CFG = ArticulationCfg(
             ],
             effort_limit=27.0,
             velocity_limit=10.0,
-            stiffness=10.0,
-            damping=0.8,
-            armature=ARMATURE_4310,
-            min_delay=0,
-            max_delay=5
+            stiffness=36.0,
+            damping=1.8,
+            armature=0.01,
+            min_delay=1,
+            max_delay=6
         )
     },
 )
