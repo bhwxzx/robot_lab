@@ -545,6 +545,25 @@ def feet_height(
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
+def feet_clearance_reward(
+    env: ManagerBasedRLEnv, 
+    command_name: str,
+    asset_cfg: SceneEntityCfg, 
+    target_height: float, 
+    std: float, 
+    tanh_mult: float
+) -> torch.Tensor:
+    """Reward the swinging feet for clearing a specified height off the ground"""
+    asset: RigidObject = env.scene[asset_cfg.name]
+    foot_z_target_error = torch.square(asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - target_height)
+    foot_velocity_tanh = torch.tanh(
+        tanh_mult * torch.norm(asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2], dim=2)
+    )
+    error = foot_z_target_error * foot_velocity_tanh
+    reward = torch.exp(-torch.sum(error, dim=1) / std)
+    reward *= torch.linalg.norm(env.command_manager.get_command(command_name), dim=1) > 0.1
+    reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
+    return reward
 
 def feet_height_body(
     env: ManagerBasedRLEnv,
@@ -1102,3 +1121,25 @@ class ActionSmoothnessPenalty(ManagerTermBase):
 
         # Return the penalty scaled by the configured weight
         return penalty
+    
+def foot_landing_vel(
+        env: ManagerBasedRLEnv,
+        asset_cfg: SceneEntityCfg,
+        sensor_cfg: SceneEntityCfg,
+        foot_radius: float,
+        about_landing_threshold: float,
+) -> torch.Tensor:
+    """Penalize high foot landing velocities"""
+    asset = env.scene[asset_cfg.name]
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    z_vels = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, 2]
+    contacts = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2] > 0.1
+
+    foot_heights = torch.clip(
+    asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - foot_radius, 0, 1
+    )  # TODO: change to the height relative to the vertical projection of the terrain
+
+    about_to_land = (foot_heights < about_landing_threshold) & (~contacts) & (z_vels < 0.0)
+    landing_z_vels = torch.where(about_to_land, z_vels, torch.zeros_like(z_vels))
+    reward = torch.sum(torch.square(landing_z_vels), dim=1)
+    return reward
