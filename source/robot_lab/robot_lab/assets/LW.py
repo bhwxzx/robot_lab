@@ -77,7 +77,8 @@ LW_LEG_CFG = ArticulationCfg(
             stiffness=90.0, # 70.0
             damping=3.0,  # 2.3
             armature=0.01,
-            min_delay=1,
+            friction=0.01,
+            min_delay=3,
             max_delay=6
         ),
         "wheels": DelayedPDActuatorCfg(
@@ -90,7 +91,8 @@ LW_LEG_CFG = ArticulationCfg(
             stiffness=0.0,
             damping=0.5, # 0.4
             armature=0.01,
-            min_delay=1,
+            friction=0.01,
+            min_delay=3,
             max_delay=6
         ),
         "foots": DelayedPDActuatorCfg(
@@ -103,7 +105,8 @@ LW_LEG_CFG = ArticulationCfg(
             stiffness=36.0,
             damping=1.8,
             armature=0.01,
-            min_delay=1,
+            friction=0.01,
+            min_delay=3,
             max_delay=6
         )
     },
