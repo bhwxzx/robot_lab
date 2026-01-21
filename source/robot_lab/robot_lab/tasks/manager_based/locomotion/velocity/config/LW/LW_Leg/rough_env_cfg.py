@@ -834,7 +834,7 @@ class LWLegNormalPPOObservationsCfg(ObservationsCfg):
         def __post_init__(self):
             self.enable_corruption = True
             self.concatenate_terms = True
-            self.history_length = 5
+            self.history_length = 10
 
     @configclass
     class CriticCfg(ObsGroup):
@@ -881,7 +881,7 @@ class LWLegNormalPPOObservationsCfg(ObservationsCfg):
         def __post_init__(self):
             self.enable_corruption = False
             self.concatenate_terms = True
-            self.history_length = 5 
+            self.history_length = 10 
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
@@ -925,7 +925,7 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
         # self.scene.height_scanner.pattern_cfg = patterns.GridPatternCfg(resolution=0.05, size=(0.8, 0.5)),
         self.scene.height_scanner_base.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
-        self.scene.terrain.terrain_generator = BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG
+        self.scene.terrain.terrain_generator = BLIND_ROUGH_TERRAINS_CFG
 
         # ------------------------------Observations------------------------------
         self.observations.policy.joint_pos.func = mdp.joint_pos_rel_without_wheel
@@ -971,11 +971,11 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
             "right_.*", "left_.*",
         ]
 
-        # self.events.randomize_com_positions.params["com_range"] = {"x": (-0.075, 0.075), "y": (-0.075, 0.075), "z": (-0.075, 0.075)}
+        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.075, 0.075), "y": (-0.075, 0.075), "z": (-0.075, 0.075)}
         self.events.randomize_com_positions.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
-        self.events.randomize_reset_joints.params["position_range"] = (-0.5, 0.5)
-        self.events.randomize_reset_joints.params["velocity_range"] = (-0.1, 0.1)
+        self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
+        self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
         self.events.randomize_apply_external_force_torque.params["asset_cfg"].body_names = [self.base_link_name]
         
@@ -1030,8 +1030,8 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 5.0
 
         # Action penalties
-        self.rewards.action_rate_l2.weight = -0.01 # -0.01 
-        # self.rewards.action_smoothness.weight = -0.02 # -0.15 
+        self.rewards.action_rate_l2.weight = -0.02 # -0.01 
+        self.rewards.action_smoothness.weight = -0.02 # -0.15 
 
         # Contact sensorstand_still
         self.rewards.undesired_contacts.weight = -1.0
@@ -1049,7 +1049,7 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
         # Others
         # self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.5
 
-        self.rewards.bipedal_gait_reward.weight = 2.0
+        self.rewards.bipedal_gait_reward.weight = 2.5
         self.rewards.feet_air_time.weight = 1.0
         self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
         self.rewards.feet_air_time.params["threshold"] = 0.4
@@ -1070,19 +1070,13 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_height.params["target_height"] = 0.05
         # self.rewards.feet_height.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_height_body.weight = -1.0
-        self.rewards.feet_height_body.params["target_height"] = -0.4
+        self.rewards.feet_height_body.params["target_height"] = -0.5
         self.rewards.feet_height_body.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_distance_y_exp.weight = 10.0
         self.rewards.feet_distance_y_exp.params["stance_width"] = 0.42 # 0.42
         self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.2
-
-        self.rewards.feet_landing_vel.weight = -0.15
-        self.rewards.feet_landing_vel.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_landing_vel.params["sensor_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_landing_vel.params["foot_radius"] = 0.071
-        self.rewards.feet_landing_vel.params["about_landing_threshold"] = 0.08
 
         # If the weight of rewards is 0, set rewards to None
         if self.__class__.__name__ == "LWLegRoughNormalPPOEnvCfg":

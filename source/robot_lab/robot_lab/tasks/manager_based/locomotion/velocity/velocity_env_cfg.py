@@ -286,22 +286,22 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "mass_distribution_params": (0.7, 1.3),
+            "mass_distribution_params": (0.8, 1.2),
             "operation": "scale",
             "recompute_inertia": True,
         },
     )
 
-    randomize_joint_parameters = EventTerm(
-        func=mdp.randomize_joint_parameters,
-        mode="startup",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "friction_distribution_params": (1.0, 1.0),
-            "armature_distribution_params": (0.5, 1.5),
-            "operation": "scale",
-        },
-    )
+    # randomize_joint_parameters = EventTerm(
+    #     func=mdp.randomize_joint_parameters,
+    #     mode="startup",
+    #     params={
+    #         "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
+    #         "friction_distribution_params": (1.0, 1.0),
+    #         "armature_distribution_params": (0.5, 1.5),
+    #         "operation": "scale",
+    #     },
+    # )
 
     # Skip: inertia updated via mass randomization by setting recompute_inertia=True
     # randomize_rigid_body_inertia = EventTerm(
@@ -349,8 +349,8 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "stiffness_distribution_params": (0.8, 1.2), # (0.5, 2.0)
-            "damping_distribution_params": (0.8, 1.2), # (0.5, 2.0)
+            "stiffness_distribution_params": (0.5, 2.0), # (0.5, 2.0)
+            "damping_distribution_params": (0.5, 2.0), # (0.5, 2.0)
             "operation": "scale",
             "distribution": "uniform",
         },

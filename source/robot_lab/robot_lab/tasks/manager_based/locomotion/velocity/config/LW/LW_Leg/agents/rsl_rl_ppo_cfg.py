@@ -40,5 +40,5 @@ class LWFlatNormalPPORunnerCfg(LWRoughNormalPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        self.max_iterations = 30000
+        self.max_iterations = 50000
         self.experiment_name = "LW_leg_flat_normal_ppo"
