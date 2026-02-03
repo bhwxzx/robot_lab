@@ -8,6 +8,7 @@ from isaaclab.terrains import (
     MeshPyramidStairsTerrainCfg,
     MeshRandomGridTerrainCfg,
     TerrainGeneratorCfg,
+    MeshPitTerrainCfg
 )
 
 # #############################
@@ -188,6 +189,41 @@ BLIND_ROUGH_TERRAINS_CFG = TerrainGeneratorCfg(
     },
 )
 
+BLIND_STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
+    size=(8.0, 8.0),
+    border_width=20.0,
+    num_rows=10,
+    num_cols=20,
+    horizontal_scale=0.1,
+    vertical_scale=0.005,
+    slope_threshold=0.75,
+    use_cache=False,
+    sub_terrains={
+        "pyramid_stairs": MeshPyramidStairsTerrainCfg(
+            proportion=0.4,
+            step_height_range=(0.05, 0.15),
+            step_width=0.3,
+            platform_width=3.0,
+            border_width=1.0,
+            holes=False,
+        ),
+        "pyramid_stairs_inv": MeshInvertedPyramidStairsTerrainCfg(
+            proportion=0.4,
+            step_height_range=(0.05, 0.15),
+            step_width=0.3,
+            platform_width=3.0,
+            border_width=1.0,
+            holes=False,
+        ),
+        "hf_pyramid_slope": HfPyramidSlopedTerrainCfg(
+            proportion=0.1, slope_range=(0.0, 0.3), platform_width=2.0, border_width=0.25
+        ),
+        "hf_pyramid_slope_inv": HfInvertedPyramidSlopedTerrainCfg(
+            proportion=0.1, slope_range=(0.0, 0.3), platform_width=2.0, border_width=0.25
+        ),
+    },
+)
+
 BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
     size=(8.0, 8.0),
     border_width=20.0,
@@ -221,10 +257,77 @@ BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
             proportion=0.1, noise_range=(0.02, 0.10), noise_step=0.02, border_width=0.25
         ),
         "hf_pyramid_slope": HfPyramidSlopedTerrainCfg(
-            proportion=0.05, slope_range=(0.0, 0.4), platform_width=2.0, border_width=0.25
+            proportion=0.05, slope_range=(0.0, 0.3), platform_width=2.0, border_width=0.25
         ),
         "hf_pyramid_slope_inv": HfInvertedPyramidSlopedTerrainCfg(
-            proportion=0.05, slope_range=(0.0, 0.4), platform_width=2.0, border_width=0.25
+            proportion=0.05, slope_range=(0.0, 0.3), platform_width=2.0, border_width=0.25
         ),
+    },
+)
+
+DWAQ_ROUGH_TERRAINS_CFG = TerrainGeneratorCfg(
+    curriculum=True,
+    size=(8.0, 8.0),
+    border_width=20.0,
+    num_rows=10,
+    num_cols=20,
+    horizontal_scale=0.1,
+    vertical_scale=0.005,
+    slope_threshold=0.75,
+    use_cache=False,
+    sub_terrains={
+        # ========== 上台阶 (中心高，向外下降) - 20% ==========
+        "stairs_up_28": MeshPyramidStairsTerrainCfg(
+            proportion=0.1,
+            step_height_range=(0.0, 0.15),
+            step_width=0.28,
+            platform_width=3.0,
+            border_width=1.0,
+            holes=False,
+        ),
+        "stairs_up_32": MeshPyramidStairsTerrainCfg(
+            proportion=0.1,
+            step_height_range=(0.0, 0.15),
+            step_width=0.32,
+            platform_width=3.0,
+            border_width=1.0,
+            holes=False,
+        ),
+        # ========== 下台阶 (中心低，向外上升) - 20% ==========
+        "stairs_down_30": MeshInvertedPyramidStairsTerrainCfg(
+            proportion=0.1,
+            step_height_range=(0.0, 0.15),
+            step_width=0.30,
+            platform_width=3.0,
+            border_width=1.0,
+            holes=False,
+        ),
+        "stairs_down_34": MeshInvertedPyramidStairsTerrainCfg(
+            proportion=0.1,
+            step_height_range=(0.0, 0.15),
+            step_width=0.34,
+            platform_width=3.0,
+            border_width=1.0,
+            holes=False,
+        ),
+        # ========== 其他地形 - 60% ==========
+        "boxes": MeshRandomGridTerrainCfg(
+            proportion=0.1, grid_width=0.45, grid_height_range=(0.0, 0.10), platform_width=2.0
+        ),
+        "random_rough": HfRandomUniformTerrainCfg(
+            proportion=0.15, noise_range=(-0.02, 0.04), noise_step=0.02, border_width=0.25
+        ),
+        "wave": HfWaveTerrainCfg(
+            proportion=0.1, amplitude_range=(0.0, 0.2), num_waves=5.0
+        ),
+        "slope": HfPyramidSlopedTerrainCfg(
+            proportion=0.1, slope_range=(0.0, 0.3), platform_width=2.0, inverted=False
+        ),
+        "high_platform": MeshPitTerrainCfg(
+            proportion=0.15, pit_depth_range=(0.0, 0.3), platform_width=2.0, double_pit=True
+        ),
+        # "gap": terrain_gen.MeshGapTerrainCfg(
+        #     proportion=0.1, gap_width_range=(0.1, 0.4), platform_width=2.0
+        # ),
     },
 )
