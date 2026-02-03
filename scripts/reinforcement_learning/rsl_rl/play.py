@@ -61,8 +61,9 @@ import gymnasium as gym
 import os
 import time
 import torch
+import torch.nn as nn 
 
-from rsl_rl.runners import DistillationRunner, OnPolicyRunner
+from rsl_rl.runners import DistillationRunner, OnPolicyRunner, OnPolicyRunnerDwaq
 
 from isaaclab.devices import Se2Keyboard, Se2KeyboardCfg
 from isaaclab.envs import (
@@ -87,6 +88,37 @@ from rl_utils import camera_follow
 
 # PLACEHOLDER: Extension template (do not remove this comment)
 
+# --- DWAQ 专用导出包装器 ---
+class DWAQDeploymentWrapper(nn.Module):
+    """将 DWAQ 模型包装为单 Tensor 输入格式以供部署。"""
+    def __init__(self, policy_nn, num_obs):
+        super().__init__()
+        # 核心修改：只引用部署所需的子模块，这样 JIT 就不会导出巨大的 Critic 权重
+        self.encoder_backbone = policy_nn.encoder_backbone
+        self.encode_mean_vel = policy_nn.encode_mean_vel
+        self.encode_mean_latent = policy_nn.encode_mean_latent
+        self.actor = policy_nn.actor
+        self.actor_obs_normalizer = policy_nn.actor_obs_normalizer
+        
+        self.num_obs = num_obs
+
+    def forward(self, obs_history_flat: torch.Tensor):
+        # 1. 提取当前帧
+        policy_obs = obs_history_flat[:, -self.num_obs:]
+        
+        # 2. 确定性推理逻辑 (不采样)
+        feat = self.encoder_backbone(obs_history_flat)
+        mu_v = self.encode_mean_vel(feat)
+        mu_l = self.encode_mean_latent(feat)
+        latent_code = torch.cat((mu_v, mu_l), dim=-1)
+        
+        # 3. 拼接并归一化
+        combined_obs = torch.cat((latent_code, policy_obs), dim=-1)
+        combined_obs = self.actor_obs_normalizer(combined_obs)
+        
+        # 4. 输出动作
+        actions = self.actor(combined_obs)
+        return torch.nan_to_num(actions, nan=0.0)
 
 @hydra_task_config(args_cli.task, args_cli.agent)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
@@ -180,12 +212,17 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     elif agent_cfg.class_name == "DistillationRunner":
         runner = DistillationRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    elif agent_cfg.class_name == "OnPolicyRunnerDwaq": # 新增 DWAQ 支持
+        runner = OnPolicyRunnerDwaq(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     else:
         raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
     runner.load(resume_path)
 
     # obtain the trained policy for inference
     policy = runner.get_inference_policy(device=env.unwrapped.device)
+
+    # 提前获取一次观察值，用于确定维度和后续播放
+    obs = env.get_observations() 
 
     # extract the neural network module
     # we do this in a try-except to maintain backwards compatibility.
@@ -196,23 +233,84 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         # version 2.2 and below
         policy_nn = runner.alg.actor_critic
 
-    # extract the normalizer
-    if hasattr(policy_nn, "actor_obs_normalizer"):
-        normalizer = policy_nn.actor_obs_normalizer
-    elif hasattr(policy_nn, "student_obs_normalizer"):
-        normalizer = policy_nn.student_obs_normalizer
-    else:
-        normalizer = None
-
-    # export policy to onnx/jit
+     # --- DWAQ 专用导出逻辑 ---
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
-    export_policy_as_jit(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.pt")
-    export_policy_as_onnx(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.onnx")
+    os.makedirs(export_model_dir, exist_ok=True)
+
+    if agent_cfg.class_name == "OnPolicyRunnerDwaq":
+        print("[INFO] Detecting DWAQ runner. Exporting with deployment wrapper...")
+        # --- 1. 维度解析 (适配 3D 张量) ---
+        policy_tensor = obs["policy"] # [Batch, Time, Dim]
+        num_obs_single = policy_tensor.shape[-1]
+        history_length = policy_tensor.shape[1]
+        num_policy_total_flat = num_obs_single * history_length # 展平后的总长度
+
+        print(f"[INFO] DWAQ Dimensions -> Single_Obs: {num_obs_single}, History_Len: {history_length}")
+
+        # 重要：将模型先移动到 CPU
+        policy_nn.cpu() 
+
+        deployment_model = DWAQDeploymentWrapper(policy_nn, num_obs_single).to("cpu")
+        deployment_model.eval()
+        
+        # 准备样例输入用于 Trace [Batch=1, HistoryLen * ObsDim]
+        example_input = torch.zeros(1, num_policy_total_flat).to("cpu")
+        
+        # 导出为 TorchScript (JIT)
+        traced_model = torch.jit.trace(deployment_model, example_input)
+        traced_model.save(os.path.join(export_model_dir, "policy.pt"))
+        print(f"[SUCCESS] DWAQ JIT model exported to: {export_model_dir}/policy.pt")
+        
+        # 导出为 ONNX (可选)
+        torch.onnx.export(deployment_model, example_input, os.path.join(export_model_dir, "policy.onnx"))
+
+        print("\n" + "="*50)
+        print("[验证] 开始导出模型数值一致性检查...")
+        
+        # --- 验证逻辑 ---
+        print("\n" + "="*50)
+        print("[验证] 开始导出模型数值一致性检查...")
+        
+        # A. 获取仿真器当前吐出的数据 (Term-First)
+        test_policy_raw = obs["policy"].to("cpu")
+        
+        # B. 运行原始模型推理
+        # policy_nn.act_inference 内部会自动处理 Term-First 转 Time-First 并切出当前帧
+        with torch.no_grad():
+            actions_orig = policy_nn.act_inference(obs.to("cpu"))
+            
+        # C. 模拟 C++ 部署端输入：手动展平 3D 张量
+        # flatten(1, 2) 会把 Time 和 Dim 合并，且保持 Time-First 顺序
+        test_flat_input = test_policy_raw.flatten(1, 2)
+        
+        # D. 运行 JIT 模型
+        with torch.no_grad():
+            actions_jit = traced_model(test_flat_input)
+            
+        # 计算误差
+        diff = torch.max(torch.abs(actions_orig - actions_jit))
+        print(f"[验证] 原始动作样例: {actions_orig[0, :3]}")
+        print(f"[验证] JIT 动作样例:  {actions_jit[0, :3]}")
+        print(f"[验证] 最大绝对误差: {diff.item():.8e}")
+
+        # 把模型移回原来的设备，以免影响后续的 Play 可视化
+        policy_nn.to(agent_cfg.device)
+    else:
+        # 标准 PPO 导出逻辑
+        if hasattr(policy_nn, "actor_obs_normalizer"):
+            normalizer = policy_nn.actor_obs_normalizer
+        elif hasattr(policy_nn, "student_obs_normalizer"):
+            normalizer = policy_nn.student_obs_normalizer
+        else:
+            normalizer = None
+
+        export_policy_as_jit(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.pt")
+        export_policy_as_onnx(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.onnx")
 
     dt = env.unwrapped.step_dt
 
     # reset environment
-    obs = env.get_observations()
+    # obs = env.get_observations()  # 获取观测移到了前面
     timestep = 0
     # simulate environment
     while simulation_app.is_running():
