@@ -4,16 +4,16 @@
 from __future__ import annotations
 
 import torch
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
 from isaaclab.managers import SceneEntityCfg
+from isaaclab.utils.math import quat_apply_inverse
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv, ManagerBasedRLEnv
-
 
 def joint_pos_rel_without_wheel(
     env: ManagerBasedEnv,
@@ -99,6 +99,11 @@ def robot_pos(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     return asset.data.root_pos_w.to(device)
 
+def robot_pose_z_world(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """pose z of the robot in world"""
+    asset: Articulation = env.scene[asset_cfg.name]
+    # device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    return asset.data.root_pos_w[:, 2:3]
 
 def robot_vel(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """velocity of the robot"""
@@ -135,7 +140,7 @@ def robot_contact_force(env: ManagerBasedEnv, sensor_cfg: SceneEntityCfg) -> tor
     return body_contact_force.reshape(body_contact_force.shape[0], -1)
 
 
-def get_gait_phase(env: ManagerBasedRLEnv) -> torch.Tensor:
+def get_gait_phase_from_command(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Get the current gait phase as observation.
 
     The gait phase is represented by [sin(phase), cos(phase)] to ensure continuity.
@@ -155,6 +160,40 @@ def get_gait_phase(env: ManagerBasedRLEnv) -> torch.Tensor:
     # Reshape gait_indices to (num_envs, 1)
     gait_indices = gait_indices.unsqueeze(-1)
     # Convert to sin/cos representation
+    sin_phase = torch.sin(2 * torch.pi * gait_indices)
+    cos_phase = torch.cos(2 * torch.pi * gait_indices)
+
+    return torch.cat([sin_phase, cos_phase], dim=-1)
+
+def get_gait_phase_from_param(env: ManagerBasedRLEnv, gait_freq: Union[float, torch.Tensor]) -> torch.Tensor:
+    """获取当前的步态相位。
+
+    步态相位通过 [sin(phase), cos(phase)] 表示以确保连续性。
+    相位根据情节步数（episode length）和传入的步频（gait frequency）计算。
+
+    参数:
+        env: 环境实例。
+        gait_freq: 步频参数。可以是标量（float）或形状为 (num_envs,) 的 Tensor。
+
+    返回:
+        torch.Tensor: 步态相位观测。形状为 (num_envs, 2)。
+    """
+    # 检查 episode_length_buf 是否可用
+    if not hasattr(env, "episode_length_buf"):
+        return torch.zeros(env.num_envs, 2, device=env.device)
+
+    # 如果 gait_freq 是标量，确保它能与 env.num_envs 匹配
+    if isinstance(gait_freq, (float, int)):
+        gait_freq = torch.tensor(gait_freq, device=env.device)
+
+    # 计算步态指数 (phase = time * frequency % 1.0)
+    # env.episode_length_buf * env.step_dt 得到的是当前情节持续的时间（秒）
+    gait_indices = torch.remainder(env.episode_length_buf * env.step_dt * gait_freq, 1.0)
+    
+    # 将形状调整为 (num_envs, 1) 以进行后续计算
+    gait_indices = gait_indices.view(env.num_envs, 1)
+    
+    # 转换为正余弦表示
     sin_phase = torch.sin(2 * torch.pi * gait_indices)
     cos_phase = torch.cos(2 * torch.pi * gait_indices)
 
@@ -183,6 +222,106 @@ def feet_lin_vel(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCf
     asset: RigidObject = env.scene[asset_cfg.name]
     return asset.data.body_lin_vel_w[:, asset_cfg.body_ids].flatten(start_dim=1)
 
+def feet_lin_vel_in_body(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+    """获取足部相对于机身的速度，并转换到机身坐标系下。"""
+    
+    asset: Articulation = env.scene[asset_cfg.name]
+    
+    # 获取足部在世界系下的线性速度 (Shape: [num_envs, num_feet, 3])
+    foot_vel_w = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :]
+    
+    base_vel_w = asset.data.root_lin_vel_w
+    
+    # 使用 unsqueeze(1) 将 base_vel_w 从 [N, 3] 变为 [N, 1, 3]，以便对所有足部进行广播相减
+    rel_vel_w = foot_vel_w - base_vel_w.unsqueeze(1)
+
+    base_quat_w = asset.data.root_quat_w  # [N, 4]
+    
+    # 因为 rel_vel_w 是 [N, num_feet, 3]，而 base_quat_w 是 [N, 4]
+    # 我们需要将四元数扩展到与足部数量一致，或者利用该函数内部的 reshape 特性
+    num_feet = rel_vel_w.shape[1]
+    # [N, num_feet, 4]
+    base_quat_w_expanded = base_quat_w.unsqueeze(1).expand(-1, num_feet, -1)
+    
+    rel_vel_b = quat_apply_inverse(base_quat_w_expanded, rel_vel_w)
+    
+    # 返回展平后的观测 [num_envs, num_feet * 3]
+    return rel_vel_b.view(env.num_envs, -1)
+
+def feet_contact_bool(env: ManagerBasedEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """获取足部触地状态
+    
+    Args:
+        sensor_cfg: 触地传感器的配置，需指定传感器名称和关联的 body_ids（足部索引）。
+    """
+    # 这里是从 env.scene.sensors 中获取，而不是 env.scene
+    sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    
+    # 获取传感器记录的合力大小 (Shape: [num_envs, num_bodies_in_sensor, 3])
+    # 通常关注的是合力的模长（或者 Z 轴分量）
+    net_forces = sensor.data.net_forces_w[:, sensor_cfg.body_ids, :]
+    
+    # 计算力的模长 [num_envs, num_feet]
+    force_magnitudes = torch.norm(net_forces, dim=-1)
+    
+    # 判断是否触地。设置一个阈值（如 1.0 牛顿）以过滤传感器的数值噪声
+    # 返回的是布尔张量 (True 为触地，False 为悬空)
+    contact_bool = force_magnitudes > 1.0
+    
+    return contact_bool.float()
+
+def feet_pos_in_body(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+    """获取足端相对于机身的位置（在机身坐标系下表示）。"""
+    
+    asset: Articulation = env.scene[asset_cfg.name]
+    
+    # 获取足部在世界系下的位置 (Shape: [num_envs, num_feet, 3])
+    foot_pos_w = asset.data.body_pos_w[:, asset_cfg.body_ids, :]
+    
+    # 获取机身在世界系下的位置 (Shape: [num_envs, 3])
+    base_pos_w = asset.data.root_pos_w.unsqueeze(1) # 增加维度以便广播相减
+    
+    rel_pos_w = foot_pos_w - base_pos_w
+    
+    # 获取机身姿态四元数 [N, 4]
+    base_quat_w = asset.data.root_quat_w
+    
+    # 准备四元数以匹配足部数量 [N, num_feet, 4]
+    num_feet = rel_pos_w.shape[1]
+    base_quat_w_expanded = base_quat_w.unsqueeze(1).expand(-1, num_feet, -1)
+    
+    rel_pos_b = quat_apply_inverse(base_quat_w_expanded, rel_pos_w)
+    
+    # 返回展平后的观测 [num_envs, num_feet * 3]
+    return rel_pos_b.reshape(env.num_envs, -1)
+
+def feet_contact_forces_in_body(env: ManagerBasedEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """获取足端在机身坐标系下的三维接触力。"""
+    
+    # 获取传感器和机器人资源对象
+    sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+
+    asset: Articulation = env.scene["robot"] 
+    
+    # 获取世界系下的接触力 [num_envs, num_feet, 3]
+    if sensor_cfg.body_ids is not None:
+        forces_w = sensor.data.net_forces_w[:, sensor_cfg.body_ids, :]
+    else:
+        forces_w = sensor.data.net_forces_w
+        
+    # 获取机身姿态四元数 [num_envs, 4]
+    base_quat_w = asset.data.root_quat_w
+    
+    # 准备四元数以匹配足部数量
+    num_feet = forces_w.shape[1]
+    base_quat_w_expanded = base_quat_w.unsqueeze(1).expand(-1, num_feet, -1)
+    
+    # 将力从世界系旋转到机身系
+    forces_b = quat_apply_inverse(base_quat_w_expanded, forces_w)
+    
+    # 返回展平后的观测 [num_envs, num_feet * 3]
+    return forces_b.reshape(env.num_envs, -1)
+
 def generated_commands(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     """The generated command from command term in the command manager with the given name."""
     return env.command_manager.get_command(command_name)
@@ -201,3 +340,6 @@ def joint_pos_rel_exclude_wheel(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCf
     all_joints_idx = range(asset.num_joints)
     pos_idx_exclude_wheel = [i for i in all_joints_idx if i not in wheel_joints_idx]
     return asset.data.joint_pos[:, pos_idx_exclude_wheel] - asset.data.default_joint_pos[:, pos_idx_exclude_wheel]
+
+
+
