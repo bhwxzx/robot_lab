@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import torch
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from torch import distributions
 
 import isaaclab.utils.math as math_utils
@@ -14,7 +14,7 @@ from isaaclab.managers import ManagerTermBase
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor, RayCaster
-from isaaclab.utils.math import quat_apply_inverse, yaw_quat, euler_xyz_from_quat
+from isaaclab.utils.math import quat_apply_inverse, yaw_quat, euler_xyz_from_quat, quat_apply, wrap_to_pi
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -446,6 +446,40 @@ def feet_contact_without_cmd(env: ManagerBasedRLEnv, command_name: str, sensor_c
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
+def feet_standing_force_reward(
+    env: ManagerBasedRLEnv, 
+    command_name: str, 
+    sensor_cfg: SceneEntityCfg, 
+    force_threshold: float = 20.0  # 受力阈值（单位：牛顿）
+) -> torch.Tensor:
+    """根据足部受力大小奖励静止时的站立状态。
+    
+    参数:
+        force_threshold: 只有当足部受力超过此值时，才认为该脚是有效支撑。
+                         建议设为机器人总重(mg)的 10%~20%。
+    """
+    # 1. 获取传感器对象
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    
+    # 2. 获取所有足部的合力大小 (Net Force Norm)
+    # net_forces_w 形状为 (num_envs, num_bodies, 3)
+    # 我们只取指定的 foot_link 的索引
+    foot_forces = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, :]
+    foot_force_norms = torch.norm(foot_forces, dim=-1) # (num_envs, num_feet)
+    
+    # 3. 计算符合受力阈值的脚的数量
+    # 只有受力 > force_threshold 时，该脚计为 1.0
+    standing_feet_count = torch.sum(foot_force_norms > force_threshold, dim=-1).float()
+    
+    # 4. 条件遮罩：只在没有速度指令时生效
+    vel_cmd = env.command_manager.get_command(command_name)
+    is_static = torch.norm(vel_cmd[:, :2], dim=1) < 0.1
+    
+    # 5. 姿态遮罩：确保机器人向上
+    upright_mask = torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
+    
+    # 返回奖励：静止且朝上时，有效支撑的脚越多，奖励越高
+    return standing_feet_count * is_static * upright_mask
 
 def feet_stumble(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     # extract the used quantities (to enable type-hinting)
@@ -795,171 +829,107 @@ def keep_ankle_pitch_zero_in_air(
 
 class BipedalGaitReward(ManagerTermBase):
     def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):
-        """Initialize the term.
-
-        Args:
-            cfg: The configuration of the reward.
-            env: The RL environment instance.
-        """
+        """初始化奖励项。"""
         super().__init__(cfg, env)
 
+        # 提取必要的传感器和资产信息
         self.sensor_cfg = cfg.params["sensor_cfg"]
         self.asset_cfg = cfg.params["asset_cfg"]
-        self.height_sensor_cfg = cfg.params["height_sensor_cfg"]
-        self.target_height = cfg.params["base_target_height"]
-
-        # extract the used quantities (to enable type-hinting)
         self.contact_sensor: ContactSensor = env.scene.sensors[self.sensor_cfg.name]
         self.asset: Articulation = env.scene[self.asset_cfg.name]
 
-        # Store configuration parameters
+        # 奖励缩放与超参数
         self.force_scale = float(cfg.params["tracking_contacts_shaped_force"])
         self.vel_scale = float(cfg.params["tracking_contacts_shaped_vel"])
         self.force_sigma = cfg.params["gait_force_sigma"]
         self.vel_sigma = cfg.params["gait_vel_sigma"]
         self.kappa_gait_probs = cfg.params["kappa_gait_probs"]
         self.vel_command_name = cfg.params["vel_command_name"]
-        self.command_name = cfg.params["command_name"]
+        
         self.dt = env.step_dt
-
-        # self.gait_param_cfg = list(cfg.params["gait_param_cfg"]) # 频率 偏置 周期
 
     def __call__(
         self,
         env: ManagerBasedRLEnv,
-        tracking_contacts_shaped_force,
-        tracking_contacts_shaped_vel,
-        gait_force_sigma,
-        gait_vel_sigma,
-        kappa_gait_probs,
-        vel_command_name,
-        command_name,
-        sensor_cfg,
-        asset_cfg,
-        height_sensor_cfg,
-        base_target_height,
-        # gait_param_cfg,
+        tracking_contacts_shaped_force: float,
+        tracking_contacts_shaped_vel: float,
+        gait_force_sigma: float,
+        gait_vel_sigma: float,
+        kappa_gait_probs: float,
+        vel_command_name: str,
+        sensor_cfg: any,
+        asset_cfg: any,
+        gait_params: List[float],
     ) -> torch.Tensor:
-        """Compute the reward.
+        """计算奖励。"""
+        
+        # 将传入的 [1.2, 0.5, 0.5] 转换为 tensor 并扩展到所有环境
+        # gait_params 形状: (num_envs, 3)
+        gait_tensor = torch.tensor(gait_params, device=self.device, dtype=torch.float32).repeat(self.num_envs, 1)
 
-        The reward combines force-based and velocity-based terms to encourage desired gait patterns.
+        # 1. 计算目标接触状态 (Desired Contact States)
+        # foot_indices: 每个脚当前的相位, desired_contact_states: 目标触地概率 [0, 1]
+        foot_indices, desired_contact_states = self.compute_contact_targets(gait_tensor)
 
-        Args:
-            env: The RL environment instance.
-
-        Returns:
-            The reward value.
-        """
-
-        gait_params = env.command_manager.get_command(self.command_name)
-        # gait_row = torch.tensor([float(self.gait_param_cfg[0]), float(self.gait_param_cfg[1]), float(self.gait_param_cfg[2])], 
-        #                           device=self.device, dtype=torch.float32)
-        # gait_params = gait_row.view(1, 3).expand(self.num_envs, 3).contiguous() 
-
-        # Update contact targets
-        foot_indices, desired_contact_states = self.compute_contact_targets(gait_params)
-
-        # Force-based reward
+        # 2. 力量奖励 (鼓励在支撑相触地，摆动相离地)
         foot_forces = torch.norm(self.contact_sensor.data.net_forces_w[:, self.sensor_cfg.body_ids], dim=-1)
         force_reward = self._compute_force_reward(foot_forces, desired_contact_states)
 
-        # Velocity-based reward
+        # 3. 速度奖励 (鼓励在摆动相移动，支撑相静止)
         foot_velocities = torch.norm(self.asset.data.body_lin_vel_w[:, self.asset_cfg.body_ids], dim=-1)
         velocity_reward = self._compute_velocity_reward(foot_velocities, desired_contact_states)
 
-        # 抬脚高度奖励（惩罚在摆动期间未抬脚到目标高度）
-        if self.height_sensor_cfg is not None:
-            height_sensor: RayCaster = env.scene[self.height_sensor_cfg.name]
-            # 获取击中点的世界坐标 Z
-            ray_hits_w = height_sensor.data.ray_hits_w[..., 2]
-            
-            # 计算掩码：标记 NaN, Inf 以及 距离过远 的异常值
-            invalid_mask = torch.isnan(ray_hits_w) | torch.isinf(ray_hits_w) | (torch.abs(ray_hits_w) > 1e6)
-            
-            # 估算地面高度：Fallback
-            fallback_ground_z = self.asset.data.root_link_pos_w[:, 2] - self.target_height
-            
-            clean_hits = ray_hits_w.clone()
-            # 将所有被标记为 invalid 的值（包括 Inf 和 >1e6）都强制设为 NaN
-            # 这样 torch.nanmean 就会忽略它们
-            clean_hits[invalid_mask] = float('nan') 
-            
-            # 计算均值 (忽略 NaN)
-            row_means = torch.nanmean(clean_hits, dim=1)
-            
-            # 处理整行都是无效值的情况
-            # 如果某行全部是 NaN (即所有射线都无效)，nanmean 会返回 NaN
-            bad_envs = torch.isnan(row_means)
-            ground_z_est = row_means
-            ground_z_est[bad_envs] = fallback_ground_z[bad_envs]
-        else:
-            # 默认平地 Z=0
-            ground_z_est = torch.zeros(self.num_envs, device=self.device)
-
-        # 4. 计算高度奖励 (传入纯净的 ground_z_est)
-        foot_height_reward = self._compute_foot_height_reward(
-            gait_params, 
-            foot_indices, 
-            ground_z_est, 
-            desired_contact_states
-        )
-
-        # Combine rewards
-        total_reward = force_reward + velocity_reward  # + foot_height_reward
-        # print(force_reward)
-        # print(velocity_reward)
-        # print(foot_height_reward)
-        total_reward *= torch.norm(env.command_manager.get_command(self.vel_command_name), dim=1) > 0.1
-        total_reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
-        return total_reward 
+        # 4. 汇总奖励
+        total_reward = force_reward + velocity_reward
+        
+        # 5. 条件遮罩 (Masking)
+        # 只有当速度指令大于 0.1m/s 时才给步态奖励
+        vel_cmd = env.command_manager.get_command(self.vel_command_name)
+        moving_mask = torch.norm(vel_cmd, dim=1) > 0.1
+        
+        # 姿态遮罩：如果机器人摔倒或严重倾斜（重力投影 Z 分量），减小奖励
+        upright_mask = torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
+        
+        return total_reward * moving_mask * upright_mask
 
     def compute_contact_targets(self, gait_params):
-        """Calculate desired contact states for the current timestep."""
+        """根据当前时间计算期望的触地状态。"""
         frequencies = gait_params[:, 0]
         offsets = gait_params[:, 1]
-        durations = torch.cat(
-            [
-                gait_params[:, 2].view(self.num_envs, 1),
-                gait_params[:, 2].view(self.num_envs, 1),
-            ],
-            dim=1,
-        )
+        # 假设双足是对称的，持续时间(duration)一致
+        durations = gait_params[:, 2].view(self.num_envs, 1).expand(-1, 2)
 
-        assert torch.all(frequencies > 0), "Frequencies must be positive"
-        assert torch.all((offsets >= 0) & (offsets <= 1)), "Offsets must be between 0 and 1"
-        assert torch.all((durations > 0) & (durations < 1)), "Durations must be between 0 and 1"
-
+        # 当前整体相位 [0, 1)
         gait_indices = torch.remainder(self._env.episode_length_buf * self.dt * frequencies, 1.0)
 
-        # Calculate foot indices
-        foot_indices = torch.remainder(
-            torch.cat(
-                [gait_indices.view(self.num_envs, 1), (gait_indices + offsets + 1).view(self.num_envs, 1)],
-                dim=1,
-            ),
-            1.0,
-        )
+        # 计算两只脚各自的相位 (加上 offset 产生相位差)
+        foot_indices = torch.stack([
+            gait_indices, 
+            torch.remainder(gait_indices + offsets, 1.0)
+        ], dim=1)
 
-        # Determine stance and swing phases
+        # 判断处于支撑相还是摆动相并归一化索引
+        # 支撑相: [0, duration] -> 映射到 [0, 0.5]
+        # 摆动相: [duration, 1] -> 映射到 [0.5, 1.0]
         stance_idxs = foot_indices < durations
-        swing_idxs = foot_indices > durations
+        swing_idxs = ~stance_idxs
 
-        # Adjust foot indices based on phase
-        foot_indices[stance_idxs] = torch.remainder(foot_indices[stance_idxs], 1) * (0.5 / durations[stance_idxs])
-        foot_indices[swing_idxs] = 0.5 + (torch.remainder(foot_indices[swing_idxs], 1) - durations[swing_idxs]) * (
+        # 映射逻辑
+        foot_indices[stance_idxs] = foot_indices[stance_idxs] * (0.5 / durations[stance_idxs])
+        foot_indices[swing_idxs] = 0.5 + (foot_indices[swing_idxs] - durations[swing_idxs]) * (
             0.5 / (1 - durations[swing_idxs])
         )
 
-        # Calculate desired contact states using von mises distribution
-        smoothing_cdf_start = distributions.normal.Normal(0, self.kappa_gait_probs).cdf
-        desired_contact_states = smoothing_cdf_start(foot_indices) * (
-            1 - smoothing_cdf_start(foot_indices - 0.5)
-        ) + smoothing_cdf_start(foot_indices - 1) * (1 - smoothing_cdf_start(foot_indices - 1.5))
+        # 使用 Von Mises 类似平滑分布计算目标触地状态
+        # 这里的逻辑保持原样，用于产生平滑的 0-1 触地信号
+        smoothing_cdf = distributions.normal.Normal(0, self.kappa_gait_probs).cdf
+        desired_contact_states = smoothing_cdf(foot_indices) * (
+            1 - smoothing_cdf(foot_indices - 0.5)
+        ) + smoothing_cdf(foot_indices - 1) * (1 - smoothing_cdf(foot_indices - 1.5))
 
         return foot_indices, desired_contact_states
 
     def _compute_force_reward(self, forces: torch.Tensor, desired_contacts: torch.Tensor) -> torch.Tensor:
-        """Compute force-based reward component."""
         reward = torch.zeros_like(forces[:, 0])
         if self.force_scale < 0:  # Negative scale means penalize unwanted contact
             for i in range(forces.shape[1]):
@@ -971,7 +941,6 @@ class BipedalGaitReward(ManagerTermBase):
         return (reward / forces.shape[1]) * self.force_scale
 
     def _compute_velocity_reward(self, velocities: torch.Tensor, desired_contacts: torch.Tensor) -> torch.Tensor:
-        """Compute velocity-based reward component."""
         reward = torch.zeros_like(velocities[:, 0])
         if self.vel_scale < 0:  # Negative scale means penalize movement during contact
             for i in range(velocities.shape[1]):
@@ -982,40 +951,6 @@ class BipedalGaitReward(ManagerTermBase):
 
         return (reward / velocities.shape[1]) * self.vel_scale
     
-    def _compute_foot_height_reward(self, gait_params, foot_indices, ground_z, desired_contacts: torch.Tensor) -> torch.Tensor:
-        """计算抬脚高度误差惩罚"""
-        # 维度对齐
-        # ground_z: [env] -> [env, 1]
-        ground_z = ground_z.view(-1, 1)
-        # gait_params[:, 3]: [env] -> [env, 1]
-        foot_target_height = gait_params[:, 3].view(-1, 1)
-
-        # 计算摆动相位 (Swing Phase)
-        # 将 [0.5, 1.0] 映射到 [0, 1.0]，并在 clamp 后计算
-        swing_phase = (foot_indices - 0.5) * 2.0
-        swing_phase = torch.clamp(swing_phase, 0.0, 1.0)
-
-        # 计算相对高度偏移 (Sine Wave)
-        # [Num_Envs, 1] * [Num_Envs, Num_Feet] -> PyTorch 自动广播为 [Num_Envs, Num_Feet]
-        # sin(0)=0 (刚抬起), sin(pi/2)=1 (最高点), sin(pi)=0 (落地)
-        sine_height = foot_target_height * torch.sin(swing_phase * torch.pi)
-
-        # 应用 Mask (只在摆动相应用正弦波，支撑相高度为0)
-        is_swing = foot_indices > 0.5
-        ref_height_offset = torch.where(is_swing, sine_height, torch.zeros_like(sine_height))
-
-        # 计算绝对目标 World Z
-        target_pos_z = ground_z + ref_height_offset
-
-        # 获取当前脚的实际 World Z
-        current_foot_height = self.asset.data.body_pos_w[:, self.asset_cfg.body_ids, 2]
-
-        # 使用平方误差，并用 exp 转换为 [0, 1] 的系数
-        height_error = torch.square(current_foot_height - target_pos_z)
-        rew = 1.0 - torch.exp(-height_error / 0.0025)
-
-        return -torch.mean(rew, dim=1) * 2.0  # scale
-
 def feet_distance_penalize(env: ManagerBasedRLEnv,
                   asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
                   feet_links_name: list[str]=["foot_[RL]_Link"],
@@ -1143,3 +1078,189 @@ def foot_landing_vel(
     landing_z_vels = torch.where(about_to_land, z_vels, torch.zeros_like(z_vels))
     reward = torch.sum(torch.square(landing_z_vels), dim=1)
     return reward
+
+def track_adaptive_swing_height(
+    env,
+    min_clearance: float = 0.1,
+    obstacle_scan_range: tuple = (0.1, 0.45),
+    gait_params: list = [1.2, 0.5, 0.5], # [频率, 偏移, 支撑相占比]
+    scan_dot_threshold: float = 0.05,
+    foot_height_offset: float = 0.07, 
+    vel_command_name: str = "base_velocity",
+    sensor_cfg: SceneEntityCfg = SceneEntityCfg("height_scanner"),
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot", body_names=[".*_foot_link"]),
+) -> torch.Tensor:
+    """
+    自适应抬腿高度奖励 - 最终对齐版。
+    
+    逻辑：
+    1. 提取指令掩码：静止时不产生奖励/惩罚。
+    2. 提取姿态掩码：摔倒时不产生奖励。
+    3. 同步相位：严格遵循 BipedalGaitReward 的支撑/摆动周期。
+    4. 地形感知：动态搜索脚下地面高度，支持楼梯/斜坡。
+    5. 障碍检测：计算运动方向前方的台阶高度。
+    6. 轨迹跟踪：在摆动相跟踪一个受障碍物高度影响的正弦曲线。
+    """
+
+    # =========================================================================
+    # 0. 准备掩码 (Masks) - 确保静止或摔倒时不强制抬腿
+    # =========================================================================
+    vel_cmd = env.command_manager.get_command(vel_command_name)
+    # 只有当线速度或角速度指令大于 0.1 时才激活奖励
+    moving_mask = torch.norm(vel_cmd[:, :3], dim=1) > 0.1
+    
+    # 姿态遮罩：鼓励机器人保持直立，重力投影 Z 越接近 -1 奖励权重越高
+    upright_mask = torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
+    
+    # 提取步态参数
+    gait_freq, gait_offset, gait_duration = gait_params
+    
+    # =========================================================================
+    # 1. 计算相位 (严格对齐 BipedalGaitReward)
+    # =========================================================================
+    current_time = env.episode_length_buf * env.step_dt
+    base_phase = torch.remainder(current_time * gait_freq, 1.0)
+    
+    # Index 0: Base, Index 1: Offset
+    phase = torch.stack([
+        base_phase,                                    
+        torch.remainder(base_phase + gait_offset, 1.0) 
+    ], dim=1)
+
+    # =========================================================================
+    # 2. 获取资产与传感器
+    # =========================================================================
+    robot = env.scene[asset_cfg.name]
+    foot_indices, _ = robot.find_bodies(asset_cfg.body_names)
+    num_feet = len(foot_indices)
+    feet_pos_w = robot.data.body_pos_w[:, foot_indices, :] 
+
+    sensor: RayCaster = env.scene.sensors[sensor_cfg.name]
+    ray_hits_w = sensor.data.ray_hits_w
+    
+    # =========================================================================
+    # 3. 确定运动方向 (世界坐标系)
+    # =========================================================================
+    cmd_vel_b = vel_cmd[:, :2]
+    cmd_norm = torch.norm(cmd_vel_b, dim=-1, keepdim=True)
+    move_dir_b = torch.where(
+        cmd_norm > 0.01,
+        cmd_vel_b / (cmd_norm + 1e-5),
+        torch.tensor([1.0, 0.0], device=env.device).expand_as(cmd_vel_b)
+    )
+    root_quat = robot.data.root_quat_w
+    move_dir_w = quat_apply(root_quat, torch.cat([move_dir_b, torch.zeros_like(move_dir_b[:, :1])], dim=-1))[:, :2]
+
+    # =========================================================================
+    # 4. 计算：地形参考高度 & 前方障碍高度
+    # =========================================================================
+    terrain_h_under_foot = torch.zeros(env.num_envs, num_feet, device=env.device)
+    obstacle_h = torch.zeros(env.num_envs, num_feet, device=env.device)
+    default_terrain_z = robot.data.root_pos_w[:, 2] - 0.69 # 假设标准站姿高度
+
+    for i in range(num_feet):
+        foot_xy = feet_pos_w[:, i, :2]
+        rel_pos = ray_hits_w[..., :2] - foot_xy.unsqueeze(1)
+        dist_sq = torch.sum(rel_pos ** 2, dim=-1)
+        
+        # A. 脚下地形参考 (取脚周围 15cm 内的最矮点)
+        near_mask = dist_sq < (0.15 ** 2)
+        near_z = torch.where(near_mask, ray_hits_w[..., 2], torch.tensor(float('inf'), device=env.device))
+        min_z, _ = torch.min(near_z, dim=-1)
+        terrain_h = torch.where(torch.isinf(min_z), default_terrain_z, min_z)
+        terrain_h_under_foot[:, i] = terrain_h
+        
+        # B. 运动方向前方障碍高度
+        forward_dist = (rel_pos * move_dir_w.unsqueeze(1)).sum(dim=-1)
+        dist = torch.sqrt(dist_sq)
+        scan_mask = (forward_dist > scan_dot_threshold) & \
+                    (dist > obstacle_scan_range[0]) & \
+                    (dist < obstacle_scan_range[1])
+        
+        # 相对于该脚地面的高度差
+        rel_z = ray_hits_w[..., 2] - terrain_h.unsqueeze(1)
+        valid_hits = torch.where(scan_mask, rel_z, torch.tensor(-1.0, device=env.device))
+        max_h, _ = torch.max(valid_hits, dim=-1)
+        obstacle_h[:, i] = max_h.clamp(min=0.0)
+
+    # =========================================================================
+    # 5. 计算目标轨迹与奖励 (对齐摆动相)
+    # =========================================================================
+    swing_start = gait_duration # 支撑相结束即摆动相开始
+    swing_end = 1.0
+    
+    # 摆动相掩码 (num_envs, 2)
+    in_swing = (phase >= swing_start) & (phase < swing_end)
+    
+    # 计算摆动进度 [0, 1]
+    swing_duration_len = max(swing_end - swing_start, 1e-3)
+    swing_progress = (phase - swing_start) / swing_duration_len
+    
+    # 目标：(基础高度 + 障碍物高度) * 正弦波
+    target_peak = min_clearance + obstacle_h
+    target_traj = target_peak * torch.sin(torch.pi * swing_progress)
+    
+    # 实际足底 Z = foot_link_z - foot_height_offset
+    # 实际离地间隙 = 实际足底 Z - 地面参考 Z
+    actual_sole_z = feet_pos_w[:, :, 2] - foot_height_offset
+    current_clearance = actual_sole_z - terrain_h_under_foot
+    
+    error_sq = torch.square(current_clearance - target_traj)
+    
+    # 汇总奖励：只有在摆动相、且正在移动、且姿态直立时才计算
+    # unsqueeze(1) 用于将 (num_envs,) 广播到 (num_envs, num_feet)
+    reward = -error_sq * in_swing * moving_mask.unsqueeze(1) * upright_mask.unsqueeze(1)
+    
+    return torch.sum(reward, dim=1)
+
+def idle_when_commanded(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    cmd_threshold: float = 0.2,
+    vel_threshold: float = 0.1,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """惩罚机器人“懒惰”行为：当收到移动或旋转指令时却保持静止。
+    
+    检测条件：(线性指令或旋转指令超过阈值) 且 (线性速度和旋转速度都低于阈值)。
+
+    Args:
+        env: 环境实例。
+        command_name: 指令名称。通常指令为 [vx, vy, yaw_rate]。
+        cmd_threshold: 指令幅值阈值。
+        vel_threshold: 实际运动幅值阈值。
+        asset_cfg: 机器人资产配置。
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    
+    # 1. 获取指令 (包含 vx, vy 和 yaw_rate)
+    # command 形状通常为 (num_envs, 3) -> [vx, vy, omega]
+    cmd = env.command_manager.get_command(command_name)[:, :3]
+    # 计算综合指令强度 (线性速度和旋转速度的 L2 范数)
+    cmd_magnitude = torch.norm(cmd, dim=-1)
+    
+    # 2. 获取实际线性速度 (投影到 Yaw 坐标系)
+    root_vel_w = asset.data.root_lin_vel_w[:, :3]
+    root_quat_w = asset.data.root_quat_w
+    yaw_quat = math_utils.yaw_quat(root_quat_w)
+    
+    vel_yaw = math_utils.quat_apply_inverse(yaw_quat, root_vel_w)
+    lin_vel_mag_sq = torch.sum(torch.square(vel_yaw[:, :2]), dim=-1) # vx^2 + vy^2
+    
+    # 3. 获取实际旋转速度 (Base 坐标系的角速度 z 分量)
+    # root_ang_vel_w 是世界坐标系下的角速度
+    # 我们将其转到机器人局部坐标系下，看 z 轴旋转
+    ang_vel_b = math_utils.quat_apply_inverse(root_quat_w, asset.data.root_ang_vel_w)
+    ang_vel_z_sq = torch.square(ang_vel_b[:, 2]) # omega_z^2
+    
+    # 4. 计算综合实际运动强度
+    # 综合速度 = sqrt(vx^2 + vy^2 + omega_z^2)
+    vel_magnitude = torch.sqrt(lin_vel_mag_sq + ang_vel_z_sq)
+    
+    # 5. 逻辑判定
+    # 是否下达了移动/旋转指令
+    is_commanded = cmd_magnitude > cmd_threshold
+    # 是否实际表现为静止 (既没有线位移也没有旋转)
+    is_idle = vel_magnitude < vel_threshold
+    
+    return (is_commanded & is_idle).float()
