@@ -349,8 +349,8 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "stiffness_distribution_params": (0.5, 2.0), # (0.5, 2.0)
-            "damping_distribution_params": (0.5, 2.0), # (0.5, 2.0)
+            "stiffness_distribution_params": (0.8, 1.2), # (0.5, 2.0)
+            "damping_distribution_params": (0.8, 1.2), # (0.5, 2.0)
             "operation": "scale",
             "distribution": "uniform",
         },
@@ -475,7 +475,7 @@ class RewardsCfg:
             "command_name": "base_velocity",
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
             "stand_still_scale": 5.0, 
-            "velocity_threshold": 0.5,
+            "velocity_threshold": 0.2, # 0.5
             "command_threshold": 0.1,
         },
     )
@@ -604,6 +604,16 @@ class RewardsCfg:
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=""),
             "command_name": "base_velocity",
+        },
+    )
+
+    feet_standing_force_without_cmd = RewTerm(
+        func=mdp.feet_standing_force_reward,
+        weight=0.0, # 正权重，奖励
+        params={
+            "command_name": "base_velocity",
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=""),
+            "force_threshold": 40.0, # 根据机器人重量调整
         },
     )
 
