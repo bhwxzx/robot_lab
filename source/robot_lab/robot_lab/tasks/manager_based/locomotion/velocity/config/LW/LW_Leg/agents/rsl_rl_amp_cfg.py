@@ -37,7 +37,7 @@ class LWRoughAmpRunnerCfg(RslRlOnPolicyRunnerAmpCfg):
         max_grad_norm=1.0,
     )
     amp_discr_hidden_dims=[1024, 512, 256]
-    amp_motion_files=["source/robot_lab/datasets/LW_Leg/motion_amp_expert/walk.txt"]
+    amp_motion_files=["source/robot_lab/robot_lab/datasets/LW_Leg/motion_amp_expert/motion_.*.txt"]
     amp_num_preload_transitions=200000
     amp_replay_buffer_size=100000
     amp_reward_coef=0.3

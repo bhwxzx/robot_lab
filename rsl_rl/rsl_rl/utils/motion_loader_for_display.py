@@ -24,18 +24,18 @@ import torch
 
 
 class AMPLoaderDisplay:
-    JOINT_POS_SIZE = 10
-    JOINT_VEL_SIZE = 10
+    JOINT_POS_SIZE = 8
+    JOINT_VEL_SIZE = 8
     
-    # 对应格式：[pos(0:3) rot(3:6) joint_pos(6:16) lin_vel(16:19) ang_vel(19:22) joint_vel(22:32)]
+    # 对应格式：[pos(3) rot(3) joint_pos(N) lin_vel(3) ang_vel(3) joint_vel(N)]
     JOINT_POSE_START_IDX = 6
-    JOINT_POSE_END_IDX = JOINT_POSE_START_IDX + JOINT_POS_SIZE # 16
+    JOINT_POSE_END_IDX = JOINT_POSE_START_IDX + JOINT_POS_SIZE 
 
     ROOT_STATES_NUM = 6 # pos(3) + euler(3)
     
-    # 关节速度从 22 开始（跳过了中间 6 位基座速度）
-    JOINT_VEL_START_IDX = 22 
-    JOINT_VEL_END_IDX = JOINT_VEL_START_IDX + JOINT_VEL_SIZE # 32
+    # （跳过了中间 6 位基座速度）
+    JOINT_VEL_START_IDX = 6 + JOINT_POS_SIZE + 6
+    JOINT_VEL_END_IDX = JOINT_VEL_START_IDX + JOINT_VEL_SIZE
 
     def __init__(
         self,

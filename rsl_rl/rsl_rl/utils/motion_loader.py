@@ -24,9 +24,9 @@ import torch
 
 
 class AMPLoader:
-    JOINT_POS_SIZE = 10
+    JOINT_POS_SIZE = 8
 
-    JOINT_VEL_SIZE = 10
+    JOINT_VEL_SIZE = 8
 
     END_EFFECTOR_POS_SIZE = 6
 
@@ -140,6 +140,10 @@ class AMPLoader:
         p = float(time) / self.trajectory_lens[traj_idx]
         n = self.trajectories[traj_idx].shape[0]
         idx_low, idx_high = int(np.floor(p * n)), int(np.ceil(p * n))
+        # --- [核心修复：强制边界限制] ---
+        idx_low = min(idx_low, n - 1)
+        idx_high = min(idx_high, n - 1)
+        # -----------------------------
         frame_start = self.trajectories[traj_idx][idx_low]
         frame_end = self.trajectories[traj_idx][idx_high]
         blend = p * n - idx_low
@@ -151,6 +155,11 @@ class AMPLoader:
         p = times / self.trajectory_lens[traj_idxs]
         n = self.trajectory_num_frames[traj_idxs]
         idx_low, idx_high = np.floor(p * n).astype(np.int), np.ceil(p * n).astype(np.int)
+        # --- [核心修复：对整个 Batch 进行边界限制] ---
+        # 这里的 n 是每条轨迹的长度，利用 np.clip 批量处理
+        idx_low = np.clip(idx_low, 0, n.astype(np.int64) - 1)
+        idx_high = np.clip(idx_high, 0, n.astype(np.int64) - 1)
+        # ------------------------------------------
         all_frame_starts = torch.zeros(len(traj_idxs), self.observation_dim, device=self.device)
         all_frame_ends = torch.zeros(len(traj_idxs), self.observation_dim, device=self.device)
         for traj_idx in set(traj_idxs):
@@ -166,6 +175,10 @@ class AMPLoader:
         p = float(time) / self.trajectory_lens[traj_idx]
         n = self.trajectories_full[traj_idx].shape[0]
         idx_low, idx_high = int(np.floor(p * n)), int(np.ceil(p * n))
+        # 强制限制索引不超标
+        idx_low = min(idx_low, n - 1)
+        idx_high = min(idx_high, n - 1)
+
         frame_start = self.trajectories_full[traj_idx][idx_low]
         frame_end = self.trajectories_full[traj_idx][idx_high]
         blend = p * n - idx_low
@@ -175,6 +188,10 @@ class AMPLoader:
         p = times / self.trajectory_lens[traj_idxs]
         n = self.trajectory_num_frames[traj_idxs]
         idx_low, idx_high = np.floor(p * n).astype(np.int64), np.ceil(p * n).astype(np.int64)
+        # --- [核心修复：对整个 Batch 进行边界限制] ---
+        # 这里的 n 是每条轨迹的长度，利用 np.clip 批量处理
+        idx_low = np.clip(idx_low, 0, n.astype(np.int64) - 1)
+        idx_high = np.clip(idx_high, 0, n.astype(np.int64) - 1)
         all_frame_amp_starts = torch.zeros(
             len(traj_idxs), AMPLoader.END_POS_END_IDX - AMPLoader.JOINT_POSE_START_IDX, device=self.device
         )
