@@ -29,9 +29,6 @@ class RslRlActorCriticDwaqCfg(RslRlPpoActorCriticCfg):
     velocity_dim: int = 3
     """预测速度 v_t 的维度 (线速度 xyz)"""
 
-    history_encoding: str = "term-first"
-    """用于训练的历史观测编码格式，如果是term-first，内部会重组为time-first再用于训练"""
-
 #########################
 # DWAQ Algorithm Config #
 #########################

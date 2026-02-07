@@ -27,7 +27,6 @@ class LWRoughDwaqRunnerCfg(RslRlOnPolicyRunnerDwaqCfg):
         vae_hidden_dims=[128, 64],
         latent_dim=16, # 环境参数隐变量
         velocity_dim=3, # 显示监督速度维度
-        history_encoding="term-first"
     )
     algorithm = RslRlAlgorithmDwaqCfg(
         value_loss_coef=1.0,
