@@ -51,7 +51,10 @@ class AMPPPO:
         amp_discr_hidden_dims=None,
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
+        **kwargs
     ):
+        if kwargs:
+            print(f"[AMPPPO] 忽略了多余的配置参数: {list(kwargs.keys())}")
         # device-related parameters 决定了模型运行在哪个硬件上，以及是否开启分布式训练
         self.device = device
         self.is_multi_gpu = multi_gpu_cfg is not None

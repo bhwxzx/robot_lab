@@ -1779,7 +1779,7 @@ class LWLegRoughAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.action_smoothness.weight = -0.02 # -0.15 
 
         # Contact sensorstand_still
-        self.rewards.undesired_contacts.weight = -5.0
+        self.rewards.undesired_contacts.weight = -1.0
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link", ".*wheel_link"]
 
         # Velocity-tracking rewards
@@ -1794,7 +1794,7 @@ class LWLegRoughAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.5
 
         # self.rewards.bipedal_gait_reward.weight = 3.5
-        self.rewards.feet_air_time.weight = 4.0
+        self.rewards.feet_air_time.weight = 1.0
         self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
         self.rewards.feet_air_time.params["threshold"] = 0.4
         self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
@@ -1809,7 +1809,7 @@ class LWLegRoughAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_contact.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_contact_without_cmd.weight = 0
         # self.rewards.feet_contact_without_cmd.params["sensor_c fg"].body_names = [self.foot_link_name]
-        self.rewards.feet_stumble.weight = -3.0
+        self.rewards.feet_stumble.weight = -1.0
         self.rewards.feet_stumble.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_slide.weight = -0.25
         self.rewards.feet_slide.params["sensor_cfg"].body_names = [self.foot_link_name]
@@ -1817,15 +1817,15 @@ class LWLegRoughAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_height.weight = 0
         # self.rewards.feet_height.params["target_height"] = 0.05
         # self.rewards.feet_height.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_height_body.weight = -5.0
+        self.rewards.feet_height_body.weight = 0.0
         self.rewards.feet_height_body.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_height_body.params["target_height"] = -0.5
         # self.rewards.track_adaptive_swing_height.weight = 5.0
         # self.rewards.track_adaptive_swing_height.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_distance_y_exp.weight = 10.0
+        self.rewards.feet_distance_y_exp.weight = 0.0
         self.rewards.feet_distance_y_exp.params["stance_width"] = 0.40 # 0.42
         self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_distance_penalize.weight = -100.0
+        self.rewards.feet_distance_penalize.weight = 0.0
         self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.2
 
         # If the weight of rewards is 0, set rewards to None

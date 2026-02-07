@@ -177,7 +177,7 @@ class LWLegFlatAmpEnvCfg(LWLegRoughAmpEnvCfg):
         self.events.randomize_com_positions.params["com_range"] = {"x": (-0.075, 0.075), "y": (-0.075, 0.075), "z": (-0.075, 0.075)}
 
         # Rewards
-        self.rewards.base_height_l2.weight = -50.0
+        self.rewards.base_height_l2.weight = 0.0
         self.rewards.track_lin_vel_xy_exp.weight = 3.5
         self.rewards.track_ang_vel_z_exp.weight = 2.5
         self.rewards.ang_vel_xy_l2.weight = -0.1 # -0.05
@@ -188,13 +188,14 @@ class LWLegFlatAmpEnvCfg(LWLegRoughAmpEnvCfg):
         self.rewards.stop_motion.weight = -3.0 # -3.0
         self.rewards.action_rate_l2.weight = -0.02 
         self.rewards.action_smoothness.weight = -0.02
+        self.rewards.undesired_contacts.weight = -1.0
         self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.0
         self.rewards.feet_standing_force_without_cmd.weight = 0.0
         self.rewards.feet_air_time.weight = 1.0
         self.rewards.feet_air_time.params["threshold"] = 0.4
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.bipedal_gait_reward.weight = 0.0
-        self.rewards.feet_clearance.weight = 1.0
+        self.rewards.feet_clearance.weight = 0.0
         self.rewards.feet_clearance.params["target_height"] = 0.10 + 0.071 # foot_radius
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = 0.0 # -0.15
@@ -203,9 +204,12 @@ class LWLegFlatAmpEnvCfg(LWLegRoughAmpEnvCfg):
         self.rewards.feet_landing_vel.params["foot_radius"] = 0.071
         self.rewards.feet_landing_vel.params["about_landing_threshold"] = 0.08
         self.rewards.feet_stumble.weight = 0.0
+        self.rewards.lazy_penalty.weight = 0.0
+        self.rewards.feet_distance_y_exp.weight = 0.0
+        self.rewards.feet_distance_penalize.weight = 0.0
 
         # If the weight of rewards is 0, set rewards to None
-        if self.__class__.__name__ == "LWLegFlatDwaqEnvCfg":
+        if self.__class__.__name__ == "LWLegFlatAmpEnvCfg":
             self.disable_zero_weight_rewards()
 
 @configclass

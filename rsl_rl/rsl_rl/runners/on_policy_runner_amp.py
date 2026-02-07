@@ -88,6 +88,9 @@ class OnPolicyRunnerAmp:
             print(f"Synchronizing parameters for rank {self.gpu_global_rank}...")
             self.alg.broadcast_parameters()
 
+        # 记录上一帧的 AMP 观测
+        current_amp_obs = amp_obs.clone() if amp_obs is not None else None
+
         # Start training
         start_iter = self.current_learning_iteration
         tot_iter = start_iter + num_learning_iterations
@@ -113,26 +116,29 @@ class OnPolicyRunnerAmp:
                     reset_env_ids = dones.nonzero(as_tuple=False).flatten()
 
                     if len(reset_env_ids) > 0:
-                        # Isaac Lab 的 ManagerBasedRLEnv 默认会将重置前的最后一帧存在这里：
-                        # extras["observations"]["terminal_obs"] 是一个字典/TensorDict
-                        terminal_obs_dict = extras["observations"].get("terminal_obs")
-    
+                        # 安全获取 observations 字典，如果没有则返回空字典
+                        obs_extras = extras.get("observations", {})
+                        
+                        # 从 observations 字典里安全获取 terminal_obs
+                        terminal_obs_dict = obs_extras.get("terminal_obs")
+                        
+                        # 有些 Isaac Lab 版本/Wrapper 会把 terminal_obs 直接放在 extras 顶层
+                        if terminal_obs_dict is None:
+                            terminal_obs_dict = extras.get("terminal_obs")
+                        # -----------------------------------
                         if terminal_obs_dict is not None and "amp" in terminal_obs_dict:
-                            # 提取这些环境重置前的“真实最后一步”观测
-                            # 注意：这里的 terminal_obs_dict["amp"] 包含了所有环境的最后帧，我们只取重置的那部分
                             next_amp_obs_with_term[reset_env_ids] = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
                         else:
-                            # 万一配置里没开 terminal_obs，这里给个警告或保持 next_amp_obs (s0)
-                            # 建议在环境配置里确保开启了 terminal_obs
-                            pass
+                            # 我们用上一帧 (current_amp_obs) 来近似
+                            next_amp_obs_with_term[reset_env_ids] = current_amp_obs[reset_env_ids]
 
                     # 3. 调用算法处理 (传入 amp_obs)
-                    # 注意：这里我们不需要手动调用 discriminator.predict_amp_reward
-                    # 因为我们在 AMPPPO.process_env_step 内部已经封装好了奖励计算逻辑
+                    # 在 AMPPPO.process_env_step 内部已经封装好了奖励计算逻辑
                     self.alg.process_env_step(obs, rewards, dones, extras, next_amp_obs_with_term)
                         
                     # 4. 更新当前帧
                     amp_obs = next_amp_obs
+                    current_amp_obs = next_amp_obs.clone() 
 
                     # book keeping
                     if self.log_dir is not None:
@@ -400,11 +406,6 @@ class OnPolicyRunnerAmp:
 
     def _construct_algorithm(self, obs) -> AMPPPO:
         """Construct the actor-critic algorithm."""
-        # resolve RND config
-        self.alg_cfg = resolve_rnd_config(self.alg_cfg, obs, self.cfg["obs_groups"], self.env)
-
-        # resolve symmetry config
-        self.alg_cfg = resolve_symmetry_config(self.alg_cfg, self.env)
 
         # resolve deprecated normalization config
         if self.cfg.get("empirical_normalization") is not None:
@@ -426,14 +427,22 @@ class OnPolicyRunnerAmp:
 
         # initialize the algorithm
         alg_class = eval(self.alg_cfg.pop("class_name"))
-        # 从 Isaac Lab 的标准配置中提取计算
-        # dt 是物理步长（如 0.005），decimation 是每多少个物理步执行一次 RL（如 4）
         try:
-            # 优先尝试直接获取
-            step_dt = getattr(self.env, "step_dt", self.env.cfg.sim.dt * self.env.cfg.sim.decimation)
-        except Exception:
-            # 最后的保底手动计算
-            step_dt = self.env.cfg.sim.dt * self.env.cfg.sim.decimation
+            if hasattr(self.env, "step_dt"):
+                # 如果环境对象已经有了计算好的 step_dt
+                step_dt = self.env.step_dt
+            elif hasattr(self.env, "unwrapped") and hasattr(self.env.unwrapped, "step_dt"):
+                # 尝试从原始环境中获取
+                step_dt = self.env.unwrapped.step_dt
+            else:
+                # 如果没有，根据配置手动计算
+                physics_dt = self.env.cfg.sim.dt
+                # 尝试获取 decimation，如果找不到则默认为 1 (即 RL 频率 = 物理频率)
+                decimation = getattr(self.env.cfg, "decimation", 1)
+                step_dt = physics_dt * decimation
+        except Exception as e:
+            print(f"[Warning] Could not automatically determine step_dt, using default 0.02s. Error: {e}")
+            step_dt = 0.02
         print(f"[AMP] Time between frames (step_dt) set to: {step_dt}s")
         # 初始化 AMP 专用组件
         amp_data = AMPLoader(

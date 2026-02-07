@@ -44,7 +44,7 @@ class AMPLoaderDisplay:
         data_dir="",
         preload_transitions=False,
         num_preload_transitions=1000000,
-        motion_files=glob.glob("datasets/motion_amp_expert/*"),
+        motion_files=[], # 默认值改为空列表
     ):
         """Expert dataset provides AMP observations from Dog mocap dataset.
 
@@ -52,6 +52,21 @@ class AMPLoaderDisplay:
         """
         self.device = device
         self.time_between_frames = time_between_frames
+
+        # --- [处理传入的路径列表，展开通配符] ---
+        expanded_motion_files = []
+        for file_path in motion_files:
+            # 即使传入的是普通路径，glob 也能处理；如果是通配符，则会展开
+            matches = glob.glob(file_path)
+            if not matches:
+                print(f"[Warning] No files found for pattern: {file_path}")
+            expanded_motion_files.extend(matches)
+        
+        # 排序：保证不同机器上加载顺序一致，确保训练可复现
+        expanded_motion_files.sort()
+        
+        if not expanded_motion_files:
+            raise ValueError(f"No motion files found in: {motion_files}")
 
         # Values to store for each trajectory.
         self.trajectories = []
@@ -63,7 +78,7 @@ class AMPLoaderDisplay:
         self.trajectory_frame_durations = []
         self.trajectory_num_frames = []
 
-        for i, motion_file in enumerate(motion_files):
+        for i, motion_file in enumerate(expanded_motion_files):
             self.trajectory_names.append(motion_file.split(".")[0])
             with open(motion_file) as f:
                 motion_json = json.load(f)
