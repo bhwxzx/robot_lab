@@ -312,22 +312,16 @@ DWAQ_ROUGH_TERRAINS_CFG = TerrainGeneratorCfg(
         ),
         # ========== 其他地形 - 60% ==========
         "boxes": MeshRandomGridTerrainCfg(
-            proportion=0.1, grid_width=0.45, grid_height_range=(0.0, 0.10), platform_width=2.0
+            proportion=0.3, grid_width=0.45, grid_height_range=(0.05, 0.10), platform_width=2.0
         ),
         "random_rough": HfRandomUniformTerrainCfg(
-            proportion=0.15, noise_range=(-0.02, 0.04), noise_step=0.02, border_width=0.25
+            proportion=0.1, noise_range=(-0.02, 0.04), noise_step=0.02, border_width=0.25
         ),
         "wave": HfWaveTerrainCfg(
-            proportion=0.1, amplitude_range=(0.0, 0.2), num_waves=5.0
+            proportion=0.1, amplitude_range=(0.0, 0.1), num_waves=5.0
         ),
         "slope": HfPyramidSlopedTerrainCfg(
             proportion=0.1, slope_range=(0.0, 0.3), platform_width=2.0, inverted=False
         ),
-        "high_platform": MeshPitTerrainCfg(
-            proportion=0.15, pit_depth_range=(0.0, 0.3), platform_width=2.0, double_pit=True
-        ),
-        # "gap": terrain_gen.MeshGapTerrainCfg(
-        #     proportion=0.1, gap_width_range=(0.1, 0.4), platform_width=2.0
-        # ),
     },
 )

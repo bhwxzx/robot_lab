@@ -296,6 +296,17 @@ class LWLegRewardsCfg(RewardsCfg):
         },
     )
 
+    track_adaptive_swing_height = RewTerm(
+        func=mdp.track_adaptive_swing_height,
+        params={
+            "min_clearance": 0.15,
+            "obstacle_scan_range": (0.1, 0.45),
+            "gait_params": [1.2, 0.5, 0.5],
+            "foot_height_offset": 0.071,
+            "asset_cfg": SceneEntityCfg("robot", body_names=[".*_foot_link"])
+        }
+    )
+
 # @configclass
 # class LWLegCurriculumCfg(CurriculumCfg):
 
@@ -1289,7 +1300,7 @@ class LWLegRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         # ------------------------------Sence------------------------------
         self.scene.robot = LW_LEG_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
-        # self.scene.height_scanner.pattern_cfg = patterns.GridPatternCfg(resolution=0.05, size=(0.8, 0.5)),
+        self.scene.height_scanner.pattern_cfg = patterns.GridPatternCfg(resolution=0.05, size=(1.6, 1.0))
         self.scene.height_scanner_base.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
         self.scene.terrain.terrain_generator = DWAQ_ROUGH_TERRAINS_CFG
 
@@ -1357,7 +1368,7 @@ class LWLegRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.lin_vel_z_l2.weight = -1.0 #-1.0
         self.rewards.ang_vel_xy_l2.weight = -0.05 # -0.05
         self.rewards.flat_orientation_l2.weight = -2.5 # -5.0
-        self.rewards.base_height_l2.weight = -50.0 # -50.0 
+        self.rewards.base_height_l2.weight = -10.0 # -50.0 
         self.rewards.base_height_l2.params["target_height"] = 0.69 # 0.647
         self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
 
@@ -1389,7 +1400,7 @@ class LWLegRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # self.rewards.stand_still.weight = -3.0
 
-        self.rewards.joint_pos_penalty.weight = -1.0 # -2.0
+        self.rewards.joint_pos_penalty.weight = -0.7 # -2.0
         self.rewards.joint_pos_penalty.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
 
@@ -1404,10 +1415,10 @@ class LWLegRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.contact_forces.params["sensor_cfg"].body_names = [self.foot_link_name]
 
         # Velocity-tracking rewards
-        self.rewards.track_lin_vel_xy_exp.weight = 10.0 # 3.0
+        self.rewards.track_lin_vel_xy_exp.weight = 5.0 # 3.0
         self.rewards.track_lin_vel_xy_exp.func = mdp.track_lin_vel_xy_yaw_frame_exp
         # self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.2)
-        self.rewards.track_ang_vel_z_exp.weight = 8.0
+        self.rewards.track_ang_vel_z_exp.weight = 4.0
         self.rewards.track_ang_vel_z_exp.func = mdp.track_ang_vel_z_world_exp
         self.rewards.lazy_penalty.weight = -1.0
 
@@ -1415,7 +1426,7 @@ class LWLegRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.5
 
         self.rewards.bipedal_gait_reward.weight = 4.0
-        self.rewards.feet_air_time.weight = 4.0
+        self.rewards.feet_air_time.weight = 3.0
         self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
         self.rewards.feet_air_time.params["threshold"] = 0.4
         self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
@@ -1438,11 +1449,11 @@ class LWLegRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_height.weight = 0
         # self.rewards.feet_height.params["target_height"] = 0.05
         # self.rewards.feet_height.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_height_body.weight = -4.0
+        self.rewards.feet_height_body.weight = 0.0
         self.rewards.feet_height_body.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_height_body.params["target_height"] = -0.5
-        # self.rewards.track_adaptive_swing_height.weight = 5.0
-        # self.rewards.track_adaptive_swing_height.params["asset_cfg"].body_names = [self.foot_link_name]
+        self.rewards.track_adaptive_swing_height.weight = 5.0
+        self.rewards.track_adaptive_swing_height.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_distance_y_exp.weight = 10.0
         self.rewards.feet_distance_y_exp.params["stance_width"] = 0.40 # 0.42
         self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.foot_link_name]
