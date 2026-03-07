@@ -45,7 +45,6 @@ class RolloutStorageDwaq:
         self.num_envs = num_envs
 
         # 核心：使用 TensorDict 存储观察值（已经自动处理了 policy 等分组）
-        # 此时 obs["policy"] 已经是 [num_envs, 225] (假设 45*5)
         self.observations = TensorDict(
             {key: torch.zeros(num_transitions_per_env, *value.shape, device=device) for key, value in obs.items()},
             batch_size=[num_transitions_per_env, num_envs],

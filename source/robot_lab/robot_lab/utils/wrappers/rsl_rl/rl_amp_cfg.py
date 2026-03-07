@@ -31,7 +31,7 @@ class RslRlOnPolicyRunnerAmpCfg(RslRlOnPolicyRunnerCfg):
     """预加载到内存中的转换对数量。"""
 
     # --- AMP 判别器与奖励相关 ---
-    amp_reward_coef: float = 0.3
+    amp_reward_coef: float = 0.3 
     """AMP 风格奖励的权重系数。"""
 
     amp_task_reward_lerp: float = 0.7

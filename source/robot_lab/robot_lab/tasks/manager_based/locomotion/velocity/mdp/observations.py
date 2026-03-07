@@ -254,19 +254,24 @@ def feet_contact_bool(env: ManagerBasedEnv, sensor_cfg: SceneEntityCfg) -> torch
     Args:
         sensor_cfg: 触地传感器的配置，需指定传感器名称和关联的 body_ids（足部索引）。
     """
-    # 这里是从 env.scene.sensors 中获取，而不是 env.scene
     sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     
-    # 获取传感器记录的合力大小 (Shape: [num_envs, num_bodies_in_sensor, 3])
-    # 通常关注的是合力的模长（或者 Z 轴分量）
-    net_forces = sensor.data.net_forces_w[:, sensor_cfg.body_ids, :]
+    # 获取历史数据 (确保配置中 history_length > 1)
+    # Shape: [num_envs, history_length, num_bodies_in_sensor, 3]
+    net_forces_history = sensor.data.net_forces_w_history
     
-    # 计算力的模长 [num_envs, num_feet]
-    force_magnitudes = torch.norm(net_forces, dim=-1)
+    # 提取指定部位的数据
+    # Shape: [num_envs, history_length, num_feet, 3]
+    feet_forces_history = net_forces_history[:, :, sensor_cfg.body_ids, :]
     
-    # 判断是否触地。设置一个阈值（如 1.0 牛顿）以过滤传感器的数值噪声
-    # 返回的是布尔张量 (True 为触地，False 为悬空)
-    contact_bool = force_magnitudes > 1.0
+    # 计算每一帧的受力模长
+    # Shape: [num_envs, history_length, num_feet]
+    force_norms = torch.norm(feet_forces_history, dim=-1)
+    
+    # 在历史维度 (dim=1) 上取最大值
+    # Shape: [num_envs, num_feet]
+    max_force, _ = torch.max(force_norms, dim=1)
+    contact_bool = max_force > 0.5
     
     return contact_bool.float()
 
