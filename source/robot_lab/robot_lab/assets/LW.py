@@ -125,18 +125,18 @@ LW_WHEEL_CFG = ArticulationCfg(
         ),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
             enabled_self_collisions=False,
-            solver_position_iteration_count=4,
-            solver_velocity_iteration_count=0,
+            solver_position_iteration_count=8,
+            solver_velocity_iteration_count=4,
         ),
         activate_contact_sensors=True,
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.75), # 0.683 height
+        pos=(0.0, 0.0, 0.725), # 0.67 height
         joint_pos={
             "right_hip_joint": 0.0,
             "left_hip_joint": 0.0,
-            "right_thigh_joint": 0.6109,
-            "left_thigh_joint": -0.6109,
+            "right_thigh_joint": 0.7330,
+            "left_thigh_joint": -0.7330,
             "right_shank_joint": -0.1745,
             "left_shank_joint": 0.1745,
             "right_wheel_joint": 0.0,
@@ -159,11 +159,11 @@ LW_WHEEL_CFG = ArticulationCfg(
             ],
             effort_limit=120.0,
             velocity_limit=20.0,
-            stiffness=70.0,
+            stiffness=90.0,
             damping=3.0,
-            armature=ARMATURE_10010,
-            min_delay=0,
-            max_delay=5
+            armature=0.01,
+            min_delay=3,
+            max_delay=6
         ),
         "wheels": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -173,10 +173,10 @@ LW_WHEEL_CFG = ArticulationCfg(
             effort_limit=40.0,
             velocity_limit=33.0,
             stiffness=0.0,
-            damping=0.4,
-            armature=ARMATURE_8009,
-            min_delay=0,
-            max_delay=5
+            damping=0.5,
+            armature=0.01,
+            min_delay=3,
+            max_delay=6
         ),
         "foots": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -185,11 +185,11 @@ LW_WHEEL_CFG = ArticulationCfg(
             ],
             effort_limit=27.0,
             velocity_limit=10.0,
-            stiffness=10.0,
-            damping=0.8,
-            armature=ARMATURE_4310,
-            min_delay=0,
-            max_delay=5
+            stiffness=36.0,
+            damping=1.8,
+            armature=0.01,
+            min_delay=3,
+            max_delay=6
         )
     },
 )
