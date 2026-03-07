@@ -63,7 +63,7 @@ import time
 import torch
 import torch.nn as nn 
 
-from rsl_rl.runners import DistillationRunner, OnPolicyRunner, OnPolicyRunnerDwaq, OnPolicyRunnerAmp
+from rsl_rl.runners import DistillationRunner, OnPolicyRunner, OnPolicyRunnerDwaq, OnPolicyRunnerAmp, OnPolicyRunnerAmpDwaq
 
 from isaaclab.devices import Se2Keyboard, Se2KeyboardCfg
 from isaaclab.envs import (
@@ -216,6 +216,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         runner = OnPolicyRunnerDwaq(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     elif agent_cfg.class_name == "OnPolicyRunnerAmp": # [新增] AMP 支持
         runner = OnPolicyRunnerAmp(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    elif agent_cfg.class_name == "OnPolicyRunnerAmpDwaq":
+        runner = OnPolicyRunnerAmpDwaq(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     else:
         raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
     runner.load(resume_path)
@@ -239,8 +241,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
     os.makedirs(export_model_dir, exist_ok=True)
 
-    if agent_cfg.class_name == "OnPolicyRunnerDwaq":
-        print("[INFO] Detecting DWAQ runner. Exporting with deployment wrapper...")
+    if agent_cfg.class_name in ["OnPolicyRunnerDwaq", "OnPolicyRunnerAmpDwaq"]:
+        print(f"[INFO] Detecting {agent_cfg.class_name}. Exporting with deployment wrapper...")
         # --- 1. 维度解析 (适配 3D 张量) ---
         policy_tensor = obs["policy"] # [Batch, Time, Dim]
         num_obs_single = policy_tensor.shape[-1]

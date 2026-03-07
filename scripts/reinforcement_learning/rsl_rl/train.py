@@ -85,7 +85,7 @@ import time
 import torch
 from datetime import datetime
 
-from rsl_rl.runners import DistillationRunner, OnPolicyRunner, OnPolicyRunnerDwaq, OnPolicyRunnerAmp
+from rsl_rl.runners import DistillationRunner, OnPolicyRunner, OnPolicyRunnerDwaq, OnPolicyRunnerAmp, OnPolicyRunnerAmpDwaq
 
 from isaaclab.envs import (
     DirectMARLEnv,
@@ -204,6 +204,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         runner = OnPolicyRunnerDwaq(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     elif agent_cfg.class_name == "OnPolicyRunnerAmp":  # Amp 支持
         runner = OnPolicyRunnerAmp(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    elif agent_cfg.class_name == "OnPolicyRunnerAmpDwaq":
+        runner = OnPolicyRunnerAmpDwaq(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     else:
         raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
     # write git state to logs
