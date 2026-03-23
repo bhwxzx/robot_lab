@@ -55,7 +55,7 @@ class LWRoughAmpDwaqRunnerCfg(RslRlOnPolicyRunnerAmpDwaqCfg):
 @configclass
 class LWFlatAmpDwaqRunnerCfg(LWRoughAmpDwaqRunnerCfg):
 
-    max_iterations = 50000
+    max_iterations = 40000
     experiment_name = "LW_leg_flat_amp_dwaq"
     amp_reward_coef=0.3
     amp_task_reward_lerp=0.7

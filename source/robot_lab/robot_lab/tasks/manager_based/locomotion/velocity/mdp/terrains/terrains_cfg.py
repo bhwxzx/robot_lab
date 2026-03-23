@@ -344,6 +344,27 @@ DWAQ_ROUGH_TERRAINS_CFG = TerrainGeneratorCfg(
     },
 )
 
+DWAQ_FLAT_TERRAINS_CFG = TerrainGeneratorCfg(
+    curriculum=True,
+    size=(8.0, 8.0),
+    border_width=20.0,
+    num_rows=10,
+    num_cols=20,
+    horizontal_scale=0.1,
+    vertical_scale=0.005,
+    slope_threshold=0.75,
+    use_cache=False,
+    sub_terrains={
+        # 使用非常平缓的随机地形作为"平地"替代
+        "flat": HfRandomUniformTerrainCfg(
+            proportion=0.6, 
+            noise_range=(0.0, 0.02),  # 几乎无噪声
+            noise_step=0.01,
+            border_width=0.25,
+        ),
+        "flat": MeshPlaneTerrainCfg(proportion=0.4),
+    },
+)
 
 DWAQ_ROUGH_TERRAINS_CFG_PLAY = TerrainGeneratorCfg(
     curriculum=True,
@@ -392,3 +413,5 @@ DWAQ_ROUGH_TERRAINS_CFG_PLAY = TerrainGeneratorCfg(
         ),
     },
 )
+
+

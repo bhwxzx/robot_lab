@@ -190,14 +190,14 @@ class LWWheelCommandsCfg(CommandsCfg):
 
     base_velocity = mdp.UniformVelocityCommandCfg(
         asset_name="robot",
-        resampling_time_range=(3.0, 15.0),
+        resampling_time_range=(10.0, 10.0), # (3.0, 15.0)
         rel_standing_envs=0.02,
         rel_heading_envs=1.0,
         heading_command=True,
-        heading_control_stiffness=1.0,
+        heading_control_stiffness=0.5,
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.5, 0.5), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
+            lin_vel_x=(-0.7, 1.0), lin_vel_y=(-0.5, 0.5), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
         ),
     )
 
@@ -845,13 +845,13 @@ class LWWheelDwaqObservationsCfg(ObservationsCfg):
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel,clip=(-100.0, 100.0),scale=2.0)
         # 环境参数 由隐变量估计
         robot_pose_z_world = ObsTerm(func=mdp.robot_pose_z_world)
-        feet_contact = ObsTerm(func=mdp.feet_contact_bool, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])})
-        feet_pos_in_body = ObsTerm(func=mdp.feet_pos_in_body, params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_foot_link"])}, scale=1.0)
-        feet_lin_vel_in_body = ObsTerm(func=mdp.feet_lin_vel_in_body, params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_foot_link"])},
+        feet_contact = ObsTerm(func=mdp.feet_contact_bool, params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_wheel_link"])})
+        feet_pos_in_body = ObsTerm(func=mdp.feet_pos_in_body, params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_wheel_link"])}, scale=1.0)
+        feet_lin_vel_in_body = ObsTerm(func=mdp.feet_lin_vel_in_body, params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_wheel_link"])},
                                        scale=1.0)
-        feet_contact_forces_in_body = ObsTerm(func=mdp.feet_contact_forces_in_body, 
-                                              params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])},
-                                              scale=0.01)
+        # feet_contact_forces_in_body = ObsTerm(func=mdp.feet_contact_forces_in_body, 
+        #                                       params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_wheel_link"])},
+        #                                       scale=0.01)
         height_scan = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
@@ -907,6 +907,9 @@ class LWWheelRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
         # self.scene.height_scanner.pattern_cfg = patterns.GridPatternCfg(resolution=0.05, size=(1.6, 1.0))
         self.scene.height_scanner_base.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
+        self.scene.base_contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
+        # filter_prim_paths_expr 这里必须一个字符串对应一个物体，否则会报错
+        self.scene.base_contact_forces.filter_prim_paths_expr = ["{ENV_REGEX_NS}/Robot/right_foot_link", "{ENV_REGEX_NS}/Robot/left_foot_link"]
         self.scene.terrain.terrain_generator = DWAQ_ROUGH_TERRAINS_CFG
 
         # ------------------------------Observations------------------------------
@@ -976,6 +979,8 @@ class LWWheelRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.base_height_l2.weight = -10.0 # -50.0 
         self.rewards.base_height_l2.params["target_height"] = 0.67
         self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
+        self.rewards.body_orientation_l2.weight = -2.0
+        self.rewards.body_orientation_l2.params["asset_cfg"].body_names = [self.base_link_name]
 
         # Joint penalties
         self.rewards.joint_torques_l2.weight = -1.25e-5 # -1.25e-5
@@ -1018,7 +1023,7 @@ class LWWheelRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # Contact sensorstand_still
         self.rewards.undesired_contacts.weight = -10.0
-        self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link", ".*wheel_link"]
+        self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link", ".*foot_link"]
 
         # Velocity-tracking rewards
         self.rewards.track_lin_vel_xy_exp.weight = 8.0 # 3.0
@@ -1039,7 +1044,7 @@ class LWWheelRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.feet_distance_y_exp.params["stance_width"] = 0.516
         self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.wheel_link_name]
         self.rewards.feet_distance_penalize.weight = -100.0
-        self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.50
+        self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.48
         self.rewards.feet_distance_penalize.params["max_feet_distance"] = 0.53
 
         # If the weight of rewards is 0, set rewards to None
@@ -1055,10 +1060,10 @@ class LWWheelRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.curriculum.command_levels_lin_vel = None
 
         # ------------------------------Commands------------------------------
-        self.commands.base_velocity.ranges.lin_vel_x = (-1.0, 1.0)
+        self.commands.base_velocity.ranges.lin_vel_x = (-1.5, 1.5)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
-        self.commands.base_velocity.ranges.heading = (-math.pi/6, math.pi/6)
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
+        self.commands.base_velocity.ranges.heading = (-math.pi/2, math.pi/2)
 
 @configclass
 class LWWheelRoughDwaqEnvCfg_Play(LWWheelRoughDwaqEnvCfg):
@@ -1066,10 +1071,10 @@ class LWWheelRoughDwaqEnvCfg_Play(LWWheelRoughDwaqEnvCfg):
         super().__post_init__()
 
         self.curriculum.terrain_levels = None
-        self.commands.base_velocity.ranges.lin_vel_x = (-1.0, 1.0)
+        self.commands.base_velocity.ranges.lin_vel_x = (-1.5, 1.5)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
-        self.commands.base_velocity.ranges.heading = (-math.pi/6, math.pi/6)
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
+        self.commands.base_velocity.ranges.heading = (-math.pi/3, math.pi/3)
         self.events.randomize_actuator_gains = None
         self.events.randomize_apply_external_force_torque = None
         self.events.push_robot_hard = None
