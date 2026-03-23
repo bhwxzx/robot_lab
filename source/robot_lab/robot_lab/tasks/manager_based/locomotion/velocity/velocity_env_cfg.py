@@ -84,6 +84,9 @@ class MySceneCfg(InteractiveSceneCfg):
         mesh_prim_paths=["/World/ground"],
     )
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
+    # 添加一个专门用来检测base_link终止条件的contactsensor
+    base_contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/base", filter_prim_paths_expr=["{ENV_REGEX_NS}/Robot/foot"],
+                                           history_length=3)
     # lights
     sky_light = AssetBaseCfg(
         prim_path="/World/skyLight",
@@ -263,8 +266,8 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "static_friction_range": (0.3, 1.2), # (0.3, 1.0)
-            "dynamic_friction_range": (0.3, 1.0), # (0.3, 0.8)
+            "static_friction_range": (0.3, 1.6), # (0.3, 1.0)
+            "dynamic_friction_range": (0.3, 1.2), # (0.3, 0.8)
             "restitution_range": (0.0, 0.5), # (0.0, 0.5)
             "num_buckets": 64,
         },
@@ -376,7 +379,7 @@ class EventCfg:
     randomize_push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
-        interval_range_s=(10.0, 15.0),
+        interval_range_s=(5.0, 10.0), # (10.0, 15.0)
         params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
     )
 
@@ -539,7 +542,7 @@ class RewardsCfg:
         weight=0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=""),
-            "threshold": 1.0,
+            "threshold": 5.0,
         },
     )
     contact_forces = RewTerm(
@@ -715,8 +718,8 @@ class TerminationsCfg:
 
     # Contact sensor
     illegal_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=""), "threshold": 1.0},
+        func=mdp.base_illegal_contact,
+        params={"sensor_cfg": SceneEntityCfg("base_contact_forces", body_names=""), "threshold": 1.0},
     )
 
 
