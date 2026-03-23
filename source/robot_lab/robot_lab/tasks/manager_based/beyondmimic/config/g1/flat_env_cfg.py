@@ -6,11 +6,11 @@ import os
 from isaaclab.utils import configclass
 
 from robot_lab.assets.unitree import UNITREE_G1_29DOF_ACTION_SCALE, UNITREE_G1_29DOF_CFG
-from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import BeyondMimicEnvCfg
+from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import TrackingEnvCfg
 
 
 @configclass
-class UnitreeG1BeyondMimicFlatEnvCfg(BeyondMimicEnvCfg):
+class UnitreeG1BeyondMimicFlatEnvCfg(TrackingEnvCfg):
     def __post_init__(self):
         super().__post_init__()
 

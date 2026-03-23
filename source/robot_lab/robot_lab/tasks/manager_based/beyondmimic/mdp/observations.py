@@ -1,12 +1,11 @@
-# Copyright (c) 2024-2025 Ziqi Fan
-# SPDX-License-Identifier: Apache-2.0
-
 from __future__ import annotations
 
 import torch
 from typing import TYPE_CHECKING
 
 from isaaclab.utils.math import matrix_from_quat, subtract_frame_transforms
+from isaaclab.assets import Articulation
+from isaaclab.managers import SceneEntityCfg
 
 from robot_lab.tasks.manager_based.beyondmimic.mdp.commands import MotionCommand
 
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
 def robot_anchor_ori_w(env: ManagerBasedEnv, command_name: str) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
     mat = matrix_from_quat(command.robot_anchor_quat_w)
-    return mat[..., :2].reshape(mat.shape[0], -1)
+    return mat[..., :2].reshape(mat.shape[0], -1) # Rot6D表示法
 
 
 def robot_anchor_lin_vel_w(env: ManagerBasedEnv, command_name: str) -> torch.Tensor:
@@ -84,3 +83,15 @@ def motion_anchor_ori_b(env: ManagerBasedEnv, command_name: str) -> torch.Tensor
     )
     mat = matrix_from_quat(ori)
     return mat[..., :2].reshape(mat.shape[0], -1)
+
+def joint_pos_rel_without_wheel(
+    env: ManagerBasedEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    wheel_asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """The joint positions of the asset w.r.t. the default joint positions.(Without the wheel joints)"""
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    joint_pos_rel = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+    joint_pos_rel[:, wheel_asset_cfg.joint_ids] = 0
+    return joint_pos_rel

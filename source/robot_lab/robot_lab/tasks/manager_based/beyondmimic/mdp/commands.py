@@ -1,6 +1,3 @@
-# Copyright (c) 2024-2025 Ziqi Fan
-# SPDX-License-Identifier: Apache-2.0
-
 from __future__ import annotations
 
 import math
@@ -74,6 +71,11 @@ class MotionCommand(CommandTerm):
             self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0], dtype=torch.long, device=self.device
         )
 
+        # ==================== 获取重排索引 ====================
+        self.command_joint_indexes = torch.tensor(
+            self.robot.find_joints(self.cfg.joint_names, preserve_order=True)[0], dtype=torch.long, device=self.device
+        )
+
         self.motion = MotionLoader(self.cfg.motion_file, self.body_indexes, device=self.device)
         self.time_steps = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
         self.body_pos_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 3, device=self.device)
@@ -102,7 +104,11 @@ class MotionCommand(CommandTerm):
 
     @property
     def command(self) -> torch.Tensor:  # TODO Consider again if this is the best observation
-        return torch.cat([self.joint_pos, self.joint_vel], dim=1)
+        
+        # 重排为指定的期望的顺序
+        cmd_pos = self.joint_pos[:, self.command_joint_indexes]
+        cmd_vel = self.joint_vel[:, self.command_joint_indexes]
+        return torch.cat([cmd_pos, cmd_vel], dim=1)
 
     @property
     def joint_pos(self) -> torch.Tensor:
@@ -360,13 +366,16 @@ class MotionCommandCfg(CommandTermCfg):
     asset_name: str = MISSING
 
     motion_file: str = MISSING
-    anchor_body_name: str = MISSING
-    body_names: list[str] = MISSING
+    anchor_body_name: str = MISSING # 锚点连杆名称
+    body_names: list[str] = MISSING # 需要追踪的关键连杆列表
+
+    # 用于指定神经网络期望的关节顺序
+    joint_names: list[str] = MISSING 
 
     pose_range: dict[str, tuple[float, float]] = {}
     velocity_range: dict[str, tuple[float, float]] = {}
 
-    joint_position_range: tuple[float, float] = (-0.52, 0.52)
+    joint_position_range: tuple[float, float] = (-0.52, 0.52) # 训练初始化时添加的随机噪声范围
 
     adaptive_kernel_size: int = 1
     adaptive_lambda: float = 0.8

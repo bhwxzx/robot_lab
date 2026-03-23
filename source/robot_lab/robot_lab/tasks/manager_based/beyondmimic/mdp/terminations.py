@@ -1,6 +1,3 @@
-# Copyright (c) 2024-2025 Ziqi Fan
-# SPDX-License-Identifier: Apache-2.0
-
 from __future__ import annotations
 
 import torch
@@ -59,3 +56,8 @@ def bad_motion_body_pos_z_only(
     body_indexes = _get_body_indexes(command, body_names)
     error = torch.abs(command.body_pos_relative_w[:, body_indexes, -1] - command.robot_body_pos_w[:, body_indexes, -1])
     return torch.any(error > threshold, dim=-1)
+
+def motion_end(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
+    command = env.command_manager.get_term(command_name)
+    # 给定一点余量，减去 1 确保在越界前拦截
+    return command.time_steps >= (command.motion.time_step_total - 1)

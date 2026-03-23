@@ -1,6 +1,3 @@
-# Copyright (c) 2024-2025 Ziqi Fan
-# SPDX-License-Identifier: Apache-2.0
-
 from __future__ import annotations
 
 import torch
@@ -9,6 +6,7 @@ from typing import TYPE_CHECKING
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
 from isaaclab.utils.math import quat_error_magnitude
+from isaaclab.managers import ManagerTermBase
 
 from robot_lab.tasks.manager_based.beyondmimic.mdp.commands import MotionCommand
 
@@ -83,3 +81,58 @@ def feet_contact_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, thresh
     last_contact_time = contact_sensor.data.last_contact_time[:, sensor_cfg.body_ids]
     reward = torch.sum((last_contact_time < threshold) * first_air, dim=-1)
     return reward
+
+class ActionSmoothnessPenalty(ManagerTermBase):
+    """
+    A reward term for penalizing large instantaneous changes in the network action output.
+    This penalty encourages smoother actions over time.
+    """
+
+    def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):
+        """Initialize the term.
+
+        Args:
+            cfg: The configuration of the reward term.
+            env: The RL environment instance.
+        """
+        super().__init__(cfg, env)
+        self.dt = env.step_dt
+        self.prev_prev_action = None
+        self.prev_action = None
+        # self.__name__ = "action_smoothness_penalty"
+
+    def __call__(self, env: ManagerBasedRLEnv) -> torch.Tensor:
+        """Compute the action smoothness penalty.
+
+        Args:
+            env: The RL environment instance.
+
+        Returns:
+            The penalty value based on the action smoothness.
+        """
+        # Get the current action from the environment's action manager
+        current_action = env.action_manager.action.clone()
+
+        # If this is the first call, initialize the previous actions
+        if self.prev_action is None:
+            self.prev_action = current_action
+            return torch.zeros(current_action.shape[0], device=current_action.device)
+
+        if self.prev_prev_action is None:
+            self.prev_prev_action = self.prev_action
+            self.prev_action = current_action
+            return torch.zeros(current_action.shape[0], device=current_action.device)
+
+        # Compute the smoothness penalty
+        penalty = torch.sum(torch.square(current_action - 2 * self.prev_action + self.prev_prev_action), dim=1)
+
+        # Update the previous actions for the next call
+        self.prev_prev_action = self.prev_action
+        self.prev_action = current_action
+
+        # Apply a condition to ignore penalty during the first few episodes
+        startup_env_mask = env.episode_length_buf < 3
+        penalty[startup_env_mask] = 0
+
+        # Return the penalty scaled by the configured weight
+        return penalty

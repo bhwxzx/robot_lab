@@ -1,6 +1,3 @@
-# Copyright (c) 2024-2025 Ziqi Fan
-# SPDX-License-Identifier: Apache-2.0
-
 from __future__ import annotations
 
 from dataclasses import MISSING
@@ -118,39 +115,45 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"})
+        command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"},clip=(-100.0, 100.0))
         motion_anchor_pos_b = ObsTerm(
-            func=mdp.motion_anchor_pos_b, params={"command_name": "motion"}, noise=Unoise(n_min=-0.25, n_max=0.25)
+            func=mdp.motion_anchor_pos_b, params={"command_name": "motion"}, noise=Unoise(n_min=-0.25, n_max=0.25),clip=(-100.0, 100.0)
         )
         motion_anchor_ori_b = ObsTerm(
-            func=mdp.motion_anchor_ori_b, params={"command_name": "motion"}, noise=Unoise(n_min=-0.05, n_max=0.05)
+            func=mdp.motion_anchor_ori_b, params={"command_name": "motion"}, noise=Unoise(n_min=-0.05, n_max=0.05),clip=(-100.0, 100.0)
         )
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.5, n_max=0.5))
-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-0.5, n_max=0.5))
-        actions = ObsTerm(func=mdp.last_action)
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.5, n_max=0.5),clip=(-100.0, 100.0))
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2),clip=(-100.0, 100.0))
+        joint_pos = ObsTerm(func=mdp.joint_pos_rel, 
+                            params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
+                            clip=(-100.0, 100.0),
+                            noise=Unoise(n_min=-0.01, n_max=0.01))
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel, 
+                            params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
+                            clip=(-100.0, 100.0),
+                            noise=Unoise(n_min=-0.5, n_max=0.5))
+        actions = ObsTerm(func=mdp.last_action,clip=(-100.0, 100.0))
 
         def __post_init__(self):
             self.enable_corruption = True
             self.concatenate_terms = True
 
     @configclass
-    class CriticCfg(ObsGroup):
-        command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"})
-        motion_anchor_pos_b = ObsTerm(func=mdp.motion_anchor_pos_b, params={"command_name": "motion"})
-        motion_anchor_ori_b = ObsTerm(func=mdp.motion_anchor_ori_b, params={"command_name": "motion"})
-        body_pos = ObsTerm(func=mdp.robot_body_pos_b, params={"command_name": "motion"})
-        body_ori = ObsTerm(func=mdp.robot_body_ori_b, params={"command_name": "motion"})
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel)
-        actions = ObsTerm(func=mdp.last_action)
+    class PrivilegedCfg(ObsGroup):
+        command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"},clip=(-100.0, 100.0))
+        motion_anchor_pos_b = ObsTerm(func=mdp.motion_anchor_pos_b, params={"command_name": "motion"},clip=(-100.0, 100.0))
+        motion_anchor_ori_b = ObsTerm(func=mdp.motion_anchor_ori_b, params={"command_name": "motion"},clip=(-100.0, 100.0))
+        body_pos = ObsTerm(func=mdp.robot_body_pos_b, params={"command_name": "motion"},clip=(-100.0, 100.0))
+        body_ori = ObsTerm(func=mdp.robot_body_ori_b, params={"command_name": "motion"},clip=(-100.0, 100.0))
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel,clip=(-100.0, 100.0))
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel,clip=(-100.0, 100.0))
+        joint_pos = ObsTerm(func=mdp.joint_pos_rel, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},clip=(-100.0, 100.0))
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},clip=(-100.0, 100.0))
+        actions = ObsTerm(func=mdp.last_action,clip=(-100.0, 100.0))
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
-    critic: CriticCfg = CriticCfg()
+    critic: PrivilegedCfg = PrivilegedCfg()
 
 
 @configclass
@@ -158,7 +161,7 @@ class EventCfg:
     """Configuration for events."""
 
     # startup
-    randomize_rigid_body_material = EventTerm(
+    physics_material = EventTerm(
         func=mdp.randomize_rigid_body_material,
         mode="startup",
         params={
@@ -170,7 +173,7 @@ class EventCfg:
         },
     )
 
-    randomize_joint_default_pos = EventTerm(
+    add_joint_default_pos = EventTerm(
         func=mdp.randomize_joint_default_pos,
         mode="startup",
         params={
@@ -180,7 +183,7 @@ class EventCfg:
         },
     )
 
-    randomize_com_positions = EventTerm(
+    base_com = EventTerm(
         func=mdp.randomize_rigid_body_com,
         mode="startup",
         params={
@@ -190,7 +193,7 @@ class EventCfg:
     )
 
     # interval
-    randomize_push_robot = EventTerm(
+    push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
         interval_range_s=(1.0, 3.0),
@@ -202,17 +205,6 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    # Base
-    joint_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    joint_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-5)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-1)
-    joint_pos_limits = RewTerm(
-        func=mdp.joint_pos_limits,
-        weight=-10.0,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"])},
-    )
-
-    # Tracking
     motion_global_anchor_pos = RewTerm(
         func=mdp.motion_global_anchor_position_error_exp,
         weight=0.5,
@@ -243,8 +235,15 @@ class RewardsCfg:
         weight=1.0,
         params={"command_name": "motion", "std": 3.14},
     )
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-1)
 
-    # Others
+    action_smoothness = RewTerm(func=mdp.ActionSmoothnessPenalty, weight=0.0)
+    
+    joint_limit = RewTerm(
+        func=mdp.joint_pos_limits,
+        weight=-10.0,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"])},
+    )
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
         weight=-0.1,
@@ -265,6 +264,11 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    motion_finished = DoneTerm(
+        func=mdp.motion_end,
+        params={"command_name": "motion"},
+        time_out=True  
+    )
     anchor_pos = DoneTerm(
         func=mdp.bad_anchor_pos_z_only,
         params={"command_name": "motion", "threshold": 0.25},
@@ -301,7 +305,7 @@ class CurriculumCfg:
 
 
 @configclass
-class BeyondMimicEnvCfg(ManagerBasedRLEnvCfg):
+class TrackingEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the locomotion velocity-tracking environment."""
 
     # Scene settings
@@ -320,13 +324,13 @@ class BeyondMimicEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 4
-        self.episode_length_s = 20.0
+        self.episode_length_s = 10.0
         # simulation settings
         self.sim.dt = 0.005
         self.sim.render_interval = self.decimation
         self.sim.physics_material = self.scene.terrain.physics_material
         self.sim.physx.gpu_max_rigid_patch_count = 10 * 2**15
         # viewer settings
-        self.viewer.eye = (1.5, 1.5, 1.5)
-        self.viewer.origin_type = "asset_root"
-        self.viewer.asset_name = "robot"
+        # self.viewer.eye = (1.5, 1.5, 1.5)
+        # self.viewer.origin_type = "asset_root"
+        # self.viewer.asset_name = "robot"
