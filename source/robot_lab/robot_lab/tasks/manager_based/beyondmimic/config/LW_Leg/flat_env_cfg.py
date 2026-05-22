@@ -78,6 +78,7 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.action_smoothness.weight = -0.02
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.torque_limit.weight = -1.0
         # terminations
         self.terminations.ee_body_pos.params["body_names"] = [self.foot_link_name]
         # commands

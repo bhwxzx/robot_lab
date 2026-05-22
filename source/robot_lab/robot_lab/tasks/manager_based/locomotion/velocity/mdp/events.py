@@ -314,3 +314,62 @@ def apply_external_force_torque_stochastic(
     # set the forces and torques into the buffers
     # note: these are only applied when you call: `asset.write_data_to_sim()`
     asset.set_external_force_and_torque(forces, torques, env_ids=masked_env_ids, body_ids=asset_cfg.body_ids)
+
+
+def randomize_joint_default_pos(
+    env: ManagerBasedEnv,
+    env_ids: torch.Tensor | None,
+    asset_cfg: SceneEntityCfg,
+    pos_distribution_params: tuple[float, float] | None = None,
+    operation: Literal["add", "scale", "abs"] = "abs",
+    distribution: Literal["uniform", "log_uniform", "gaussian"] = "uniform",
+):
+    """
+    Randomize the joint default positions which may be different from URDF due to calibration errors.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+
+    # save nominal value for export
+    asset.data.default_joint_pos_nominal = torch.clone(asset.data.default_joint_pos[0])
+
+    # resolve environment ids
+    if env_ids is None:
+        env_ids = torch.arange(env.scene.num_envs, device=asset.device)
+
+    # resolve joint indices
+    if asset_cfg.joint_ids == slice(None):
+        joint_ids = slice(None)  # for optimization purposes
+    else:
+        joint_ids = torch.tensor(asset_cfg.joint_ids, dtype=torch.int, device=asset.device)
+
+    if pos_distribution_params is not None:
+        pos = asset.data.default_joint_pos.to(asset.device).clone()
+        pos = _randomize_prop_by_op(
+            pos, pos_distribution_params, env_ids, joint_ids, operation=operation, distribution=distribution
+        )[env_ids][:, joint_ids]
+
+        if env_ids != slice(None) and joint_ids != slice(None):
+            env_ids_view = env_ids[:, None]
+        else:
+            env_ids_view = env_ids
+
+        # 更新物理引擎底层的 default_joint_pos
+        asset.data.default_joint_pos[env_ids_view, joint_ids] = pos
+        
+        # ==================== 核心修复部分 ====================
+        # 安全地更新 action_manager 的 _offset
+        try:
+            action_term = env.action_manager.get_term("joint_pos")
+            # 获取 action_term 实际控制的关节在底层 URDF 中的绝对索引
+            action_joint_ids = action_term._joint_ids
+            
+            # 直接从刚刚更新过的 asset.data.default_joint_pos 中提取属于该 action 的最新偏移量
+            # 避免相对索引与绝对索引的映射错乱
+            updated_offsets = asset.data.default_joint_pos[env_ids[:, None], action_joint_ids]
+            action_term._offset[env_ids, :] = updated_offsets
+            
+        except ValueError:
+            # 如果环境中根本没有 "joint_pos" 这个动作项，忽略即可
+            pass
+        # ====================================================

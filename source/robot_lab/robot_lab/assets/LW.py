@@ -1,7 +1,7 @@
 import os
 
 import isaaclab.sim as sim_utils
-from isaaclab.actuators import ImplicitActuatorCfg, DCMotorCfg, DelayedPDActuatorCfg
+from isaaclab.actuators import ImplicitActuatorCfg, DCMotorCfg, DelayedPDActuatorCfg, ActuatorNetMLPCfg
 from isaaclab.assets.articulation import ArticulationCfg
 
 from robot_lab.assets import ISAACLAB_ASSETS_DATA_DIR
@@ -46,17 +46,17 @@ LW_LEG_CFG = ArticulationCfg(
         activate_contact_sensors=True,
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.725),
+        pos=(0.0, 0.0, 0.72),
         joint_pos={
             "right_hip_joint": 0.0,
             "left_hip_joint": 0.0,
-            "right_thigh_joint": -0.4363,
+            "right_thigh_joint": -0.4363,   # 25度
             "left_thigh_joint": 0.4363,
-            "right_shank_joint": -2.234,
+            "right_shank_joint": -2.234,    # 128度
             "left_shank_joint": 2.234,
             "right_wheel_joint": 0.0,
             "left_wheel_joint": 0.0,
-            "right_foot_joint": -0.4712,
+            "right_foot_joint": -0.4712,    # 27度
             "left_foot_joint": 0.4712,
         },
         joint_vel={".*": 0.0},
@@ -77,9 +77,29 @@ LW_LEG_CFG = ArticulationCfg(
             stiffness=90.0, # 70.0
             damping=3.0,  # 2.3
             armature=0.01,
-            min_delay=0,
-            max_delay=5
+            min_delay=3,
+            max_delay=6
         ),
+        # "legs": ActuatorNetMLPCfg(
+        #     joint_names_expr=[
+        #         "right_hip_joint",
+        #         "left_hip_joint",
+        #         "right_thigh_joint",
+        #         "left_thigh_joint",
+        #         "right_shank_joint",
+        #         "left_shank_joint",
+        #     ],
+        #     effort_limit=120.0,
+        #     velocity_limit=20.0,
+        #     saturation_effort=120.0,
+        #     armature=0.01,
+        #     pos_scale=1.0,
+        #     vel_scale=1.0,
+        #     torque_scale=1.0,
+        #     input_order="pos_vel",
+        #     input_idx=[0, 4, 8],
+        #     network_file="/home/young/liufengrong/robot_lab/scripts/tools/actuator_net/leg_actuator_net.pt"
+        # ),
         "wheels": DelayedPDActuatorCfg(
             joint_names_expr=[
                 "right_wheel_joint",
@@ -90,8 +110,8 @@ LW_LEG_CFG = ArticulationCfg(
             stiffness=0.0,
             damping=0.5, # 0.4
             armature=0.01,
-            min_delay=0,
-            max_delay=5
+            min_delay=3,
+            max_delay=6
         ),
         "foots": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -103,9 +123,25 @@ LW_LEG_CFG = ArticulationCfg(
             stiffness=36.0,
             damping=1.8,
             armature=0.01,
-            min_delay=0,
-            max_delay=5
+            min_delay=3,
+            max_delay=6
         )
+        # "foots": ActuatorNetMLPCfg(
+        #     joint_names_expr=[
+        #         "right_foot_joint",
+        #         "left_foot_joint",
+        #     ],
+        #     effort_limit=27.0,
+        #     velocity_limit=10.0,
+        #     saturation_effort=27.0,
+        #     armature=0.01,
+        #     pos_scale=1.0,
+        #     vel_scale=1.0,
+        #     torque_scale=1.0,
+        #     input_order="pos_vel",
+        #     input_idx=[0, 4, 8],
+        #     network_file="/home/young/liufengrong/robot_lab/scripts/tools/actuator_net/foot_actuator_net.pt"
+        # )
     },
 )
 
@@ -162,8 +198,8 @@ LW_WHEEL_CFG = ArticulationCfg(
             stiffness=90.0,
             damping=3.0,
             armature=0.01,
-            min_delay=0,
-            max_delay=5
+            min_delay=3,
+            max_delay=6
         ),
         "wheels": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -175,8 +211,8 @@ LW_WHEEL_CFG = ArticulationCfg(
             stiffness=0.0,
             damping=0.5,
             armature=0.01,
-            min_delay=0,
-            max_delay=5
+            min_delay=3,
+            max_delay=6
         ),
         "foots": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -188,8 +224,8 @@ LW_WHEEL_CFG = ArticulationCfg(
             stiffness=36.0,
             damping=1.8,
             armature=0.01,
-            min_delay=0,
-            max_delay=5
+            min_delay=3,
+            max_delay=6
         )
     },
 )

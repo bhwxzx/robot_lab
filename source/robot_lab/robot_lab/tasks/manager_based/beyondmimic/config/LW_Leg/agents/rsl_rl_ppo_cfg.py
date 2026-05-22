@@ -7,7 +7,7 @@ class LWBeyondMimicFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
     max_iterations = 50000
     save_interval = 1000
-    experiment_name = "LW_beyongdmimic_flat"
+    experiment_name = "LW_leg_beyongdmimic"
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
         actor_obs_normalization=False,

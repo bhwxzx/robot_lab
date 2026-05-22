@@ -7,6 +7,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
 from isaaclab.utils.math import quat_error_magnitude
 from isaaclab.managers import ManagerTermBase
+from isaaclab.assets import Articulation
 
 from robot_lab.tasks.manager_based.beyondmimic.mdp.commands import MotionCommand
 
@@ -136,3 +137,26 @@ class ActionSmoothnessPenalty(ManagerTermBase):
 
         # Return the penalty scaled by the configured weight
         return penalty
+
+def soft_torque_limit_penalty(
+    env: ManagerBasedRLEnv, 
+    ratio: float, 
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """
+    惩罚超过指定比例 (ratio) 的关节力矩。
+    
+    例如：ratio=0.9 时，只有当力矩超过最大额定力矩的 90% 时，才会触发惩罚。
+    超出越多，惩罚越大。
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    
+    effort_limits = asset.data.joint_effort_limits[:, asset_cfg.joint_ids]
+    
+    threshold = effort_limits * ratio
+    
+    torques = asset.data.applied_torque[:, asset_cfg.joint_ids]
+    
+    out_of_limits = torch.relu(torch.abs(torques) - threshold)
+    
+    return torch.sum(out_of_limits, dim=1)

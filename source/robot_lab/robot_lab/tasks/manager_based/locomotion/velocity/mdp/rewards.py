@@ -7,6 +7,7 @@ import torch
 from typing import TYPE_CHECKING, List
 from torch import distributions
 
+import re
 import isaaclab.utils.math as math_utils
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.envs import mdp
@@ -1317,12 +1318,83 @@ def body_orientation_l2(
     该函数衡量重力向量在局部坐标系 XY 平面上的投影。
     当机器人完全竖直时，返回 0.0；倾斜程度越大，返回数值越大。
     """
-    # 1. 获取资产对象
+
     asset: Articulation = env.scene[asset_cfg.name]
     
-    # 2. 获取目标部位的重力投影
+    # 获取目标部位的重力投影
     projected_gravity = asset.data.projected_gravity_b
 
-    # 3. 计算 X 和 Y 分量的平方和 (L2 范数)
+    # 计算 X 和 Y 分量的平方和 (L2 范数)
     # 取前两维 [gx, gy]，计算 gx^2 + gy^2
     return torch.sum(torch.square(projected_gravity[:, :2]), dim=1)
+
+def specific_joint_action_penalty(env: ManagerBasedRLEnv, action_term_name: str, joint_regex: str) -> torch.Tensor:
+    """
+    专门针对被拆分的动作空间，惩罚特定 Action Term 下的特定关节动作。
+    """
+    # 动态获取配置的特定 Action 组（比如 "joint_pos"）
+    action_term = env.action_manager.get_term(action_term_name)
+    
+    # 从该组负责控制的关节名字列表中，找到符合正则表达式的关节的【相对索引】
+    pattern = re.compile(joint_regex)
+    target_indices =[
+        i for i, name in enumerate(action_term._joint_names) if pattern.search(name)
+    ]
+    
+    if len(target_indices) == 0:
+        # 如果没匹配到，返回 0 避免报错
+        return torch.zeros(env.num_envs, device=env.device)
+        
+    # 获取策略网络输出给这些关节的【原始动作】(raw_actions)
+    target_actions = action_term.raw_actions[:, target_indices]
+    
+    # 计算 L1 惩罚并返回 (求绝对值之和)
+    return torch.sum(torch.abs(target_actions), dim=1)
+
+def foot_impact_reduction(
+    env: ManagerBasedRLEnv,
+    max_delta_v_sq: float,
+    asset_cfg: SceneEntityCfg,
+) -> torch.Tensor:
+    """
+    足部柔和落地奖励 (Impact Reduction Reward)
+    惩罚重力方向（Z轴）上连续两步之间的速度突变，并使用最大阈值进行截断以稳定训练。
+    
+    公式: sum( min( (v_{z,t} - v_{z,t-1})^2, max_delta_v_sq ) )
+    注意：此函数返回的是正的惩罚值，在配置中需将 weight 设为负数。
+    """
+    # 获取机器人的 asset 数据
+    asset = env.scene[asset_cfg.name]
+    
+    # 获取指定刚体（如左右脚）在世界坐标系下 Z 轴（索引2）的线速度
+    # body_lin_vel_w 的 shape 为[num_envs, num_bodies, 3]
+    # current_vel_z 的 shape 为 [num_envs, num_target_bodies]
+    current_vel_z = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, 2]
+    
+    # 巧妙利用 asset 挂载自定义属性，来保存上一步的速度 (处理状态依赖)
+    if not hasattr(asset, "prev_body_vel_z"):
+        asset.prev_body_vel_z = torch.zeros_like(current_vel_z)
+        asset.prev_body_vel_z.copy_(current_vel_z)
+        
+    # 【关键处理】处理环境重置 (Reset)
+    # 当某些环境发生重置时，上一步的速度必须与当前速度对齐，否则会产生因为“瞬移”导致的巨大惩罚
+    reset_env_ids = env.reset_buf.nonzero(as_tuple=False).squeeze(-1)
+    if len(reset_env_ids) > 0:
+        asset.prev_body_vel_z[reset_env_ids] = current_vel_z[reset_env_ids]
+        
+    # 计算当前步与上一步在 Z 轴上的速度变化量
+    delta_v_z = current_vel_z - asset.prev_body_vel_z
+    
+    # 计算速度变化的平方
+    delta_v_z_sq = torch.square(delta_v_z)
+    
+    # 模拟公式中的 min(Delta_v^2, Delta_v_max^2)，使用 clamp 截断上限，防止物理引擎结算时的突变毁掉 Critic 网络
+    penalty_per_body = torch.clamp(delta_v_z_sq, max=max_delta_v_sq)
+    
+    # 将两只脚的惩罚值相加，shape 变为 [num_envs]
+    total_penalty = torch.sum(penalty_per_body, dim=1)
+    
+    # 就地更新速度缓存，供下一个时间步使用
+    asset.prev_body_vel_z.copy_(current_vel_z)
+    
+    return total_penalty

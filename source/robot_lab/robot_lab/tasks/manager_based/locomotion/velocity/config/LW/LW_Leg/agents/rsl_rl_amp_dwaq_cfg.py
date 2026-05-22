@@ -46,7 +46,7 @@ class LWRoughAmpDwaqRunnerCfg(RslRlOnPolicyRunnerAmpDwaqCfg):
         obs_dim=41    # 本体感知的观测维度
     )
     amp_discr_hidden_dims=[1024, 512, 256]
-    amp_motion_files=["source/robot_lab/robot_lab/datasets/LW_Leg/motion_amp_expert/motion_*.txt"]
+    amp_motion_files=["source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_*.txt"]
     amp_num_preload_transitions=200000
     amp_replay_buffer_size=100000
     amp_reward_coef=0.3
@@ -55,7 +55,7 @@ class LWRoughAmpDwaqRunnerCfg(RslRlOnPolicyRunnerAmpDwaqCfg):
 @configclass
 class LWFlatAmpDwaqRunnerCfg(LWRoughAmpDwaqRunnerCfg):
 
-    max_iterations = 40000
+    max_iterations = 50000
     experiment_name = "LW_leg_flat_amp_dwaq"
     amp_reward_coef=0.3
-    amp_task_reward_lerp=0.7
+    amp_task_reward_lerp=0.8

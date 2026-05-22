@@ -48,5 +48,5 @@ class LWRoughDwaqRunnerCfg(RslRlOnPolicyRunnerDwaqCfg):
 @configclass
 class LWFlatDwaqRunnerCfg(LWRoughDwaqRunnerCfg):
 
-    max_iterations = 30000
+    max_iterations = 40000
     experiment_name = "LW_wheel_flat_dwaq"

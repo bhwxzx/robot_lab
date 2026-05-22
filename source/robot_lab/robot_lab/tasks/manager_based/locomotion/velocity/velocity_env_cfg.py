@@ -270,6 +270,7 @@ class EventCfg:
             "dynamic_friction_range": (0.3, 1.2), # (0.3, 0.8)
             "restitution_range": (0.0, 0.5), # (0.0, 0.5)
             "num_buckets": 64,
+            "make_consistent": True,
         },
     )
 
@@ -338,12 +339,22 @@ class EventCfg:
     )
 
     randomize_reset_joints = EventTerm(
-        func=mdp.reset_joints_by_scale,
-        # func=mdp.reset_joints_by_offset,
+        # func=mdp.reset_joints_by_scale,
+        func=mdp.reset_joints_by_offset,
         mode="reset",
         params={
-            "position_range": (1.0, 1.0),
+            "position_range": (-0.5, 0.5),
             "velocity_range": (0.0, 0.0),
+        },
+    )
+
+    add_joint_default_pos = EventTerm(
+        func=mdp.randomize_joint_default_pos,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=[""]),
+            "pos_distribution_params": (-0.01, 0.01),
+            "operation": "add",
         },
     )
 
@@ -352,10 +363,10 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "stiffness_distribution_params": (0.8, 1.2), # (0.5, 2.0)
-            "damping_distribution_params": (0.8, 1.2), # (0.5, 2.0)
+            "stiffness_distribution_params": (0.5, 2.0), # (0.5, 2.0)
+            "damping_distribution_params": (0.5, 2.0), # (0.5, 2.0)
             "operation": "scale",
-            "distribution": "uniform",
+            "distribution": "log_uniform",  # 保证相对 1.0 对称
         },
     )
 
@@ -379,8 +390,8 @@ class EventCfg:
     randomize_push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
-        interval_range_s=(5.0, 10.0), # (10.0, 15.0)
-        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
+        interval_range_s=(10.0, 15.0), # (10.0, 15.0)
+        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-1.0, 1.0)}},
     )
 
     push_robot_hard = EventTerm(

@@ -118,7 +118,8 @@ class DWAQDeploymentWrapper(nn.Module):
         
         # 4. 输出动作
         actions = self.actor(combined_obs)
-        return torch.nan_to_num(actions, nan=0.0)
+        # return torch.nan_to_num(actions, nan=0.0)
+        return actions
 
 @hydra_task_config(args_cli.task, args_cli.agent)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
@@ -267,6 +268,28 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         
         # 导出为 ONNX (可选)
         torch.onnx.export(deployment_model, example_input, os.path.join(export_model_dir, "policy.onnx"))
+
+        # ---------- 使用 onnxsim 简化模型 ----------
+        print("[INFO] 正在使用 onnxsim 优化并消除冗余计算...")
+        try:
+            import onnx
+            from onnxsim import simplify
+
+            # 加载刚导出的臃肿模型
+            model_onnx = onnx.load(os.path.join(export_model_dir, "policy.onnx"))
+            
+            # 执行核心简化逻辑
+            model_simp, check = simplify(model_onnx)
+            
+            if check:
+                # 覆盖保存为优化后的模型
+                sim_onnx_path = os.path.join(export_model_dir, "policy.onnx")
+                onnx.save(model_simp, sim_onnx_path)
+                print(f"[SUCCESS] 优化后的 ONNX 已保存至: {sim_onnx_path}")
+            else:
+                print("[WARNING] onnxsim 简化失败，模型结构验证未通过。")
+        except ImportError:
+            print("[WARNING] 未安装 onnxsim。强烈建议运行 'pip install onnxsim' 以获得极致的推理速度！")
 
         print("\n" + "="*50)
         print("[验证] 开始导出模型数值一致性检查...")

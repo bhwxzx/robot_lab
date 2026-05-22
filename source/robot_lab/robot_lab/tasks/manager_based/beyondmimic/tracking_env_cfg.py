@@ -257,6 +257,20 @@ class RewardsCfg:
             "threshold": 1.0,
         },
     )
+    torque_limit = RewTerm(
+        func=mdp.soft_torque_limit_penalty,
+        weight=0.0,  
+        params={
+            "ratio": 0.875,  
+            "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]) # 匹配所有关节
+        },
+    )
+    joint_vel_wheel_l2 = RewTerm(
+        func=mdp.joint_vel_l2, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names="")}
+    )
+    joint_acc_wheel_l2 = RewTerm(
+        func=mdp.joint_acc_l2, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names="")}
+    )
 
 
 @configclass
