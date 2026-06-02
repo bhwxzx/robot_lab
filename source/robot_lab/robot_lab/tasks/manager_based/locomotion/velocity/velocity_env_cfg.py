@@ -270,7 +270,6 @@ class EventCfg:
             "dynamic_friction_range": (0.3, 1.2), # (0.3, 0.8)
             "restitution_range": (0.0, 0.5), # (0.0, 0.5)
             "num_buckets": 64,
-            "make_consistent": True,
         },
     )
 
@@ -390,7 +389,7 @@ class EventCfg:
     randomize_push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
-        interval_range_s=(10.0, 15.0), # (10.0, 15.0)
+        interval_range_s=(5.0, 10.0), # (10.0, 15.0)
         params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-1.0, 1.0)}},
     )
 

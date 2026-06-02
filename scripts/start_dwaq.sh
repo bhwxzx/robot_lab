@@ -19,4 +19,5 @@ python scripts/reinforcement_learning/rsl_rl/train.py \
     --log_project_name="LW_${TYPE}_locomotion_dwaq" \
     --logger=wandb \
     --num_envs=4096 \
-    --headless
+    --headless \
+    # --resume

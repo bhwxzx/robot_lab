@@ -15,3 +15,4 @@ done
 python scripts/reinforcement_learning/rsl_rl/play_beyondmimic.py \
     --task="RobotLab-Isaac-BeyondMimic-Flat-LW-${TYPE}-v0" \
     --num_envs=1 \
+    # --checkpoint="/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-04-24_22-26-19/model_45000.pt"

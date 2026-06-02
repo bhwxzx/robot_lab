@@ -4,5 +4,5 @@ python scripts/reinforcement_learning/rsl_rl/train.py \
     --logger=wandb \
     --num_envs=4096 \
     --headless \
-    --load_run=2025-12-13_21-59-44 \
-    --checkpoint=model_65999.pt
+    --load_run=2026-01-08_22-31-56 \
+    --checkpoint=model_18000.pt \

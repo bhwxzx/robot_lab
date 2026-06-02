@@ -1398,3 +1398,42 @@ def foot_impact_reduction(
     asset.prev_body_vel_z.copy_(current_vel_z)
     
     return total_penalty
+
+def centrifugal_compensation_reward(
+    env: ManagerBasedRLEnv, 
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """
+    鼓励机器人在转弯时产生适当的身体倾斜，以补偿离心力。
+    """
+    # 提取机器人的 asset 数据
+    asset = env.scene[asset_cfg.name]
+    
+    # 1. 获取机身坐标系下的前向速度 v_x (X轴)
+    # 形状: (num_envs,)
+    v_x = asset.data.root_lin_vel_b[:, 0]
+    
+    # 2. 获取机身坐标系下的偏航角速度 omega_yaw (Z轴)
+    # 形状: (num_envs,)
+    omega_yaw = asset.data.root_ang_vel_b[:, 2]
+    
+    # 3. 计算期望的质心倾斜角 theta_des
+    g = 9.81
+    theta_des = torch.atan((v_x * omega_yaw) / g)
+    
+    # 4. 计算目标项: min(0.3, sin(theta_des))
+    # 注意：论文公式写的是 min(0.3, ...)，这在正向转弯时是对的。
+    # 为了保证左右转弯时的对称性，实际工程中建议使用对称截断 clamp(-0.3, 0.3)。
+    # 这里严格按照您的公式，但为了兼顾左右转，使用了对称的 torch.clamp。
+    target_val = torch.clamp(torch.sin(theta_des), min=-0.3, max=0.3)
+    
+    # 5. 获取观测到的侧向加速度 a_obs_y
+    # 在 Isaac Lab 中，IMU 的姿态观测通常用重力在机身系下的投影来表示。
+    # projected_gravity_b 的 Y 轴分量即相当于归一化后的侧向倾斜加速度 (近似 sin(roll))
+    # 形状: (num_envs,)
+    a_obs_y = asset.data.projected_gravity_b[:, 1]
+    
+    # 6. 计算奖励
+    reward = -torch.square(a_obs_y - target_val)
+    
+    return reward

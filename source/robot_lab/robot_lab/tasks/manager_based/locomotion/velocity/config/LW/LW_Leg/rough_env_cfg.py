@@ -2223,6 +2223,7 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
         self.events.randomize_apply_external_force_torque.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.add_joint_default_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.events.randomize_actuator_gains.params["asset_cfg"].joint_names = self.joint_names
         
         self.events.push_robot_hard = None
         # self.events.randomize_apply_external_force_torque = None 
@@ -2344,7 +2345,7 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.feet_distance_y_exp.params["stance_width"] = 0.42 # 0.42
         self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_distance_penalize.weight = -100.0
-        self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.36
+        self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.38
         self.rewards.feet_distance_penalize.params["max_feet_distance"] = 1.5
 
         self.rewards.feet_impact_reduction.weight = -2.5e-3
@@ -2364,7 +2365,7 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.curriculum.command_levels_lin_vel = None
 
         # ------------------------------Commands------------------------------
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.8, 0.8)
+        self.commands.base_velocity.ranges.lin_vel_x = (-1.0, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
         self.commands.base_velocity.ranges.heading = (-math.pi/6, math.pi/6)

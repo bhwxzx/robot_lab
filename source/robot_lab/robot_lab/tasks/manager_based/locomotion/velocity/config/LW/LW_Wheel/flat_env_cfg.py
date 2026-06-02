@@ -26,14 +26,14 @@ class LWWheelFlatDwaqEnvCfg(LWWheelRoughDwaqEnvCfg):
         # self.curriculum.terrain_levels = None
 
         # events
-        self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
+        self.events.randomize_reset_joints.params["position_range"] = (-0.4, 0.4)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
         # wheel状态下承受侧向冲击能力弱
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (1.0, 1.0), "yaw": (-1.0, 1.0)}
         self.events.randomize_rigid_body_mass_base.params["mass_distribution_params"] = (-1.0, 3.0)
         self.events.randomize_com_positions.params["com_range"] = {"x": (-0.075, 0.075), "y": (-0.075, 0.075), "z": (-0.075, 0.075)}
-        self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.5, 2.0)
-        self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.5, 2.0)
+        self.events.randomize_actuator_gains = None
+        self.events.randomize_apply_external_force_torque = None
         self.events.randomize_rigid_body_mass_others.params["mass_distribution_params"] = (0.8, 1.2)
 
         # Rewards
@@ -48,18 +48,19 @@ class LWWheelFlatDwaqEnvCfg(LWWheelRoughDwaqEnvCfg):
         self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)
         self.rewards.ang_vel_xy_l2.weight = -0.1 # -0.05
         self.rewards.flat_orientation_l2.weight = -5.0  # -5.0
-        self.rewards.body_orientation_l2.weight = -4.0
-        self.rewards.stop_motion.weight = -4.0
-        self.rewards.action_rate_l2.weight = -0.1 
+        self.rewards.body_orientation_l2.weight = -3.0
+        self.rewards.stop_motion.weight = -5.0
+        self.rewards.action_rate_l2.weight = -0.075 
         self.rewards.action_smoothness.weight = -0.03
         self.rewards.feet_stumble.weight = 0.0
         self.rewards.leg_symmetry.weight = 0.5
         self.rewards.lazy_penalty.weight = -0.0
         self.rewards.same_foot_x_position.weight = -50.0
         self.rewards.feet_distance_y_exp.weight = 3.0
-        self.rewards.feet_distance_penalize.weight = -100.0
+        self.rewards.feet_distance_penalize.weight = -150.0
         self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.50
-        self.rewards.feet_distance_penalize.params["max_feet_distance"] = 0.525
+        self.rewards.feet_distance_penalize.params["max_feet_distance"] = 0.52
+        self.rewards.centrifugal_compensation.weight = 1.0 
 
         # If the weight of rewards is 0, set rewards to None
         if self.__class__.__name__ == "LWWheelFlatDwaqEnvCfg":

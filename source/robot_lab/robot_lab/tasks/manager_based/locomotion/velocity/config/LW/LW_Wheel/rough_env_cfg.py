@@ -292,6 +292,14 @@ class LWWheelRewardsCfg(RewardsCfg):
         },
     )
 
+    centrifugal_compensation = RewTerm(
+        func=mdp.centrifugal_compensation_reward,
+        weight=0.0,  # 正数
+        params={
+            "asset_cfg": SceneEntityCfg("robot")
+        }
+    )
+
 @configclass
 class LWWheelRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
 
@@ -963,6 +971,7 @@ class LWWheelRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
         self.events.randomize_apply_external_force_torque.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.add_joint_default_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.events.randomize_actuator_gains.params["asset_cfg"].joint_names = self.joint_names
         
         self.events.push_robot_hard = None
         # self.events.randomize_apply_external_force_torque = None 
@@ -1047,6 +1056,8 @@ class LWWheelRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.48
         self.rewards.feet_distance_penalize.params["max_feet_distance"] = 0.53
+
+        self.rewards.centrifugal_compensation.weight = 1.0
 
         # If the weight of rewards is 0, set rewards to None
         if self.__class__.__name__ == "LWWheelRoughDwaqEnvCfg":
