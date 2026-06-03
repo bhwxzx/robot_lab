@@ -1835,6 +1835,7 @@ class LWLegRoughAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
         self.events.randomize_apply_external_force_torque.params["asset_cfg"].body_names = [self.base_link_name]
+        self.events.add_joint_default_pos = None
         
         self.events.push_robot_hard = None
         # self.events.randomize_apply_external_force_torque = None 
