@@ -199,7 +199,7 @@ LW_WHEEL_CFG = ArticulationCfg(
             damping=3.0,
             armature=0.01,
             min_delay=0,
-            max_delay=5
+            max_delay=6
         ),
         "wheels": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -212,7 +212,7 @@ LW_WHEEL_CFG = ArticulationCfg(
             damping=0.5,
             armature=0.01,
             min_delay=0,
-            max_delay=5
+            max_delay=6
         ),
         "foots": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -225,7 +225,7 @@ LW_WHEEL_CFG = ArticulationCfg(
             damping=1.8,
             armature=0.01,
             min_delay=0,
-            max_delay=5
+            max_delay=6
         )
     },
 )
