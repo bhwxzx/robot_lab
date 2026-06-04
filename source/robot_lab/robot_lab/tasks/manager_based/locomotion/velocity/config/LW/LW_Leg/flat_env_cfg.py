@@ -280,9 +280,9 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         # Rewards
         self.rewards.base_height_l2.weight = -10.0
         self.rewards.lin_vel_z_l2.weight = -2.0
-        self.rewards.track_lin_vel_xy_exp.weight = 4.0
+        self.rewards.track_lin_vel_xy_exp.weight = 5.0
         self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
-        self.rewards.track_ang_vel_z_exp.weight = 2.0
+        self.rewards.track_ang_vel_z_exp.weight = 3.0
         self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)
         self.rewards.ang_vel_xy_l2.weight = -0.1 # -0.05
         self.rewards.flat_orientation_l2.weight = -5.0  # -5.0
@@ -290,19 +290,18 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.stand_still.weight = -1.0
         self.rewards.joint_pos_penalty.weight = -0.0
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
-        self.rewards.joint_deviation_hip.weight = -1.0
         self.rewards.stop_motion.weight = -3.0 # -3.0
         self.rewards.action_rate_l2.weight = -0.15  # -0.02
         self.rewards.action_smoothness.weight = -0.075 # -0.02
         self.rewards.undesired_contacts.weight = -5.0
         self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.0
         self.rewards.feet_standing_force_without_cmd.weight = 0.0
-        self.rewards.feet_air_time.weight = 0.0
+        self.rewards.feet_air_time.weight = 2.0
         self.rewards.feet_air_time.params["threshold"] = 0.4
         self.rewards.feet_air_time_variance.weight = -0.0
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.bipedal_gait_reward.weight = 2.0
-        self.rewards.feet_clearance.weight = 1.0
+        self.rewards.feet_clearance.weight = 2.0
         self.rewards.feet_clearance.params["target_height"] = 0.125 + 0.071 # 0.125 + 0.071 foot_radius 
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = -0.25 # -0.15
@@ -316,7 +315,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.fly_penalty.weight = -0.0
         self.rewards.ankle_torque_limit.weight = -0.2
-        self.rewards.penalize_hip_roll_action.weight = -0.0
+        self.rewards.penalize_hip_roll_action.weight = -1.0
         self.rewards.feet_impact_reduction.weight = -2.5e-3
         self.rewards.feet_impact_reduction.params["max_delta_v_sq"] = 2.0
 
