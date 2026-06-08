@@ -13,6 +13,7 @@ from .student_teacher import StudentTeacher
 from .student_teacher_recurrent import StudentTeacherRecurrent
 from .symmetry import *
 from .discriminator import Discriminator
+from .actor_critic_roa import ActorCriticROA
 
 __all__ = [
     "ActorCritic",
@@ -20,5 +21,6 @@ __all__ = [
     "ActorCriticDwaq",
     "StudentTeacher",
     "StudentTeacherRecurrent",
-    "Discriminator"
+    "Discriminator",
+    "ActorCriticROA"
 ]

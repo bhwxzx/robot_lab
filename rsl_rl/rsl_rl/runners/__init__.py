@@ -10,5 +10,7 @@ from .distillation_runner import DistillationRunner
 from .on_policy_runner_dwaq import OnPolicyRunnerDwaq
 from .on_policy_runner_amp import OnPolicyRunnerAmp
 from .on_policy_runner_amp_dwaq import OnPolicyRunnerAmpDwaq
+from .on_policy_runner_roa import OnPolicyRunnerROA
+from .on_policy_runner_amp_roa import OnPolicyRunnerAmpROA
 
-__all__ = ["OnPolicyRunner", "DistillationRunner", "OnPolicyRunnerDwaq", "OnPolicyRunnerAmp", "OnPolicyRunnerAmpDwaq"]
+__all__ = ["OnPolicyRunner", "DistillationRunner", "OnPolicyRunnerDwaq", "OnPolicyRunnerAmp", "OnPolicyRunnerAmpDwaq" ,"OnPolicyRunnerROA", "OnPolicyRunnerAmpROA"]

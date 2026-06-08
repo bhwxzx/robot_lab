@@ -10,3 +10,5 @@ from isaaclab_rl.rsl_rl import *
 from .rl_dwaq_cfg import RslRlActorCriticDwaqCfg, RslRlAlgorithmDwaqCfg, RslRlOnPolicyRunnerDwaqCfg
 from .rl_amp_cfg import RslRlAlgorithmAmpCfg, RslRlOnPolicyRunnerAmpCfg
 from .rl_amp_dwaq_cfg import RslRlActorCriticAmpDwaqCfg, RslRlAlgorithmAmpDwaqCfg, RslRlOnPolicyRunnerAmpDwaqCfg
+from .rl_amp_roa_cfg import RslRlActorCriticAmpRoaCfg, RslRlAlgorithmAmpRoaCfg, RslRlOnPolicyRunnerAmpRoaCfg
+from .rl_roa_cfg import RslRlActorCriticRoaCfg, RslRlAlgorithmRoaCfg, RslRlOnPolicyRunnerRoaCfg

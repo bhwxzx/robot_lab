@@ -346,5 +346,111 @@ def joint_pos_rel_exclude_wheel(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCf
     pos_idx_exclude_wheel = [i for i in all_joints_idx if i not in wheel_joints_idx]
     return asset.data.joint_pos[:, pos_idx_exclude_wheel] - asset.data.default_joint_pos[:, pos_idx_exclude_wheel]
 
+def randomized_base_mass(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """获取经过域随机化 (Domain Randomization) 后的机器人躯干实际质量。
+    
+    该函数直接从底层 PhysX 视图中拉取数据，确保即使在训练过程中质量发生了随机化突变，
+    也能获取到最真实、最新的物理质量参数。
+    
+    返回:
+        torch.Tensor: 真实躯干质量，形状为 (num_envs, 1)。
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    # 从 PhysX 底层直接读取最新的根刚体质量, 通常第0个索引为躯干 (Base)
+    masses = asset.root_physx_view.get_masses().clone()
+    
+    # 提取第 0 个 link 的质量，保持形状为 [num_envs, 1]
+    base_mass = masses[:, 0].unsqueeze(1)
+    return base_mass.to(env.device)
 
+def randomized_link_masses(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """获取经过域随机化后，指定连杆(links)的真实物理质量。
+    
+    参数 `asset_cfg` 可以通过 `body_ids` 过滤出特定的连杆。
+    如果不指定 `body_ids`，默认返回所有连杆的质量。
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    # 从 PhysX 视图获取该机器人的所有连杆质量, 形状通常为 (num_envs, num_bodies)
+    masses = asset.root_physx_view.get_masses().clone()
+    
+    # 如果 SceneEntityCfg 指定了 body_ids，则只提取指定连杆的质量
+    if asset_cfg.body_ids is slice(None):
+        pass # 获取全部
+    else:
+        masses = masses[:, asset_cfg.body_ids]
+        
+    return masses.to(env.device)
 
+def randomized_rigid_body_material_properties(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """获取经过域随机化后，指定连杆（例如左右脚）的材质属性。
+    
+    返回静摩擦系数、动摩擦系数和恢复系数。
+    如果指定了多个连杆（通过 body_names），会将它们的材质属性展平（Flatten）后拼接在一起。
+    例如：指定了左右脚 (共2个连杆)，则返回形状为 (num_envs, 2 * 3 = 6) 的张量。
+    注意：此函数假设每个指定的连杆只有一个 Collision Shape。
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    # 获取底层物理视图中，连杆材质的属性，形状通常为 (num_envs, max_shapes, 3)
+    materials = asset.root_physx_view.get_material_properties()
+    
+    # 根据配置提取指定连杆的材质属性
+    if asset_cfg.body_ids is slice(None):
+        # 如果未指定，则默认取第 0 个连杆的属性 (通常是 base)
+        material_props = materials[:, 0, :]
+    else:
+        # 取出指定连杆的材质属性，形状变为 (num_envs, num_selected_bodies, 3)
+        # 假设：选中的每个 body 对应一个主要的 shape
+        material_props = materials[:, asset_cfg.body_ids, :]
+        # 将多个连杆的属性展平，变成 (num_envs, num_selected_bodies * 3)
+        material_props = material_props.view(env.num_envs, -1)
+        
+    return material_props.clone().to(env.device)
+
+def randomized_actuator_gains(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """获取经过域随机化后的关节执行器（Actuators）强度。
+    
+    返回拼接后的 (stiffness, damping)，形状为 (num_envs, num_selected_joints * 2)。
+    由于随机化使用的是比例缩放，建议在提取后，再配置文件中通过 mathematical operation 使其中心化
+    （例如除以标准刚度后减1）。
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    num_joints = asset.num_joints
+    
+    # 初始化全局关节刚度和阻尼张量
+    stiffness_all = torch.zeros((env.num_envs, num_joints), device=asset.device)
+    damping_all = torch.zeros((env.num_envs, num_joints), device=asset.device)
+    
+    # 遍历所有 actuator 并提取其实时增益
+    # (IsaacLab 在 randomize_actuator_gains 时会更新 actuator.stiffness/damping)
+    for actuator in asset.actuators.values():
+        indices = actuator.joint_indices
+        stiffness_all[:, indices] = actuator.stiffness
+        damping_all[:, indices] = actuator.damping
+        
+    # 如果指定了特定关节（通过 joint_names），则进行过滤
+    if asset_cfg.joint_ids is not slice(None):
+        stiffness_all = stiffness_all[:, asset_cfg.joint_ids]
+        damping_all = damping_all[:, asset_cfg.joint_ids]
+        
+    # 拼接并返回
+    return torch.cat([stiffness_all, damping_all], dim=-1).to(env.device)
+
+def randomized_base_com(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """获取经过域随机化后的机器人质心（CoM）位置偏移。
+    
+    返回形状为 (num_envs, 3) 的张量，分别代表 X, Y, Z 方向上的质心坐标。
+    如果指定了特定的连杆（通过 body_ids），则返回对应连杆的质心位置。默认返回躯干 (0 号连杆) 的质心。
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    
+    # get_coms 返回的形状为 (num_envs, num_bodies, ...)
+    # 提取指定连杆的质心 (默认 0 号代表 base)
+    coms = asset.root_physx_view.get_coms().clone()
+    
+    if asset_cfg.body_ids is slice(None):
+        base_com = coms[:, 0, :3]
+    else:
+        # 如果指定了多个 body，展平返回
+        base_com = coms[:, asset_cfg.body_ids, :3].view(env.num_envs, -1)
+        
+    return base_com.to(env.device)
