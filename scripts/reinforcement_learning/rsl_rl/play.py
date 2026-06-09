@@ -63,7 +63,7 @@ import time
 import torch
 import torch.nn as nn 
 
-from rsl_rl.runners import DistillationRunner, OnPolicyRunner, OnPolicyRunnerDwaq, OnPolicyRunnerAmp, OnPolicyRunnerAmpDwaq
+from rsl_rl.runners import DistillationRunner, OnPolicyRunner, OnPolicyRunnerDwaq, OnPolicyRunnerAmp, OnPolicyRunnerAmpDwaq, OnPolicyRunnerROA, OnPolicyRunnerAmpROA
 
 from isaaclab.devices import Se2Keyboard, Se2KeyboardCfg
 from isaaclab.envs import (
@@ -120,6 +120,31 @@ class DWAQDeploymentWrapper(nn.Module):
         actions = self.actor(combined_obs)
         # return torch.nan_to_num(actions, nan=0.0)
         return actions
+
+# --- ROA 专用导出包装器 ---
+class ROADeploymentWrapper(nn.Module):
+    """将 ROA 模型包装为单 Tensor 输入格式以供部署。"""
+    def __init__(self, policy_nn, num_obs):
+        super().__init__()
+        self.history_encoder = policy_nn.history_encoder
+        self.actor = policy_nn.actor
+        self.actor_obs_normalizer = policy_nn.actor_obs_normalizer
+        self.num_obs = num_obs
+
+    def forward(self, obs_history_flat: torch.Tensor):
+        # 1. 提取当前帧 (无噪声本体观测)
+        current_obs = obs_history_flat[:, -self.num_obs:]
+        # ROA 逻辑：actor_obs_normalizer 仅对当前帧观测进行归一化
+        if self.actor_obs_normalizer is not None:
+            current_obs = self.actor_obs_normalizer(current_obs)
+        
+        # 2. 从未归一化的历史中提取隐特征
+        hist_latent = self.history_encoder(obs_history_flat)
+        
+        # 3. 拼接输入给 actor
+        actor_input = torch.cat((current_obs, hist_latent), dim=-1)
+            
+        return self.actor(actor_input)
 
 @hydra_task_config(args_cli.task, args_cli.agent)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
@@ -219,6 +244,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         runner = OnPolicyRunnerAmp(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     elif agent_cfg.class_name == "OnPolicyRunnerAmpDwaq":
         runner = OnPolicyRunnerAmpDwaq(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    elif agent_cfg.class_name == "OnPolicyRunnerROA":
+        runner = OnPolicyRunnerROA(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    elif agent_cfg.class_name == "OnPolicyRunnerAmpROA":
+        runner = OnPolicyRunnerAmpROA(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     else:
         raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
     runner.load(resume_path)
@@ -242,7 +271,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
     os.makedirs(export_model_dir, exist_ok=True)
 
-    if agent_cfg.class_name in ["OnPolicyRunnerDwaq", "OnPolicyRunnerAmpDwaq"]:
+    if agent_cfg.class_name in ["OnPolicyRunnerDwaq", "OnPolicyRunnerAmpDwaq", "OnPolicyRunnerROA", "OnPolicyRunnerAmpROA"]:
         print(f"[INFO] Detecting {agent_cfg.class_name}. Exporting with deployment wrapper...")
         # --- 1. 维度解析 (适配 3D 张量) ---
         policy_tensor = obs["policy"] # [Batch, Time, Dim]
@@ -250,12 +279,15 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         history_length = policy_tensor.shape[1]
         num_policy_total_flat = num_obs_single * history_length # 展平后的总长度
 
-        print(f"[INFO] DWAQ Dimensions -> Single_Obs: {num_obs_single}, History_Len: {history_length}")
+        print(f"[INFO] Dimensions -> Single_Obs: {num_obs_single}, History_Len: {history_length}")
 
         # 重要：将模型先移动到 CPU
         policy_nn.cpu() 
 
-        deployment_model = DWAQDeploymentWrapper(policy_nn, num_obs_single).to("cpu")
+        if "ROA" in agent_cfg.class_name:
+            deployment_model = ROADeploymentWrapper(policy_nn, num_obs_single).to("cpu")
+        else:
+            deployment_model = DWAQDeploymentWrapper(policy_nn, num_obs_single).to("cpu")
         deployment_model.eval()
         
         # 准备样例输入用于 Trace [Batch=1, HistoryLen * ObsDim]
@@ -304,7 +336,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         # B. 运行原始模型推理
         # policy_nn.act_inference 内部会自动处理 Term-First 转 Time-First 并切出当前帧
         with torch.no_grad():
-            actions_orig = policy_nn.act_inference(obs.to("cpu"))
+            if "ROA" in agent_cfg.class_name:
+                actions_orig = policy_nn.act_inference(obs.to("cpu"), hist_encoding=True)
+            else:
+                actions_orig = policy_nn.act_inference(obs.to("cpu"))
             
         # C. 模拟 C++ 部署端输入：手动展平 3D 张量
         # flatten(1, 2) 会把 Time 和 Dim 合并，且保持 Time-First 顺序

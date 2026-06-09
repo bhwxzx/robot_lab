@@ -34,7 +34,7 @@ class RslRlAlgorithmRoaCfg(RslRlPpoAlgorithmCfg):
     ROA PPO 算法配置。
     包含 PPO 基础参数以及 ROA 特有的算法参数（如 DAgger 和特权正则化）。
     """
-    class_name: str = "ROA_PPO"
+    class_name: str = "ROAPPO"
 
     # --- ROA 参数 ---
     priv_reg_coef_schedule: list[float] = [0, 0.1, 1000, 2000]

@@ -39,7 +39,7 @@ class RslRlAlgorithmAmpRoaCfg(RslRlPpoAlgorithmCfg):
     (AMP 的算法参数通常由 Runner 处理并传递给算法构造函数)
     """
 
-    class_name: str = "AMP_ROA_PPO"
+    class_name: str = "AMPROAPPO"
     """指向 AMP_ROA_PPO 算法类。"""
 
     # --- ROA 参数 ---

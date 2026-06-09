@@ -13,9 +13,9 @@ import warnings
 from collections import deque
 
 import rsl_rl
-from rsl_rl.algorithms import AMPPPO
+from rsl_rl.algorithms import AMPPPO, AMPROAPPO
 from rsl_rl.env import VecEnv
-from rsl_rl.modules import ActorCritic, ActorCriticRecurrent, resolve_rnd_config, resolve_symmetry_config, Discriminator
+from rsl_rl.modules import ActorCritic, ActorCriticRecurrent, ActorCriticROA, resolve_rnd_config, resolve_symmetry_config, Discriminator
 from rsl_rl.utils import resolve_obs_groups, store_code_state, AMPLoader, Normalizer
 
 
@@ -71,7 +71,7 @@ class OnPolicyRunnerAmp:
         obs = self.env.get_observations().to(self.device)
 
         amp_obs = None
-        if isinstance(self.alg, AMPPPO):
+        if hasattr(self.alg, "discriminator"):
             amp_obs = obs["amp"].to(self.device)
 
         self.train_mode()  # switch to train mode (for dropout for example)
@@ -304,7 +304,7 @@ class OnPolicyRunnerAmp:
             "infos": infos,
         }
         # AMP判别器和归一化器状态
-        if isinstance(self.alg, AMPPPO):
+        if hasattr(self.alg, "discriminator"):
             saved_dict["discriminator_state_dict"] = self.alg.discriminator.state_dict()
             saved_dict["amp_normalizer"] = self.alg.amp_normalizer
         torch.save(saved_dict, path)

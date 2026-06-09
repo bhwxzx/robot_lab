@@ -53,7 +53,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
 
 @configclass
 class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):
-    max_iterations = 50000
+    max_iterations = 25000
     experiment_name = "LW_leg_flat_amp_roa"
     amp_reward_coef=0.3
     amp_task_reward_lerp=0.7
