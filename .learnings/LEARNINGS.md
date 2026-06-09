@@ -159,3 +159,49 @@ Apply this watchdog pattern (potentially via `invoke_subagent` and `schedule`) w
 - Promoted: AGENTS.md
 
 ---
+
+## [LRN-20260609-003] best_practice
+
+**Logged**: 2026-06-09T15:15:00+08:00
+**Priority**: high
+**Status**: promoted
+**Area**: config
+
+### Summary
+Always propose a modification plan before directly modifying code.
+
+### Details
+When receiving a request to modify code (especially logic or configurations), do not jump straight to editing the files. The user prefers to review a detailed modification plan first. Once the user approves the plan, proceed with the actual code edits.
+
+### Suggested Action
+Before calling file modification tools or running sed/replace scripts, output a clear plan of what will be changed, where, and why, and ask the user for confirmation.
+
+### Metadata
+- Source: user_feedback
+- Related Files: N/A
+- Promoted: AGENTS.md
+
+---
+
+## [LRN-20260609-004] best_practice
+
+**Logged**: 2026-06-09T15:18:00+08:00
+**Priority**: high
+**Status**: promoted
+**Area**: config
+
+### Summary
+Clean up intermediate files and scripts after a task is completed.
+
+### Details
+When generating temporary scripts (like modify_cfg.py or other single-use python/bash scripts) to facilitate code modifications, do not leave them in the workspace. They clutter the repository and can cause confusion. Always ensure they are deleted as the final step of the operation.
+
+### Suggested Action
+Delete any temporary scripts or intermediate files immediately after their purpose has been served.
+
+### Metadata
+- Source: user_feedback
+- Related Files: N/A
+- Promoted: AGENTS.md
+
+---
