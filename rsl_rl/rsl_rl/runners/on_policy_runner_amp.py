@@ -473,6 +473,7 @@ class OnPolicyRunnerAmp:
             amp_replay_buffer_size=self.cfg.get("amp_replay_buffer_size", 100000), 
             amp_reward_coef=self.cfg.get("amp_reward_coef", 2.0),
             amp_task_reward_lerp=self.cfg.get("amp_task_reward_lerp", 0.3),
+            disc_learning_rate=self.cfg.get("disc_learning_rate", 1e-4),
             device=self.device,
             **self.alg_cfg,
             multi_gpu_cfg=self.multi_gpu_cfg,

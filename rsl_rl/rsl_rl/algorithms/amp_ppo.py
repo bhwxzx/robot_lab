@@ -49,6 +49,7 @@ class AMPPPO:
         amp_reward_coef=2.0,  # AMP 奖励的权重系数，决定风格奖励占比
         amp_task_reward_lerp=0.3, # 这里的逻辑可能需要在 Env 或 Reward Function 中处理，这里保留参数
         amp_discr_hidden_dims=None,
+        disc_learning_rate=1e-4,
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
         **kwargs
@@ -87,13 +88,17 @@ class AMPPPO:
         self.policy.to(self.device)
 
         # --- [优化器修改] ---
-        # 我们需要同时优化 Policy 和 Discriminator，且 Discriminator 的不同部分有不同的 weight_decay
-        params = [
+        # 我们需要同时优化 Policy 和 Discriminator，且 Discriminator 的不同部分有不同的        # Create optimizer
+        ppo_params = [
             {"params": self.policy.parameters(), "name": "policy"},
-            {"params": self.discriminator.trunk.parameters(), "weight_decay": 10e-4, "name": "amp_trunk"},
-            {"params": self.discriminator.amp_linear.parameters(), "weight_decay": 10e-2, "name": "amp_head"},
         ]
-        self.optimizer = optim.Adam(params, lr=learning_rate)
+        self.optimizer = optim.Adam(ppo_params, lr=learning_rate)
+        
+        amp_params = [
+            {"params": self.discriminator.trunk.parameters(), "weight_decay": 1e-4, "name": "amp_trunk"},
+            {"params": self.discriminator.amp_linear.parameters(), "weight_decay": 1e-2, "name": "amp_head"},
+        ]
+        self.amp_optimizer = optim.Adam(amp_params, lr=disc_learning_rate)
 
         # Create rollout storage
         self.storage: RolloutStorage = None  # type: ignore
@@ -335,13 +340,17 @@ class AMPPPO:
             # Gradient Penalty (关键! 防止判别器梯度爆炸)
             grad_pen_loss = self.discriminator.compute_grad_pen(expert_state, expert_next_state, lambda_=10)
             
-            # 将 AMP Loss 加入总 Loss (乘以系数)
-            loss += self.amploss_coef * amp_loss + self.amploss_coef * grad_pen_loss
+            # 分离 AMP Loss
+            amp_total_loss = self.amploss_coef * amp_loss + self.amploss_coef * grad_pen_loss
 
             # Compute the gradients
             # -- For PPO
             self.optimizer.zero_grad()
             loss.backward()
+            
+            # -- For AMP
+            self.amp_optimizer.zero_grad()
+            amp_total_loss.backward()
 
             # Collect gradients from all GPUs
             if self.is_multi_gpu:
@@ -351,6 +360,10 @@ class AMPPPO:
             # -- For PPO
             nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.optimizer.step()
+            
+            # -- For AMP
+            nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.max_grad_norm)
+            self.amp_optimizer.step()
 
              # 更新 AMP Normalizer
             if self.amp_normalizer is not None:

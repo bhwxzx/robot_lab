@@ -40,6 +40,7 @@ class LWRoughAmpRunnerCfg(RslRlOnPolicyRunnerAmpCfg):
     amp_motion_files=["source/robot_lab/robot_lab/datasets/LW_Leg/motion_amp_expert/motion_*.txt"]
     amp_num_preload_transitions=200000
     amp_replay_buffer_size=100000
+    disc_learning_rate=1.0e-4
     amp_reward_coef=0.3
     amp_task_reward_lerp=0.7
 

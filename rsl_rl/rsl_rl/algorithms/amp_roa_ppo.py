@@ -49,6 +49,7 @@ class AMPROAPPO:
         amp_reward_coef=2.0,
         amp_task_reward_lerp=0.3,
         amp_discr_hidden_dims=None,
+        disc_learning_rate=1e-4,
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
         **kwargs
@@ -87,14 +88,17 @@ class AMPROAPPO:
         self.policy = policy
         self.policy.to(self.device)
 
-        # --- [融合的主优化器] ---
-        # 同时优化 Policy(包含 Actor, Critic, Privileged Encoder) 和 Discriminator
-        params = [
+        # --- [解耦的主优化器] ---
+        ppo_params = [
             {"params": self.policy.parameters(), "name": "policy"},
-            {"params": self.discriminator.trunk.parameters(), "weight_decay": 10e-4, "name": "amp_trunk"},
-            {"params": self.discriminator.amp_linear.parameters(), "weight_decay": 10e-2, "name": "amp_head"},
         ]
-        self.optimizer = optim.Adam(params, lr=learning_rate)
+        self.optimizer = optim.Adam(ppo_params, lr=learning_rate)
+        
+        amp_params = [
+            {"params": self.discriminator.trunk.parameters(), "weight_decay": 1e-4, "name": "amp_trunk"},
+            {"params": self.discriminator.amp_linear.parameters(), "weight_decay": 1e-2, "name": "amp_head"},
+        ]
+        self.amp_optimizer = optim.Adam(amp_params, lr=disc_learning_rate)
 
         # --- [ROA专属历史编码器优化器] ---
         if hasattr(self.policy, "history_encoder"):
@@ -284,23 +288,33 @@ class AMPROAPPO:
             
             grad_pen_loss = self.discriminator.compute_grad_pen(expert_state, expert_next_state, lambda_=10)
 
-            # ====== 终极聚合 Loss ======
+            # ====== 解耦的 Loss ======
             loss = (surrogate_loss + 
                     self.value_loss_coef * value_loss - 
                     self.entropy_coef * entropy_batch.mean() + 
-                    priv_reg_coef * priv_reg_loss + 
-                    self.amploss_coef * amp_loss + 
-                    self.amploss_coef * grad_pen_loss)
+                    priv_reg_coef * priv_reg_loss)
+                    
+            amp_total_loss = self.amploss_coef * amp_loss + self.amploss_coef * grad_pen_loss
 
             # Optimization
+            # -- For PPO
             self.optimizer.zero_grad()
             loss.backward()
+            
+            # -- For AMP
+            self.amp_optimizer.zero_grad()
+            amp_total_loss.backward()
 
             if self.is_multi_gpu:
                 self.reduce_parameters()
 
+            # -- For PPO
             nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.optimizer.step()
+            
+            # -- For AMP
+            nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.max_grad_norm)
+            self.amp_optimizer.step()
 
             if self.amp_normalizer is not None:
                 self.amp_normalizer.update(policy_state.cpu().numpy())

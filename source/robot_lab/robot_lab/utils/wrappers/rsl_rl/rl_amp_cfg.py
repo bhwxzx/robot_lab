@@ -43,6 +43,9 @@ class RslRlOnPolicyRunnerAmpCfg(RslRlOnPolicyRunnerCfg):
     amp_replay_buffer_size: int = 100000
     """判别器训练使用的回放池大小（存储机器人的历史动作）。"""
 
+    disc_learning_rate: float = 1e-4
+    """判别器的独立学习率。"""
+
     # --- 策略噪声约束 ---
     min_normalized_std: list[float] = [0.05]*20
     """强制执行的最小动作标准差（List 长度需等于动作维度）。"""
