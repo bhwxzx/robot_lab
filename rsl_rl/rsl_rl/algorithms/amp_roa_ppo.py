@@ -317,8 +317,8 @@ class AMPROAPPO:
             self.amp_optimizer.step()
 
             if self.amp_normalizer is not None:
-                self.amp_normalizer.update(policy_state.cpu().numpy())
-                self.amp_normalizer.update(expert_state.cpu().numpy())
+                self.amp_normalizer.update(sample_amp_policy[0].cpu().numpy())
+                self.amp_normalizer.update(sample_amp_expert[0].cpu().numpy())
 
             mean_value_loss += value_loss.item()
             mean_surrogate_loss += surrogate_loss.item()

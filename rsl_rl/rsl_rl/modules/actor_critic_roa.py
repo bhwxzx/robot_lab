@@ -268,11 +268,12 @@ class ActorCriticROA(nn.Module):
         current_obs = self.actor_obs_normalizer(current_obs)
         
         if hist_encoding and self.history_encoder is not None:
-            latent = self.infer_hist_latent(obs)
+            latent, vel = self.infer_hist_latent(obs, return_vel=True)
         else:
             latent = self.infer_priv_latent(obs)
+            vel = self.get_true_vel(obs)
             
-        actor_input = torch.cat([current_obs, latent], dim=-1)
+        actor_input = torch.cat([current_obs, vel, latent], dim=-1)
         return self.actor(actor_input)
 
     def evaluate(self, obs, **kwargs):

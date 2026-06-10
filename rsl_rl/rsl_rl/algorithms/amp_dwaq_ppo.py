@@ -406,8 +406,8 @@ class AMPDWAQPPO:
 
             # Update AMP Normalizer
             if self.amp_normalizer is not None:
-                self.amp_normalizer.update(policy_state.cpu().numpy())
-                self.amp_normalizer.update(expert_state.cpu().numpy())
+                self.amp_normalizer.update(sample_amp_policy[0].cpu().numpy())
+                self.amp_normalizer.update(sample_amp_expert[0].cpu().numpy())
 
             # -----------------------------------------------------
             # 6. Logging

@@ -229,3 +229,57 @@ Delete any temporary scripts or intermediate files immediately after their purpo
 - Related Files: scripts/start_amp_roa.sh, scripts/reinforcement_learning/rsl_rl/train.py
 - Tags: training, watchdog, monitoring
 - Pattern-Key: infra.watchdog.completion_detection
+
+## [LRN-20260610-001] correction
+
+**Logged**: 2026-06-10T21:38:22+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: backend
+
+### Summary
+ActorCritic推理(Inference)阶段遗漏了独立速度估计张量(vel)，导致部署时Shape不匹配崩溃。
+
+### Details
+在实现具有独立速度估计的 ROA 算法时（`actor_critic_roa.py`），训练前向传播 `update_distribution` 正确拼接了 `[current_obs, vel, latent]` 作为 Actor 的输入。但在编写部署推理代码 `act_inference` 时，开发者往往会习惯性复制传统 ROA（仅包含 latent）的代码，导致遗漏了 `vel` 的提取和拼接，仅拼接了 `[current_obs, latent]`。这会导致训练正常，但在实车部署或执行 `play.py` 时瞬间触发 PyTorch Shape Mismatch 崩溃。
+
+### Suggested Action
+当修改 Actor 的输入特征维度（例如增加显式的速度估计头 `code_vel`）时，**必须同时且对称地修改**训练环境（`update_distribution` / `act`）和部署环境（`act_inference`）的特征拼接代码，保持完全一致。
+
+### Metadata
+- Source: correction
+- Related Files: rsl_rl/rsl_rl/modules/actor_critic_roa.py
+- Tags: shape-mismatch, roa, inference, bug, sim-to-real
+- Pattern-Key: harden.tensor_concatenation_sync
+
+### Resolution
+- **Resolved**: 2026-06-10T21:38:00+08:00
+- **Notes**: 已经修复了 `act_inference`，通过 `infer_hist_latent(obs, return_vel=True)` 提取 `vel` 并正确加入到 `torch.cat` 中。
+
+---
+
+## [LRN-20260610-002] bug
+
+**Logged**: 2026-06-10T22:18:00+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: backend
+
+### Summary
+AMP Normalizer statistics collapse due to updating with already-normalized data.
+
+### Details
+In `amp_ppo.py`, `amp_roa_ppo.py`, and `amp_dwaq_ppo.py`, the state variables (`policy_state`, `expert_state`) were overwritten in-place with their normalized versions (`self.amp_normalizer.normalize_torch(...)`). Subsequently, `self.amp_normalizer.update()` was incorrectly called using these already-normalized variables. This causes the Normalizer's running mean to collapse towards 0 and its variance towards 1, destroying the scale of the state observations and breaking the discriminator's capability over time. `roboparty` avoids this by storing normalized data in new variables (e.g., `disc_obs_batch_normed`).
+
+### Suggested Action
+When updating a Normalizer's running statistics, ALWAYS pass the raw, unnormalized data. If you normalize data in-place, store a `.clone()` or access the original raw tensor (e.g., `sample_amp_policy[0]`) for the `update()` step.
+
+### Metadata
+- Source: error
+- Related Files: rsl_rl/rsl_rl/algorithms/amp_ppo.py, rsl_rl/rsl_rl/algorithms/amp_roa_ppo.py, rsl_rl/rsl_rl/algorithms/amp_dwaq_ppo.py
+- Tags: amp, normalizer, bug, statistics-collapse
+- Pattern-Key: harden.normalizer_update_with_raw_data
+
+### Resolution
+- **Resolved**: 2026-06-10T22:04:00+08:00
+- **Notes**: Replaced the variables passed to `amp_normalizer.update()` with the original `sample_amp_policy[0]` and `sample_amp_expert[0]` unnormalized tensors across all three AMP algorithms.
