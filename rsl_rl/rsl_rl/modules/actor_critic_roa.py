@@ -49,6 +49,10 @@ class StateHistoryEncoder(nn.Module):
         self.linear_output = nn.Sequential(
             nn.Linear(channel_size * 3, output_size), self.activation_fn
         )
+        # 测速头：新增输出线速度 (explicit velocity estimation)
+        self.vel_output = nn.Sequential(
+            nn.Linear(channel_size * 3, 3)
+        )
 
     def forward(self, obs_flat):
         batch_size = obs_flat.shape[0]
@@ -57,8 +61,9 @@ class StateHistoryEncoder(nn.Module):
         projection = self.encoder(obs_flat.reshape([batch_size * T, -1]))
         # 把数据形状转换为 Conv1d 需要的格式 [Batch, Channels, T]，然后送入卷积网络
         output = self.conv_layers(projection.reshape([batch_size, T, -1]).permute((0, 2, 1)))
-        output = self.linear_output(output)
-        return output
+        hist_latent = self.linear_output(output)
+        code_vel = self.vel_output(output)
+        return hist_latent, code_vel
 
 
 class ActorCriticROA(nn.Module):
@@ -81,6 +86,7 @@ class ActorCriticROA(nn.Module):
         activation="elu",
         init_noise_std=1.0,
         noise_std_type: str = "scalar",
+        vel_offset=None,
         **kwargs,
     ):
         if kwargs:
@@ -121,6 +127,9 @@ class ActorCriticROA(nn.Module):
 
         self.num_priv_obs = critic_tensor.shape[-1]
         
+        # 读取速度索引配置。如果不传，默认等于本体观测的维度 (排在本体后面)
+        self.vel_offset = vel_offset if vel_offset is not None else self.num_prop
+        
         critic_backbone_tensor = self.get_group_obs(obs, obs_groups.get("critic", ["critic"]))
         num_critic_obs = critic_backbone_tensor.shape[-1]
 
@@ -157,8 +166,8 @@ class ActorCriticROA(nn.Module):
             self.history_encoder = None
 
         # ====== 3. 策略网络主干 (Actor Backbone) ======
-        # Actor 输入: 单帧本体观测 (Current Obs) + Latent Code
-        self.actor = MLP(self.num_prop + priv_out_dim, num_actions, actor_hidden_dims, activation)
+        # Actor 输入: 单帧本体观测 (Current Obs) + 线速度 (Vel) + Latent Code
+        self.actor = MLP(self.num_prop + 3 + priv_out_dim, num_actions, actor_hidden_dims, activation)
         self.actor_obs_normalization = actor_obs_normalization
         if actor_obs_normalization:
             self.actor_obs_normalizer = EmpiricalNormalization(self.num_prop)
@@ -210,10 +219,19 @@ class ActorCriticROA(nn.Module):
         priv_obs = self.get_group_obs(obs, self.priv_groups)
         return self.priv_encoder(priv_obs)
 
-    def infer_hist_latent(self, obs):
+    def infer_hist_latent(self, obs, return_vel=False):
         """推理：使用历史编码器生成隐向量"""
         _, hist_flat = self._process_policy_obs(obs)
-        return self.history_encoder(hist_flat)
+        hist_latent, code_vel = self.history_encoder(hist_flat)
+        if return_vel:
+            return hist_latent, code_vel
+        return hist_latent
+        
+    def get_true_vel(self, obs):
+        """获取批评家视野中的真实线速度"""
+        critic_obs = self.get_group_obs(obs, ["critic"])
+        # 根据配置的偏移量截取 3 维速度
+        return critic_obs[:, self.vel_offset : self.vel_offset + 3]
 
     def update_distribution(self, obs, hist_encoding=False):
         """前向传递计算动作分布"""
@@ -221,14 +239,15 @@ class ActorCriticROA(nn.Module):
         current_obs, _ = self._process_policy_obs(obs)
         current_obs = self.actor_obs_normalizer(current_obs)
 
-        # 2. 路由：选择对应的特征提取器获取 Latent
+        # 2. 路由：选择对应的特征提取器获取 Latent 和 Vel
         if hist_encoding and self.history_encoder is not None:
-            latent = self.infer_hist_latent(obs)
+            latent, vel = self.infer_hist_latent(obs, return_vel=True)
         else:
             latent = self.infer_priv_latent(obs)
+            vel = self.get_true_vel(obs)
 
         # 3. 拼接传入主网络
-        actor_input = torch.cat([current_obs, latent], dim=-1)
+        actor_input = torch.cat([current_obs, vel, latent], dim=-1)
         mean = self.actor(actor_input)
 
         if self.noise_std_type == "scalar":

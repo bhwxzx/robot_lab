@@ -18,6 +18,7 @@ class ROAPPO(PPO):
     def __init__(self, policy, 
                  priv_reg_coef_schedule=[0, 0.1, 2000, 3000], 
                  dagger_update_freq=20, 
+                 vel_loss_coef=1.0,
                  **kwargs):
         super().__init__(policy=policy, **kwargs)
         
@@ -28,6 +29,9 @@ class ROAPPO(PPO):
         self.priv_reg_coef_schedule = priv_reg_coef_schedule
         self.dagger_update_freq = dagger_update_freq
         self.counter = 0  # 记录当前的总更新次数，用于计算系数的阶段性调度
+        
+        # 新增测速损失系数配置
+        self.vel_loss_coef = vel_loss_coef
         
         # 为历史编码器 (History Encoder) 创建一个独立的优化器
         # 原因是在 update_dagger 蒸馏阶段时，我们只更新历史编码器，不更新整个 Actor。
@@ -281,9 +285,10 @@ class ROAPPO(PPO):
         在此过程中，特权编码器被彻底冻结（纯粹作为标签产生器），历史编码器进行监督学习，努力拉近两者的隐向量距离。
         """
         if self.hist_encoder_optimizer is None:
-            return 0.0
+            return {}
         
         mean_hist_latent_loss = 0
+        mean_vel_loss = 0
         if self.policy.is_recurrent:
             generator = self.storage.recurrent_mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
         else:
@@ -297,18 +302,22 @@ class ROAPPO(PPO):
             with torch.inference_mode():
                 # 这一步前向传播是为了维持网络里的一些隐状态（如归一化层等），同时可以预热网络
                 self.policy.act(obs_batch, hist_encoding=True, masks=masks_batch, hidden_states=hid_states_batch[0] if hid_states_batch else None)
-                # 提取出特权隐向量，也就是我们的监督目标 (Target/Label)
+                # 提取出特权隐向量和真实速度，也就是我们的监督目标 (Target/Label)
                 priv_latent_batch = self.policy.infer_priv_latent(obs_batch)
+                true_vel_batch = self.policy.get_true_vel(obs_batch)
                 
             # 2. 获取 Student 的预测输出 (因为需要学习，所以带有梯度轨迹)
-            hist_latent_batch = self.policy.infer_hist_latent(obs_batch)
+            hist_latent_batch, pred_vel_batch = self.policy.infer_hist_latent(obs_batch, return_vel=True)
             
-            # 3. 计算蒸馏 Loss: L2 距离。让历史数据算出的向量向特权数据算出的向量逼近。
+            # 3. 计算双重 Loss: 隐向量蒸馏 + 速度显式监督
             hist_latent_loss = (priv_latent_batch.detach() - hist_latent_batch).norm(p=2, dim=1).mean()
+            vel_loss = (true_vel_batch.detach() - pred_vel_batch).pow(2).mean()
+            
+            total_dagger_loss = hist_latent_loss + self.vel_loss_coef * vel_loss
             
             # 4. 仅仅对 History Encoder 的专属优化器执行反向传播和梯度下降
             self.hist_encoder_optimizer.zero_grad()
-            hist_latent_loss.backward()
+            total_dagger_loss.backward()
             
             # 多GPU梯度同步 (修复原版中缺失的多卡适配)
             if self.is_multi_gpu:
@@ -318,10 +327,12 @@ class ROAPPO(PPO):
             self.hist_encoder_optimizer.step()
             
             mean_hist_latent_loss += hist_latent_loss.item()
+            mean_vel_loss += vel_loss.item()
             
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_hist_latent_loss /= num_updates
-        return mean_hist_latent_loss
+        mean_vel_loss /= num_updates
+        return {"hist_latent": mean_hist_latent_loss, "vel_loss": mean_vel_loss}
 
     def broadcast_parameters(self):
         """多GPU下同步模型参数广播"""

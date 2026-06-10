@@ -22,6 +22,9 @@ class RslRlActorCriticRoaCfg(RslRlPpoActorCriticCfg):
     class_name: str = "ActorCriticROA"
     priv_encoder_dims: list[int] = [64, 20]
     """特权编码器的隐藏层和输出维度 [hidden_dim, latent_dim]。"""
+    
+    vel_offset: int | None = None
+    """在 Critic 观测组中真实速度特征的起始索引。默认 None 表示自动推断 (等于本体观测维度)。"""
 
 
 #############################
@@ -42,6 +45,9 @@ class RslRlAlgorithmRoaCfg(RslRlPpoAlgorithmCfg):
 
     dagger_update_freq: int = 20
     """历史编码器与特权编码器的 DAgger 蒸馏发生频率 (表示每隔几次 PPO 迭代使用一次历史编码器)。"""
+
+    vel_loss_coef: float = 1.0
+    """显式速度估计的监督损失权重系数。"""
 
 
 #############################

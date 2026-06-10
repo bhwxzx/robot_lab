@@ -108,8 +108,8 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
             
             # --- [ROA DAgger 蒸馏] ---
             if hist_encoding:
-                mean_hist_latent_loss = self.alg.update_dagger()
-                loss_dict["hist_latent"] = mean_hist_latent_loss
+                dagger_loss_dict = self.alg.update_dagger()
+                loss_dict.update(dagger_loss_dict)
 
             stop = time.time()
             learn_time = stop - start

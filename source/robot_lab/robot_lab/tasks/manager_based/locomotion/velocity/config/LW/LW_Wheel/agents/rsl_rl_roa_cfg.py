@@ -25,7 +25,8 @@ class LWWheelRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
         actor_obs_normalization=False,
         critic_obs_normalization=False,
         activation="elu",
-        priv_encoder_dims=[64, 20]
+        priv_encoder_dims=[64, 20],
+        vel_offset=39,
     )
     algorithm = RslRlAlgorithmRoaCfg(
         value_loss_coef=1.0,
@@ -42,6 +43,7 @@ class LWWheelRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
         max_grad_norm=1.0,
         priv_reg_coef_schedule=[0.0, 0.1, 2000, 3000],
         dagger_update_freq=20,
+        vel_loss_coef=1.0,
     )
 
 @configclass

@@ -205,3 +205,27 @@ Delete any temporary scripts or intermediate files immediately after their purpo
 - Promoted: AGENTS.md
 
 ---
+
+## [LRN-20260609-002] best_practice
+
+**Logged**: 2026-06-09T19:43:33.477192
+**Priority**: high
+**Status**: pending
+**Area**: infra
+
+### Summary
+正确区分后台训练的“正常结束”与“静默卡死”
+
+### Details
+之前在监控（Watchdog）训练时，只通过 `train_watchdog.log` 文件的最后修改时间是否停滞（例如超过15分钟未更新）来判断训练是否挂掉。但这个逻辑有一个致命盲区：**当训练正常顺利结束时，日志文件也会停止更新**。这会导致监控程序误判为卡死，并不断尝试 `--resume` 重启训练。正确的做法是：当发现日志停滞时，必须去检查日志文件的末尾是否包含标志着正常结束的关键字（例如 `Training time:`）。只有在未发现完工关键字时，才判定为卡死并重启；若发现关键字，则应清理日志、结束监控任务。
+
+### Suggested Action
+1. 后台监控器发现 MTIME 停滞时，使用 `tail -n 20 <log_file>` 检索结束关键字。
+2. 若找到关键字，终止监控、删除日志文件、判定为成功。
+3. 若未找到，执行进程终结和 --resume 重启。
+
+### Metadata
+- Source: conversation
+- Related Files: scripts/start_amp_roa.sh, scripts/reinforcement_learning/rsl_rl/train.py
+- Tags: training, watchdog, monitoring
+- Pattern-Key: infra.watchdog.completion_detection

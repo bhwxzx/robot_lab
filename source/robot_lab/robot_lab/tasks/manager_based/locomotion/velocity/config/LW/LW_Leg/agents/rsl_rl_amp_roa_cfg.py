@@ -26,7 +26,8 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         actor_obs_normalization=False,
         critic_obs_normalization=False,
         activation="elu",
-        priv_encoder_dims=[64, 20]
+        priv_encoder_dims=[64, 20],
+        vel_offset=41,
     )
     algorithm = RslRlAlgorithmAmpRoaCfg(
         value_loss_coef=1.0,
@@ -43,6 +44,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         max_grad_norm=1.0,
         priv_reg_coef_schedule=[0.0, 0.1, 2000, 3000],
         dagger_update_freq=20,
+        vel_loss_coef=1.0,
     )
     amp_discr_hidden_dims=[1024, 512, 256]
     amp_motion_files=["source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_*.txt"]
@@ -53,7 +55,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
 
 @configclass
 class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):
-    max_iterations = 25000
+    max_iterations = 50000
     experiment_name = "LW_leg_flat_amp_roa"
     amp_reward_coef=0.3
     amp_task_reward_lerp=0.7

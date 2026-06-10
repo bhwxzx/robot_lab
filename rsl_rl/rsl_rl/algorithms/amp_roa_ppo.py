@@ -27,6 +27,7 @@ class AMPROAPPO:
         # --- [ROA 新增参数] ---
         priv_reg_coef_schedule=[0.0, 0.1, 1000, 2000],
         dagger_update_freq=1,
+        vel_loss_coef=1.0,
         # --- [PPO 通用参数] ---
         num_learning_epochs=5,
         num_mini_batches=4,
@@ -120,6 +121,7 @@ class AMPROAPPO:
         self.normalize_advantage_per_mini_batch = normalize_advantage_per_mini_batch
         
         self.counter = 0
+        self.vel_loss_coef = vel_loss_coef
 
     def init_storage(self, training_type, num_envs, num_transitions_per_env, obs, actions_shape):
         self.storage = RolloutStorage(
@@ -340,21 +342,26 @@ class AMPROAPPO:
     def update_dagger(self):
         """ ROA 的监督蒸馏阶段 (History Encoder 学习阶段) """
         if self.hist_encoder_optimizer is None:
-            return 0.0
+            return {}
         
         mean_hist_latent_loss = 0
+        mean_vel_loss = 0
         generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
             
         for (obs_batch, _, _, _, _, _, _, _, hid_states_batch, masks_batch) in generator:
             with torch.inference_mode():
                 self.policy.act(obs_batch, hist_encoding=True, masks=masks_batch, hidden_states=hid_states_batch[0] if hid_states_batch else None)
                 priv_latent_batch = self.policy.infer_priv_latent(obs_batch)
+                true_vel_batch = self.policy.get_true_vel(obs_batch)
                 
-            hist_latent_batch = self.policy.infer_hist_latent(obs_batch)
+            hist_latent_batch, pred_vel_batch = self.policy.infer_hist_latent(obs_batch, return_vel=True)
             hist_latent_loss = (priv_latent_batch.detach() - hist_latent_batch).norm(p=2, dim=1).mean()
+            vel_loss = (true_vel_batch.detach() - pred_vel_batch).pow(2).mean()
+            
+            total_dagger_loss = hist_latent_loss + self.vel_loss_coef * vel_loss
             
             self.hist_encoder_optimizer.zero_grad()
-            hist_latent_loss.backward()
+            total_dagger_loss.backward()
             
             if self.is_multi_gpu:
                 self.reduce_history_parameters()
@@ -363,8 +370,12 @@ class AMPROAPPO:
             self.hist_encoder_optimizer.step()
             
             mean_hist_latent_loss += hist_latent_loss.item()
+            mean_vel_loss += vel_loss.item()
             
-        return mean_hist_latent_loss / (self.num_learning_epochs * self.num_mini_batches)
+        num_updates = self.num_learning_epochs * self.num_mini_batches
+        mean_hist_latent_loss /= num_updates
+        mean_vel_loss /= num_updates
+        return {"hist_latent": mean_hist_latent_loss, "vel_loss": mean_vel_loss}
 
     def broadcast_parameters(self):
         model_params = [self.policy.state_dict(), self.discriminator.state_dict()]

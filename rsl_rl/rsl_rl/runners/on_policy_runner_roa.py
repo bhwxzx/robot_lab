@@ -145,10 +145,10 @@ class OnPolicyRunnerROA(OnPolicyRunner):
             # 冻结所有策略，独占式地让 History Encoder 去模仿(L2 Loss) Privileged Encoder 的输出
             # =============================================================================
             if hist_encoding:
-                mean_hist_latent_loss = self.alg.update_dagger()
+                dagger_loss_dict = self.alg.update_dagger()
                 # 这一步非常精妙！我们将新产生的 Loss 塞入字典，父类的 log() 会在打印表格和
-                # wandb 上传时自动提取并记录名为 'hist_latent' 的 Loss！无侵入式整合。
-                loss_dict["hist_latent"] = mean_hist_latent_loss
+                # wandb 上传时自动提取并记录。无侵入式整合。
+                loss_dict.update(dagger_loss_dict)
 
             stop = time.time()
             learn_time = stop - start

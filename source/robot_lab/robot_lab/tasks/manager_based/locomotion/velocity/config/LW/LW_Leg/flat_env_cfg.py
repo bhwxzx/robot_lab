@@ -314,7 +314,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.feet_distance_y_exp.weight = 2.0
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.fly_penalty.weight = -0.0
-        self.rewards.ankle_torque.weight = -0.0005
+        self.rewards.ankle_torque.weight = -0.0005 # -0.0005
         self.rewards.ankle_action.weight = -0.001
         self.rewards.penalize_hip_roll_action.weight = -1.0
         self.rewards.feet_impact_reduction.weight = -5e-3

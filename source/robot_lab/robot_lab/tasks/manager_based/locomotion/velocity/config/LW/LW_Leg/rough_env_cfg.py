@@ -2553,7 +2553,6 @@ class LWLegAmpRoaObservationsCfg(ObservationsCfg):
 
     @configclass
     class PrivilegedCfg(ObsGroup):
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel,clip=(-100.0, 100.0),scale=2.0)
         base_mass = ObsTerm(func=mdp.randomized_base_mass,clip=(-100.0, 100.0),scale=0.1)
         feet_material = ObsTerm(
             func=mdp.randomized_rigid_body_material_properties,
