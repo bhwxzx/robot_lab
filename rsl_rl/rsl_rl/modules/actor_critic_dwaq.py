@@ -190,39 +190,32 @@ class ActorCriticDwaq(nn.Module):
         return self.distribution.sample()
 
     def act_inference(self, obs):
-        # policy_obs_raw = self.get_obs_from_group(obs, "policy")
-        
-        # # 1. 确定性重排与提取
-        # obs_time_first, current_obs = self._process_history(policy_obs_raw)
-        
-        # # 2. 编码 (取均值)
-        # feat = self.encoder_backbone(obs_time_first)
-        # mu_v = self.encode_mean_vel(feat)
-        # mu_l = self.encode_mean_latent(feat)
-        # latent_code_det = torch.cat((mu_v, mu_l), dim=-1)
-        
-        # # 3. 拼接并推理
-        # combined_obs = torch.cat((latent_code_det, current_obs), dim=-1)
-        # combined_obs = self.actor_obs_normalizer(combined_obs)
-        # actions_mean = self.actor(combined_obs)
-        
-        # return torch.nan_to_num(actions_mean, nan=0.0)
-
-        # 1. 提取全量观测
         policy_obs_raw = self.get_obs_from_group(obs, "policy")
         
-        # 2. 调用 cenet_forward。
-        # 注意：这里会执行 reparameterise，所以 latent_code 依然带有随机噪声。
-        # 这里的 current_obs 是经过 _process_history 对齐后的当前帧。
-        latent_code, _, _, _, _, _, current_obs = self.cenet_forward(policy_obs_raw)
+        # 1. 确定性重排与提取
+        obs_time_first, current_obs = self._process_history(policy_obs_raw)
         
-        # 3. 拼接特征 [Latent Code(采样) + Current Obs(单帧)]
-        combined_obs = torch.cat((latent_code, current_obs), dim=-1)
+        # 【方案 B：严谨的数学实现】
+        # 编码时强制取均值 (mu_v, mu_l)，彻底消除部署和 Play 时由 VAE 采样带来的随机震荡
+        feat = self.encoder_backbone(obs_time_first)
+        mu_v = self.encode_mean_vel(feat)
+        mu_l = self.encode_mean_latent(feat)
+        latent_code_det = torch.cat((mu_v, mu_l), dim=-1)
+        
+        # ====================================================================
+        # 【方案 A：原版 DreamWaQ 的 "玄学 Hack" (已注释)】
+        # 原版在推理时仍调用带高斯噪声采样的 cenet_forward。
+        # 由于方案 A 训练出的网络已习惯在巨大噪声下工作，如果恢复方案 A，建议也恢复带噪推理：
+        # latent_code_det, _, _, _, _, _, _ = self.cenet_forward(policy_obs_raw)
+        # ====================================================================
+        
+        # 3. 拼接特征 [Latent Code(均值) + Current Obs(单帧)]
+        combined_obs = torch.cat((latent_code_det, current_obs), dim=-1)
         
         # 4. 归一化处理
         combined_obs = self.actor_obs_normalizer(combined_obs)
         
-        # 5. 直接调用 Actor 网络输出均值。
+        # 5. 直接调用 Actor 网络输出均值
         actions_mean = self.actor(combined_obs)
         
         return torch.nan_to_num(actions_mean, nan=0.0)

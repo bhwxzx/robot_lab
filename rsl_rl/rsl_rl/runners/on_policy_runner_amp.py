@@ -460,6 +460,7 @@ class OnPolicyRunnerAmp:
             self.cfg["amp_discr_hidden_dims"],
             self.device,
             self.cfg["amp_task_reward_lerp"],
+            dt=step_dt,
         ).to(self.device)
         min_std = torch.zeros(len(self.cfg["min_normalized_std"]), device=self.device, requires_grad=False)
 

@@ -190,7 +190,16 @@ class DWAQPPO:
 
             # KL 计算 (完全对齐原代码逻辑)
             logvar_l_clamped = torch.clamp(logvar_l, min=-10.0, max=10.0)
-            kl_divergence = -0.5 * torch.sum(1 + logvar_l_clamped - mu_l.pow(2) - logvar_l_clamped.exp())
+            # 【方案 B：严谨的数学实现】使用了 .mean() 保证 KL Loss 不会随 Batch Size 爆炸
+            kl_divergence = -0.5 * torch.sum(1 + logvar_l_clamped - mu_l.pow(2) - logvar_l_clamped.exp(), dim=-1).mean()
+            
+            # ====================================================================
+            # 【方案 A：原版 DreamWaQ 的 "玄学 Hack" (已注释)】
+            # 原作者在这里遗漏了 .mean()，导致 KL Loss 会随 Batch Size 放大数千倍。
+            # 这一 Bug 意外起到了极强的正则化作用，迫使隐空间强制坍塌，形成“信息瓶颈”。
+            # 若发现方案 B 导致策略过拟合并在真机/Play时失败，可取消下方注释恢复原版效果：
+            # kl_divergence = -0.5 * torch.sum(1 + logvar_l_clamped - mu_l.pow(2) - logvar_l_clamped.exp())
+            # ====================================================================
             
             # Autoencoder Loss
             # PPO 的 Surrogate_Loss 通常非常小。

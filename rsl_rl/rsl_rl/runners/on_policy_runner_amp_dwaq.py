@@ -388,6 +388,7 @@ class OnPolicyRunnerAmpDwaq:
             self.cfg["amp_discr_hidden_dims"],
             self.device,
             self.cfg["amp_task_reward_lerp"],
+            dt=step_dt,
         ).to(self.device)
 
         # 4. Initialize Policy (ActorCriticDwaq)

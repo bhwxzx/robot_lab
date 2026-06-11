@@ -138,11 +138,11 @@ class ROADeploymentWrapper(nn.Module):
         if self.actor_obs_normalizer is not None:
             current_obs = self.actor_obs_normalizer(current_obs)
         
-        # 2. 从未归一化的历史中提取隐特征
-        hist_latent = self.history_encoder(obs_history_flat)
+        # 2. 从未归一化的历史中提取隐特征和速度特征
+        hist_latent, code_vel = self.history_encoder(obs_history_flat)
         
-        # 3. 拼接输入给 actor
-        actor_input = torch.cat((current_obs, hist_latent), dim=-1)
+        # 3. 拼接输入给 actor，顺序需与训练时保持一致 (current_obs, vel, latent)
+        actor_input = torch.cat((current_obs, code_vel, hist_latent), dim=-1)
             
         return self.actor(actor_input)
 
