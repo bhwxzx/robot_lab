@@ -363,11 +363,11 @@ class LWLegFlatAmpRoaEnvCfg(LWLegRoughAmpRoaEnvCfg):
         self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
-        self.events.randomize_rigid_body_mass_base.params["mass_distribution_params"] = (-1.0, 3.0)
-        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)}
+        self.events.randomize_rigid_body_mass_base.params["mass_distribution_params"] = (0.0, 3.0)
+        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.03, 0.03), "y": (-0.03, 0.03), "z": (-0.03, 0.03)}
         self.events.randomize_actuator_gains.params["distribution"] = "uniform"
-        self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
-        self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
+        self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.9, 1.1)
+        self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.9, 1.1)
         # self.events.randomize_actuator_gains = None
         self.events.randomize_apply_external_force_torque = None
         self.events.randomize_rigid_body_mass_others.params["mass_distribution_params"] = (0.7, 1.3)
