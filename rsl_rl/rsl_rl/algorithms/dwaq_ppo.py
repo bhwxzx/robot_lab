@@ -42,6 +42,7 @@ class DWAQPPO:
         # DWAQ 特有参数
         obs_dim=41,          # 原始本体感受观察值维度（用于提取速度真值标签）
         vae_beta=1.0,        # KL 散度权重系数
+        vae_learning_rate=1e-3, # VAE 专属学习率 (参照 DreamWaQ_B)
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
         **kwargs, # 兼容多余参数传递
@@ -66,8 +67,22 @@ class DWAQPPO:
         # PPO components
         self.policy = policy
         self.policy.to(self.device)
+        
+        # 将 PPO 和 VAE 的参数严格隔离
+        self.rl_parameters = list(self.policy.actor.parameters()) + \
+                             list(self.policy.critic.parameters()) + \
+                             [self.policy.std]
+        
+        self.vae_parameters = list(self.policy.encoder_backbone.parameters()) + \
+                              list(self.policy.encode_mean_latent.parameters()) + \
+                              list(self.policy.encode_logvar_latent.parameters()) + \
+                              list(self.policy.encode_mean_vel.parameters()) + \
+                              list(self.policy.encode_logvar_vel.parameters()) + \
+                              list(self.policy.decoder.parameters())
+                             
         # Create optimizer
-        self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
+        self.optimizer = optim.Adam(self.rl_parameters, lr=learning_rate)
+        self.vae_optimizer = optim.Adam(self.vae_parameters, lr=vae_learning_rate)
         # Create rollout storage
        # 使用 DWAQ 专用存储
         self.storage: RolloutStorageDwaq = None  # type: ignore
@@ -164,6 +179,7 @@ class DWAQPPO:
             old_actions_log_prob_batch,
             old_mu_batch,
             old_sigma_batch,
+            live_batch,             # 对应 generator 中新增的 live_batch mask
             hid_states_batch,
             masks_batch,
         ) in generator:
@@ -185,13 +201,11 @@ class DWAQPPO:
             # 修正后的代码
             decode_target = current_obs_synced.detach()
 
-            # 单独计算速度部分的 MSE Loss (注意：这里不除以 num_mini_batches，为了看真实的物理误差量级)
-            vel_loss_term = nn.MSELoss()(code_vel, vel_target)
-
-            # KL 计算 (完全对齐原代码逻辑)
+            # KL 计算 (完全对齐原代码逻辑，并修复了原版 DreamWaQ_B 的广播 Bug)
             logvar_l_clamped = torch.clamp(logvar_l, min=-10.0, max=10.0)
             # 【方案 B：严谨的数学实现】使用了 .mean() 保证 KL Loss 不会随 Batch Size 爆炸
-            kl_divergence = -0.5 * torch.sum(1 + logvar_l_clamped - mu_l.pow(2) - logvar_l_clamped.exp(), dim=-1).mean()
+            # 注意：必须加上 .squeeze(-1)，否则 [batch_size] * [batch_size, 1] 会触发错误的 [batch_size, batch_size] 矩阵广播！
+            kl_divergence = -0.5 * (torch.sum(1 + logvar_l_clamped - mu_l.pow(2) - logvar_l_clamped.exp(), dim=-1) * live_batch.squeeze(-1)).mean()
             
             # ====================================================================
             # 【方案 A：原版 DreamWaQ 的 "玄学 Hack" (已注释)】
@@ -202,15 +216,11 @@ class DWAQPPO:
             # ====================================================================
             
             # Autoencoder Loss
-            # PPO 的 Surrogate_Loss 通常非常小。
-            # 如果 VAE 的 MSE 损失项太强，优化器会优先去优化“如何预测速度”，而忽视了“如何走得稳”。
-            # 通过将 MSE 也除以 num_mini_batches，作者实际上是人工调低了 VAE 部分的学习速率，让它的更新节奏慢下来，从而不会带偏 PPO 的主任务。
+            # 使用 live_batch 过滤掉由于超时、失败带来的无效补齐帧
+            vel_loss_term = nn.MSELoss()(code_vel * live_batch, vel_target * live_batch)
+            recon_loss_term = nn.MSELoss()(reconstruction * live_batch, decode_target * live_batch)
 
-            autoenc_loss = (
-                nn.MSELoss()(code_vel, vel_target) + 
-                nn.MSELoss()(reconstruction, decode_target) + 
-                self.vae_beta * kl_divergence
-            ) / self.num_mini_batches 
+            autoenc_loss = vel_loss_term + recon_loss_term + self.vae_beta * kl_divergence 
 
             # 3. PPO 调用
             # 构造完整的观察字典，防止模型内部 get_obs_from_group 报错
@@ -284,7 +294,7 @@ class DWAQPPO:
                 value_loss = (returns_batch - value_batch).pow(2).mean()
 
             # 总损失与反向传播
-            loss = surrogate_loss + self.value_loss_coef * value_loss - self.entropy_coef * entropy_batch.mean() + autoenc_loss
+            loss = surrogate_loss + self.value_loss_coef * value_loss - self.entropy_coef * entropy_batch.mean()
 
             # Compute the gradients
             # -- For PPO
@@ -293,12 +303,22 @@ class DWAQPPO:
 
             # Collect gradients from all GPUs
             if self.is_multi_gpu:
-                self.reduce_parameters() # 将所有显卡计算出的梯度求平均
+                self.reduce_parameters(self.rl_parameters) # 将所有显卡计算出的 PPO 梯度求平均
 
             # Apply the gradients
             # -- For PPO
-            nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+            nn.utils.clip_grad_norm_(self.rl_parameters, self.max_grad_norm)
             self.optimizer.step()
+            
+            # -- For VAE
+            self.vae_optimizer.zero_grad()
+            autoenc_loss.backward()
+            
+            if self.is_multi_gpu:
+                self.reduce_parameters(self.vae_parameters) # 将所有显卡计算出的 VAE 梯度求平均
+                
+            nn.utils.clip_grad_norm_(self.vae_parameters, self.max_grad_norm)
+            self.vae_optimizer.step()
 
             # Store the losses
             mean_value_loss += value_loss.item()
@@ -345,13 +365,15 @@ class DWAQPPO:
         self.policy.load_state_dict(model_params[0])
 
 
-    def reduce_parameters(self):
+    def reduce_parameters(self, parameters):
         """Collect gradients from all GPUs and average them.
 
         This function is called after the backward pass to synchronize the gradients across all GPUs.
         """
         # Create a tensor to store the gradients
-        grads = [param.grad.view(-1) for param in self.policy.parameters() if param.grad is not None]
+        grads = [param.grad.view(-1) for param in parameters if param.grad is not None]
+        if not grads:
+            return
 
         all_grads = torch.cat(grads)
 
@@ -359,13 +381,9 @@ class DWAQPPO:
         torch.distributed.all_reduce(all_grads, op=torch.distributed.ReduceOp.SUM)
         all_grads /= self.gpu_world_size
 
-        # Get all parameters
-        all_params = self.policy.parameters()
-
-
         # Update the gradients for all parameters with the reduced gradients
         offset = 0
-        for param in all_params:
+        for param in parameters:
             if param.grad is not None:
                 numel = param.numel()
                 # copy data back from shared buffer

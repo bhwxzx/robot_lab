@@ -30,6 +30,7 @@ class AMPDWAQPPO:
         # --- [DWAQ 参数] ---
         obs_dim=41,          # 原始本体感受观察值维度（用于提取速度真值标签）
         vae_beta=1.0,        # KL 散度权重系数
+        vae_learning_rate=1e-3, # VAE 专属学习率
         # --- [通用 PPO 参数] ---
         num_learning_epochs=5,
         num_mini_batches=4,
@@ -94,10 +95,22 @@ class AMPDWAQPPO:
         self.policy.to(self.device)
         # --- [优化器修改] ---
         # Create optimizer
+        self.rl_parameters = list(self.policy.actor.parameters()) + \
+                             list(self.policy.critic.parameters()) + \
+                             [self.policy.std]
+                             
         ppo_params = [
-            {"params": self.policy.parameters(), "name": "policy"},
+            {"params": self.rl_parameters, "name": "policy"},
         ]
         self.optimizer = optim.Adam(ppo_params, lr=learning_rate)
+        
+        self.vae_parameters = list(self.policy.encoder_backbone.parameters()) + \
+                              list(self.policy.encode_mean_latent.parameters()) + \
+                              list(self.policy.encode_logvar_latent.parameters()) + \
+                              list(self.policy.encode_mean_vel.parameters()) + \
+                              list(self.policy.encode_logvar_vel.parameters()) + \
+                              list(self.policy.decoder.parameters())
+        self.vae_optimizer = optim.Adam(self.vae_parameters, lr=vae_learning_rate)
         
         amp_params = [
             {"params": self.discriminator.trunk.parameters(), "weight_decay": 1e-4, "name": "amp_trunk"},
@@ -171,6 +184,11 @@ class AMPDWAQPPO:
             normalizer=self.amp_normalizer
         )
 
+        if self.storage.step == 0:
+            with torch.no_grad():
+                raw_amp = self.discriminator.dt * self.discriminator.amp_reward_coef * torch.clamp(1 - (1 / 4) * torch.square(policy_d - 1), min=0)
+                print(f"\n[AMP DEBUG] Task Reward Mean: {rewards.mean().item():.4f} | Raw AMP Reward Mean: {raw_amp.mean().item():.4f}")
+
         # 3. 设置最终奖励
         if self.discriminator.task_reward_lerp > 0:
             # 如果开启了 Lerp，amp_rewards 已经是混合后的奖励
@@ -241,6 +259,7 @@ class AMPDWAQPPO:
                 old_actions_log_prob_batch,
                 old_mu_batch,
                 old_sigma_batch,
+                live_batch,             # DWAQ VAE 掩码
                 hid_states_batch,
                 masks_batch,
             ) = sample
@@ -264,28 +283,16 @@ class AMPDWAQPPO:
             # 解码目标 (通常是当前观测)
             decode_target = current_obs_synced.detach()
 
-            # 速度估计误差 (仅用于监控)
-            vel_loss_term = nn.MSELoss()(code_vel, vel_target)
+            # 速度估计误差与重构误差，使用 live_batch 过滤 padding
+            vel_loss_term = nn.MSELoss()(code_vel * live_batch, vel_target * live_batch)
+            recon_loss_term = nn.MSELoss()(reconstruction * live_batch, decode_target * live_batch)
 
-            # KL 散度
+            # KL 散度 (修复 broadcasting bug)
             logvar_l_clamped = torch.clamp(logvar_l, min=-10.0, max=10.0)
-            # 【方案 B：严谨的数学实现】使用了 .mean() 保证 KL Loss 不会随 Batch Size 爆炸
-            kl_divergence = -0.5 * torch.sum(1 + logvar_l_clamped - mu_l.pow(2) - logvar_l_clamped.exp(), dim=-1).mean()
-            
-            # ====================================================================
-            # 【方案 A：原版 DreamWaQ 的 "玄学 Hack" (已注释)】
-            # 原作者在这里遗漏了 .mean()，导致 KL Loss 会随 Batch Size 放大数千倍。
-            # 这一 Bug 意外起到了极强的正则化作用，迫使隐空间强制坍塌，形成“信息瓶颈”。
-            # 若发现方案 B 导致策略过拟合并在真机/Play时失败，可取消下方注释恢复原版效果：
-            # kl_divergence = -0.5 * torch.sum(1 + logvar_l_clamped - mu_l.pow(2) - logvar_l_clamped.exp())
-            # ====================================================================
+            kl_divergence = -0.5 * (torch.sum(1 + logvar_l_clamped - mu_l.pow(2) - logvar_l_clamped.exp(), dim=-1) * live_batch.squeeze(-1)).mean()
 
-            # VAE 总损失 (注意除以 mini_batches 以降低对 PPO 的影响)
-            autoenc_loss = (
-                nn.MSELoss()(code_vel, vel_target) + 
-                nn.MSELoss()(reconstruction, decode_target) + 
-                self.vae_beta * kl_divergence
-            ) / self.num_mini_batches
+            # VAE 总损失 
+            autoenc_loss = vel_loss_term + recon_loss_term + self.vae_beta * kl_divergence
 
             # -----------------------------------------------------
             # 3. PPO Forward Pass
@@ -389,12 +396,11 @@ class AMPDWAQPPO:
                 surrogate_loss 
                 + self.value_loss_coef * value_loss 
                 - self.entropy_coef * entropy_batch.mean()
-                + autoenc_loss                          # DWAQ VAE Loss
             )
             
             amp_total_loss = self.amploss_coef * amp_loss + self.amploss_coef * grad_pen_loss
 
-            # -- For PPO & VAE
+            # -- For PPO
             self.optimizer.zero_grad()
             loss.backward()
             
@@ -403,11 +409,21 @@ class AMPDWAQPPO:
             amp_total_loss.backward()
 
             if self.is_multi_gpu:
-                self.reduce_parameters()
+                self.reduce_parameters(self.rl_parameters, self.discriminator.parameters())
 
-            # -- For PPO & VAE
-            nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+            # -- For PPO
+            nn.utils.clip_grad_norm_(self.rl_parameters, self.max_grad_norm)
             self.optimizer.step()
+            
+            # -- For VAE
+            self.vae_optimizer.zero_grad()
+            autoenc_loss.backward()
+            
+            if self.is_multi_gpu:
+                self.reduce_parameters(self.vae_parameters, [])
+                
+            nn.utils.clip_grad_norm_(self.vae_parameters, self.max_grad_norm)
+            self.vae_optimizer.step()
             
             # -- For AMP
             nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.max_grad_norm)
@@ -468,12 +484,9 @@ class AMPDWAQPPO:
         self.policy.load_state_dict(model_params[0])
         self.discriminator.load_state_dict(model_params[1])
 
-    def reduce_parameters(self):
+    def reduce_parameters(self, params1, params2=[]):
         """Collect gradients from all GPUs and average them."""
-        # 收集 Policy (包含 VAE) 的梯度
-        grads = [param.grad.view(-1) for param in self.policy.parameters() if param.grad is not None]
-        # 收集 Discriminator 的梯度
-        grads += [param.grad.view(-1) for param in self.discriminator.parameters() if param.grad is not None]
+        grads = [param.grad.view(-1) for param in chain(params1, params2) if param.grad is not None]
         
         if not grads:
             return 
@@ -482,7 +495,7 @@ class AMPDWAQPPO:
         torch.distributed.all_reduce(all_grads, op=torch.distributed.ReduceOp.SUM)
         all_grads /= self.gpu_world_size
 
-        all_params = chain(self.policy.parameters(), self.discriminator.parameters())
+        all_params = chain(params1, params2)
         
         offset = 0
         for param in all_params:

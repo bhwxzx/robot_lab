@@ -165,6 +165,11 @@ class AMPPPO:
             normalizer=self.amp_normalizer     # 传入归一化器
         )
 
+        if self.storage.step == 0:
+            with torch.no_grad():
+                raw_amp = self.discriminator.dt * self.discriminator.amp_reward_coef * torch.clamp(1 - (1 / 4) * torch.square(policy_d - 1), min=0)
+                print(f"\n[AMP DEBUG] Task Reward Mean: {rewards.mean().item():.4f} | Raw AMP Reward Mean: {raw_amp.mean().item():.4f}")
+
         # 4. 设置最终奖励
         if self.discriminator.task_reward_lerp > 0:
             # 如果开启了 Lerp，predict_amp_reward 返回的已经是 (1-w)*style + w*task

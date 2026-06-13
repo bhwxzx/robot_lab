@@ -17,3 +17,11 @@ When asked to monitor a long-running training process (like IsaacLab RL) for sil
 ## Workspace Cleanliness
 **CRITICAL RULE**: Clean up intermediate files after use.
 - Any temporary scripts, patch files, or intermediate data generated to accomplish a task MUST be deleted immediately after the task is completed or the files are no longer needed. Do not leave the workspace cluttered.
+
+## Environment Requirements
+- The required conda environment for running this project (IsaacLab/RSL-RL) is `isaacsim-5.1`. Do NOT use `isaaclab` or base environments as they may contain incorrect dependency versions.
+
+## Installation and Deletion Workflow
+**CRITICAL RULE**: Explicit user consent is strictly required before installing or deleting any packages, libraries, or files.
+- You must always propose an installation or deletion plan and wait for the user's explicit approval.
+- Do not autonomously run package managers (e.g., `pip install`, `apt-get`, `conda install`) or file deletion commands/tools without permission.

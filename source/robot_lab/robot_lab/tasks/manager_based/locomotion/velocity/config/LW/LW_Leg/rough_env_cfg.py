@@ -2025,7 +2025,7 @@ class LWLegAmpDwaqObservationsCfg(ObservationsCfg):
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
             # noise=GaussianNoise(mean=0.0, std=0.2),
-            noise=Unoise(n_min=-0.5, n_max=0.5),
+            noise=Unoise(n_min=-1.5, n_max=1.5),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
@@ -2442,7 +2442,7 @@ class LWLegAmpRoaObservationsCfg(ObservationsCfg):
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
             # noise=GaussianNoise(mean=0.0, std=0.2),
-            noise=Unoise(n_min=-0.5, n_max=0.5),
+            noise=Unoise(n_min=-1.5, n_max=1.5),
             clip=(-100.0, 100.0),
             scale=1.0,
         )

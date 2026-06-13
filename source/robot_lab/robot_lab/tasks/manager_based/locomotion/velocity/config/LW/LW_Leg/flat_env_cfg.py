@@ -268,11 +268,11 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
-        self.events.randomize_rigid_body_mass_base.params["mass_distribution_params"] = (-1.0, 3.0)
-        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)}
+        self.events.randomize_rigid_body_mass_base.params["mass_distribution_params"] = (0.0, 3.0)
+        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.06, 0.06), "y": (-0.05, 0.05), "z": (-0.05, 0.05)}
         self.events.randomize_actuator_gains.params["distribution"] = "uniform"
-        self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
-        self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
+        self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.9, 1.1)
+        self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.9, 1.1)
         # self.events.randomize_actuator_gains = None
         self.events.randomize_apply_external_force_torque = None
         self.events.randomize_rigid_body_mass_others.params["mass_distribution_params"] = (0.7, 1.3)
@@ -287,7 +287,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.ang_vel_xy_l2.weight = -0.1 # -0.05
         self.rewards.flat_orientation_l2.weight = -5.0  # -5.0
         self.rewards.body_orientation_l2.weight = -3.0
-        self.rewards.stand_still.weight = -1.0
+        self.rewards.stand_still.weight = -3.0 # -1.0
         self.rewards.joint_pos_penalty.weight = -0.0
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
         self.rewards.stop_motion.weight = -3.0 # -3.0
@@ -314,8 +314,8 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.feet_distance_y_exp.weight = 2.0
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.fly_penalty.weight = -0.0
-        self.rewards.ankle_torque.weight = -0.0005 # -0.0005
-        self.rewards.ankle_action.weight = -0.001
+        self.rewards.ankle_torque.weight = -0.002 # -0.0005
+        self.rewards.ankle_action.weight = -0.004 # -0.001
         self.rewards.penalize_hip_roll_action.weight = -1.0
         self.rewards.feet_impact_reduction.weight = -5e-3
         self.rewards.feet_impact_reduction.params["max_delta_v_sq"] = 2.0

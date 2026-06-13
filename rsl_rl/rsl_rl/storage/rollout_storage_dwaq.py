@@ -213,6 +213,9 @@ class RolloutStorageDwaq:
                 old_actions_log_prob_batch = old_actions_log_prob[batch_idx]
                 old_mu_batch = old_mu[batch_idx]
                 old_sigma_batch = old_sigma[batch_idx]
+                
+                # 新增 live_batch 用于 VAE 损失掩码
+                live_batch = 1 - self.dones.flatten(0, 1)[batch_idx].float()
 
                 # 4. 直接 yield 变量
                 yield (
@@ -226,8 +229,9 @@ class RolloutStorageDwaq:
                     old_actions_log_prob_batch, # 8
                     old_mu_batch,           # 9
                     old_sigma_batch,        # 10
-                    (None, None),           # 11. RNN states
-                    None                    # 12. Masks
+                    live_batch,             # 11. Live batch mask
+                    (None, None),           # 12. RNN states
+                    None                    # 13. PPO Masks (未使用)
                 )
 
     # for reinfrocement learning with recurrent networks
