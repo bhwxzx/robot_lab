@@ -269,7 +269,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
         self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
         self.events.randomize_rigid_body_mass_base.params["mass_distribution_params"] = (0.0, 3.0)
-        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.06, 0.06), "y": (-0.05, 0.05), "z": (-0.05, 0.05)}
+        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.06, 0.06), "y": (-0.06, 0.06), "z": (-0.06, 0.06)}
         self.events.randomize_actuator_gains.params["distribution"] = "uniform"
         self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.9, 1.1)
         self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.9, 1.1)
@@ -291,7 +291,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.joint_pos_penalty.weight = -0.0
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
         self.rewards.stop_motion.weight = -3.0 # -3.0
-        self.rewards.action_rate_l2.weight = -0.15  # -0.02
+        self.rewards.action_rate_l2.weight = -0.2  # -0.02
         self.rewards.action_smoothness.weight = -0.075 # -0.02
         self.rewards.undesired_contacts.weight = -5.0
         self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.0
@@ -317,7 +317,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.ankle_torque.weight = -0.002 # -0.0005
         self.rewards.ankle_action.weight = -0.004 # -0.001
         self.rewards.penalize_hip_roll_action.weight = -1.0
-        self.rewards.feet_impact_reduction.weight = -5e-3
+        self.rewards.feet_impact_reduction.weight = -2.5e-3
         self.rewards.feet_impact_reduction.params["max_delta_v_sq"] = 2.0
 
         # If the weight of rewards is 0, set rewards to None

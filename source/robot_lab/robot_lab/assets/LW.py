@@ -78,7 +78,7 @@ LW_LEG_CFG = ArticulationCfg(
             damping=3.0,  # 2.3
             armature=0.01,
             min_delay=0,
-            max_delay=6
+            max_delay=3
         ),
         # "legs": ActuatorNetMLPCfg(
         #     joint_names_expr=[
@@ -111,7 +111,7 @@ LW_LEG_CFG = ArticulationCfg(
             damping=0.5, # 0.4
             armature=0.01,
             min_delay=0,
-            max_delay=6
+            max_delay=3
         ),
         "foots": DelayedPDActuatorCfg(
             joint_names_expr=[
@@ -124,7 +124,7 @@ LW_LEG_CFG = ArticulationCfg(
             damping=1.8,
             armature=0.01,
             min_delay=0,
-            max_delay=6
+            max_delay=3
         )
         # "foots": ActuatorNetMLPCfg(
         #     joint_names_expr=[
