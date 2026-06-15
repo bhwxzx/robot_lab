@@ -143,6 +143,7 @@ class LWLegFlatDwaqEnvCfg(LWLegRoughDwaqEnvCfg):
         self.rewards.feet_distance_y_exp.weight = 6.0
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.ankle_torque.weight = -0.0005
+        self.rewards.ankle_torque_limit.weight = -0.01
         self.rewards.ankle_action.weight = -0.001
         self.rewards.feet_impact_reduction.weight = -2.5e-2
         self.rewards.feet_impact_reduction.params["max_delta_v_sq"] = 2.0
@@ -314,8 +315,9 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.feet_distance_y_exp.weight = 2.0
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.fly_penalty.weight = -0.0
-        self.rewards.ankle_torque.weight = -0.002 # -0.0005
-        self.rewards.ankle_action.weight = -0.004 # -0.001
+        self.rewards.ankle_torque.weight = -0.001 # -0.0005
+        self.rewards.ankle_torque_limit.weight = -0.1
+        self.rewards.ankle_action.weight = -0.002 # -0.001
         self.rewards.penalize_hip_roll_action.weight = -1.0
         self.rewards.feet_impact_reduction.weight = -2.5e-3
         self.rewards.feet_impact_reduction.params["max_delta_v_sq"] = 2.0
@@ -410,6 +412,7 @@ class LWLegFlatAmpRoaEnvCfg(LWLegRoughAmpRoaEnvCfg):
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.fly_penalty.weight = -0.0
         self.rewards.ankle_torque.weight = -0.001 # -0.0005
+        self.rewards.ankle_torque_limit.weight = -0.01
         self.rewards.ankle_action.weight = -0.002  # -0.001
         self.rewards.penalize_hip_roll_action.weight = -1.0
         self.rewards.feet_impact_reduction.weight = -2.5e-3

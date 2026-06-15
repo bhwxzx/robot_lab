@@ -89,6 +89,21 @@ def joint_power(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityC
     return reward
 
 
+def joint_torque_limit_penalty(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg,
+    torque_limit: float,
+) -> torch.Tensor:
+    """Penalize joint torques when they exceed a specified limit."""
+    asset: Articulation = env.scene[asset_cfg.name]
+    torques = asset.data.applied_torque[:, asset_cfg.joint_ids]
+    # Calculate excess torque beyond the limit
+    excess_torque = torch.clamp(torch.abs(torques) - torque_limit, min=0.0)
+    # Penalize the square of the excess torque
+    reward = torch.sum(torch.square(excess_torque), dim=1)
+    return reward
+
+
 def stand_still(
     env: ManagerBasedRLEnv,
     command_name: str,

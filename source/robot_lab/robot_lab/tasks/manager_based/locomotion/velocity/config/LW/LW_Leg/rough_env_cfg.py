@@ -355,6 +355,15 @@ class LWLegRewardsCfg(RewardsCfg):
         }
     )
 
+    ankle_torque_limit = RewTerm(
+        func=mdp.joint_torque_limit_penalty,
+        weight=0.0,
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=[".*_foot_joint"]),
+            "torque_limit": 22.0,
+        }
+    )
+
     ankle_action = RewTerm(
         func=mdp.specific_joint_action_penalty,
         weight=0.0,
@@ -1488,6 +1497,7 @@ class LWLegRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.stop_motion.weight = -5.0
 
         self.rewards.ankle_torque.weight = -0.0005
+        self.rewards.ankle_torque_limit.weight = -0.01
         self.rewards.ankle_action.weight = -0.001
 
         # self.rewards.stand_still.weight = -3.0
@@ -2281,6 +2291,7 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.stop_motion.weight = -3.0
 
         self.rewards.ankle_torque.weight = -0.0005
+        self.rewards.ankle_torque_limit.weight = -0.01
         self.rewards.ankle_action.weight = -0.001
 
         self.rewards.penalize_hip_roll_action.weight = -1.0
@@ -2724,6 +2735,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.stop_motion.weight = -3.0
 
         self.rewards.ankle_torque.weight = -0.0005
+        self.rewards.ankle_torque_limit.weight = -0.01
         self.rewards.ankle_action.weight = -0.001
 
         self.rewards.penalize_hip_roll_action.weight = -1.0
