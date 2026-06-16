@@ -81,8 +81,8 @@ class LWLegObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.2})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.2, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
         # gait_command = ObsTerm(func=mdp.get_gait_command, params={"command_name": "gait_command"})
 
         # Privileged observation
@@ -157,8 +157,8 @@ class LWLegObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.2})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.2, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
         # gait_command = ObsTerm(func=mdp.get_gait_command, params={"command_name": "gait_command"})
 
         # Privileged observation
@@ -675,8 +675,8 @@ class LWLegRoughStudentObservationsCfg:
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.2})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.2, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -721,8 +721,8 @@ class LWLegRoughStudentObservationsCfg:
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.2})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.2, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
         
         # Privileged observation
         base_lin_vel = ObsTerm(
@@ -939,8 +939,8 @@ class LWLegNormalPPOObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.2})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.2, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -986,8 +986,8 @@ class LWLegNormalPPOObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.2})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.2, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         def __post_init__(self):
             self.enable_corruption = False
@@ -1279,8 +1279,8 @@ class LWLegDwaqObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.25})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.25, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -1327,8 +1327,8 @@ class LWLegDwaqObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.25})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.25, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         # 特权观测 给vae进行显式监督
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel,clip=(-100.0, 100.0),scale=2.0)
@@ -1663,8 +1663,8 @@ class LWLegAmpObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.2})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.2, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -1711,8 +1711,8 @@ class LWLegAmpObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.2})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.2, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         height_scan = ObsTerm(
             func=mdp.height_scan,
@@ -2045,8 +2045,8 @@ class LWLegAmpDwaqObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.25})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.25, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -2093,8 +2093,8 @@ class LWLegAmpDwaqObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.25})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.25, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         # 特权观测 给vae进行显式监督
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel,clip=(-100.0, 100.0),scale=2.0)
@@ -2463,8 +2463,8 @@ class LWLegAmpRoaObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.25})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.25, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -2511,8 +2511,8 @@ class LWLegAmpRoaObservationsCfg(ObservationsCfg):
             scale=1.0,
         )
 
-        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param,
-                             params={"gait_freq": 1.25})
+        gait_phase = ObsTerm(func=mdp.get_gait_phase_from_param_with_mask,
+                             params={"gait_freq": 1.25, "vel_command_name": "base_velocity", "vel_threshold": 0.1})
 
         # 特权观测
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel,clip=(-100.0, 100.0),scale=2.0)

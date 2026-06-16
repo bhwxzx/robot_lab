@@ -200,6 +200,47 @@ def get_gait_phase_from_param(env: ManagerBasedRLEnv, gait_freq: Union[float, to
     return torch.cat([sin_phase, cos_phase], dim=-1)
 
 
+def get_gait_phase_from_param_with_mask(
+    env: ManagerBasedRLEnv, 
+    gait_freq: Union[float, torch.Tensor],
+    vel_command_name: str = "base_velocity",
+    vel_threshold: float = 0.1
+) -> torch.Tensor:
+    """获取带有速度命令遮罩的步态相位。
+    
+    当线速度指令的模长（或仅考虑平移速度）小于 vel_threshold 时，强制返回 [0.0, 0.0]。
+    以此避免机器人在收到零速指令时，因为神经网络连续接收到时钟相位信号而发生原地晃动（bobbing）。
+    
+    参数:
+        env: 环境实例。
+        gait_freq: 步频参数。
+        vel_command_name: 获取速度指令的 command_name。
+        vel_threshold: 速度阈值，低于此值屏蔽相位输入。
+    """
+    # 检查 episode_length_buf 是否可用
+    if not hasattr(env, "episode_length_buf"):
+        return torch.zeros(env.num_envs, 2, device=env.device)
+
+    # 计算标准相位
+    if isinstance(gait_freq, (float, int)):
+        gait_freq = torch.tensor(gait_freq, device=env.device)
+
+    gait_indices = torch.remainder(env.episode_length_buf * env.step_dt * gait_freq, 1.0)
+    gait_indices = gait_indices.view(env.num_envs, 1)
+    
+    sin_phase = torch.sin(2 * torch.pi * gait_indices)
+    cos_phase = torch.cos(2 * torch.pi * gait_indices)
+    phase_tensor = torch.cat([sin_phase, cos_phase], dim=-1)
+
+    # 获取速度指令进行遮罩
+    vel_cmd = env.command_manager.get_command(vel_command_name)
+    # 考虑所有的速度指令分量 (包括平移和旋转，与步态奖励、stand_still 保持严格一致)
+    cmd_norm = torch.norm(vel_cmd, dim=1, keepdim=True)
+    is_moving = (cmd_norm > vel_threshold).float()
+
+    return phase_tensor * is_moving
+
+
 def get_gait_command(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     """Get the current gait command parameters as observation.
 
