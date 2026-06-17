@@ -59,4 +59,4 @@ class LWFlatAmpDwaqRunnerCfg(LWRoughAmpDwaqRunnerCfg):
     max_iterations = 50000
     experiment_name = "LW_leg_flat_amp_dwaq"
     amp_reward_coef=2.0
-    amp_task_reward_lerp=0.3
+    amp_task_reward_lerp=0.6

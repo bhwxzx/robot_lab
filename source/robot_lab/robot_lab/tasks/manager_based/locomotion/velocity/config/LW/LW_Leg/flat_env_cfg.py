@@ -301,7 +301,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.feet_air_time.params["threshold"] = 0.4
         self.rewards.feet_air_time_variance.weight = -10.0
         self.rewards.feet_height_body.weight = 0.0
-        self.rewards.bipedal_gait_reward.weight = 2.0
+        self.rewards.bipedal_gait_reward.weight = 2.5 # 2.0
         self.rewards.feet_clearance.weight = 2.0
         self.rewards.feet_clearance.params["target_height"] = 0.125 + 0.071 # 0.125 + 0.071 foot_radius 
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
