@@ -297,12 +297,12 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.undesired_contacts.weight = -5.0
         self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.0
         self.rewards.feet_standing_force_without_cmd.weight = 0.0
-        self.rewards.feet_air_time.weight = 0.125  # 2.0
-        self.rewards.feet_air_time.params["threshold"] = 0.3  # 0.4
+        self.rewards.feet_air_time.weight = 1.0  # 2.0
+        self.rewards.feet_air_time.params["threshold"] = 0.4  # 0.4
         self.rewards.feet_air_time_variance.weight = -10.0 # -10.0
         self.rewards.feet_height_body.weight = 0.0
-        self.rewards.bipedal_gait_reward.weight = 1.0 # 2.0
-        self.rewards.feet_clearance.weight = 1.0  # 2.0
+        self.rewards.bipedal_gait_reward.weight = 4.0 # 2.0
+        self.rewards.feet_clearance.weight = 2.0  # 2.0
         self.rewards.feet_clearance.params["target_height"] = 0.125 + 0.071 # 0.125 + 0.071 foot_radius 
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = -0.25 # -0.15
