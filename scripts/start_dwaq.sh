@@ -2,7 +2,7 @@
 
 # 设置默认值
 TERRAIN="Rough"
-type="leg"
+TYPE="leg"
 
 # 解析传入的命名参数
 while [[ "$#" -gt 0 ]]; do

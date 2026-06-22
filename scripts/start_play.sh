@@ -19,7 +19,7 @@ done
 python scripts/reinforcement_learning/rsl_rl/play.py \
     --task="RobotLab-Isaac-Velocity-${TERRAIN}-LW-${TYPE}-${METHOD}-Play-v0" \
     --num_envs=500 \
-    # --checkpoint=/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_dwaq/2026-05-16_12-00-50/model_49999.pt
+    # --checkpoint=/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_dwaq/2026-06-17_14-57-09/model_49999.pt
     # --keyboard \
     # --checkpoint=/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_rough_amp_dwaq/2026-02-26_16-03-20/model_49999.pt
     # --real-time \

@@ -49,9 +49,9 @@ class LWRoughAmpDwaqRunnerCfg(RslRlOnPolicyRunnerAmpDwaqCfg):
     amp_motion_files=["source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_*.txt"]
     amp_num_preload_transitions=200000
     amp_replay_buffer_size=100000
-    disc_learning_rate=1.0e-5
+    disc_learning_rate=1.0e-4
     amp_reward_coef=2.0
-    amp_task_reward_lerp=0.7
+    amp_task_reward_lerp=0.5
 
 @configclass
 class LWFlatAmpDwaqRunnerCfg(LWRoughAmpDwaqRunnerCfg):
@@ -59,4 +59,4 @@ class LWFlatAmpDwaqRunnerCfg(LWRoughAmpDwaqRunnerCfg):
     max_iterations = 50000
     experiment_name = "LW_leg_flat_amp_dwaq"
     amp_reward_coef=2.0
-    amp_task_reward_lerp=0.5
+    amp_task_reward_lerp=0.4

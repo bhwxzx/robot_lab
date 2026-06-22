@@ -2189,8 +2189,8 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.scene.base_contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
         # filter_prim_paths_expr 这里必须一个字符串对应一个物体，否则会报错
         self.scene.base_contact_forces.filter_prim_paths_expr = ["{ENV_REGEX_NS}/Robot/right_wheel_link", "{ENV_REGEX_NS}/Robot/left_wheel_link"]
-        self.scene.terrain.terrain_generator = DWAQ_ROUGH_TERRAINS_CFG
-        # self.scene.terrain.max_init_terrain_level = 3
+        self.scene.terrain.terrain_generator = BLIND_ROUGH_TERRAINS_CFG
+        self.scene.terrain.max_init_terrain_level = 5
 
         # ------------------------------Observations------------------------------
         self.observations.policy.joint_pos.func = mdp.joint_pos_rel_without_wheel
@@ -2240,13 +2240,16 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
         self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
-        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.5, 1.5), "y": (-1.5, 1.5)}
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
         self.events.randomize_apply_external_force_torque.params["asset_cfg"].body_names = [self.base_link_name]
         self.events.add_joint_default_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.events.randomize_actuator_gains.params["asset_cfg"].joint_names = self.joint_names
         
         self.events.push_robot_hard = None
-        # self.events.randomize_apply_external_force_torque = None 
+        self.events.randomize_actuator_gains.params["distribution"] = "uniform"
+        self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
+        self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
+        self.events.randomize_rigid_body_mass_others.params["mass_distribution_params"] = (0.7, 1.3) 
 
         # ------------------------------Rewards------------------------------
         # General
@@ -2255,10 +2258,10 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.upward.weight = 1.0 # 1.0
 
         # Root penalties
-        self.rewards.lin_vel_z_l2.weight = -2.0 #-1.0
-        self.rewards.ang_vel_xy_l2.weight = -0.1 # -0.05
+        self.rewards.lin_vel_z_l2.weight = -1.0 #-1.0
+        self.rewards.ang_vel_xy_l2.weight = -0.05 # -0.05
         self.rewards.flat_orientation_l2.weight = -5.0 # -5.0
-        self.rewards.base_height_l2.weight = -40.0 # -50.0 
+        self.rewards.base_height_l2.weight = -10.0 # -50.0 
         self.rewards.base_height_l2.params["target_height"] = 0.69 # 0.647
         self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
         self.rewards.body_orientation_l2.weight = -3.0
@@ -2288,11 +2291,11 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         self.rewards.joint_power.weight = -2e-5
 
-        self.rewards.stop_motion.weight = -3.0
+        self.rewards.stop_motion.weight = -5.0
 
-        self.rewards.ankle_torque.weight = -0.0005
-        self.rewards.ankle_torque_limit.weight = -0.01
-        self.rewards.ankle_action.weight = -0.001
+        self.rewards.ankle_torque.weight = -0.001
+        self.rewards.ankle_torque_limit.weight = -0.1
+        self.rewards.ankle_action.weight = -0.002
 
         self.rewards.penalize_hip_roll_action.weight = -1.0
 
@@ -2310,46 +2313,46 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.joint_deviation_legs.params["asset_cfg"].joint_names = [".*_thigh_joint",".*_shank_joint"]
 
         # Action penalties
-        self.rewards.action_rate_l2.weight = -0.02 # -0.01 
-        self.rewards.action_smoothness.weight = -0.02 # -0.15 
+        self.rewards.action_rate_l2.weight = -0.2 # -0.01 
+        self.rewards.action_smoothness.weight = -0.075 # -0.15 
 
         # Contact sensorstand_still
-        self.rewards.undesired_contacts.weight = -2.0
+        self.rewards.undesired_contacts.weight = -5.0
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link", ".*wheel_link"]
 
         # Velocity-tracking rewards
-        self.rewards.track_lin_vel_xy_exp.weight = 8.0 # 3.0
+        self.rewards.track_lin_vel_xy_exp.weight = 5.0 # 3.0
         self.rewards.track_lin_vel_xy_exp.func = mdp.track_lin_vel_xy_yaw_frame_exp
-        self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.5)
-        self.rewards.track_ang_vel_z_exp.weight = 6.0
+        self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
+        self.rewards.track_ang_vel_z_exp.weight = 4.0
         self.rewards.track_ang_vel_z_exp.func = mdp.track_ang_vel_z_world_exp
-        self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.5)
-        self.rewards.lazy_penalty.weight = -2.0
+        self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)
+        self.rewards.lazy_penalty.weight = -1.0
 
         # Others
-        self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.5
+        self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.0
         self.rewards.rew_keep_ankle_pitch_zero_in_air.params["sensor_cfg"].body_names = [self.foot_link_name]
 
-        self.rewards.bipedal_gait_reward.weight = 3.5
-        self.rewards.feet_air_time.weight = 12.0
+        self.rewards.bipedal_gait_reward.weight = 5.0
+        self.rewards.feet_air_time.weight = 0.5
         self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
         self.rewards.feet_air_time.params["threshold"] = 0.4
         self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
-        self.rewards.fly_penalty.weight = -2.0
+        self.rewards.fly_penalty.weight = -0.0
         # self.rewards.feet_standing_force_without_cmd.weight = 1.0
         # self.rewards.feet_standing_force_without_cmd.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_contact_without_cmd.weight = 2.0
         # self.rewards.feet_contact_without_cmd.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_air_only_one.weight = -40.0
 
-        self.rewards.feet_air_time_variance.weight = -1.0
+        self.rewards.feet_air_time_variance.weight = -10.0
         self.rewards.feet_air_time_variance.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_contact.weight = 0
         # self.rewards.feet_contact.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_contact_without_cmd.weight = 0
         # self.rewards.feet_contact_without_cmd.params["sensor_c fg"].body_names = [self.foot_link_name]
-        self.rewards.feet_stumble.weight = -10.0
+        self.rewards.feet_stumble.weight = -2.0
         self.rewards.feet_stumble.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_slide.weight = -0.25 # -0.25
         self.rewards.feet_slide.params["sensor_cfg"].body_names = [self.foot_link_name]
@@ -2357,12 +2360,12 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_height.weight = 0
         # self.rewards.feet_height.params["target_height"] = 0.05
         # self.rewards.feet_height.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_height_body.weight = -10.0
+        self.rewards.feet_height_body.weight = -2.0
         self.rewards.feet_height_body.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_height_body.params["target_height"] = -0.5
         # self.rewards.track_adaptive_swing_height.weight = 5.0
         # self.rewards.track_adaptive_swing_height.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_distance_y_exp.weight = 2.5
+        self.rewards.feet_distance_y_exp.weight = 3.0
         self.rewards.feet_distance_y_exp.params["stance_width"] = 0.42 # 0.42
         self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_distance_penalize.weight = -100.0
