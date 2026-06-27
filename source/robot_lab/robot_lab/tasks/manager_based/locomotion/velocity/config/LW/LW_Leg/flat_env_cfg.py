@@ -57,6 +57,7 @@ class LWLegFlatNormalPPOEnvCfg(LWLegRoughNormalPPOEnvCfg):
         self.rewards.feet_landing_vel.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.params["foot_radius"] = 0.071
         self.rewards.feet_landing_vel.params["about_landing_threshold"] = 0.08
+        self.rewards.feet_landing_vel.params["height_scanner_cfg"] = None
         self.rewards.feet_stumble.weight = 0.0
 
         # If the weight of rewards is 0, set rewards to None
@@ -138,6 +139,7 @@ class LWLegFlatDwaqEnvCfg(LWLegRoughDwaqEnvCfg):
         self.rewards.feet_landing_vel.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.params["foot_radius"] = 0.071
         self.rewards.feet_landing_vel.params["about_landing_threshold"] = 0.08
+        self.rewards.feet_landing_vel.params["height_scanner_cfg"] = None
         self.rewards.feet_stumble.weight = 0.0
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.feet_distance_y_exp.weight = 6.0
@@ -221,6 +223,7 @@ class LWLegFlatAmpEnvCfg(LWLegRoughAmpEnvCfg):
         self.rewards.feet_landing_vel.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.params["foot_radius"] = 0.071
         self.rewards.feet_landing_vel.params["about_landing_threshold"] = 0.08
+        self.rewards.feet_landing_vel.params["height_scanner_cfg"] = None
         self.rewards.feet_stumble.weight = 0.0
         self.rewards.lazy_penalty.weight = 0.0
         self.rewards.feet_distance_y_exp.weight = 0.0
@@ -310,6 +313,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.feet_landing_vel.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.params["foot_radius"] = 0.071
         self.rewards.feet_landing_vel.params["about_landing_threshold"] = 0.08
+        self.rewards.feet_landing_vel.params["height_scanner_cfg"] = None
         self.rewards.feet_stumble.weight = 0.0
         self.rewards.lazy_penalty.weight = -1.0
         self.rewards.feet_distance_y_exp.weight = 2.0
@@ -410,6 +414,7 @@ class LWLegFlatAmpRoaEnvCfg(LWLegRoughAmpRoaEnvCfg):
         self.rewards.feet_landing_vel.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.params["foot_radius"] = 0.071
         self.rewards.feet_landing_vel.params["about_landing_threshold"] = 0.08
+        self.rewards.feet_landing_vel.params["height_scanner_cfg"] = None
         self.rewards.feet_stumble.weight = 0.0
         self.rewards.lazy_penalty.weight = -1.0
         self.rewards.feet_distance_y_exp.weight = 2.0
@@ -506,6 +511,7 @@ class LWLegFlatRoaEnvCfg(LWLegRoughRoaEnvCfg):
         self.rewards.feet_landing_vel.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.params["foot_radius"] = 0.071
         self.rewards.feet_landing_vel.params["about_landing_threshold"] = 0.08
+        self.rewards.feet_landing_vel.params["height_scanner_cfg"] = None
         self.rewards.feet_stumble.weight = 0.0
         self.rewards.lazy_penalty.weight = -1.0
         self.rewards.feet_distance_y_exp.weight = 2.0
