@@ -2752,7 +2752,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # Root penalties
         self.rewards.lin_vel_z_l2.weight = -1.0 #-1.0
-        self.rewards.ang_vel_xy_l2.weight = -0.01 # -0.05
+        self.rewards.ang_vel_xy_l2.weight = -0.05 # -0.05
         self.rewards.flat_orientation_l2.weight = -0.0 # -5.0
         self.rewards.base_height_l2.weight = -10.0 # -50.0 
         self.rewards.base_height_l2.params["target_height"] = 0.69 # 0.647
