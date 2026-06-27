@@ -51,7 +51,7 @@ class LWRoughAmpDwaqRunnerCfg(RslRlOnPolicyRunnerAmpDwaqCfg):
     amp_replay_buffer_size=100000
     disc_learning_rate=1.0e-4
     amp_reward_coef=2.0
-    amp_task_reward_lerp=0.5
+    amp_task_reward_lerp=0.7
 
 @configclass
 class LWFlatAmpDwaqRunnerCfg(LWRoughAmpDwaqRunnerCfg):

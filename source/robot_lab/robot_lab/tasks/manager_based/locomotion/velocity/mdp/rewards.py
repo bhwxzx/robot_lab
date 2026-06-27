@@ -1079,6 +1079,7 @@ def foot_landing_vel(
         sensor_cfg: SceneEntityCfg,
         foot_radius: float,
         about_landing_threshold: float,
+        height_scanner_cfg: SceneEntityCfg | None = None,
 ) -> torch.Tensor:
     """Penalize high foot landing velocities"""
     asset = env.scene[asset_cfg.name]
@@ -1086,9 +1087,32 @@ def foot_landing_vel(
     z_vels = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, 2]
     contacts = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2] > 0.1
 
+    terrain_h_under_foot = torch.zeros_like(z_vels)
+
+    if height_scanner_cfg is not None:
+        scanner = env.scene.sensors[height_scanner_cfg.name]
+        ray_hits_w = scanner.data.ray_hits_w
+        feet_pos_w = asset.data.body_pos_w[:, asset_cfg.body_ids, :]
+        num_feet = feet_pos_w.shape[1]
+        
+        default_terrain_z = asset.data.root_pos_w[:, 2] - 0.69 # fallback standard height
+
+        for i in range(num_feet):
+            foot_xy = feet_pos_w[:, i, :2]
+            # 计算脚底周围的射线距离
+            rel_pos = ray_hits_w[..., :2] - foot_xy.unsqueeze(1)
+            dist_sq = torch.sum(rel_pos ** 2, dim=-1)
+            
+            # 取脚周围 15cm 内的探测点
+            near_mask = dist_sq < (0.15 ** 2)
+            near_z = torch.where(near_mask, ray_hits_w[..., 2], torch.tensor(float('inf'), device=env.device))
+            min_z, _ = torch.min(near_z, dim=-1)
+            terrain_h = torch.where(torch.isinf(min_z), default_terrain_z, min_z)
+            terrain_h_under_foot[:, i] = terrain_h
+
     foot_heights = torch.clip(
-    asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - foot_radius, 0, 1
-    )  # TODO: change to the height relative to the vertical projection of the terrain
+        asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - foot_radius - terrain_h_under_foot, 0, 1
+    )
 
     about_to_land = (foot_heights < about_landing_threshold) & (~contacts) & (z_vels < 0.0)
     landing_z_vels = torch.where(about_to_land, z_vels, torch.zeros_like(z_vels))

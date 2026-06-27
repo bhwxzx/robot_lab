@@ -94,3 +94,34 @@ def command_levels_ang_vel(
             base_velocity_ranges.ang_vel_z = new_ang_vel_z.tolist()
 
     return torch.tensor(base_velocity_ranges.ang_vel_z[1], device=env.device)
+
+
+def modify_reward_weight_linear_with_delay(
+    env: ManagerBasedRLEnv,
+    env_ids: Sequence[int],
+    term_name: str,
+    weight: float,
+    start_step: int,
+    num_steps: int,
+):
+    """Curriculum that linearly modifies a reward weight from its initial value to a target weight
+    starting at `start_step` and completing over `num_steps`.
+    """
+    if env.common_step_counter == 0:
+        # Store initial weight if not already stored
+        if not hasattr(env, f"_{term_name}_initial_weight"):
+            term_cfg = env.reward_manager.get_term_cfg(term_name)
+            setattr(env, f"_{term_name}_initial_weight", term_cfg.weight)
+            
+    if env.common_step_counter > start_step:
+        initial_weight = getattr(env, f"_{term_name}_initial_weight")
+        progress = min(1.0, (env.common_step_counter - start_step) / num_steps)
+        current_weight = initial_weight + (weight - initial_weight) * progress
+        
+        term_cfg = env.reward_manager.get_term_cfg(term_name)
+        term_cfg.weight = current_weight
+        env.reward_manager.set_term_cfg(term_name, term_cfg)
+        
+        return torch.tensor(current_weight, device=env.device, dtype=torch.float32)
+        
+    return torch.tensor(getattr(env, f"_{term_name}_initial_weight", 0.0), device=env.device, dtype=torch.float32)
