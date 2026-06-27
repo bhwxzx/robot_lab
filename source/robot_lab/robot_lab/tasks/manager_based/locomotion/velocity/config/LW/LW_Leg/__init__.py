@@ -249,5 +249,42 @@ gym.register(
     },
 )
 
+gym.register(
+    id="RobotLab-Isaac-Velocity-Rough-LW-leg-Roa-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rough_env_cfg:LWLegRoughRoaEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_roa_cfg:LWRoughRoaRunnerCfg",
+    },
+)
 
+gym.register(
+    id="RobotLab-Isaac-Velocity-Rough-LW-leg-Roa-Play-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rough_env_cfg:LWLegRoughRoaEnvCfg_Play",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_roa_cfg:LWRoughRoaRunnerCfg",
+    },
+)
 
+gym.register(
+    id="RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.flat_env_cfg:LWLegFlatRoaEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_roa_cfg:LWFlatRoaRunnerCfg",
+    },
+)
+
+gym.register(
+    id="RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-Play-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.flat_env_cfg:LWLegFlatRoaEnvCfg_Play",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_roa_cfg:LWFlatRoaRunnerCfg",
+    },
+)

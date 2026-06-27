@@ -1,24 +1,23 @@
 from isaaclab.utils import configclass
 
-from robot_lab.utils.wrappers.rsl_rl.rl_amp_roa_cfg import (
-    RslRlOnPolicyRunnerAmpRoaCfg,
-    RslRlActorCriticAmpRoaCfg,
-    RslRlAlgorithmAmpRoaCfg
+from robot_lab.utils.wrappers.rsl_rl.rl_roa_cfg import (
+    RslRlOnPolicyRunnerRoaCfg,
+    RslRlActorCriticRoaCfg,
+    RslRlAlgorithmRoaCfg
 )
 
 @configclass
-class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
+class LWRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
     num_steps_per_env = 24
     max_iterations = 100000
     save_interval = 1000
-    experiment_name = "LW_leg_rough_amp_roa"
+    experiment_name = "LW_leg_rough_roa"
     obs_groups = {
         "policy": ["policy"],       
         "critic": ["critic"],
-        "amp": ["amp"],
         "privileged": ["privileged"]  # 专供特权编码器使用的纯物理参数组
     }
-    policy = RslRlActorCriticAmpRoaCfg(
+    policy = RslRlActorCriticRoaCfg(
         init_noise_std=1.0,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
@@ -29,7 +28,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         priv_encoder_dims=[64, 20],
         vel_offset=41,
     )
-    algorithm = RslRlAlgorithmAmpRoaCfg(
+    algorithm = RslRlAlgorithmRoaCfg(
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
@@ -46,17 +45,8 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         dagger_update_freq=20,
         vel_loss_coef=1.0,
     )
-    amp_discr_hidden_dims=[1024, 512]
-    amp_motion_files=["source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_*.txt"]
-    amp_num_preload_transitions=200000
-    amp_replay_buffer_size=100000
-    disc_learning_rate=1.0e-4
-    amp_reward_coef=2.0
-    amp_task_reward_lerp=0.7
 
 @configclass
-class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):
+class LWFlatRoaRunnerCfg(LWRoughRoaRunnerCfg):
     max_iterations = 50000
-    experiment_name = "LW_leg_flat_amp_roa"
-    amp_reward_coef=2.0
-    amp_task_reward_lerp=0.7
+    experiment_name = "LW_leg_flat_roa"
