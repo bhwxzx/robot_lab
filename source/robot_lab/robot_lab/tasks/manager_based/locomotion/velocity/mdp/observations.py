@@ -208,14 +208,15 @@ def get_gait_phase_from_param_with_mask(
 ) -> torch.Tensor:
     """获取带有速度命令遮罩的步态相位。
     
-    当线速度指令的模长（或仅考虑平移速度）小于 vel_threshold 时，强制返回 [0.0, 0.0]。
-    以此避免机器人在收到零速指令时，因为神经网络连续接收到时钟相位信号而发生原地晃动（bobbing）。
+    对速度模长应用平滑过渡：0 到 0.05 为死区（强制返回 [0, 0]），
+    0.05 到 vel_threshold 之间线性平滑过渡至 1.0，大于等于 vel_threshold 正常输出。
+    以此避免机器人在收到零速指令时发生原地晃动（bobbing），同时防止边界处的观测突变。
     
     参数:
         env: 环境实例。
         gait_freq: 步频参数。
         vel_command_name: 获取速度指令的 command_name。
-        vel_threshold: 速度阈值，低于此值屏蔽相位输入。
+        vel_threshold: 速度平滑过渡的上限阈值（默认 0.1）。
     """
     # 检查 episode_length_buf 是否可用
     if not hasattr(env, "episode_length_buf"):
@@ -236,7 +237,10 @@ def get_gait_phase_from_param_with_mask(
     vel_cmd = env.command_manager.get_command(vel_command_name)
     # 考虑所有的速度指令分量 (包括平移和旋转，与步态奖励、stand_still 保持严格一致)
     cmd_norm = torch.norm(vel_cmd, dim=1, keepdim=True)
-    is_moving = (cmd_norm > vel_threshold).float()
+    
+    # 速度死区为 0.05，在 0.05 到 vel_threshold 之间线性平滑过渡
+    deadzone = 0.05
+    is_moving = torch.clamp((cmd_norm - deadzone) / (vel_threshold - deadzone + 1e-6), min=0.0, max=1.0)
 
     return phase_tensor * is_moving
 

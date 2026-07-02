@@ -1443,7 +1443,7 @@ def centrifugal_compensation_reward(
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
 ) -> torch.Tensor:
     """
-    鼓励机器人在转弯时产生适当的身体倾斜，以补偿离心力。
+    鼓励轮式机器人在转弯时产生适当的身体倾斜，以补偿离心力。
     """
     # 提取机器人的 asset 数据
     asset = env.scene[asset_cfg.name]

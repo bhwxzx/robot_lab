@@ -42,6 +42,7 @@ class LWRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
         desired_kl=0.01,
         max_grad_norm=1.0,
         priv_reg_coef_schedule=[0.0, 0.1, 2000, 3000],
+        priv_reg_coef_schedule_resume=[0.0, 0.1, 0, 1],
         dagger_update_freq=20,
         vel_loss_coef=1.0,
     )

@@ -171,9 +171,9 @@ LW_WHEEL_CFG = ArticulationCfg(
         joint_pos={
             "right_hip_joint": 0.0,
             "left_hip_joint": 0.0,
-            "right_thigh_joint": 0.7330,
+            "right_thigh_joint": 0.7330,  # 42度
             "left_thigh_joint": -0.7330,
-            "right_shank_joint": -0.1745,
+            "right_shank_joint": -0.1745, # 10度
             "left_shank_joint": 0.1745,
             "right_wheel_joint": 0.0,
             "left_wheel_joint": 0.0,

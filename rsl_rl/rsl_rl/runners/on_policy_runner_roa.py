@@ -191,3 +191,17 @@ class OnPolicyRunnerROA(OnPolicyRunner):
             return self.alg.policy.act_inference(obs, hist_encoding=hist_encoding)
             
         return act_inference_wrapper
+
+    def load(self, path: str, load_optimizer: bool = True, map_location: str | None = None):
+        """
+        重写原有的 load 方法。在恢复训练 (resume) 时，检查配置中是否存在
+        'priv_reg_coef_schedule_resume'，并将其覆盖到特权正则化调度参数中，
+        从而避免 resume 之后系数突然掉回 0。
+        """
+        super().load(path, load_optimizer=load_optimizer, map_location=map_location)
+        
+        # 处理 Resume 特有的调度覆盖
+        if "priv_reg_coef_schedule_resume" in self.alg_cfg:
+            resume_schedule = self.alg_cfg["priv_reg_coef_schedule_resume"]
+            self.alg.priv_reg_coef_schedule = resume_schedule
+            print(f"[ROA Resume] Overriding priv_reg_coef_schedule with {resume_schedule}")
