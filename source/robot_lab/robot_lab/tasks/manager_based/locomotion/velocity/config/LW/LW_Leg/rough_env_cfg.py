@@ -3070,6 +3070,21 @@ class LWLegRoaObservationsCfg(ObservationsCfg):
         feet_contact_forces_in_body = ObsTerm(func=mdp.feet_contact_forces_in_body, 
                                               params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])},
                                               scale=0.005)
+        feet_pos_in_body = ObsTerm(
+            func=mdp.feet_pos_in_body, 
+            params={"asset_cfg": SceneEntityCfg("robot", body_names=".*_foot_link")},
+            scale=1.0
+        )
+        feet_contact_bool = ObsTerm(
+            func=mdp.feet_contact_bool,
+            params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])},
+            scale=1.0
+        )
+        feet_lin_vel_in_body = ObsTerm(
+            func=mdp.feet_lin_vel_in_body,
+            params={"asset_cfg": SceneEntityCfg("robot", body_names=".*_foot_link")},
+            scale=1.0
+        )
         height_scan = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},

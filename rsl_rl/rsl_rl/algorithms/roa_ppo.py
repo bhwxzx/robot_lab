@@ -19,6 +19,7 @@ class ROAPPO(PPO):
                  priv_reg_coef_schedule=[0, 0.1, 2000, 3000], 
                  dagger_update_freq=20, 
                  vel_loss_coef=1.0,
+                 priv_reg_coef_schedule_resume=None,
                  **kwargs):
         super().__init__(policy=policy, **kwargs)
         
