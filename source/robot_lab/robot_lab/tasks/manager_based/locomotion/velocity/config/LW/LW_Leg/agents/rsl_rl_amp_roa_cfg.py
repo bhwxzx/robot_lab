@@ -26,7 +26,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         actor_obs_normalization=False,
         critic_obs_normalization=False,
         activation="elu",
-        priv_encoder_dims=[64, 20],
+        priv_encoder_dims=[256, 128, 20],
         vel_offset=41,
     )
     algorithm = RslRlAlgorithmAmpRoaCfg(
@@ -43,6 +43,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         desired_kl=0.01,
         max_grad_norm=1.0,
         priv_reg_coef_schedule=[0.0, 0.1, 2000, 3000],
+        priv_reg_coef_schedule_resume=[0.0, 0.1, 0, 1],
         dagger_update_freq=20,
         vel_loss_coef=1.0,
     )
@@ -58,5 +59,16 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
 class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):
     max_iterations = 50000
     experiment_name = "LW_leg_flat_amp_roa"
+    policy = RslRlActorCriticAmpRoaCfg(
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        state_dependent_std=False,
+        actor_obs_normalization=False,
+        critic_obs_normalization=False,
+        activation="elu",
+        priv_encoder_dims=[64, 20],
+        vel_offset=41,
+    )
     amp_reward_coef=2.0
     amp_task_reward_lerp=0.7
