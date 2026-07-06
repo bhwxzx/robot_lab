@@ -3070,21 +3070,21 @@ class LWLegRoaObservationsCfg(ObservationsCfg):
         feet_contact_forces_in_body = ObsTerm(func=mdp.feet_contact_forces_in_body, 
                                               params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])},
                                               scale=0.005)
-        feet_pos_in_body = ObsTerm(
-            func=mdp.feet_pos_in_body, 
-            params={"asset_cfg": SceneEntityCfg("robot", body_names=".*_foot_link")},
-            scale=1.0
-        )
-        feet_contact_bool = ObsTerm(
-            func=mdp.feet_contact_bool,
-            params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])},
-            scale=1.0
-        )
-        feet_lin_vel_in_body = ObsTerm(
-            func=mdp.feet_lin_vel_in_body,
-            params={"asset_cfg": SceneEntityCfg("robot", body_names=".*_foot_link")},
-            scale=1.0
-        )
+        # feet_pos_in_body = ObsTerm(
+        #     func=mdp.feet_pos_in_body, 
+        #     params={"asset_cfg": SceneEntityCfg("robot", body_names=".*_foot_link")},
+        #     scale=1.0
+        # )
+        # feet_contact_bool = ObsTerm(
+        #     func=mdp.feet_contact_bool,
+        #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])},
+        #     scale=1.0
+        # )
+        # feet_lin_vel_in_body = ObsTerm(
+        #     func=mdp.feet_lin_vel_in_body,
+        #     params={"asset_cfg": SceneEntityCfg("robot", body_names=".*_foot_link")},
+        #     scale=1.0
+        # )
         height_scan = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
@@ -3281,19 +3281,19 @@ class LWLegRoughRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link", ".*wheel_link"]
 
         # Velocity-tracking rewards
-        self.rewards.track_lin_vel_xy_exp.weight = 8.0 # 3.0
+        self.rewards.track_lin_vel_xy_exp.weight = 5.0 # 3.0
         self.rewards.track_lin_vel_xy_exp.func = mdp.track_lin_vel_xy_yaw_frame_exp
         self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
-        self.rewards.track_ang_vel_z_exp.weight = 6.0
+        self.rewards.track_ang_vel_z_exp.weight = 4.0
         self.rewards.track_ang_vel_z_exp.func = mdp.track_ang_vel_z_world_exp
         self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)
-        self.rewards.lazy_penalty.weight = -1.0
+        self.rewards.lazy_penalty.weight = -0.0
 
         # Others
         self.rewards.rew_keep_ankle_pitch_zero_in_air.weight = 0.0
         self.rewards.rew_keep_ankle_pitch_zero_in_air.params["sensor_cfg"].body_names = [self.foot_link_name]
 
-        self.rewards.bipedal_gait_reward.weight = 8.0
+        self.rewards.bipedal_gait_reward.weight = 5.0
         self.rewards.bipedal_gait_reward.params["gait_params"] = [1.25, 0.5, 0.5]
         self.rewards.feet_air_time.weight = 3.0
         self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
@@ -3313,7 +3313,7 @@ class LWLegRoughRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_contact.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_contact_without_cmd.weight = 0
         # self.rewards.feet_contact_without_cmd.params["sensor_c fg"].body_names = [self.foot_link_name]
-        self.rewards.feet_stumble.weight = -4.0
+        self.rewards.feet_stumble.weight = -5.0
         self.rewards.feet_stumble.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_slide.weight = -0.25 # -0.25
         self.rewards.feet_slide.params["sensor_cfg"].body_names = [self.foot_link_name]
@@ -3328,7 +3328,7 @@ class LWLegRoughRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.track_adaptive_swing_height.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.track_adaptive_swing_height.params["gait_params"] = [1.25, 0.5, 0.5]
 
-        self.rewards.feet_distance_y_exp.weight = 5.0
+        self.rewards.feet_distance_y_exp.weight = 3.0
         self.rewards.feet_distance_y_exp.params["stance_width"] = 0.42 # 0.42
         self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_distance_penalize.weight = -100.0

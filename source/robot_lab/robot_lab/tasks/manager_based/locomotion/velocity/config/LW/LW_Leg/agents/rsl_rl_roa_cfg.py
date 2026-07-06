@@ -25,7 +25,7 @@ class LWRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
         actor_obs_normalization=False,
         critic_obs_normalization=False,
         activation="elu",
-        priv_encoder_dims=[64, 20],
+        priv_encoder_dims=[256, 128, 20],
         vel_offset=41,
     )
     algorithm = RslRlAlgorithmRoaCfg(
@@ -51,3 +51,14 @@ class LWRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
 class LWFlatRoaRunnerCfg(LWRoughRoaRunnerCfg):
     max_iterations = 50000
     experiment_name = "LW_leg_flat_roa"
+    policy = RslRlActorCriticRoaCfg(
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        state_dependent_std=False,
+        actor_obs_normalization=False,
+        critic_obs_normalization=False,
+        activation="elu",
+        priv_encoder_dims=[64, 20],
+        vel_offset=41,
+    )

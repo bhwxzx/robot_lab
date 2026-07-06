@@ -237,7 +237,7 @@ BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
         # ========== 上台阶 (中心高，向外下降) - 20% ==========
         "stairs_up_25": MeshPyramidStairsTerrainCfg(
             proportion=0.05,
-            step_height_range=(0.05, 0.15),
+            step_height_range=(0.03, 0.10),
             step_width=0.25,
             platform_width=2.0,
             border_width=1.0,
@@ -245,7 +245,7 @@ BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
         ),
         "stairs_up_35": MeshPyramidStairsTerrainCfg(
             proportion=0.05,
-            step_height_range=(0.05, 0.15),
+            step_height_range=(0.03, 0.10),
             step_width=0.35,
             platform_width=2.0,
             border_width=1.0,
@@ -254,7 +254,7 @@ BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
         # ========== 下台阶 (中心低，向外上升) - 20% ==========
         "stairs_down_25": MeshInvertedPyramidStairsTerrainCfg(
             proportion=0.05,
-            step_height_range=(0.05, 0.15),
+            step_height_range=(0.03, 0.10),
             step_width=0.25,
             platform_width=2.0,
             border_width=1.0,
@@ -262,14 +262,14 @@ BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
         ),
         "stairs_down_35": MeshInvertedPyramidStairsTerrainCfg(
             proportion=0.05,
-            step_height_range=(0.05, 0.15),
+            step_height_range=(0.03, 0.10),
             step_width=0.35,
             platform_width=2.0,
             border_width=1.0,
             holes=False,
         ),
         "boxes": MeshRandomGridTerrainCfg(
-            proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.15), platform_width=2.0
+            proportion=0.1, grid_width=0.45, grid_height_range=(0.03, 0.10), platform_width=2.0
         ),
         "random_rough": HfRandomUniformTerrainCfg(
             proportion=0.1, noise_range=(-0.02, 0.04), noise_step=0.02, border_width=1.0
