@@ -153,7 +153,10 @@ def main():
         motion_weight = original_json.get("MotionWeight", 0.5)
         print(f"Detected MotionWeight: {motion_weight}")
 
-    env_cfg = LWLegFlatAmpEnvCfg_Play() 
+    env_cfg = LWLegFlatAmpEnvCfg_Play()
+    
+    # 强制将生成数据的环境历史设为 0 (单帧)，保证输出单帧维度特征
+    env_cfg.observations.amp.history_length = 0 
     
     # 强制修改配置
     env_cfg.sim.disable_gravity = True

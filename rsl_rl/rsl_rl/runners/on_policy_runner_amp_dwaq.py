@@ -15,7 +15,7 @@ from collections import deque
 import rsl_rl
 from rsl_rl.algorithms import AMPDWAQPPO
 from rsl_rl.env import VecEnv
-from rsl_rl.modules import ActorCriticDwaq, Discriminator
+from rsl_rl.modules import ActorCriticDwaq, Discriminator, resolve_rnd_config, resolve_symmetry_config
 from rsl_rl.utils import resolve_obs_groups, store_code_state, AMPLoader, Normalizer
 
 
@@ -79,6 +79,8 @@ class OnPolicyRunnerAmpDwaq:
         # --- [Init: AMP Data] ---
         # amp_obs 用于判别器输入，需要记录当前帧(s)和下一帧(s')
         amp_obs = obs["amp"].to(self.device)
+        if len(amp_obs.shape) == 3:
+            amp_obs = amp_obs.view(amp_obs.shape[0], -1)
         # 记录上一帧 AMP 观测 (用于处理 reset 时的 terminal state 近似)
         current_amp_obs = amp_obs.clone()
 
@@ -125,6 +127,8 @@ class OnPolicyRunnerAmpDwaq:
                     # 4. [AMP] Handle Next Obs & Terminal States
                     # 获取 s_{t+1}
                     next_amp_obs = obs["amp"].to(self.device)
+                    if len(next_amp_obs.shape) == 3:
+                        next_amp_obs = next_amp_obs.view(next_amp_obs.shape[0], -1)
                     
                     # 构建用于判别器训练的 next_amp_obs_with_term
                     # 如果环境重置了，不能直接用新 Episode 的第一帧作为 s_{t+1}
@@ -139,7 +143,10 @@ class OnPolicyRunnerAmpDwaq:
                             terminal_obs_dict = extras.get("terminal_obs")
                         
                         if terminal_obs_dict is not None and "amp" in terminal_obs_dict:
-                            next_amp_obs_with_term[reset_env_ids] = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
+                            term_amp = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
+                            if len(term_amp.shape) == 3:
+                                term_amp = term_amp.view(term_amp.shape[0], -1)
+                            next_amp_obs_with_term[reset_env_ids] = term_amp
                         else:
                             # Fallback: 如果没有 terminal_obs，使用上一帧 (current_amp_obs) 近似
                             next_amp_obs_with_term[reset_env_ids] = current_amp_obs[reset_env_ids]
@@ -352,6 +359,10 @@ class OnPolicyRunnerAmpDwaq:
     def _construct_algorithm(self, obs) -> AMPDWAQPPO:
         """构建 AMPDWAQPPO 算法实例。"""
         
+        # 0. Resolve Configurations (Symmetry & RND)
+        self.alg_cfg = resolve_rnd_config(self.alg_cfg, obs, self.cfg["obs_groups"], self.env)
+        self.alg_cfg = resolve_symmetry_config(self.alg_cfg, self.env)
+
         # 1. [DWAQ] Determine dims
         policy_tensor = obs["policy"]
         single_obs_dim = policy_tensor.shape[-1]
@@ -379,6 +390,7 @@ class OnPolicyRunnerAmpDwaq:
             preload_transitions=True,
             num_preload_transitions=self.cfg["amp_num_preload_transitions"],
             motion_files=self.cfg["amp_motion_files"],
+            history_length=self.cfg.get("amp_history_length", 1),
         )
         print(f"AMP Observation Dim: {amp_data.observation_dim}")
         amp_normalizer = Normalizer(amp_data.observation_dim)

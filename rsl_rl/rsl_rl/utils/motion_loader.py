@@ -47,6 +47,7 @@ class AMPLoader:
         preload_transitions=False,
         num_preload_transitions=1000000,
         motion_files=[], # 默认值改为空列表
+        history_length=1,
     ):
         """Expert dataset provides AMP observations from Dog mocap dataset.
 
@@ -54,6 +55,7 @@ class AMPLoader:
         """
         self.device = device
         self.time_between_frames = time_between_frames
+        self.history_length = history_length
 
         # --- [处理传入的路径列表，展开通配符] ---
         expanded_motion_files = []
@@ -116,8 +118,8 @@ class AMPLoader:
             traj_idxs = self.weighted_traj_idx_sample_batch(num_preload_transitions)
             times = self.traj_time_sample_batch(traj_idxs)
 
-            self.preloaded_s = self.get_full_frame_at_time_batch(traj_idxs, times)
-            self.preloaded_s_next = self.get_full_frame_at_time_batch(traj_idxs, times + self.time_between_frames)
+            self.preloaded_s = self._get_history_frames_batch(traj_idxs, times)
+            self.preloaded_s_next = self._get_history_frames_batch(traj_idxs, times + self.time_between_frames)
             print("Finished preloading")
 
         self.all_trajectories_full = torch.vstack(self.trajectories_full)
@@ -248,6 +250,19 @@ class AMPLoader:
             times = self.traj_time_sample_batch(traj_idxs)
             return self.get_full_frame_at_time_batch(traj_idxs, times)
 
+    def _get_history_frames_batch(self, traj_idxs, times):
+        """Fetches a sequence of frames for the history window and flattens them time-first."""
+        frames = []
+        for i in range(self.history_length):
+            offset = (i - self.history_length + 1) * self.time_between_frames
+            t = np.maximum(0, times + offset)
+            # get_full_frame_at_time_batch already slices the features appropriately
+            frame = self.get_full_frame_at_time_batch(traj_idxs, t)
+            frames.append(frame)
+        stacked = torch.stack(frames, dim=1)
+        # flatten (batch_size, history_length, dim) to (batch_size, history_length * dim)
+        return stacked.view(stacked.shape[0], -1)
+
     def blend_frame_pose(self, frame0, frame1, blend):
         """Linearly interpolate between two frames, including orientation.
 
@@ -273,24 +288,21 @@ class AMPLoader:
         for _ in range(num_mini_batch):
             if self.preload_transitions:
                 idxs = np.random.choice(self.preloaded_s.shape[0], size=mini_batch_size)
-                s = self.preloaded_s[idxs, AMPLoader.JOINT_POSE_START_IDX : AMPLoader.END_POS_END_IDX]
-                s_next = self.preloaded_s_next[idxs, AMPLoader.JOINT_POSE_START_IDX : AMPLoader.END_POS_END_IDX]
+                s = self.preloaded_s[idxs]
+                s_next = self.preloaded_s_next[idxs]
             else:
                 s, s_next = [], []
                 traj_idxs = self.weighted_traj_idx_sample_batch(mini_batch_size)
                 times = self.traj_time_sample_batch(traj_idxs)
-                for traj_idx, frame_time in zip(traj_idxs, times):
-                    s.append(self.get_frame_at_time(traj_idx, frame_time))
-                    s_next.append(self.get_frame_at_time(traj_idx, frame_time + self.time_between_frames))
+                s = self._get_history_frames_batch(traj_idxs, times)
+                s_next = self._get_history_frames_batch(traj_idxs, times + self.time_between_frames)
 
-                s = torch.vstack(s)
-                s_next = torch.vstack(s_next)
             yield s, s_next
 
     @property
     def observation_dim(self):
         """Size of AMP observations."""
-        return self.trajectories[0].shape[1]
+        return self.trajectories[0].shape[1] * self.history_length
 
     @property
     def num_motions(self):

@@ -28,6 +28,8 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
 
         obs = self.env.get_observations().to(self.device)
         amp_obs = obs["amp"].to(self.device) if "amp" in obs else None
+        if amp_obs is not None and len(amp_obs.shape) == 3:
+            amp_obs = amp_obs.view(amp_obs.shape[0], -1)
 
         self.train_mode()
 
@@ -64,6 +66,8 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
                     obs, rewards, dones = (obs.to(self.device), rewards.to(self.device), dones.to(self.device))
 
                     next_amp_obs = obs["amp"].to(self.device)
+                    if len(next_amp_obs.shape) == 3:
+                        next_amp_obs = next_amp_obs.view(next_amp_obs.shape[0], -1)
                     next_amp_obs_with_term = next_amp_obs.clone()
                     reset_env_ids = dones.nonzero(as_tuple=False).flatten()
 
@@ -74,7 +78,10 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
                             terminal_obs_dict = extras.get("terminal_obs")
                             
                         if terminal_obs_dict is not None and "amp" in terminal_obs_dict:
-                            next_amp_obs_with_term[reset_env_ids] = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
+                            term_amp = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
+                            if len(term_amp.shape) == 3:
+                                term_amp = term_amp.view(term_amp.shape[0], -1)
+                            next_amp_obs_with_term[reset_env_ids] = term_amp
                         else:
                             next_amp_obs_with_term[reset_env_ids] = current_amp_obs[reset_env_ids]
 

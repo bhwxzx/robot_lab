@@ -1,6 +1,6 @@
 from isaaclab.utils import configclass
 
-from isaaclab_rl.rsl_rl import RslRlPpoActorCriticCfg
+from isaaclab_rl.rsl_rl import RslRlPpoActorCriticCfg, RslRlSymmetryCfg
 from robot_lab.utils.wrappers.rsl_rl.rl_amp_cfg import (
     RslRlAlgorithmAmpCfg,
     RslRlOnPolicyRunnerAmpCfg
@@ -35,7 +35,14 @@ class LWRoughAmpRunnerCfg(RslRlOnPolicyRunnerAmpCfg):
         lam=0.95,
         desired_kl=0.01,
         max_grad_norm=1.0,
+        symmetry_cfg=RslRlSymmetryCfg(
+            use_data_augmentation=True,
+            use_mirror_loss=True,
+            mirror_loss_coeff=0.2,
+            data_augmentation_func="robot_lab.tasks.manager_based.locomotion.velocity.mdp.symmetry.lw_leg:compute_symmetric_states"
+        ),
     )
+    amp_history_length=10
     amp_discr_hidden_dims=[1024, 512, 256]
     amp_motion_files=["source/robot_lab/robot_lab/datasets/LW_Leg/motion_amp_expert/motion_*.txt"]
     amp_num_preload_transitions=200000

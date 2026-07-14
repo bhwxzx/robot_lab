@@ -53,6 +53,8 @@ class AMPDWAQPPO:
         amp_task_reward_lerp=0.3,
         amp_discr_hidden_dims=None,
         disc_learning_rate=1e-4,
+        # Symmetry parameters
+        symmetry_cfg: dict | None = None,
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
         **kwargs
@@ -66,6 +68,25 @@ class AMPDWAQPPO:
         # for dwaq
         self.obs_dim = obs_dim
         self.vae_beta = vae_beta
+        
+        from rsl_rl.utils import string_to_callable
+        # Symmetry components
+        if symmetry_cfg is not None:
+            # Check if symmetry is enabled
+            use_symmetry = symmetry_cfg["use_data_augmentation"] or symmetry_cfg["use_mirror_loss"]
+            if not use_symmetry:
+                print("Symmetry not used for learning. We will use it for logging instead.")
+            if isinstance(symmetry_cfg["data_augmentation_func"], str):
+                symmetry_cfg["data_augmentation_func"] = string_to_callable(symmetry_cfg["data_augmentation_func"])
+            if symmetry_cfg["use_data_augmentation"] and not callable(symmetry_cfg["data_augmentation_func"]):
+                raise ValueError(
+                    "Data augmentation enabled but the function is not callable:"
+                    f" {symmetry_cfg['data_augmentation_func']}"
+                )
+            self.symmetry = symmetry_cfg
+        else:
+            self.symmetry = None
+
         # --- [AMP 初始化] ---
         self.discriminator = discriminator
         self.discriminator.to(self.device)
@@ -232,6 +253,11 @@ class AMPDWAQPPO:
         # DWAQ 统计
         mean_autoenc_loss = 0
         mean_vel_loss = 0
+        # -- Symmetry loss
+        if self.symmetry:
+            mean_symmetry_loss = 0
+        else:
+            mean_symmetry_loss = None
 
         # --- [Generators] ---
         # 1. 主生成器 (包含 DWAQ 所需的 prev_critic_obs)
@@ -267,9 +293,32 @@ class AMPDWAQPPO:
             # -----------------------------------------------------
             # 1. PPO Pre-processing (Advantage Normalization)
             # -----------------------------------------------------
+            original_batch_size = policy_obs_batch.batch_size[0]
+            num_aug = 1
+
             if self.normalize_advantage_per_mini_batch:
                 with torch.no_grad():
                     advantages_batch = (advantages_batch - advantages_batch.mean()) / (advantages_batch.std() + 1e-8)
+
+            if self.symmetry and self.symmetry["use_data_augmentation"]:
+                # augmentation using symmetry
+                data_augmentation_func = self.symmetry["data_augmentation_func"]
+                policy_obs_batch, actions_batch = data_augmentation_func(
+                    obs=policy_obs_batch,
+                    actions=actions_batch,
+                    env=self.symmetry["_env"],
+                )
+                # recompute the number of augmentations
+                num_aug = int(policy_obs_batch.batch_size[0] / original_batch_size)
+                # repeat the other parts of the batch
+                old_actions_log_prob_batch = old_actions_log_prob_batch.repeat(num_aug, 1)
+                target_values_batch = target_values_batch.repeat(num_aug, 1)
+                advantages_batch = advantages_batch.repeat(num_aug, 1)
+                returns_batch = returns_batch.repeat(num_aug, 1)
+                # For DWAQ specific observations
+                critic_obs_batch = critic_obs_batch.repeat(num_aug, 1)
+                prev_critic_obs_batch = prev_critic_obs_batch.repeat(num_aug, 1)
+                live_batch = live_batch.repeat(num_aug, 1)
 
             # -----------------------------------------------------
             # 2. DWAQ / VAE Loss Calculation
@@ -360,6 +409,35 @@ class AMPDWAQPPO:
                 value_loss = torch.max(value_losses, value_losses_clipped).mean()
             else:
                 value_loss = (returns_batch - value_batch).pow(2).mean()
+                
+            loss = (
+                surrogate_loss 
+                + self.value_loss_coef * value_loss 
+                - self.entropy_coef * entropy_batch.mean()
+            )
+
+            # Symmetry loss
+            if self.symmetry:
+                if not self.symmetry["use_data_augmentation"]:
+                    data_augmentation_func = self.symmetry["data_augmentation_func"]
+                    policy_obs_batch, _ = data_augmentation_func(obs=policy_obs_batch, actions=None, env=self.symmetry["_env"])
+                    num_aug = int(policy_obs_batch.shape[0] / original_batch_size)
+
+                mean_actions_batch = self.policy.act_inference(policy_obs_batch.detach().clone())
+                action_mean_orig = mean_actions_batch[:original_batch_size]
+                _, actions_mean_symm_batch = data_augmentation_func(
+                    obs=None, actions=action_mean_orig, env=self.symmetry["_env"]
+                )
+
+                mse_loss = torch.nn.MSELoss()
+                symmetry_loss = mse_loss(
+                    mean_actions_batch[original_batch_size:], actions_mean_symm_batch.detach()[original_batch_size:]
+                )
+
+                if self.symmetry["use_mirror_loss"]:
+                    loss += self.symmetry["mirror_loss_coeff"] * symmetry_loss
+                else:
+                    symmetry_loss = symmetry_loss.detach()
 
             # -----------------------------------------------------
             # 4. AMP Discriminator Loss
@@ -391,12 +469,6 @@ class AMPDWAQPPO:
             # -----------------------------------------------------
             # 5. Total Loss & Optimization
             # -----------------------------------------------------
-            
-            loss = (
-                surrogate_loss 
-                + self.value_loss_coef * value_loss 
-                - self.entropy_coef * entropy_batch.mean()
-            )
             
             amp_total_loss = self.amploss_coef * amp_loss + self.amploss_coef * grad_pen_loss
 
@@ -446,6 +518,9 @@ class AMPDWAQPPO:
             mean_grad_pen_loss += grad_pen_loss.item()
             mean_policy_pred += policy_d.mean().item()
             mean_expert_pred += expert_d.mean().item()
+            # -- Symmetry loss
+            if mean_symmetry_loss is not None:
+                mean_symmetry_loss += symmetry_loss.item()
 
         # Average stats
         num_updates = self.num_learning_epochs * self.num_mini_batches
@@ -458,6 +533,9 @@ class AMPDWAQPPO:
         mean_grad_pen_loss /= num_updates
         mean_policy_pred /= num_updates
         mean_expert_pred /= num_updates
+        # -- For Symmetry
+        if mean_symmetry_loss is not None:
+            mean_symmetry_loss /= num_updates
 
         self.storage.clear()
 
@@ -474,6 +552,8 @@ class AMPDWAQPPO:
             "amp/policy_pred": mean_policy_pred,
             "amp/expert_pred": mean_expert_pred,
         }
+        if self.symmetry:
+            loss_dict["symmetry"] = mean_symmetry_loss
 
         return loss_dict
     

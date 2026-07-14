@@ -73,6 +73,8 @@ class OnPolicyRunnerAmp:
         amp_obs = None
         if hasattr(self.alg, "discriminator"):
             amp_obs = obs["amp"].to(self.device)
+            if len(amp_obs.shape) == 3:
+                amp_obs = amp_obs.view(amp_obs.shape[0], -1)
 
         self.train_mode()  # switch to train mode (for dropout for example)
 
@@ -108,6 +110,8 @@ class OnPolicyRunnerAmp:
 
                     # 1. 获取下一帧 AMP 观测
                     next_amp_obs = obs["amp"].to(self.device)
+                    if len(next_amp_obs.shape) == 3:
+                        next_amp_obs = next_amp_obs.view(next_amp_obs.shape[0], -1)
                         
                     # 2. 处理 Terminal States (关键：防止重置干扰判别器)
                     # 我们需要构建一个用于判别器训练的 "next_amp_obs"，其中重置的环境使用其重置前的最后一帧
@@ -127,7 +131,10 @@ class OnPolicyRunnerAmp:
                             terminal_obs_dict = extras.get("terminal_obs")
                         # -----------------------------------
                         if terminal_obs_dict is not None and "amp" in terminal_obs_dict:
-                            next_amp_obs_with_term[reset_env_ids] = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
+                            term_amp = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
+                            if len(term_amp.shape) == 3:
+                                term_amp = term_amp.view(term_amp.shape[0], -1)
+                            next_amp_obs_with_term[reset_env_ids] = term_amp
                         else:
                             # 我们用上一帧 (current_amp_obs) 来近似
                             next_amp_obs_with_term[reset_env_ids] = current_amp_obs[reset_env_ids]
@@ -406,6 +413,12 @@ class OnPolicyRunnerAmp:
 
     def _construct_algorithm(self, obs) -> AMPPPO:
         """Construct the actor-critic algorithm."""
+        
+        # resolve RND config
+        self.alg_cfg = resolve_rnd_config(self.alg_cfg, obs, self.cfg["obs_groups"], self.env)
+
+        # resolve symmetry config
+        self.alg_cfg = resolve_symmetry_config(self.alg_cfg, self.env)
 
         # resolve deprecated normalization config
         if self.cfg.get("empirical_normalization") is not None:
@@ -451,6 +464,7 @@ class OnPolicyRunnerAmp:
             preload_transitions=True,
             num_preload_transitions=self.cfg["amp_num_preload_transitions"],
             motion_files=self.cfg["amp_motion_files"],
+            history_length=self.cfg.get("amp_history_length", 1),
         )
         print(f"AMP Observation Dim: {amp_data.observation_dim}")
         amp_normalizer = Normalizer(amp_data.observation_dim)

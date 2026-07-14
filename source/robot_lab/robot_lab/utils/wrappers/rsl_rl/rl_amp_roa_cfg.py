@@ -7,7 +7,7 @@ from dataclasses import MISSING
 from typing import Literal
 
 from isaaclab.utils import configclass
-from isaaclab_rl.rsl_rl import RslRlPpoAlgorithmCfg, RslRlPpoActorCriticCfg, RslRlOnPolicyRunnerCfg
+from isaaclab_rl.rsl_rl import RslRlPpoAlgorithmCfg, RslRlPpoActorCriticCfg, RslRlOnPolicyRunnerCfg, RslRlSymmetryCfg
 
 #############################
 # AMP-ROA Policy Config     #
@@ -57,6 +57,9 @@ class RslRlAlgorithmAmpRoaCfg(RslRlPpoAlgorithmCfg):
 
     vel_loss_coef: float = 1.0
     """显式速度估计的监督损失权重系数。"""
+
+    symmetry_cfg: RslRlSymmetryCfg | None = None
+    """Configuration for symmetry mechanism (e.g. data augmentation, mirror loss)."""
 
 
 #############################

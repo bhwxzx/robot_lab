@@ -7,7 +7,7 @@ from dataclasses import MISSING
 from typing import Literal
 
 from isaaclab.utils import configclass
-from isaaclab_rl.rsl_rl import RslRlPpoAlgorithmCfg, RslRlPpoActorCriticCfg, RslRlOnPolicyRunnerCfg
+from isaaclab_rl.rsl_rl import RslRlPpoAlgorithmCfg, RslRlPpoActorCriticCfg, RslRlOnPolicyRunnerCfg, RslRlSymmetryCfg
 
 #############################
 # AMP-DWAQ Policy Config    #
@@ -54,6 +54,9 @@ class RslRlAlgorithmAmpDwaqCfg(RslRlPpoAlgorithmCfg):
 
     obs_dim: int = 41
     """本体感受观察值的维度 (用于从特权观测中提取速度标签)。"""
+
+    symmetry_cfg: RslRlSymmetryCfg | None = None
+    """Configuration for symmetry mechanism (e.g. data augmentation, mirror loss)."""
 
 
 #############################

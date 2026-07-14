@@ -7,7 +7,7 @@ from dataclasses import MISSING
 from typing import Literal
 
 from isaaclab.utils import configclass
-from isaaclab_rl.rsl_rl import RslRlPpoAlgorithmCfg, RslRlPpoActorCriticCfg, RslRlOnPolicyRunnerCfg
+from isaaclab_rl.rsl_rl import RslRlPpoAlgorithmCfg, RslRlPpoActorCriticCfg, RslRlOnPolicyRunnerCfg, RslRlSymmetryCfg
 
 @configclass
 class RslRlAlgorithmAmpCfg(RslRlPpoAlgorithmCfg):
@@ -15,6 +15,9 @@ class RslRlAlgorithmAmpCfg(RslRlPpoAlgorithmCfg):
 
     class_name: str = "AMPPPO"
     """The algorithm class name."""
+
+    symmetry_cfg: RslRlSymmetryCfg | None = None
+    """Configuration for symmetry mechanism (e.g. data augmentation, mirror loss)."""
 
 @configclass
 class RslRlOnPolicyRunnerAmpCfg(RslRlOnPolicyRunnerCfg):

@@ -1,4 +1,5 @@
 from isaaclab.utils import configclass
+from isaaclab_rl.rsl_rl import RslRlSymmetryCfg
 
 from robot_lab.utils.wrappers.rsl_rl.rl_amp_dwaq_cfg import (
     RslRlOnPolicyRunnerAmpDwaqCfg,
@@ -43,8 +44,15 @@ class LWRoughAmpDwaqRunnerCfg(RslRlOnPolicyRunnerAmpDwaqCfg):
         desired_kl=0.01,
         max_grad_norm=1.0,
         vae_beta=1.0, # vae系数
-        obs_dim=41    # 本体感知的观测维度
+        obs_dim=41,   # 本体感知的观测维度
+        symmetry_cfg=RslRlSymmetryCfg(
+            use_data_augmentation=True,
+            use_mirror_loss=True,
+            mirror_loss_coeff=0.2,
+            data_augmentation_func="robot_lab.tasks.manager_based.locomotion.velocity.mdp.symmetry.lw_leg:compute_symmetric_states"
+        ),
     )
+    amp_history_length=10
     amp_discr_hidden_dims=[1024, 512, 256]
     amp_motion_files=["source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_*.txt"]
     amp_num_preload_transitions=200000

@@ -50,6 +50,8 @@ class AMPROAPPO:
         amp_task_reward_lerp=0.3,
         amp_discr_hidden_dims=None,
         disc_learning_rate=1e-4,
+        # Symmetry parameters
+        symmetry_cfg: dict | None = None,
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
         **kwargs
@@ -69,6 +71,24 @@ class AMPROAPPO:
         # --- [ROA 参数] ---
         self.priv_reg_coef_schedule = priv_reg_coef_schedule
         self.dagger_update_freq = dagger_update_freq
+        
+        from rsl_rl.utils import string_to_callable
+        # Symmetry components
+        if symmetry_cfg is not None:
+            # Check if symmetry is enabled
+            use_symmetry = symmetry_cfg["use_data_augmentation"] or symmetry_cfg["use_mirror_loss"]
+            if not use_symmetry:
+                print("Symmetry not used for learning. We will use it for logging instead.")
+            if isinstance(symmetry_cfg["data_augmentation_func"], str):
+                symmetry_cfg["data_augmentation_func"] = string_to_callable(symmetry_cfg["data_augmentation_func"])
+            if symmetry_cfg["use_data_augmentation"] and not callable(symmetry_cfg["data_augmentation_func"]):
+                raise ValueError(
+                    "Data augmentation enabled but the function is not callable:"
+                    f" {symmetry_cfg['data_augmentation_func']}"
+                )
+            self.symmetry = symmetry_cfg
+        else:
+            self.symmetry = None
 
         # --- [AMP 初始化] ---
         self.discriminator = discriminator
@@ -192,6 +212,11 @@ class AMPROAPPO:
         mean_grad_pen_loss = 0
         mean_policy_pred = 0
         mean_expert_pred = 0
+        # -- Symmetry loss
+        if self.symmetry:
+            mean_symmetry_loss = 0
+        else:
+            mean_symmetry_loss = None
 
         generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
         amp_policy_generator = self.amp_storage.feed_forward_generator(
@@ -211,10 +236,27 @@ class AMPROAPPO:
             ) = sample
 
             original_batch_size = obs_batch.batch_size[0]
+            num_aug = 1
 
             if self.normalize_advantage_per_mini_batch:
                 with torch.no_grad():
                     advantages_batch = (advantages_batch - advantages_batch.mean()) / (advantages_batch.std() + 1e-8)
+
+            if self.symmetry and self.symmetry["use_data_augmentation"]:
+                # augmentation using symmetry
+                data_augmentation_func = self.symmetry["data_augmentation_func"]
+                obs_batch, actions_batch = data_augmentation_func(
+                    obs=obs_batch,
+                    actions=actions_batch,
+                    env=self.symmetry["_env"],
+                )
+                # recompute the number of augmentations
+                num_aug = int(obs_batch.batch_size[0] / original_batch_size)
+                # repeat the other parts of the batch
+                old_actions_log_prob_batch = old_actions_log_prob_batch.repeat(num_aug, 1)
+                target_values_batch = target_values_batch.repeat(num_aug, 1)
+                advantages_batch = advantages_batch.repeat(num_aug, 1)
+                returns_batch = returns_batch.repeat(num_aug, 1)
 
             # Recompute
             self.policy.act(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[0])
@@ -299,6 +341,29 @@ class AMPROAPPO:
                     self.entropy_coef * entropy_batch.mean() + 
                     priv_reg_coef * priv_reg_loss)
                     
+            # Symmetry loss
+            if self.symmetry:
+                if not self.symmetry["use_data_augmentation"]:
+                    data_augmentation_func = self.symmetry["data_augmentation_func"]
+                    obs_batch, _ = data_augmentation_func(obs=obs_batch, actions=None, env=self.symmetry["_env"])
+                    num_aug = int(obs_batch.shape[0] / original_batch_size)
+
+                mean_actions_batch = self.policy.act_inference(obs_batch.detach().clone())
+                action_mean_orig = mean_actions_batch[:original_batch_size]
+                _, actions_mean_symm_batch = data_augmentation_func(
+                    obs=None, actions=action_mean_orig, env=self.symmetry["_env"]
+                )
+
+                mse_loss = torch.nn.MSELoss()
+                symmetry_loss = mse_loss(
+                    mean_actions_batch[original_batch_size:], actions_mean_symm_batch.detach()[original_batch_size:]
+                )
+
+                if self.symmetry["use_mirror_loss"]:
+                    loss += self.symmetry["mirror_loss_coeff"] * symmetry_loss
+                else:
+                    symmetry_loss = symmetry_loss.detach()
+                    
             amp_total_loss = self.amploss_coef * amp_loss + self.amploss_coef * grad_pen_loss
 
             # Optimization
@@ -333,6 +398,9 @@ class AMPROAPPO:
             mean_grad_pen_loss += grad_pen_loss.item()
             mean_policy_pred += policy_d.mean().item()
             mean_expert_pred += expert_d.mean().item()
+            # -- Symmetry loss
+            if mean_symmetry_loss is not None:
+                mean_symmetry_loss += symmetry_loss.item()
 
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_value_loss /= num_updates
@@ -343,11 +411,14 @@ class AMPROAPPO:
         mean_grad_pen_loss /= num_updates
         mean_policy_pred /= num_updates
         mean_expert_pred /= num_updates
+        # -- For Symmetry
+        if mean_symmetry_loss is not None:
+            mean_symmetry_loss /= num_updates
         
         self.storage.clear()
         self.counter += 1
 
-        return {
+        loss_dict = {
             "value_function": mean_value_loss,
             "surrogate": mean_surrogate_loss,
             "entropy": mean_entropy,
@@ -357,6 +428,11 @@ class AMPROAPPO:
             "amp/policy_pred": mean_policy_pred,
             "amp/expert_pred": mean_expert_pred,
         }
+        
+        if self.symmetry:
+            loss_dict["symmetry"] = mean_symmetry_loss
+            
+        return loss_dict
 
     def update_dagger(self):
         """ ROA 的监督蒸馏阶段 (History Encoder 学习阶段) """

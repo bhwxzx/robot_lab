@@ -1,4 +1,5 @@
 from isaaclab.utils import configclass
+from isaaclab_rl.rsl_rl import RslRlSymmetryCfg
 
 from robot_lab.utils.wrappers.rsl_rl.rl_amp_roa_cfg import (
     RslRlOnPolicyRunnerAmpRoaCfg,
@@ -27,7 +28,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         critic_obs_normalization=False,
         activation="elu",
         priv_encoder_dims=[256, 128, 20],
-        vel_offset=41,
+        vel_offset=39,  # 41
     )
     algorithm = RslRlAlgorithmAmpRoaCfg(
         value_loss_coef=1.0,
@@ -46,14 +47,21 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         priv_reg_coef_schedule_resume=[0.0, 0.1, 0, 1],
         dagger_update_freq=20,
         vel_loss_coef=1.0,
+        symmetry_cfg=RslRlSymmetryCfg(
+            use_data_augmentation=True,
+            use_mirror_loss=True,
+            mirror_loss_coeff=0.2,
+            data_augmentation_func="robot_lab.tasks.manager_based.locomotion.velocity.mdp.symmetry.lw_leg:compute_symmetric_states"
+        ),
     )
+    amp_history_length=10
     amp_discr_hidden_dims=[1024, 512]
     amp_motion_files=["source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_*.txt"]
     amp_num_preload_transitions=200000
     amp_replay_buffer_size=100000
     disc_learning_rate=1.0e-4
-    amp_reward_coef=2.0
-    amp_task_reward_lerp=0.7
+    amp_reward_coef=3.0   # 2.0
+    amp_task_reward_lerp=0.3
 
 @configclass
 class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):

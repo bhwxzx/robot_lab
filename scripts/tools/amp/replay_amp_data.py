@@ -48,6 +48,8 @@ JOINTS_NUM = len(AMP_TARGET_JOINTS)
 def main():
     # 1. 环境初始化
     env_cfg = LWLegFlatAmpEnvCfg_Play()
+    # 强制将回放数据的环境历史设为 0 (单帧)
+    env_cfg.observations.amp.history_length = 0
     env_cfg.scene.num_envs = 1
     env_cfg.sim.disable_gravity = True
     env_cfg.scene.robot.spawn.rigid_props.disable_gravity = True
