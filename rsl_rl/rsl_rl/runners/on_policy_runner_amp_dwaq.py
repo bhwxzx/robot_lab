@@ -134,6 +134,7 @@ class OnPolicyRunnerAmpDwaq:
                     # 如果环境重置了，不能直接用新 Episode 的第一帧作为 s_{t+1}
                     # 必须使用 episode 结束前的最后一帧 (terminal_obs)
                     next_amp_obs_with_term = next_amp_obs.clone()
+                    amp_transition_valid = ~dones.bool()
                     reset_env_ids = dones.nonzero(as_tuple=False).flatten()
 
                     if len(reset_env_ids) > 0:
@@ -147,8 +148,10 @@ class OnPolicyRunnerAmpDwaq:
                             if len(term_amp.shape) == 3:
                                 term_amp = term_amp.view(term_amp.shape[0], -1)
                             next_amp_obs_with_term[reset_env_ids] = term_amp
+                            amp_transition_valid[reset_env_ids] = True
                         else:
-                            # Fallback: 如果没有 terminal_obs，使用上一帧 (current_amp_obs) 近似
+                            # 上一有效窗口只用于终止步的保守 AMP reward，
+                            # 不作为伪造的 (old, old) transition 写入 replay。
                             next_amp_obs_with_term[reset_env_ids] = current_amp_obs[reset_env_ids]
 
                     # 5. [DWAQ] Update Prev Critic Obs
@@ -163,7 +166,14 @@ class OnPolicyRunnerAmpDwaq:
                     # - 存入 DWAQ Storage (obs, actions, prev_critic_obs...)
                     # - 存入 AMP Buffer (s_t, s_{t+1})
                     # - 计算 AMP 风格奖励并加到 rewards 上
-                    self.alg.process_env_step(obs, rewards, dones, extras, next_amp_obs_with_term)
+                    self.alg.process_env_step(
+                        obs,
+                        rewards,
+                        dones,
+                        extras,
+                        next_amp_obs_with_term,
+                        amp_transition_valid=amp_transition_valid,
+                    )
 
                     # 7. Update pointers for next loop
                     amp_obs = next_amp_obs
@@ -289,7 +299,9 @@ class OnPolicyRunnerAmpDwaq:
             "infos": infos,
             # [AMP 特有]
             "discriminator_state_dict": self.alg.discriminator.state_dict(),
-            "amp_normalizer": self.alg.amp_normalizer
+            "amp_normalizer": self.alg.amp_normalizer,
+            "amp_optimizer_state_dict": self.alg.amp_optimizer.state_dict(),
+            "vae_optimizer_state_dict": self.alg.vae_optimizer.state_dict(),
         }
         torch.save(saved_dict, path)
         if self.logger_type in ["neptune", "wandb"] and not self.disable_logs:
@@ -311,9 +323,18 @@ class OnPolicyRunnerAmpDwaq:
 
         if load_optimizer and resumed_training:
             self.alg.optimizer.load_state_dict(loaded_dict["optimizer_state_dict"])
+            self.alg.learning_rate = self.alg.optimizer.param_groups[0]["lr"]
+            if "amp_optimizer_state_dict" in loaded_dict:
+                self.alg.amp_optimizer.load_state_dict(loaded_dict["amp_optimizer_state_dict"])
+            else:
+                print("[Warning] 'amp_optimizer_state_dict' not found in checkpoint. Using a fresh optimizer.")
+            if "vae_optimizer_state_dict" in loaded_dict:
+                self.alg.vae_optimizer.load_state_dict(loaded_dict["vae_optimizer_state_dict"])
+            else:
+                print("[Warning] 'vae_optimizer_state_dict' not found in checkpoint. Using a fresh optimizer.")
         if resumed_training:
             self.current_learning_iteration = loaded_dict["iter"]
-        return loaded_dict["infos"]
+        return loaded_dict.get("infos")
 
     def get_inference_policy(self, device=None):
         self.eval_mode()
@@ -393,14 +414,18 @@ class OnPolicyRunnerAmpDwaq:
             history_length=self.cfg.get("amp_history_length", 1),
         )
         print(f"AMP Observation Dim: {amp_data.observation_dim}")
-        amp_normalizer = Normalizer(amp_data.observation_dim)
+        print(f"AMP Frame Dim for Normalizer: {amp_data.frame_dim}")
+        amp_normalizer = Normalizer(amp_data.frame_dim)
+        use_history_window = self.cfg.get("amp_discriminator_history_window", False)
+        discriminator_input_dim = amp_data.observation_dim if use_history_window else amp_data.observation_dim * 2
         discriminator = Discriminator(
-            amp_data.observation_dim * 2,
+            discriminator_input_dim,
             self.cfg["amp_reward_coef"],
             self.cfg["amp_discr_hidden_dims"],
             self.device,
             self.cfg["amp_task_reward_lerp"],
             dt=step_dt,
+            use_history_window=use_history_window,
         ).to(self.device)
 
         # 4. Initialize Policy (ActorCriticDwaq)

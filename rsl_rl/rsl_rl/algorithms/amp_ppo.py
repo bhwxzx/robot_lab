@@ -96,10 +96,7 @@ class AMPPPO:
         self.min_std = min_std
 
         # 初始化 AMP 回放池 (用于存储 Policy 产生的动作序列，供判别器训练)
-        # discriminator.input_dim // 2 是因为输入是 (state, next_state) 拼接的
-        self.amp_storage = ReplayBuffer(
-            discriminator.input_dim // 2, amp_replay_buffer_size, device
-        )
+        self.amp_storage = ReplayBuffer(amp_data.observation_dim, amp_replay_buffer_size, device)
         self.amp_transition = RolloutStorage.Transition() # 临时的 AMP transition 存储
 
         # PPO components
@@ -163,7 +160,7 @@ class AMPPPO:
             self.amp_transition.observations = amp_obs
         return self.transition.actions
 
-    def process_env_step(self, obs, rewards, dones, extras, amp_obs):
+    def process_env_step(self, obs, rewards, dones, extras, amp_obs, amp_transition_valid=None):
         # 1. 常规处理
         self.policy.update_normalization(obs)
         self.transition.dones = dones
@@ -171,8 +168,16 @@ class AMPPPO:
         # 注意：这里的 rewards 是环境给出的纯任务奖励 (Task Reward)
         # 我们稍后会根据配置决定是 "相加" 还是 "覆盖(Lerp)"
         
-        # 2. 存入 AMP ReplayBuffer
-        self.amp_storage.insert(self.amp_transition.observations, amp_obs)
+        # 2. 只把带有真实 post-step AMP observation 的 transition 写入 ReplayBuffer。
+        # IsaacLab 默认在返回观测前重置终止环境，因此这些样本通常需要排除。
+        if amp_transition_valid is None:
+            amp_transition_valid = ~dones.bool()
+        amp_transition_valid = amp_transition_valid.reshape(-1)
+        if torch.any(amp_transition_valid):
+            self.amp_storage.insert(
+                self.amp_transition.observations[amp_transition_valid],
+                amp_obs[amp_transition_valid],
+            )
 
         # 3. --- [AMP 核心: 计算风格奖励] ---
         # 使用 Discriminator 封装的 predict_amp_reward 方法
@@ -390,17 +395,23 @@ class AMPPPO:
             # 归一化
             if self.amp_normalizer is not None:
                 with torch.no_grad():
-                    policy_state = self.amp_normalizer.normalize_torch(policy_state, self.device)
-                    policy_next_state = self.amp_normalizer.normalize_torch(policy_next_state, self.device)
-                    expert_state = self.amp_normalizer.normalize_torch(expert_state, self.device)
-                    expert_next_state = self.amp_normalizer.normalize_torch(expert_next_state, self.device)
+                    policy_next_state = self.discriminator.normalize_amp_observation(
+                        policy_next_state, self.amp_normalizer
+                    )
+                    expert_next_state = self.discriminator.normalize_amp_observation(
+                        expert_next_state, self.amp_normalizer
+                    )
+                    if not self.discriminator.use_history_window:
+                        policy_state = self.discriminator.normalize_amp_observation(
+                            policy_state, self.amp_normalizer
+                        )
+                        expert_state = self.discriminator.normalize_amp_observation(
+                            expert_state, self.amp_normalizer
+                        )
             
-            # 判别器前向传播 (拼接 state 和 next_state)
-            policy_cat = torch.cat([policy_state, policy_next_state], dim=-1)
-            expert_cat = torch.cat([expert_state, expert_next_state], dim=-1)
-            
-            policy_d = self.discriminator(policy_cat)
-            expert_d = self.discriminator(expert_cat)
+            # 判别器前向传播：历史窗口模式直接使用动作后的单个窗口。
+            policy_d = self.discriminator(self.discriminator.prepare_input(policy_state, policy_next_state))
+            expert_d = self.discriminator(self.discriminator.prepare_input(expert_state, expert_next_state))
 
             # Least Squares GAN Loss
             # 专家数据的目标是 1，策略数据的目标是 -1 (或者 0，取决于具体实现，AMP常用 -1)
@@ -438,8 +449,8 @@ class AMPPPO:
 
              # 更新 AMP Normalizer
             if self.amp_normalizer is not None:
-                self.amp_normalizer.update(sample_amp_policy[0].cpu().numpy())
-                self.amp_normalizer.update(sample_amp_expert[0].cpu().numpy())
+                self.discriminator.update_amp_normalizer(self.amp_normalizer, sample_amp_policy[1])
+                self.discriminator.update_amp_normalizer(self.amp_normalizer, sample_amp_expert[1])
 
             # Store the losses
             mean_value_loss += value_loss.item()

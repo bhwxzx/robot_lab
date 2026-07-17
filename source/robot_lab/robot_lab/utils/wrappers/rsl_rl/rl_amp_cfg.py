@@ -43,6 +43,9 @@ class RslRlOnPolicyRunnerAmpCfg(RslRlOnPolicyRunnerCfg):
     amp_discr_hidden_dims: list[int] = [1024, 512, 256]
     """判别器 MLP 的隐藏层维度。"""
 
+    amp_discriminator_history_window: bool = True
+    """判别器是否直接使用单个 AMP 历史窗口，而不是拼接相邻的两个窗口。"""
+
     amp_replay_buffer_size: int = 100000
     """判别器训练使用的回放池大小（存储机器人的历史动作）。"""
 

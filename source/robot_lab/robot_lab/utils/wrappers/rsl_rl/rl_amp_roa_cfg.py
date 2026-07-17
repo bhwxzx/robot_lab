@@ -4,10 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from dataclasses import MISSING
-from typing import Literal
 
 from isaaclab.utils import configclass
-from isaaclab_rl.rsl_rl import RslRlPpoAlgorithmCfg, RslRlPpoActorCriticCfg, RslRlOnPolicyRunnerCfg, RslRlSymmetryCfg
+from isaaclab_rl.rsl_rl import RslRlPpoAlgorithmCfg, RslRlPpoActorCriticCfg, RslRlOnPolicyRunnerCfg
 
 #############################
 # AMP-ROA Policy Config     #
@@ -58,10 +57,6 @@ class RslRlAlgorithmAmpRoaCfg(RslRlPpoAlgorithmCfg):
     vel_loss_coef: float = 1.0
     """显式速度估计的监督损失权重系数。"""
 
-    symmetry_cfg: RslRlSymmetryCfg | None = None
-    """Configuration for symmetry mechanism (e.g. data augmentation, mirror loss)."""
-
-
 #############################
 # AMP-ROA Runner Config     #
 #############################
@@ -99,6 +94,9 @@ class RslRlOnPolicyRunnerAmpRoaCfg(RslRlOnPolicyRunnerCfg):
 
     amp_discr_hidden_dims: list[int] = [1024, 512, 256]
     """判别器 MLP 的隐藏层维度。"""
+
+    amp_discriminator_history_window: bool = True
+    """判别器是否直接使用单个 AMP 历史窗口，而不是拼接相邻的两个窗口。"""
 
     amp_replay_buffer_size: int = 100000
     """判别器训练使用的回放池大小。"""

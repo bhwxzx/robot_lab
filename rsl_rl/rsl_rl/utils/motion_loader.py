@@ -171,14 +171,14 @@ class AMPLoader:
         """Returns frame for the given trajectory at the specified time."""
         p = times / self.trajectory_lens[traj_idxs]
         n = self.trajectory_num_frames[traj_idxs]
-        idx_low, idx_high = np.floor(p * n).astype(np.int), np.ceil(p * n).astype(np.int)
+        idx_low, idx_high = np.floor(p * n).astype(np.int64), np.ceil(p * n).astype(np.int64)
         # --- [核心修复：对整个 Batch 进行边界限制] ---
         # 这里的 n 是每条轨迹的长度，利用 np.clip 批量处理
         idx_low = np.clip(idx_low, 0, n.astype(np.int64) - 1)
         idx_high = np.clip(idx_high, 0, n.astype(np.int64) - 1)
         # ------------------------------------------
-        all_frame_starts = torch.zeros(len(traj_idxs), self.observation_dim, device=self.device)
-        all_frame_ends = torch.zeros(len(traj_idxs), self.observation_dim, device=self.device)
+        all_frame_starts = torch.zeros(len(traj_idxs), self.frame_dim, device=self.device)
+        all_frame_ends = torch.zeros(len(traj_idxs), self.frame_dim, device=self.device)
         for traj_idx in set(traj_idxs):
             trajectory = self.trajectories[traj_idx]
             traj_mask = traj_idxs == traj_idx
@@ -277,11 +277,13 @@ class AMPLoader:
 
         joints0, joints1 = AMPLoader.get_joint_pose(frame0), AMPLoader.get_joint_pose(frame1)
         joint_vel_0, joint_vel_1 = AMPLoader.get_joint_vel(frame0), AMPLoader.get_joint_vel(frame1)
+        end_pos_0, end_pos_1 = AMPLoader.get_end_pos(frame0), AMPLoader.get_end_pos(frame1)
 
         blend_joint_q = self.slerp(joints0, joints1, blend)
         blend_joints_vel = self.slerp(joint_vel_0, joint_vel_1, blend)
+        blend_end_pos = self.slerp(end_pos_0, end_pos_1, blend)
 
-        return torch.cat([blend_joint_q, blend_joints_vel])
+        return torch.cat([blend_joint_q, blend_joints_vel, blend_end_pos], dim=-1)
 
     def feed_forward_generator(self, num_mini_batch, mini_batch_size):
         """Generates a batch of AMP transitions."""
@@ -302,7 +304,12 @@ class AMPLoader:
     @property
     def observation_dim(self):
         """Size of AMP observations."""
-        return self.trajectories[0].shape[1] * self.history_length
+        return self.frame_dim * self.history_length
+
+    @property
+    def frame_dim(self):
+        """Size of a single AMP observation frame."""
+        return self.trajectories[0].shape[1]
 
     @property
     def num_motions(self):

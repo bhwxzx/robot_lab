@@ -26,7 +26,7 @@ class Discriminator(nn.Module):
     Discriminator neural network for adversarial motion priors (AMP) reward prediction.
 
     Args:
-        input_dim (int): Dimension of the input feature vector (concatenated state and next state).
+        input_dim (int): Dimension of the discriminator input feature vector.
         amp_reward_coef (float): Coefficient to scale the AMP reward.
         hidden_layer_sizes (list[int]): Sizes of hidden layers in the MLP trunk.
         device (torch.device): Device to run the model on (CPU or GPU).
@@ -39,12 +39,22 @@ class Discriminator(nn.Module):
         task_reward_lerp (float): Interpolation factor for combining rewards.
     """
 
-    def __init__(self, input_dim, amp_reward_coef, hidden_layer_sizes, device, task_reward_lerp=0.0, dt=0.02):
+    def __init__(
+        self,
+        input_dim,
+        amp_reward_coef,
+        hidden_layer_sizes,
+        device,
+        task_reward_lerp=0.0,
+        dt=0.02,
+        use_history_window=False,
+    ):
         super().__init__()
 
         self.device = device
         self.dt = dt
         self.input_dim = input_dim
+        self.use_history_window = use_history_window
 
         self.amp_reward_coef = amp_reward_coef
         amp_layers = []
@@ -75,6 +85,44 @@ class Discriminator(nn.Module):
         d = self.amp_linear(h)
         return d
 
+    def prepare_input(self, state, next_state):
+        """Build the discriminator input from an AMP transition.
+
+        History-window mode uses the post-step window directly. Legacy AMP mode
+        keeps the original concatenated state-transition representation.
+        """
+        if self.use_history_window:
+            return next_state
+        return torch.cat([state, next_state], dim=-1)
+
+    def normalize_amp_observation(self, observation, normalizer):
+        """Normalize a flattened AMP history with shared per-frame statistics.
+
+        The normalizer dimension determines the frame size. This also keeps old
+        checkpoints with a full-window normalizer compatible.
+        """
+        normalizer_dim = int(normalizer.mean.shape[0])
+        if observation.shape[-1] % normalizer_dim != 0:
+            raise ValueError(
+                "AMP observation dimension must be divisible by the normalizer dimension: "
+                f"got observation={observation.shape[-1]}, normalizer={normalizer_dim}."
+            )
+        original_shape = observation.shape
+        frames = observation.reshape(-1, normalizer_dim)
+        normalized_frames = normalizer.normalize_torch(frames, self.device)
+        return normalized_frames.reshape(original_shape)
+
+    def update_amp_normalizer(self, normalizer, observation):
+        """Update shared per-frame normalization statistics from flattened histories."""
+        normalizer_dim = int(normalizer.mean.shape[0])
+        if observation.shape[-1] % normalizer_dim != 0:
+            raise ValueError(
+                "AMP observation dimension must be divisible by the normalizer dimension: "
+                f"got observation={observation.shape[-1]}, normalizer={normalizer_dim}."
+            )
+        frames = observation.detach().reshape(-1, normalizer_dim)
+        normalizer.update(frames.cpu().numpy())
+
     def compute_grad_pen(self, expert_state, expert_next_state, lambda_=10):
         """
         Compute gradient penalty for the expert data, used to regularize the discriminator.
@@ -87,7 +135,7 @@ class Discriminator(nn.Module):
         Returns:
             torch.Tensor: Scalar gradient penalty loss.
         """
-        expert_data = torch.cat([expert_state, expert_next_state], dim=-1)
+        expert_data = self.prepare_input(expert_state, expert_next_state).detach().clone()
         expert_data.requires_grad = True
 
         disc = self.amp_linear(self.trunk(expert_data))
@@ -118,10 +166,11 @@ class Discriminator(nn.Module):
         with torch.no_grad():
             self.eval()
             if normalizer is not None:
-                state = normalizer.normalize_torch(state, self.device)
-                next_state = normalizer.normalize_torch(next_state, self.device)
+                next_state = self.normalize_amp_observation(next_state, normalizer)
+                if not self.use_history_window:
+                    state = self.normalize_amp_observation(state, normalizer)
 
-            d = self.amp_linear(self.trunk(torch.cat([state, next_state], dim=-1)))
+            d = self.amp_linear(self.trunk(self.prepare_input(state, next_state)))
             reward = self.dt * self.amp_reward_coef * torch.clamp(1 - (1 / 4) * torch.square(d - 1), min=0)
             if self.task_reward_lerp > 0:
                 reward = self._lerp_reward(reward, task_reward.unsqueeze(-1))

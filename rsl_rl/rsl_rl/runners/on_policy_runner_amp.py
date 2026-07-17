@@ -116,6 +116,7 @@ class OnPolicyRunnerAmp:
                     # 2. 处理 Terminal States (关键：防止重置干扰判别器)
                     # 我们需要构建一个用于判别器训练的 "next_amp_obs"，其中重置的环境使用其重置前的最后一帧
                     next_amp_obs_with_term = next_amp_obs.clone()
+                    amp_transition_valid = ~dones.bool()
                     # 通过 dones 找到哪些环境刚重置了
                     reset_env_ids = dones.nonzero(as_tuple=False).flatten()
 
@@ -135,13 +136,22 @@ class OnPolicyRunnerAmp:
                             if len(term_amp.shape) == 3:
                                 term_amp = term_amp.view(term_amp.shape[0], -1)
                             next_amp_obs_with_term[reset_env_ids] = term_amp
+                            amp_transition_valid[reset_env_ids] = True
                         else:
-                            # 我们用上一帧 (current_amp_obs) 来近似
+                            # 上一有效窗口只用于终止步的保守 AMP reward，
+                            # 不作为伪造的 (old, old) transition 写入 replay。
                             next_amp_obs_with_term[reset_env_ids] = current_amp_obs[reset_env_ids]
 
                     # 3. 调用算法处理 (传入 amp_obs)
                     # 在 AMPPPO.process_env_step 内部已经封装好了奖励计算逻辑
-                    self.alg.process_env_step(obs, rewards, dones, extras, next_amp_obs_with_term)
+                    self.alg.process_env_step(
+                        obs,
+                        rewards,
+                        dones,
+                        extras,
+                        next_amp_obs_with_term,
+                        amp_transition_valid=amp_transition_valid,
+                    )
                         
                     # 4. 更新当前帧
                     amp_obs = next_amp_obs
@@ -314,6 +324,12 @@ class OnPolicyRunnerAmp:
         if hasattr(self.alg, "discriminator"):
             saved_dict["discriminator_state_dict"] = self.alg.discriminator.state_dict()
             saved_dict["amp_normalizer"] = self.alg.amp_normalizer
+        if hasattr(self.alg, "amp_optimizer"):
+            saved_dict["amp_optimizer_state_dict"] = self.alg.amp_optimizer.state_dict()
+        if getattr(self.alg, "hist_encoder_optimizer", None) is not None:
+            saved_dict["hist_encoder_optimizer_state_dict"] = self.alg.hist_encoder_optimizer.state_dict()
+        if hasattr(self.alg, "counter"):
+            saved_dict["algorithm_counter"] = self.alg.counter
         torch.save(saved_dict, path)
 
         # upload model to external logging service
@@ -338,10 +354,37 @@ class OnPolicyRunnerAmp:
         if load_optimizer and resumed_training:
             # -- algorithm optimizer
             self.alg.optimizer.load_state_dict(loaded_dict["optimizer_state_dict"])
+            self.alg.learning_rate = self.alg.optimizer.param_groups[0]["lr"]
+            if hasattr(self.alg, "amp_optimizer"):
+                if "amp_optimizer_state_dict" in loaded_dict:
+                    self.alg.amp_optimizer.load_state_dict(loaded_dict["amp_optimizer_state_dict"])
+                else:
+                    print("[Warning] 'amp_optimizer_state_dict' not found in checkpoint. Using a fresh optimizer.")
+            if getattr(self.alg, "hist_encoder_optimizer", None) is not None:
+                if "hist_encoder_optimizer_state_dict" in loaded_dict:
+                    self.alg.hist_encoder_optimizer.load_state_dict(
+                        loaded_dict["hist_encoder_optimizer_state_dict"]
+                    )
+                else:
+                    print(
+                        "[Warning] 'hist_encoder_optimizer_state_dict' not found in checkpoint. "
+                        "Using a fresh optimizer."
+                    )
         # -- load current learning iteration
         if resumed_training:
             self.current_learning_iteration = loaded_dict["iter"]
-        return loaded_dict["infos"]
+            if hasattr(self.alg, "counter"):
+                if "algorithm_counter" in loaded_dict:
+                    self.alg.counter = int(loaded_dict["algorithm_counter"])
+                else:
+                    # Backward compatibility: old AMP-ROA checkpoints did not save
+                    # the regularization schedule counter.
+                    self.alg.counter = int(loaded_dict["iter"])
+                    print(
+                        "[Warning] 'algorithm_counter' not found in checkpoint. "
+                        f"Falling back to iter={self.alg.counter}."
+                    )
+        return loaded_dict.get("infos")
 
     def get_inference_policy(self, device=None):
         self.eval_mode()  # switch to evaluation mode (dropout for example)
@@ -467,14 +510,18 @@ class OnPolicyRunnerAmp:
             history_length=self.cfg.get("amp_history_length", 1),
         )
         print(f"AMP Observation Dim: {amp_data.observation_dim}")
-        amp_normalizer = Normalizer(amp_data.observation_dim)
+        print(f"AMP Frame Dim for Normalizer: {amp_data.frame_dim}")
+        amp_normalizer = Normalizer(amp_data.frame_dim)
+        use_history_window = self.cfg.get("amp_discriminator_history_window", False)
+        discriminator_input_dim = amp_data.observation_dim if use_history_window else amp_data.observation_dim * 2
         discriminator = Discriminator(
-            amp_data.observation_dim * 2,
+            discriminator_input_dim,
             self.cfg["amp_reward_coef"],
             self.cfg["amp_discr_hidden_dims"],
             self.device,
             self.cfg["amp_task_reward_lerp"],
             dt=step_dt,
+            use_history_window=use_history_window,
         ).to(self.device)
         min_std = torch.zeros(len(self.cfg["min_normalized_std"]), device=self.device, requires_grad=False)
 

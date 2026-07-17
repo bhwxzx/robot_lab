@@ -50,8 +50,6 @@ class AMPROAPPO:
         amp_task_reward_lerp=0.3,
         amp_discr_hidden_dims=None,
         disc_learning_rate=1e-4,
-        # Symmetry parameters
-        symmetry_cfg: dict | None = None,
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
         **kwargs
@@ -71,24 +69,6 @@ class AMPROAPPO:
         # --- [ROA 参数] ---
         self.priv_reg_coef_schedule = priv_reg_coef_schedule
         self.dagger_update_freq = dagger_update_freq
-        
-        from rsl_rl.utils import string_to_callable
-        # Symmetry components
-        if symmetry_cfg is not None:
-            # Check if symmetry is enabled
-            use_symmetry = symmetry_cfg["use_data_augmentation"] or symmetry_cfg["use_mirror_loss"]
-            if not use_symmetry:
-                print("Symmetry not used for learning. We will use it for logging instead.")
-            if isinstance(symmetry_cfg["data_augmentation_func"], str):
-                symmetry_cfg["data_augmentation_func"] = string_to_callable(symmetry_cfg["data_augmentation_func"])
-            if symmetry_cfg["use_data_augmentation"] and not callable(symmetry_cfg["data_augmentation_func"]):
-                raise ValueError(
-                    "Data augmentation enabled but the function is not callable:"
-                    f" {symmetry_cfg['data_augmentation_func']}"
-                )
-            self.symmetry = symmetry_cfg
-        else:
-            self.symmetry = None
 
         # --- [AMP 初始化] ---
         self.discriminator = discriminator
@@ -99,9 +79,7 @@ class AMPROAPPO:
         self.amp_reward_coef = amp_reward_coef
         self.min_std = min_std
 
-        self.amp_storage = ReplayBuffer(
-            discriminator.input_dim // 2, amp_replay_buffer_size, device
-        )
+        self.amp_storage = ReplayBuffer(amp_data.observation_dim, amp_replay_buffer_size, device)
         self.amp_transition = RolloutStorage.Transition()
 
         # --- [Policy] ---
@@ -164,11 +142,21 @@ class AMPROAPPO:
             self.amp_transition.observations = amp_obs
         return self.transition.actions
 
-    def process_env_step(self, obs, rewards, dones, extras, amp_obs):
+    def process_env_step(self, obs, rewards, dones, extras, amp_obs, amp_transition_valid=None):
         self.policy.update_normalization(obs)
         self.transition.dones = dones
-        
-        self.amp_storage.insert(self.amp_transition.observations, amp_obs)
+
+        # IsaacLab resets terminated environments before returning observations.
+        # Unless a real terminal AMP observation is supplied by the runner, exclude
+        # those transitions from discriminator replay instead of storing (old, old).
+        if amp_transition_valid is None:
+            amp_transition_valid = ~dones.bool()
+        amp_transition_valid = amp_transition_valid.reshape(-1)
+        if torch.any(amp_transition_valid):
+            self.amp_storage.insert(
+                self.amp_transition.observations[amp_transition_valid],
+                amp_obs[amp_transition_valid],
+            )
 
         # AMP 奖励计算
         amp_rewards, policy_d = self.discriminator.predict_amp_reward(
@@ -212,12 +200,6 @@ class AMPROAPPO:
         mean_grad_pen_loss = 0
         mean_policy_pred = 0
         mean_expert_pred = 0
-        # -- Symmetry loss
-        if self.symmetry:
-            mean_symmetry_loss = 0
-        else:
-            mean_symmetry_loss = None
-
         generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
         amp_policy_generator = self.amp_storage.feed_forward_generator(
             self.num_learning_epochs * self.num_mini_batches,
@@ -235,36 +217,17 @@ class AMPROAPPO:
                 hid_states_batch, masks_batch,
             ) = sample
 
-            original_batch_size = obs_batch.batch_size[0]
-            num_aug = 1
-
             if self.normalize_advantage_per_mini_batch:
                 with torch.no_grad():
                     advantages_batch = (advantages_batch - advantages_batch.mean()) / (advantages_batch.std() + 1e-8)
-
-            if self.symmetry and self.symmetry["use_data_augmentation"]:
-                # augmentation using symmetry
-                data_augmentation_func = self.symmetry["data_augmentation_func"]
-                obs_batch, actions_batch = data_augmentation_func(
-                    obs=obs_batch,
-                    actions=actions_batch,
-                    env=self.symmetry["_env"],
-                )
-                # recompute the number of augmentations
-                num_aug = int(obs_batch.batch_size[0] / original_batch_size)
-                # repeat the other parts of the batch
-                old_actions_log_prob_batch = old_actions_log_prob_batch.repeat(num_aug, 1)
-                target_values_batch = target_values_batch.repeat(num_aug, 1)
-                advantages_batch = advantages_batch.repeat(num_aug, 1)
-                returns_batch = returns_batch.repeat(num_aug, 1)
 
             # Recompute
             self.policy.act(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[0])
             actions_log_prob_batch = self.policy.get_actions_log_prob(actions_batch)
             value_batch = self.policy.evaluate(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[1])
-            mu_batch = self.policy.action_mean[:original_batch_size]
-            sigma_batch = self.policy.action_std[:original_batch_size]
-            entropy_batch = self.policy.entropy[:original_batch_size]
+            mu_batch = self.policy.action_mean
+            sigma_batch = self.policy.action_std
+            entropy_batch = self.policy.entropy
 
             # KL Adaptation
             if self.desired_kl is not None and self.schedule == "adaptive":
@@ -321,13 +284,22 @@ class AMPROAPPO:
 
             if self.amp_normalizer is not None:
                 with torch.no_grad():
-                    policy_state = self.amp_normalizer.normalize_torch(policy_state, self.device)
-                    policy_next_state = self.amp_normalizer.normalize_torch(policy_next_state, self.device)
-                    expert_state = self.amp_normalizer.normalize_torch(expert_state, self.device)
-                    expert_next_state = self.amp_normalizer.normalize_torch(expert_next_state, self.device)
+                    policy_next_state = self.discriminator.normalize_amp_observation(
+                        policy_next_state, self.amp_normalizer
+                    )
+                    expert_next_state = self.discriminator.normalize_amp_observation(
+                        expert_next_state, self.amp_normalizer
+                    )
+                    if not self.discriminator.use_history_window:
+                        policy_state = self.discriminator.normalize_amp_observation(
+                            policy_state, self.amp_normalizer
+                        )
+                        expert_state = self.discriminator.normalize_amp_observation(
+                            expert_state, self.amp_normalizer
+                        )
             
-            policy_d = self.discriminator(torch.cat([policy_state, policy_next_state], dim=-1))
-            expert_d = self.discriminator(torch.cat([expert_state, expert_next_state], dim=-1))
+            policy_d = self.discriminator(self.discriminator.prepare_input(policy_state, policy_next_state))
+            expert_d = self.discriminator(self.discriminator.prepare_input(expert_state, expert_next_state))
 
             expert_loss = torch.nn.MSELoss()(expert_d, torch.ones_like(expert_d))
             policy_loss = torch.nn.MSELoss()(policy_d, -1 * torch.ones_like(policy_d))
@@ -340,29 +312,6 @@ class AMPROAPPO:
                     self.value_loss_coef * value_loss - 
                     self.entropy_coef * entropy_batch.mean() + 
                     priv_reg_coef * priv_reg_loss)
-                    
-            # Symmetry loss
-            if self.symmetry:
-                if not self.symmetry["use_data_augmentation"]:
-                    data_augmentation_func = self.symmetry["data_augmentation_func"]
-                    obs_batch, _ = data_augmentation_func(obs=obs_batch, actions=None, env=self.symmetry["_env"])
-                    num_aug = int(obs_batch.shape[0] / original_batch_size)
-
-                mean_actions_batch = self.policy.act_inference(obs_batch.detach().clone())
-                action_mean_orig = mean_actions_batch[:original_batch_size]
-                _, actions_mean_symm_batch = data_augmentation_func(
-                    obs=None, actions=action_mean_orig, env=self.symmetry["_env"]
-                )
-
-                mse_loss = torch.nn.MSELoss()
-                symmetry_loss = mse_loss(
-                    mean_actions_batch[original_batch_size:], actions_mean_symm_batch.detach()[original_batch_size:]
-                )
-
-                if self.symmetry["use_mirror_loss"]:
-                    loss += self.symmetry["mirror_loss_coeff"] * symmetry_loss
-                else:
-                    symmetry_loss = symmetry_loss.detach()
                     
             amp_total_loss = self.amploss_coef * amp_loss + self.amploss_coef * grad_pen_loss
 
@@ -387,8 +336,8 @@ class AMPROAPPO:
             self.amp_optimizer.step()
 
             if self.amp_normalizer is not None:
-                self.amp_normalizer.update(sample_amp_policy[0].cpu().numpy())
-                self.amp_normalizer.update(sample_amp_expert[0].cpu().numpy())
+                self.discriminator.update_amp_normalizer(self.amp_normalizer, sample_amp_policy[1])
+                self.discriminator.update_amp_normalizer(self.amp_normalizer, sample_amp_expert[1])
 
             mean_value_loss += value_loss.item()
             mean_surrogate_loss += surrogate_loss.item()
@@ -398,10 +347,6 @@ class AMPROAPPO:
             mean_grad_pen_loss += grad_pen_loss.item()
             mean_policy_pred += policy_d.mean().item()
             mean_expert_pred += expert_d.mean().item()
-            # -- Symmetry loss
-            if mean_symmetry_loss is not None:
-                mean_symmetry_loss += symmetry_loss.item()
-
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_value_loss /= num_updates
         mean_surrogate_loss /= num_updates
@@ -411,10 +356,6 @@ class AMPROAPPO:
         mean_grad_pen_loss /= num_updates
         mean_policy_pred /= num_updates
         mean_expert_pred /= num_updates
-        # -- For Symmetry
-        if mean_symmetry_loss is not None:
-            mean_symmetry_loss /= num_updates
-        
         self.storage.clear()
         self.counter += 1
 
@@ -428,15 +369,13 @@ class AMPROAPPO:
             "amp/policy_pred": mean_policy_pred,
             "amp/expert_pred": mean_expert_pred,
         }
-        
-        if self.symmetry:
-            loss_dict["symmetry"] = mean_symmetry_loss
-            
         return loss_dict
 
     def update_dagger(self):
         """ ROA 的监督蒸馏阶段 (History Encoder 学习阶段) """
         if self.hist_encoder_optimizer is None:
+            self.storage.clear()
+            self.counter += 1
             return {}
         
         mean_hist_latent_loss = 0
@@ -470,6 +409,8 @@ class AMPROAPPO:
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_hist_latent_loss /= num_updates
         mean_vel_loss /= num_updates
+        self.storage.clear()
+        self.counter += 1
         return {"hist_latent": mean_hist_latent_loss, "vel_loss": mean_vel_loss}
 
     def broadcast_parameters(self):

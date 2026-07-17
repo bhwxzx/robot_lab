@@ -69,6 +69,7 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
                     if len(next_amp_obs.shape) == 3:
                         next_amp_obs = next_amp_obs.view(next_amp_obs.shape[0], -1)
                     next_amp_obs_with_term = next_amp_obs.clone()
+                    amp_transition_valid = ~dones.bool()
                     reset_env_ids = dones.nonzero(as_tuple=False).flatten()
 
                     if len(reset_env_ids) > 0:
@@ -82,10 +83,20 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
                             if len(term_amp.shape) == 3:
                                 term_amp = term_amp.view(term_amp.shape[0], -1)
                             next_amp_obs_with_term[reset_env_ids] = term_amp
+                            amp_transition_valid[reset_env_ids] = True
                         else:
+                            # IsaacLab 当前不会返回 pre-reset terminal_obs。上一有效窗口
+                            # 只用于计算该终止步的保守 AMP reward，不写入 replay buffer。
                             next_amp_obs_with_term[reset_env_ids] = current_amp_obs[reset_env_ids]
 
-                    self.alg.process_env_step(obs, rewards, dones, extras, next_amp_obs_with_term)
+                    self.alg.process_env_step(
+                        obs,
+                        rewards,
+                        dones,
+                        extras,
+                        next_amp_obs_with_term,
+                        amp_transition_valid=amp_transition_valid,
+                    )
                         
                     amp_obs = next_amp_obs
                     current_amp_obs = next_amp_obs.clone() 
@@ -110,13 +121,12 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
 
                 self.alg.compute_returns(obs)
 
-            # --- [主更新] ---
-            loss_dict = self.alg.update()
-            
-            # --- [ROA DAgger 蒸馏] ---
+            # 学生策略采集的 rollout 只用于 DAgger 蒸馏，避免使用教师策略
+            # 重算学生动作的 log_prob，导致 PPO importance ratio 失效。
             if hist_encoding:
-                dagger_loss_dict = self.alg.update_dagger()
-                loss_dict.update(dagger_loss_dict)
+                loss_dict = self.alg.update_dagger()
+            else:
+                loss_dict = self.alg.update()
 
             stop = time.time()
             learn_time = stop - start
@@ -154,9 +164,11 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
         'priv_reg_coef_schedule_resume'，并将其覆盖到特权正则化调度参数中，
         从而避免 resume 之后系数突然掉回 0。
         """
-        super().load(path, load_optimizer=load_optimizer, map_location=map_location)
+        infos = super().load(path, load_optimizer=load_optimizer, map_location=map_location)
 
         if "priv_reg_coef_schedule_resume" in self.alg_cfg:
             resume_schedule = self.alg_cfg["priv_reg_coef_schedule_resume"]
             self.alg.priv_reg_coef_schedule = resume_schedule
             print(f"[AMP ROA Resume] Overriding priv_reg_coef_schedule with {resume_schedule}")
+
+        return infos
