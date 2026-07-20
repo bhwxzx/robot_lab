@@ -272,7 +272,7 @@ AMP Normalizer statistics collapse due to updating with already-normalized data.
 In `amp_ppo.py`, `amp_roa_ppo.py`, and `amp_dwaq_ppo.py`, the state variables (`policy_state`, `expert_state`) were overwritten in-place with their normalized versions (`self.amp_normalizer.normalize_torch(...)`). Subsequently, `self.amp_normalizer.update()` was incorrectly called using these already-normalized variables. This causes the Normalizer's running mean to collapse towards 0 and its variance towards 1, destroying the scale of the state observations and breaking the discriminator's capability over time. `roboparty` avoids this by storing normalized data in new variables (e.g., `disc_obs_batch_normed`).
 
 ### Suggested Action
-When updating a Normalizer's running statistics, ALWAYS pass the raw, unnormalized data. If you normalize data in-place, store a `.clone()` or access the original raw tensor (e.g., `sample_amp_policy[0]`) for the `update()` step.
+When updating a Normalizer's running statistics, ALWAYS pass the raw, unnormalized data actually consumed by the discriminator. Do not hardcode the transition side: legacy state-pair AMP may consume both sides, while history-window AMP currently consumes the raw post-step window (`sample_amp_policy[1]` and `sample_amp_expert[1]`). Keep normalized tensors in separate variables.
 
 ### Metadata
 - Source: error
@@ -282,7 +282,7 @@ When updating a Normalizer's running statistics, ALWAYS pass the raw, unnormaliz
 
 ### Resolution
 - **Resolved**: 2026-06-10T22:04:00+08:00
-- **Notes**: Replaced the variables passed to `amp_normalizer.update()` with the original `sample_amp_policy[0]` and `sample_amp_expert[0]` unnormalized tensors across all three AMP algorithms.
+- **Notes**: The AMP algorithms now update statistics from raw, unnormalized samples. In history-window mode this is the post-step window (`sample_amp_policy[1]` and `sample_amp_expert[1]`), matching the window passed to the discriminator.
 
 ## [LRN-20260611-AMP] knowledge_gap
 
@@ -533,3 +533,148 @@ Always propose an installation/deletion plan and wait for the user to approve be
 - Related Files: AGENTS.md
 - Tags: rule, workflow, permissions
 - Promoted: AGENTS.md
+
+---
+
+## [LRN-20260717-001] best_practice
+
+**Logged**: 2026-07-17T14:47:37+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: backend
+
+### Summary
+ROA student rollouts must be trained with DAgger only; PPO and AMP updates must use teacher rollouts.
+
+### Details
+The ROA actor shares its policy backbone between the privileged teacher path and the history-based student path. If a rollout is collected with `hist_encoding=True` and then passed through PPO while the update recomputes log probabilities through the default privileged path, the old and new distributions are produced by different input routes. The PPO importance ratio is therefore invalid. The Deep-Whole-Body-Control/Parkour-style schedule avoids this by using history rollouts only for supervised latent/velocity distillation and privileged rollouts for PPO plus AMP.
+
+### Suggested Action
+At each DAgger interval, collect with the history encoder, call only `update_dagger()`, clear rollout storage, and advance the shared iteration counter. On other iterations, collect with the privileged encoder and call the normal PPO+AMP update.
+
+### Metadata
+- Source: conversation
+- Related Files: rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py, rsl_rl/rsl_rl/algorithms/amp_roa_ppo.py
+- Tags: roa, dagger, ppo, importance-ratio, teacher-student
+- Pattern-Key: harden.roa_separate_dagger_ppo_rollouts
+
+### Resolution
+- **Resolved**: 2026-07-17T14:47:37+08:00
+- **Notes**: The AMP_ROA runner now routes history rollouts to DAgger only and privileged rollouts to PPO+AMP. A two-iteration Isaac Sim smoke test covered both branches successfully.
+
+---
+
+## [LRN-20260717-002] best_practice
+
+**Logged**: 2026-07-17T14:47:37+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+IsaacLab auto-reset transitions without a genuine terminal AMP observation must be excluded from discriminator replay.
+
+### Details
+IsaacLab commonly returns the reset observation immediately after an environment terminates. Storing `(pre_reset_window, reset_window)` teaches the discriminator an artificial discontinuity. Replacing the missing terminal state with the previous window and storing `(old, old)` is also incorrect because it injects fake static transitions. The previous valid window can be used as a conservative terminal-step reward fallback, but it must not enter replay unless the environment provides a real pre-reset terminal AMP observation.
+
+### Suggested Action
+Build an `amp_transition_valid` mask initialized with `~dones`. Mark terminated samples valid only when a real `terminal_obs["amp"]` is available, and apply the mask at replay insertion.
+
+### Metadata
+- Source: conversation
+- Related Files: rsl_rl/rsl_rl/runners/on_policy_runner_amp.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp_dwaq.py
+- Tags: amp, isaaclab, auto-reset, terminal-observation, replay-buffer
+- Pattern-Key: harden.amp_filter_reset_transitions
+
+### Resolution
+- **Resolved**: 2026-07-17T14:47:37+08:00
+- **Notes**: All AMP runner variants now pass a validity mask, and their algorithms insert only valid terminal transitions into replay.
+
+---
+
+## [LRN-20260717-003] best_practice
+
+**Logged**: 2026-07-17T14:47:37+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+A single-window historical AMP discriminator requires identical policy/expert window semantics end to end.
+
+### Details
+For a 10-frame discriminator, the environment and expert loader must both produce oldest-to-newest windows with the same frame feature order and control-step spacing. The discriminator should consume one post-step window of shape `10 * frame_dim`, not concatenate two adjacent windows. Normalization should use shared per-frame statistics (`frame_dim=22`) by reshaping `[B, 10 * 22]` to `[B * 10, 22]`; the running statistics must be updated from raw policy and expert windows.
+
+### Suggested Action
+Verify together: environment AMP history length, loader history length, feature order, flatten order, `step_dt`, discriminator input dimension, and normalizer dimension. Treat any one-sided change as a compatibility break.
+
+### Metadata
+- Source: conversation
+- Related Files: rsl_rl/rsl_rl/modules/discriminator.py, rsl_rl/rsl_rl/utils/motion_loader.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp.py, source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/rough_env_cfg.py
+- Tags: amp, discriminator, history-window, motion-loader, normalization
+- See Also: LRN-20260610-002, LRN-20260611-AMP
+- Pattern-Key: harden.amp_history_window_end_to_end
+
+### Resolution
+- **Resolved**: 2026-07-17T14:47:37+08:00
+- **Notes**: The LW AMP path was verified at runtime as policy `10x41`, AMP `10x22`, discriminator input `220`, normalizer frame dimension `22`, and environment step time `0.02 s`.
+
+---
+
+## [LRN-20260717-004] best_practice
+
+**Logged**: 2026-07-17T14:47:37+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+An AMP_ROA checkpoint must restore every optimizer and scheduling counter, not only network weights.
+
+### Details
+AMP_ROA has separate optimization state for the PPO policy, discriminator, and history encoder, plus a counter controlling DAgger and privileged-regularization schedules. Restoring only model weights changes effective training dynamics: Adam moments are lost, schedules restart, and the scalar adaptive PPO learning rate can disagree with the optimizer param groups. Backward compatibility is also required for older checkpoints that lack newer keys.
+
+### Suggested Action
+Save and conditionally restore the main optimizer, AMP optimizer, history-encoder optimizer, AMP normalizer, discriminator, iteration/counter, and adaptive learning rate. Use safe fallbacks for old checkpoints and synchronize the algorithm scalar learning rate from the restored optimizer.
+
+### Metadata
+- Source: conversation
+- Related Files: rsl_rl/rsl_rl/runners/on_policy_runner_amp.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py
+- Tags: amp, roa, checkpoint, optimizer, resume, scheduling
+- See Also: LRN-20260609-001
+- Pattern-Key: harden.checkpoint_restore_all_training_state
+
+### Resolution
+- **Resolved**: 2026-07-17T14:47:37+08:00
+- **Notes**: AMP, AMP_DWAQ, and AMP_ROA checkpoint paths now restore their variant-specific optimizer state; AMP_ROA also restores the history optimizer and counter with old-checkpoint fallbacks.
+
+---
+
+## [LRN-20260717-005] best_practice
+
+**Logged**: 2026-07-17T14:47:37+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: tests
+
+### Summary
+Use a reduced two-iteration Isaac Sim smoke test to validate AMP_ROA before committing to a long rough-terrain run.
+
+### Details
+Static imports, compilation, and synthetic tensor tests cannot validate IsaacLab observation-manager shapes, task registration, motion preloading on the target device, environment stepping, or the alternating ROA update routes. A small runtime test with reduced environment count and expert preload can cover both branches cheaply: iteration 0 executes DAgger (`it % dagger_update_freq == 0`) and iteration 1 executes PPO+AMP. It also exposes configuration-only issues such as command/expert coverage and simulator warnings.
+
+### Suggested Action
+Run the smoke test in the `isaacsim-5.1` environment with a small number of environments and preloaded transitions, disable persistent runner logging, and require explicit success after both update branches. Then inspect the real observation shapes, replay insert count, AMP predictions, and CUDA errors before starting the full job.
+
+### Metadata
+- Source: conversation
+- Related Files: rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py, source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/agents/rsl_rl_amp_roa_cfg.py, source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/rough_env_cfg.py
+- Tags: smoke-test, isaacsim, amp, roa, training-readiness
+- See Also: LRN-20260613-001
+- Pattern-Key: test.amp_roa_two_branch_smoke
+
+### Resolution
+- **Resolved**: 2026-07-17T14:47:37+08:00
+- **Notes**: A 16-environment, 2000-transition preload smoke completed DAgger and PPO+AMP updates with `counter=2` and 758 valid replay transitions.
+
+---

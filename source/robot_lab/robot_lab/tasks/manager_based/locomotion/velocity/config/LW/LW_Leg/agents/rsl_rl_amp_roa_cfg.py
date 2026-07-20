@@ -26,7 +26,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         actor_obs_normalization=False,
         critic_obs_normalization=False,
         activation="elu",
-        priv_encoder_dims=[256, 128, 20],
+        priv_encoder_dims=[64, 20],
         vel_offset=41,  # 41
     )
     algorithm = RslRlAlgorithmAmpRoaCfg(
@@ -53,8 +53,8 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
     amp_num_preload_transitions=200000
     amp_replay_buffer_size=100000
     disc_learning_rate=1.0e-4
-    amp_reward_coef=3.0   # 2.0
-    amp_task_reward_lerp=0.3
+    amp_reward_coef=2.0   # 2.0
+    amp_task_reward_lerp=0.5
 
 @configclass
 class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):

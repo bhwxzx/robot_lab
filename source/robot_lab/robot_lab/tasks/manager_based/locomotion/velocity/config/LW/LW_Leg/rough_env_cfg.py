@@ -2763,7 +2763,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.base_height_l2.weight = -10.0 # -50.0 
         self.rewards.base_height_l2.params["target_height"] = 0.69 # 0.647
         self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
-        self.rewards.body_orientation_l2.weight = -3.0
+        self.rewards.body_orientation_l2.weight = -5.0
         self.rewards.body_orientation_l2.params["asset_cfg"].body_names = [self.base_link_name]
 
         # Joint penalties
@@ -2820,10 +2820,10 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link", ".*wheel_link"]
 
         # Velocity-tracking rewards
-        self.rewards.track_lin_vel_xy_exp.weight = 8.0 # 3.0
+        self.rewards.track_lin_vel_xy_exp.weight = 5.0 # 3.0
         self.rewards.track_lin_vel_xy_exp.func = mdp.track_lin_vel_xy_yaw_frame_exp
         self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
-        self.rewards.track_ang_vel_z_exp.weight = 6.0
+        self.rewards.track_ang_vel_z_exp.weight = 4.0
         self.rewards.track_ang_vel_z_exp.func = mdp.track_ang_vel_z_world_exp
         self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)
         self.rewards.lazy_penalty.weight = -0.0
@@ -2833,7 +2833,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.rew_keep_ankle_pitch_zero_in_air.params["sensor_cfg"].body_names = [self.foot_link_name]
 
         self.rewards.bipedal_gait_reward.weight = 5.0
-        self.rewards.feet_air_time.weight = 5.0
+        self.rewards.feet_air_time.weight = 4.0
         self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
         self.rewards.feet_air_time.params["threshold"] = 0.4
         self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
@@ -2844,7 +2844,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_contact_without_cmd.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_air_only_one.weight = -40.0
 
-        self.rewards.feet_air_time_variance.weight = -0.0
+        self.rewards.feet_air_time_variance.weight = -10.0
         self.rewards.feet_air_time_variance.params["sensor_cfg"].body_names = [self.foot_link_name]
         # self.rewards.feet_contact.weight = 0
         # self.rewards.feet_contact.params["sensor_cfg"].body_names = [self.foot_link_name]

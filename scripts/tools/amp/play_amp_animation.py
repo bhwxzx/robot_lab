@@ -10,7 +10,6 @@ import json
 import time as real_time_lib
 
 from isaaclab.app import AppLauncher
-from isaaclab.utils.math import quat_apply, quat_from_euler_xyz, quat_slerp
 
 """
 输入可视化数据格式：  [robot_pos(xyz) robot_rot(euler xyz) joint_pos robot_lin_vel robot_ang_vel joint_vel]
@@ -57,6 +56,7 @@ simulation_app = app_launcher.app
 
 # Imports after launching app
 from isaaclab.envs import ManagerBasedRLEnv
+from isaaclab.utils.math import quat_apply, quat_slerp
 # 可视化全省，用 Display 版
 from rsl_rl.utils import AMPLoaderDisplay # 内部配置需要修改正确
 from scipy.spatial.transform import Rotation
@@ -152,6 +152,29 @@ def main():
         original_json = json.load(f)
         motion_weight = original_json.get("MotionWeight", 0.5)
         print(f"Detected MotionWeight: {motion_weight}")
+
+    frames = original_json.get("Frames")
+    if not isinstance(frames, list) or len(frames) == 0:
+        raise ValueError(f"Motion file contains no valid Frames: {input_file}")
+
+    expected_frame_dim = IDX_JOINT_VEL + JOINTS_NUM
+    if not all(isinstance(frame, list) for frame in frames):
+        raise ValueError(f"Motion file contains malformed Frames entries: {input_file}")
+
+    frame_dims = {len(frame) for frame in frames}
+    if len(frame_dims) != 1:
+        raise ValueError(f"Motion file contains malformed or inconsistent frame dimensions: {input_file}")
+
+    actual_frame_dim = next(iter(frame_dims))
+    if actual_frame_dim != expected_frame_dim:
+        if actual_frame_dim == 22:
+            raise ValueError(
+                "play_amp_animation.py expects 28-D motion_visualization frames, but received a 22-D "
+                "motion_amp_expert file. Use replay_amp_data.py --data_type relative to replay processed AMP data."
+            )
+        raise ValueError(
+            f"Unexpected motion frame dimension: expected {expected_frame_dim}, got {actual_frame_dim} in {input_file}."
+        )
 
     env_cfg = LWLegFlatAmpEnvCfg_Play()
     
