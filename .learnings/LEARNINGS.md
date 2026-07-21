@@ -20,6 +20,34 @@ Whenever adding a custom network (e.g., `ActorCriticROA`) or algorithm (e.g., `A
 - Tags: python, eval, namespace, rsl-rl
 
 ---
+
+## [LRN-20260721-001] correction
+
+**Logged**: 2026-07-21T00:00:00+08:00
+**Priority**: high
+**Status**: pending
+**Area**: config
+
+### Summary
+When stronger AMP weighting improves gait but exposes a turning defect, inspect the expert turning motion before attributing the defect only to weak task stabilization rewards.
+
+### Details
+The initial diagnosis treated large torso oscillation during turning at `amp_task_reward_lerp=0.3` as a gap in the AMP observation (no base orientation/angular velocity) combined with task rewards being reduced to 30%. The user clarified that the AMP turning animation itself already twists the torso. In that case, stronger AMP weighting can faithfully reproduce a defect present in the expert distribution. Increasing stabilization penalties may hide the symptom but creates a direct conflict with the discriminator and can damage the otherwise good gait.
+
+### Suggested Action
+Inspect and repair, filter, or down-weight defective turning clips first. Determine whether the twist is encoded by joint/foot history or omitted root motion; only then decide between regenerating expert data, separating straight and turning motion weights, conditioning AMP on commands, or adding targeted stabilization rewards.
+
+### Metadata
+- Source: user_feedback
+- Related Files: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/, scripts/tools/amp/play_amp_animation.py, source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/rough_env_cfg.py
+- Tags: amp, expert-data, turning, torso-twist, reward-conflict
+- See Also: LRN-20260717-003
+- Pattern-Key: diagnose.amp_check_expert_before_reward_tuning
+- Recurrence-Count: 1
+- First-Seen: 2026-07-21
+- Last-Seen: 2026-07-21
+
+---
 ## [LRN-20260608-002] roa_normalization_logic
 
 **Logged**: 2026-06-08T20:32:00+08:00

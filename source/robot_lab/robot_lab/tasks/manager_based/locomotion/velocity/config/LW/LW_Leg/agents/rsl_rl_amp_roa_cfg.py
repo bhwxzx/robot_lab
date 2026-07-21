@@ -49,12 +49,15 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
     )
     amp_history_length=10
     amp_discr_hidden_dims=[1024, 512]
-    amp_motion_files=["source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_*.txt"]
+    # Use only standing and straight forward/backward motions for AMP.
+    # Turning is learned from the task reward because the current turning
+    # demonstrations contain undesirable torso twisting.
+    amp_motion_files=["source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx*_vy0.00_wz0.00.txt"]
     amp_num_preload_transitions=200000
     amp_replay_buffer_size=100000
     disc_learning_rate=1.0e-4
-    amp_reward_coef=2.0   # 2.0
-    amp_task_reward_lerp=0.5
+    amp_reward_coef=3.0   # 2.0
+    amp_task_reward_lerp=0.3
 
 @configclass
 class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):
