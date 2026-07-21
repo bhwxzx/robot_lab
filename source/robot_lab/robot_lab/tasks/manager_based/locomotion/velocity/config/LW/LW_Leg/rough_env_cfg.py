@@ -2615,15 +2615,15 @@ class LWLegAmpRoaObservationsCfg(ObservationsCfg):
             params={"asset_cfg": SceneEntityCfg("robot", body_names="base_link")},
             clip=(-100.0, 100.0),scale=1.0
         )
-        feet_contact_forces_in_body = ObsTerm(func=mdp.feet_contact_forces_in_body, 
-                                              params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])},
-                                              scale=0.005)
-        height_scan = ObsTerm(
-            func=mdp.height_scan,
-            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-            clip=(-1.0, 1.0),
-            scale=1.0,
-        )
+        # feet_contact_forces_in_body = ObsTerm(func=mdp.feet_contact_forces_in_body, 
+        #                                       params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_foot_link"])},
+        #                                       scale=0.005)
+        # height_scan = ObsTerm(
+        #     func=mdp.height_scan,
+        #     params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+        #     clip=(-1.0, 1.0),
+        #     scale=1.0,
+        # )
 
         def __post_init__(self):
             self.enable_corruption = False
