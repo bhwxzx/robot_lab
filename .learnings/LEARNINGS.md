@@ -768,3 +768,50 @@ Validate positive `FrameDuration`, derive floor/ceil frame indices from `bounded
 - **Notes**: Motion loading now uses exact frame-duration coordinates, detects effective wrapping per trajectory, safely clamps all current non-continuous LW clips, and preserves wrapping for verified cyclic motion.
 
 ---
+
+## [LRN-20260722-001] best_practice
+
+**Logged**: 2026-07-22T12:18:20+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+排查 VS Code Codex 持续停留在加载图标时，应通过隔离用户数据区分扩展故障与持久化状态故障，并在备份后只重置 Codex 相关状态。
+
+### Details
+本次故障表现为 Codex 面板持续显示加载图标，无法进入正常界面。排查过程得到以下经验：
+
+1. 最新 `Codex.log` 最初出现 `401 Unauthorized` 和 `token_revoked`。`codex login status` 只说明本地存在登录缓存，不验证服务端是否仍接受令牌。执行 `codex logout`、`codex login` 后，认证错误消失，但界面仍然卡住，说明认证失效是独立问题而非最终根因。
+2. Codex 扩展能正常激活，`codex app-server` 能收到初始化请求。应用 preload workaround、重新加载窗口以及备份并重建 VS Code Service Worker 后，问题仍未解决，因此不能继续把故障归因于预加载或 Service Worker。
+3. 使用临时 `--user-data-dir` 做了三组隔离实验：仅加载官方 Codex、加载 Codex 与 Codex Stats、使用全新用户数据并加载全部现有扩展。三组均能正常渲染 Codex。这排除了账号、网络、扩展二进制、GPU、Service Worker 基础能力和其他扩展冲突，并将问题锁定为正式 VS Code 用户数据中的 Codex 持久化状态。
+4. 完全退出 VS Code 后，对全局及当前工作区的 `state.vscdb` 和其备份副本进行逐文件备份与 SHA-256 校验。随后通过 SQLite 事务只移除 `openai.chatgpt`、Codex Webview origin 和当前工作区 Codex View 状态；所有数据库均通过 `PRAGMA integrity_check`。使用正式用户数据重新启动后，Codex 页面进入 `complete` 状态并正常显示引导界面。
+
+关键判断是：一次排障中可能同时存在多个真实错误。修复已证实的认证错误后必须重新采集证据，不能把仍然存在的 UI 故障继续归因于已消失的错误。
+
+### Suggested Action
+以后遇到同类问题，按以下顺序处理：
+
+1. 检查扩展版本、`Codex.log`、`renderer.log` 和 `network.log`，区分扩展激活、认证、后端和 Webview 层。
+2. 若日志出现 `token_revoked`，重新登录并在重启后确认新日志中错误已经消失。
+3. 根据明确证据决定是否应用 preload workaround；不要因脚本状态为 `original` 就认定它是根因。
+4. 只有 Webview 证据充分或前序手段无效时，才在完全退出 VS Code 后备份并重建 Service Worker。
+5. 若仍卡住，优先用临时 `--user-data-dir` 做隔离实验，并分别测试最小扩展集与全部扩展。这一步能有效区分扩展冲突和用户状态故障。
+6. 确认是持久化状态后，先备份并校验数据库，再事务化删除最小范围的 Codex 键；不要直接删除整个 VS Code 用户目录或全部工作区状态。
+7. 使用正式用户数据重新启动，通过 Webview 实际 DOM、控制台错误和页面状态验证修复，而不只观察图标是否消失。
+
+### Metadata
+- Source: conversation
+- Related Files: `../codex-vscode-recovery-kit/Codex_VSCode_加载故障排查与恢复.md`, `../codex-vscode-recovery-kit/codex-webview-preload-workaround.sh`, `~/.config/Code/User/globalStorage/state.vscdb`, `~/.config/Code/User/workspaceStorage/*/state.vscdb`
+- Tags: vscode, codex, webview, oauth, service-worker, sqlite, persistent-state, differential-diagnosis
+- Pattern-Key: troubleshoot.vscode_codex_persisted_state
+- Recurrence-Count: 1
+- First-Seen: 2026-07-22
+- Last-Seen: 2026-07-22
+
+### Resolution
+- **Resolved**: 2026-07-22T12:18:20+08:00
+- **Commit/PR**: N/A
+- **Notes**: 备份状态数据库后精准清除 Codex 全局状态、Webview origin 和当前工作区 Codex View 状态；正式 VS Code 配置中已验证页面正常加载。
+
+---
