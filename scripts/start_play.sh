@@ -2,7 +2,7 @@
 
 # 设置默认值
 TERRAIN="Flat"
-type="leg"
+TYPE="leg"
 METHOD="Dwaq"
 
 # 解析传入的命名参数
@@ -26,4 +26,3 @@ python scripts/reinforcement_learning/rsl_rl/play.py \
     # --real-time \
     # --video \
     # --video_length=2000 
-

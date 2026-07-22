@@ -47,7 +47,7 @@ class AMPPPO:
         amp_replay_buffer_size=100000,
         min_std=None,
         amp_reward_coef=2.0,  # AMP 奖励的权重系数，决定风格奖励占比
-        amp_task_reward_lerp=0.3, # 这里的逻辑可能需要在 Env 或 Reward Function 中处理，这里保留参数
+        amp_task_reward_lerp=0.3,
         amp_discr_hidden_dims=None,
         disc_learning_rate=1e-4,
         # Symmetry parameters
@@ -165,8 +165,8 @@ class AMPPPO:
         self.policy.update_normalization(obs)
         self.transition.dones = dones
         
-        # 注意：这里的 rewards 是环境给出的纯任务奖励 (Task Reward)
-        # 我们稍后会根据配置决定是 "相加" 还是 "覆盖(Lerp)"
+        # 注意：这里的 rewards 是环境给出的纯任务奖励 (Task Reward)，
+        # predict_amp_reward 会根据配置完成任务奖励与 AMP 奖励的插值。
         
         # 2. 只把带有真实 post-step AMP observation 的 transition 写入 ReplayBuffer。
         # IsaacLab 默认在返回观测前重置终止环境，因此这些样本通常需要排除。
@@ -182,26 +182,16 @@ class AMPPPO:
         # 3. --- [AMP 核心: 计算风格奖励] ---
         # 使用 Discriminator 封装的 predict_amp_reward 方法
         # 该方法内部会自动处理：归一化 -> 拼接 -> 判别器推理 -> 奖励公式计算 -> Lerp混合
-        amp_rewards, policy_d = self.discriminator.predict_amp_reward(
+        amp_rewards, _ = self.discriminator.predict_amp_reward(
             self.amp_transition.observations,  # state (s)
             amp_obs,                           # next_state (s')
             task_reward=rewards,               # 传入当前任务奖励，供 Lerp 使用
             normalizer=self.amp_normalizer     # 传入归一化器
         )
 
-        if self.storage.step == 0:
-            with torch.no_grad():
-                raw_amp = self.discriminator.dt * self.discriminator.amp_reward_coef * torch.clamp(1 - (1 / 4) * torch.square(policy_d - 1), min=0)
-                print(f"\n[AMP DEBUG] Task Reward Mean: {rewards.mean().item():.4f} | Raw AMP Reward Mean: {raw_amp.mean().item():.4f}")
-
-        # 4. 设置最终奖励
-        if self.discriminator.task_reward_lerp > 0:
-            # 如果开启了 Lerp，predict_amp_reward 返回的已经是 (1-w)*style + w*task
-            self.transition.rewards = amp_rewards
-        else:
-            # 如果 Lerp=0，返回的只是风格奖励，我们需要手动加到任务奖励上
-            # 注意：amp_rewards 已经乘过 amp_reward_coef 了
-            self.transition.rewards = rewards + amp_rewards
+        # 4. 设置最终奖励。predict_amp_reward 返回 PPO 应使用的完整奖励：
+        # lerp=0 为纯 AMP，0<lerp<1 为任务/AMP 混合，lerp=1 为纯任务奖励。
+        self.transition.rewards = amp_rewards
 
         # 5. Bootstrapping (超时处理)
         if "time_outs" in extras:

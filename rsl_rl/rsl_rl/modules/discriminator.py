@@ -163,6 +163,7 @@ class Discriminator(nn.Module):
                 - reward (torch.Tensor): Predicted AMP reward (optionally interpolated) with shape (batch_size,).
                 - d (torch.Tensor): Raw discriminator output logits with shape (batch_size, 1).
         """
+        was_training = self.training
         with torch.no_grad():
             self.eval()
             if normalizer is not None:
@@ -174,8 +175,9 @@ class Discriminator(nn.Module):
             reward = self.dt * self.amp_reward_coef * torch.clamp(1 - (1 / 4) * torch.square(d - 1), min=0)
             if self.task_reward_lerp > 0:
                 reward = self._lerp_reward(reward, task_reward.unsqueeze(-1))
-            self.train()
-        return reward.squeeze(), d
+            if was_training:
+                self.train()
+        return reward.squeeze(-1), d
 
     def _lerp_reward(self, disc_r, task_r):
         """

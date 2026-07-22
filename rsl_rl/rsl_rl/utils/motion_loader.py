@@ -81,6 +81,8 @@ class AMPLoader:
         self.trajectory_weights = []
         self.trajectory_frame_durations = []
         self.trajectory_num_frames = []
+        self.trajectory_loop_modes = []
+        self.trajectory_is_wrapping = []
 
         for i, motion_file in enumerate(expanded_motion_files):
             self.trajectory_names.append(motion_file.split(".")[0])
@@ -97,11 +99,26 @@ class AMPLoader:
                 self.trajectory_idxs.append(i)
                 self.trajectory_weights.append(float(motion_json["MotionWeight"]))
                 frame_duration = float(motion_json["FrameDuration"])
+                if frame_duration <= 0.0:
+                    raise ValueError(f"FrameDuration must be positive in {motion_file}, got {frame_duration}.")
                 self.trajectory_frame_durations.append(frame_duration)
                 traj_len = (motion_data.shape[0] - 1) * frame_duration
                 print(f"traj_len:{traj_len}")
                 self.trajectory_lens.append(traj_len)
-                self.trajectory_num_frames.append(float(motion_data.shape[0]))
+                self.trajectory_num_frames.append(motion_data.shape[0])
+
+                loop_mode = str(motion_json.get("LoopMode", "Clamp"))
+                wrap_requested = loop_mode.lower() == "wrap"
+                wrap_enabled = wrap_requested and self._is_cycle_continuous(
+                    motion_data[:, : AMPLoader.END_POS_END_IDX]
+                )
+                self.trajectory_loop_modes.append(loop_mode)
+                self.trajectory_is_wrapping.append(wrap_enabled)
+                if wrap_requested and not wrap_enabled:
+                    print(
+                        f"[Warning] LoopMode=Wrap ignored for non-continuous motion: {motion_file}. "
+                        "History boundaries will be clamped instead."
+                    )
 
             print(f"Loaded {traj_len}s. motion from {motion_file}.")
 
@@ -109,7 +126,8 @@ class AMPLoader:
         self.trajectory_weights = np.array(self.trajectory_weights) / np.sum(self.trajectory_weights)
         self.trajectory_frame_durations = np.array(self.trajectory_frame_durations)
         self.trajectory_lens = np.array(self.trajectory_lens)
-        self.trajectory_num_frames = np.array(self.trajectory_num_frames)
+        self.trajectory_num_frames = np.array(self.trajectory_num_frames, dtype=np.int64)
+        self.trajectory_is_wrapping = np.array(self.trajectory_is_wrapping, dtype=np.bool_)
 
         # Preload transitions.
         self.preload_transitions = preload_transitions
@@ -148,74 +166,105 @@ class AMPLoader:
     def slerp(self, frame1, frame2, blend):
         return (1.0 - blend) * frame1 + blend * frame2
 
+    @staticmethod
+    def _is_cycle_continuous(motion_data):
+        """Checks whether wrapping the last frame to the first creates a plausible one-step transition."""
+        if motion_data.shape[0] < 2:
+            return False
+
+        feature_groups = (
+            motion_data[:, AMPLoader.JOINT_POSE_START_IDX : AMPLoader.JOINT_POSE_END_IDX],
+            motion_data[:, AMPLoader.JOINT_VEL_START_IDX : AMPLoader.JOINT_VEL_END_IDX],
+            motion_data[:, AMPLoader.END_POS_START_IDX : AMPLoader.END_POS_END_IDX],
+        )
+        for features in feature_groups:
+            step_norms = np.linalg.norm(np.diff(features, axis=0), axis=1)
+            reference_step = float(np.percentile(step_norms, 95))
+            boundary_step = float(np.linalg.norm(features[-1] - features[0]))
+            if boundary_step > max(1.0e-4, 1.5 * reference_step):
+                return False
+        return True
+
+    def _bound_time(self, traj_idx, time):
+        """Applies the effective loop mode to a scalar trajectory time."""
+        traj_len = self.trajectory_lens[traj_idx]
+        if traj_len <= 0.0:
+            return 0.0
+        if self.trajectory_is_wrapping[traj_idx]:
+            return float(np.mod(time, traj_len))
+        return float(np.clip(time, 0.0, traj_len))
+
+    def _bound_time_batch(self, traj_idxs, times):
+        """Applies each trajectory's effective loop mode to a batch of times."""
+        traj_idxs = np.asarray(traj_idxs, dtype=np.int64)
+        times = np.asarray(times, dtype=np.float64)
+        traj_lens = self.trajectory_lens[traj_idxs]
+        bounded_times = np.clip(times, 0.0, traj_lens)
+        wrap_mask = self.trajectory_is_wrapping[traj_idxs] & (traj_lens > 0.0)
+        bounded_times[wrap_mask] = np.mod(times[wrap_mask], traj_lens[wrap_mask])
+        return bounded_times
+
+    def _frame_indices(self, traj_idx, time):
+        """Returns interpolation indices and blend for a scalar trajectory time."""
+        frame_position = self._bound_time(traj_idx, time) / self.trajectory_frame_durations[traj_idx]
+        num_frames = int(self.trajectory_num_frames[traj_idx])
+        idx_low = min(int(np.floor(frame_position)), num_frames - 1)
+        idx_high = min(idx_low + 1, num_frames - 1)
+        blend = frame_position - idx_low
+        return idx_low, idx_high, blend
+
+    def _frame_indices_batch(self, traj_idxs, times):
+        """Returns interpolation indices and blends for batched trajectory times."""
+        traj_idxs = np.asarray(traj_idxs, dtype=np.int64)
+        frame_positions = self._bound_time_batch(traj_idxs, times) / self.trajectory_frame_durations[traj_idxs]
+        num_frames = self.trajectory_num_frames[traj_idxs]
+        idx_low = np.minimum(np.floor(frame_positions).astype(np.int64), num_frames - 1)
+        idx_high = np.minimum(idx_low + 1, num_frames - 1)
+        blend = frame_positions - idx_low
+        return idx_low, idx_high, blend
+
     def get_trajectory(self, traj_idx):
         """Returns trajectory of AMP observations."""
         return self.trajectories_full[traj_idx]
 
     def get_frame_at_time(self, traj_idx, time):
         """Returns frame for the given trajectory at the specified time."""
-        p = float(time) / self.trajectory_lens[traj_idx]
-        n = self.trajectories[traj_idx].shape[0]
-        idx_low, idx_high = int(np.floor(p * n)), int(np.ceil(p * n))
-        # --- [核心修复：强制边界限制] ---
-        idx_low = min(idx_low, n - 1)
-        idx_high = min(idx_high, n - 1)
-        # -----------------------------
+        idx_low, idx_high, blend = self._frame_indices(traj_idx, time)
         frame_start = self.trajectories[traj_idx][idx_low]
         frame_end = self.trajectories[traj_idx][idx_high]
-        blend = p * n - idx_low
-
         return self.slerp(frame_start, frame_end, blend)
 
     def get_frame_at_time_batch(self, traj_idxs, times):
         """Returns frame for the given trajectory at the specified time."""
-        p = times / self.trajectory_lens[traj_idxs]
-        n = self.trajectory_num_frames[traj_idxs]
-        idx_low, idx_high = np.floor(p * n).astype(np.int64), np.ceil(p * n).astype(np.int64)
-        # --- [核心修复：对整个 Batch 进行边界限制] ---
-        # 这里的 n 是每条轨迹的长度，利用 np.clip 批量处理
-        idx_low = np.clip(idx_low, 0, n.astype(np.int64) - 1)
-        idx_high = np.clip(idx_high, 0, n.astype(np.int64) - 1)
-        # ------------------------------------------
+        traj_idxs = np.asarray(traj_idxs, dtype=np.int64)
+        idx_low, idx_high, blend = self._frame_indices_batch(traj_idxs, times)
         all_frame_starts = torch.zeros(len(traj_idxs), self.frame_dim, device=self.device)
         all_frame_ends = torch.zeros(len(traj_idxs), self.frame_dim, device=self.device)
-        for traj_idx in set(traj_idxs):
+        for traj_idx in np.unique(traj_idxs):
             trajectory = self.trajectories[traj_idx]
             traj_mask = traj_idxs == traj_idx
             all_frame_starts[traj_mask] = trajectory[idx_low[traj_mask]]
             all_frame_ends[traj_mask] = trajectory[idx_high[traj_mask]]
-        blend = torch.tensor(p * n - idx_low, device=self.device, dtype=torch.float32).unsqueeze(-1)
+        blend = torch.tensor(blend, device=self.device, dtype=torch.float32).unsqueeze(-1)
         return self.slerp(all_frame_starts, all_frame_ends, blend)
 
     def get_full_frame_at_time(self, traj_idx, time):
         """Returns full frame for the given trajectory at the specified time."""
-        p = float(time) / self.trajectory_lens[traj_idx]
-        n = self.trajectories_full[traj_idx].shape[0]
-        idx_low, idx_high = int(np.floor(p * n)), int(np.ceil(p * n))
-        # 强制限制索引不超标
-        idx_low = min(idx_low, n - 1)
-        idx_high = min(idx_high, n - 1)
-
+        idx_low, idx_high, blend = self._frame_indices(traj_idx, time)
         frame_start = self.trajectories_full[traj_idx][idx_low]
         frame_end = self.trajectories_full[traj_idx][idx_high]
-        blend = p * n - idx_low
         return self.blend_frame_pose(frame_start, frame_end, blend)
 
     def get_full_frame_at_time_batch(self, traj_idxs, times):
-        p = times / self.trajectory_lens[traj_idxs]
-        n = self.trajectory_num_frames[traj_idxs]
-        idx_low, idx_high = np.floor(p * n).astype(np.int64), np.ceil(p * n).astype(np.int64)
-        # --- [核心修复：对整个 Batch 进行边界限制] ---
-        # 这里的 n 是每条轨迹的长度，利用 np.clip 批量处理
-        idx_low = np.clip(idx_low, 0, n.astype(np.int64) - 1)
-        idx_high = np.clip(idx_high, 0, n.astype(np.int64) - 1)
+        traj_idxs = np.asarray(traj_idxs, dtype=np.int64)
+        idx_low, idx_high, blend = self._frame_indices_batch(traj_idxs, times)
         all_frame_amp_starts = torch.zeros(
             len(traj_idxs), AMPLoader.END_POS_END_IDX - AMPLoader.JOINT_POSE_START_IDX, device=self.device
         )
         all_frame_amp_ends = torch.zeros(
             len(traj_idxs), AMPLoader.END_POS_END_IDX - AMPLoader.JOINT_POSE_START_IDX, device=self.device
         )
-        for traj_idx in set(traj_idxs):
+        for traj_idx in np.unique(traj_idxs):
             trajectory = self.trajectories_full[traj_idx]
             traj_mask = traj_idxs == traj_idx
             all_frame_amp_starts[traj_mask] = trajectory[idx_low[traj_mask]][
@@ -224,7 +273,7 @@ class AMPLoader:
             all_frame_amp_ends[traj_mask] = trajectory[idx_high[traj_mask]][
                 :, AMPLoader.JOINT_POSE_START_IDX : AMPLoader.END_POS_END_IDX
             ]
-        blend = torch.tensor(p * n - idx_low, device=self.device, dtype=torch.float32).unsqueeze(-1)
+        blend = torch.tensor(blend, device=self.device, dtype=torch.float32).unsqueeze(-1)
 
         amp_blend = self.slerp(all_frame_amp_starts, all_frame_amp_ends, blend)
         return torch.cat([amp_blend], dim=-1)
@@ -255,9 +304,9 @@ class AMPLoader:
         frames = []
         for i in range(self.history_length):
             offset = (i - self.history_length + 1) * self.time_between_frames
-            t = np.maximum(0, times + offset)
-            # get_full_frame_at_time_batch already slices the features appropriately
-            frame = self.get_full_frame_at_time_batch(traj_idxs, t)
+            # Boundary behavior (wrap or clamp) is applied per trajectory by the
+            # interpolation helper, so negative history times remain meaningful.
+            frame = self.get_full_frame_at_time_batch(traj_idxs, times + offset)
             frames.append(frame)
         stacked = torch.stack(frames, dim=1)
         # flatten (batch_size, history_length, dim) to (batch_size, history_length * dim)
