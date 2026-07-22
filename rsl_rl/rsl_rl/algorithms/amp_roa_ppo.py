@@ -142,39 +142,49 @@ class AMPROAPPO:
             self.amp_transition.observations = amp_obs
         return self.transition.actions
 
-    def process_env_step(self, obs, rewards, dones, extras, amp_obs, amp_transition_valid=None):
+    def process_env_step(
+        self,
+        obs,
+        rewards,
+        dones,
+        extras,
+        amp_obs,
+        amp_transition_valid=None,
+        process_amp=True,
+    ):
         self.policy.update_normalization(obs)
         self.transition.dones = dones
 
-        # IsaacLab resets terminated environments before returning observations.
-        # Unless a real terminal AMP observation is supplied by the runner, exclude
-        # those transitions from discriminator replay instead of storing (old, old).
-        if amp_transition_valid is None:
-            amp_transition_valid = ~dones.bool()
-        amp_transition_valid = amp_transition_valid.reshape(-1)
-        if torch.any(amp_transition_valid):
-            self.amp_storage.insert(
-                self.amp_transition.observations[amp_transition_valid],
-                amp_obs[amp_transition_valid],
+        if process_amp:
+            # IsaacLab resets terminated environments before returning observations.
+            # Unless a real terminal AMP observation is supplied by the runner, exclude
+            # those transitions from discriminator replay instead of storing (old, old).
+            if amp_transition_valid is None:
+                amp_transition_valid = ~dones.bool()
+            amp_transition_valid = amp_transition_valid.reshape(-1)
+            if torch.any(amp_transition_valid):
+                self.amp_storage.insert(
+                    self.amp_transition.observations[amp_transition_valid],
+                    amp_obs[amp_transition_valid],
+                )
+
+            # AMP reward is used only for teacher PPO rollouts. DAgger rollouts train
+            # the history encoder exclusively and must not affect the discriminator.
+            amp_rewards, _ = self.discriminator.predict_amp_reward(
+                self.amp_transition.observations,
+                amp_obs,
+                task_reward=rewards,
+                normalizer=self.amp_normalizer,
             )
 
-        # AMP 奖励计算
-        amp_rewards, policy_d = self.discriminator.predict_amp_reward(
-            self.amp_transition.observations, 
-            amp_obs,                           
-            task_reward=rewards,               
-            normalizer=self.amp_normalizer     
-        )
-
-        if self.storage.step == 0:
-            with torch.no_grad():
-                raw_amp = self.discriminator.dt * self.discriminator.amp_reward_coef * torch.clamp(1 - (1 / 4) * torch.square(policy_d - 1), min=0)
-                print(f"\n[AMP DEBUG] Task Reward Mean: {rewards.mean().item():.4f} | Raw AMP Reward Mean: {raw_amp.mean().item():.4f}")
-
-        if self.discriminator.task_reward_lerp > 0:
+            # predict_amp_reward always returns the complete reward used by PPO:
+            # pure AMP at lerp=0, a task/AMP blend for 0<lerp<1, and pure task at lerp=1.
             self.transition.rewards = amp_rewards
         else:
-            self.transition.rewards = rewards + amp_rewards
+            # DAgger only needs the observation batches for supervised distillation.
+            # Keep valid task rewards in storage for a complete rollout, but do not
+            # query or update any AMP component on these student-policy transitions.
+            self.transition.rewards = rewards.clone()
 
         if "time_outs" in extras:
             self.transition.rewards += self.gamma * torch.squeeze(

@@ -96,6 +96,7 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
                         extras,
                         next_amp_obs_with_term,
                         amp_transition_valid=amp_transition_valid,
+                        process_amp=not hist_encoding,
                     )
                         
                     amp_obs = next_amp_obs
@@ -130,7 +131,9 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
 
             stop = time.time()
             learn_time = stop - start
-            self.current_learning_iteration = it
+            # Store the next iteration to execute. This prevents checkpoint resume
+            # from repeating the rollout/update that has just completed.
+            self.current_learning_iteration = it + 1
             
             if self.log_dir is not None and not self.disable_logs:
                 self.log(locals())
@@ -138,7 +141,7 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
                     self.save(os.path.join(self.log_dir, f"model_{it}.pt"))
 
             ep_infos.clear()
-            if it == start_iter and not self.disable_logs:
+            if self.log_dir is not None and it == start_iter and not self.disable_logs:
                 git_file_paths = store_code_state(self.log_dir, self.git_status_repos)
                 if self.logger_type in ["wandb", "neptune"] and git_file_paths:
                     for path in git_file_paths:

@@ -202,27 +202,16 @@ class AMPDWAQPPO:
 
         # 2. 计算风格奖励
         # predict_amp_reward 内部处理: 归一化 -> 判别器 -> 奖励计算 -> Lerp
-        amp_rewards, policy_d = self.discriminator.predict_amp_reward(
+        amp_rewards, _ = self.discriminator.predict_amp_reward(
             self.amp_transition.observations,  # state (s)
             amp_obs,                           # next_state (s')
             task_reward=rewards,               # 传入当前任务奖励
             normalizer=self.amp_normalizer
         )
 
-        if self.storage.step == 0:
-            with torch.no_grad():
-                raw_amp = self.discriminator.dt * self.discriminator.amp_reward_coef * torch.clamp(1 - (1 / 4) * torch.square(policy_d - 1), min=0)
-                print(f"\n[AMP DEBUG] Task Reward Mean: {rewards.mean().item():.4f} | Raw AMP Reward Mean: {raw_amp.mean().item():.4f}")
-
-        # 3. 设置最终奖励
-        if self.discriminator.task_reward_lerp > 0:
-            # 如果开启了 Lerp，amp_rewards 已经是混合后的奖励
-            final_rewards = amp_rewards
-        else:
-            # 否则手动相加
-            final_rewards = rewards + amp_rewards
-
-        self.transition.rewards = final_rewards.clone()
+        # 3. 设置最终奖励。predict_amp_reward 返回 PPO 应使用的完整奖励：
+        # lerp=0 为纯 AMP，0<lerp<1 为任务/AMP 混合，lerp=1 为纯任务奖励。
+        self.transition.rewards = amp_rewards.clone()
 
         # --- [Bootstrapping] ---
         if "time_outs" in extras:

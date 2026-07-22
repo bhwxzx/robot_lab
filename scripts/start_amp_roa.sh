@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 设置默认值
-TERRAIN="Flat"
+TERRAIN="Rough"
 
 # 解析传入的命名参数
 while [[ "$#" -gt 0 ]]; do

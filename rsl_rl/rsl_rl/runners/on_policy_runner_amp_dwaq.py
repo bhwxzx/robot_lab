@@ -28,6 +28,8 @@ class OnPolicyRunnerAmpDwaq:
     2. DWAQ (Domain Randomization with VAE): 管理 prev_critic_obs 用于 VAE 的速度估计监督。
     """
 
+    _save_iteration_as_next = True
+
     def __init__(self, env: VecEnv, train_cfg: dict, log_dir: str | None = None, device="cpu"):
         self.cfg = train_cfg
         self.alg_cfg = train_cfg["algorithm"]
@@ -206,7 +208,9 @@ class OnPolicyRunnerAmpDwaq:
 
             stop = time.time()
             learn_time = stop - start
-            self.current_learning_iteration = it
+            # Store the next iteration to execute so resume does not repeat the
+            # rollout/update that has just completed.
+            self.current_learning_iteration = it + 1
             
             # log info
             if self.log_dir is not None and not self.disable_logs:
@@ -216,7 +220,7 @@ class OnPolicyRunnerAmpDwaq:
 
             ep_infos.clear()
             
-            if it == start_iter and not self.disable_logs:
+            if self.log_dir is not None and it == start_iter and not self.disable_logs:
                 git_file_paths = store_code_state(self.log_dir, self.git_status_repos)
                 if self.logger_type in ["wandb", "neptune"] and git_file_paths:
                     for path in git_file_paths:
@@ -296,6 +300,7 @@ class OnPolicyRunnerAmpDwaq:
             "model_state_dict": self.alg.policy.state_dict(),
             "optimizer_state_dict": self.alg.optimizer.state_dict(),
             "iter": self.current_learning_iteration,
+            "iteration_is_next": self._save_iteration_as_next,
             "infos": infos,
             # [AMP 特有]
             "discriminator_state_dict": self.alg.discriminator.state_dict(),
@@ -334,6 +339,13 @@ class OnPolicyRunnerAmpDwaq:
                 print("[Warning] 'vae_optimizer_state_dict' not found in checkpoint. Using a fresh optimizer.")
         if resumed_training:
             self.current_learning_iteration = loaded_dict["iter"]
+            if not bool(loaded_dict.get("iteration_is_next", False)):
+                legacy_iteration = self.current_learning_iteration
+                self.current_learning_iteration = legacy_iteration + 1
+                print(
+                    "[AMP-DWAQ Resume] Migrated legacy checkpoint iteration "
+                    f"from {legacy_iteration} to {self.current_learning_iteration}."
+                )
         return loaded_dict.get("infos")
 
     def get_inference_policy(self, device=None):

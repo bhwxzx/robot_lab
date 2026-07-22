@@ -22,6 +22,8 @@ from rsl_rl.utils import resolve_obs_groups, store_code_state, AMPLoader, Normal
 class OnPolicyRunnerAmp:
     """On-policy runner for training and evaluation of actor-critic methods."""
 
+    _save_iteration_as_next = True
+
     def __init__(self, env: VecEnv, train_cfg: dict, log_dir: str | None = None, device="cpu"):
         self.cfg = train_cfg
         self.alg_cfg = train_cfg["algorithm"]
@@ -187,7 +189,9 @@ class OnPolicyRunnerAmp:
 
             stop = time.time()
             learn_time = stop - start
-            self.current_learning_iteration = it
+            # Store the next iteration to execute so resume does not repeat the
+            # rollout/update that has just completed.
+            self.current_learning_iteration = it + 1
             # log info
             if self.log_dir is not None and not self.disable_logs:
                 # Log information
@@ -199,7 +203,7 @@ class OnPolicyRunnerAmp:
             # Clear episode infos
             ep_infos.clear()
             # Save code state
-            if it == start_iter and not self.disable_logs:
+            if self.log_dir is not None and it == start_iter and not self.disable_logs:
                 # obtain all the diff files
                 git_file_paths = store_code_state(self.log_dir, self.git_status_repos)
                 # if possible store them to wandb
@@ -318,6 +322,7 @@ class OnPolicyRunnerAmp:
             "model_state_dict": self.alg.policy.state_dict(),
             "optimizer_state_dict": self.alg.optimizer.state_dict(),
             "iter": self.current_learning_iteration,
+            "iteration_is_next": getattr(self, "_save_iteration_as_next", False),
             "infos": infos,
         }
         # AMP判别器和归一化器状态
@@ -338,6 +343,10 @@ class OnPolicyRunnerAmp:
 
     def load(self, path: str, load_optimizer: bool = True, map_location: str | None = None):
         loaded_dict = torch.load(path, weights_only=False, map_location=map_location)
+        self._loaded_checkpoint_metadata = {
+            "iteration_is_next": bool(loaded_dict.get("iteration_is_next", False)),
+            "algorithm_counter_present": "algorithm_counter" in loaded_dict,
+        }
         # -- Load model
         resumed_training = self.alg.policy.load_state_dict(loaded_dict["model_state_dict"])
          # 加载 AMP 状态
@@ -384,6 +393,15 @@ class OnPolicyRunnerAmp:
                         "[Warning] 'algorithm_counter' not found in checkpoint. "
                         f"Falling back to iter={self.alg.counter}."
                     )
+            if not self._loaded_checkpoint_metadata["iteration_is_next"]:
+                legacy_iteration = self.current_learning_iteration
+                self.current_learning_iteration = legacy_iteration + 1
+                if hasattr(self.alg, "counter") and not self._loaded_checkpoint_metadata["algorithm_counter_present"]:
+                    self.alg.counter = self.current_learning_iteration
+                print(
+                    "[AMP Resume] Migrated legacy checkpoint iteration "
+                    f"from {legacy_iteration} to {self.current_learning_iteration}."
+                )
         return loaded_dict.get("infos")
 
     def get_inference_policy(self, device=None):
