@@ -36,7 +36,7 @@ Unpack the returned tuple `hist_latent, code_vel = self.history_encoder(obs_hist
 
 **Logged**: 2026-07-17T14:47:37+08:00
 **Priority**: low
-**Status**: pending
+**Status**: resolved
 **Area**: tests
 
 ### Summary
@@ -57,6 +57,11 @@ Guard the initial code-state snapshot with `self.log_dir is not None`, matching 
 
 ### Metadata
 - Reproducible: yes
-- Related Files: rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py
+- Related Files: rsl_rl/rsl_rl/runners/on_policy_runner_amp.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp_dwaq.py
+
+### Resolution
+- **Resolved**: 2026-07-22T15:51:11+08:00
+- **Commit/PR**: 8d6090c
+- **Notes**: Code-state snapshot calls are now guarded by `log_dir is not None` in AMP, AMP_DWAQ, and AMP_ROA. One-iteration no-log runner tests passed for the ordinary AMP and AMP_DWAQ paths, and the AMP_ROA path was previously verified.
 
 ---

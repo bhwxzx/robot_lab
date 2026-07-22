@@ -660,21 +660,22 @@ Verify together: environment AMP history length, loader history length, feature 
 An AMP_ROA checkpoint must restore every optimizer and scheduling counter, not only network weights.
 
 ### Details
-AMP_ROA has separate optimization state for the PPO policy, discriminator, and history encoder, plus a counter controlling DAgger and privileged-regularization schedules. Restoring only model weights changes effective training dynamics: Adam moments are lost, schedules restart, and the scalar adaptive PPO learning rate can disagree with the optimizer param groups. Backward compatibility is also required for older checkpoints that lack newer keys.
+AMP_ROA has separate optimization state for the PPO policy, discriminator, and history encoder, plus a counter controlling DAgger and privileged-regularization schedules. Restoring only model weights changes effective training dynamics: Adam moments are lost, schedules restart, and the scalar adaptive PPO learning rate can disagree with the optimizer param groups. The stored runner iteration must mean the next iteration to execute; storing the last completed iteration causes resume to repeat a rollout/update. Backward compatibility is also required for older checkpoints that lack newer keys or use the legacy iteration meaning.
 
 ### Suggested Action
-Save and conditionally restore the main optimizer, AMP optimizer, history-encoder optimizer, AMP normalizer, discriminator, iteration/counter, and adaptive learning rate. Use safe fallbacks for old checkpoints and synchronize the algorithm scalar learning rate from the restored optimizer.
+Save and conditionally restore the main optimizer, AMP optimizer, history-encoder optimizer, AMP normalizer, discriminator, iteration/counter, and adaptive learning rate. Mark checkpoints whose `iter` is already the next iteration, migrate unmarked legacy checkpoints by exactly one step, and keep the AMP_ROA algorithm counter aligned when old checkpoints lack it. Use safe fallbacks for missing keys and synchronize the algorithm scalar learning rate from the restored optimizer.
 
 ### Metadata
 - Source: conversation
-- Related Files: rsl_rl/rsl_rl/runners/on_policy_runner_amp.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py
+- Related Files: rsl_rl/rsl_rl/runners/on_policy_runner_amp.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py, rsl_rl/rsl_rl/runners/on_policy_runner_amp_dwaq.py
 - Tags: amp, roa, checkpoint, optimizer, resume, scheduling
 - See Also: LRN-20260609-001
 - Pattern-Key: harden.checkpoint_restore_all_training_state
 
 ### Resolution
 - **Resolved**: 2026-07-17T14:47:37+08:00
-- **Notes**: AMP, AMP_DWAQ, and AMP_ROA checkpoint paths now restore their variant-specific optimizer state; AMP_ROA also restores the history optimizer and counter with old-checkpoint fallbacks.
+- **Commit/PR**: 8d6090c
+- **Notes**: AMP, AMP_DWAQ, and AMP_ROA checkpoint paths restore variant-specific optimizer state. They now save the next iteration with an explicit marker, migrate legacy checkpoints once, and preserve AMP_ROA history-optimizer/counter scheduling.
 
 ---
 
@@ -692,7 +693,7 @@ Use a reduced two-iteration Isaac Sim smoke test to validate AMP_ROA before comm
 Static imports, compilation, and synthetic tensor tests cannot validate IsaacLab observation-manager shapes, task registration, motion preloading on the target device, environment stepping, or the alternating ROA update routes. A small runtime test with reduced environment count and expert preload can cover both branches cheaply: iteration 0 executes DAgger (`it % dagger_update_freq == 0`) and iteration 1 executes PPO+AMP. It also exposes configuration-only issues such as command/expert coverage and simulator warnings.
 
 ### Suggested Action
-Run the smoke test in the `isaacsim-5.1` environment with a small number of environments and preloaded transitions, disable persistent runner logging, and require explicit success after both update branches. Then inspect the real observation shapes, replay insert count, AMP predictions, and CUDA errors before starting the full job.
+Run the smoke test in the `isaacsim-5.1` environment with a small number of environments and two iterations, and require explicit success after both update branches. The current training entry point always creates a local run directory; use `--logger=tensorboard --run_name=smoke_test` to avoid W&B upload while keeping the run easy to identify. Then inspect observation shapes, finite DAgger/PPO/AMP losses, simulator errors, TensorBoard output, and final checkpoint before starting the full job.
 
 ### Metadata
 - Source: conversation
@@ -703,6 +704,67 @@ Run the smoke test in the `isaacsim-5.1` environment with a small number of envi
 
 ### Resolution
 - **Resolved**: 2026-07-17T14:47:37+08:00
-- **Notes**: A 16-environment, 2000-transition preload smoke completed DAgger and PPO+AMP updates with `counter=2` and 758 valid replay transitions.
+- **Commit/PR**: 8d6090c
+- **Notes**: In addition to the earlier reduced in-memory test, a 64-environment rough-terrain run with the real 200000-transition preload completed iteration 0 DAgger and iteration 1 PPO+AMP with finite losses, produced `model_0.pt` and `model_2.pt`, and wrote TensorBoard data without a W&B run.
+
+---
+
+## [LRN-20260722-002] best_practice
+
+**Logged**: 2026-07-22T15:51:11+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+Treat `Discriminator.predict_amp_reward()` as the complete PPO reward API and preserve its batch/mode contract.
+
+### Details
+The discriminator implements `reward = (1 - w) * amp_reward + w * task_reward`. Therefore `w=0` means pure AMP reward, not `task_reward + amp_reward`; adding the task reward again in the algorithm creates a discontinuous special case and makes AMP, AMP_DWAQ, and AMP_ROA disagree. Reward prediction must also remain batch-safe: an unrestricted `squeeze()` turns a one-environment reward into a scalar and can break timeout bootstrapping. Temporarily switching the discriminator to evaluation mode must not force a caller that was already in eval mode back into train mode.
+
+### Suggested Action
+Have every AMP algorithm store the reward returned by `predict_amp_reward()` directly. Use `squeeze(-1)` so batch size one remains shape `[1]`, save the discriminator's original training flag, and restore train mode only when it was originally active. Test `w=0`, an interior value, `w=1`, batch sizes one and many, and timeout reward addition.
+
+### Metadata
+- Source: conversation
+- Related Files: rsl_rl/rsl_rl/modules/discriminator.py, rsl_rl/rsl_rl/algorithms/amp_ppo.py, rsl_rl/rsl_rl/algorithms/amp_dwaq_ppo.py, rsl_rl/rsl_rl/algorithms/amp_roa_ppo.py
+- Tags: amp, reward, interpolation, batch-shape, train-eval-mode
+- See Also: LRN-20260611-AMP
+- Pattern-Key: harden.amp_reward_api_contract
+
+### Resolution
+- **Resolved**: 2026-07-22T15:51:11+08:00
+- **Commit/PR**: 8d6090c
+- **Notes**: All three AMP algorithms now use the discriminator result directly; boundary lerp values, single/multi-environment shapes, model mode restoration, and timeout bootstrapping were verified.
+
+---
+
+## [LRN-20260722-003] best_practice
+
+**Logged**: 2026-07-22T15:51:11+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+Historical motion windows must use `FrameDuration` for exact frame lookup and may wrap only across a continuous clip boundary.
+
+### Details
+Mapping normalized time with `p * num_frames` does not recover source frames at their recorded timestamps and creates an endpoint error; frame coordinates must come from bounded time divided by the file's `FrameDuration`. Historical samples before time zero also need trajectory-specific boundary handling. A `LoopMode=Wrap` declaration alone is insufficient because generated expert files may still have a discontinuity between their last and first frames. Wrapping such clips injects an artificial jump into every history window near the boundary and teaches the discriminator a motion artifact.
+
+### Suggested Action
+Validate positive `FrameDuration`, derive floor/ceil frame indices from `bounded_time / FrameDuration`, and apply the same scalar/batch logic. Honor Wrap only after checking that joint position, joint velocity, and foot-position boundary steps are consistent with normal within-clip steps; otherwise warn and clamp. Verify exact source-timestamp recovery plus scalar, batch, negative-history, true-cycle, and CUDA cases.
+
+### Metadata
+- Source: conversation
+- Related Files: rsl_rl/rsl_rl/utils/motion_loader.py, source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/
+- Tags: amp, motion-loader, interpolation, history-window, loop-boundary
+- See Also: LRN-20260717-003
+- Pattern-Key: harden.motion_history_time_and_boundary
+
+### Resolution
+- **Resolved**: 2026-07-22T15:51:11+08:00
+- **Commit/PR**: 8d6090c
+- **Notes**: Motion loading now uses exact frame-duration coordinates, detects effective wrapping per trajectory, safely clamps all current non-continuous LW clips, and preserves wrapping for verified cyclic motion.
 
 ---
