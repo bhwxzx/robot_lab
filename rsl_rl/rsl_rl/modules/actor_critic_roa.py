@@ -192,6 +192,7 @@ class ActorCriticROA(nn.Module):
             raise ValueError(f"未知的标准差类型: {self.noise_std_type}")
 
         self.distribution = None
+        self._last_actor_latent = None
         Normal.set_default_validate_args(False)
 
     def reset(self, dones=None):
@@ -245,6 +246,7 @@ class ActorCriticROA(nn.Module):
         else:
             latent = self.infer_priv_latent(obs)
             vel = self.get_true_vel(obs)
+        self._last_actor_latent = latent
 
         # 3. 拼接传入主网络
         actor_input = torch.cat([current_obs, vel, latent], dim=-1)
@@ -296,6 +298,12 @@ class ActorCriticROA(nn.Module):
     @property
     def entropy(self):
         return self.distribution.entropy().sum(dim=-1)
+
+    @property
+    def actor_latent(self):
+        if self._last_actor_latent is None:
+            raise RuntimeError("Actor latent is unavailable before the policy forward pass.")
+        return self._last_actor_latent
 
     def update_normalization(self, obs):
         if self.actor_obs_normalization:

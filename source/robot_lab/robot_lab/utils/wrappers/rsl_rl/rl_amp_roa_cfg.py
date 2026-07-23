@@ -57,6 +57,12 @@ class RslRlAlgorithmAmpRoaCfg(RslRlPpoAlgorithmCfg):
     vel_loss_coef: float = 1.0
     """显式速度估计的监督损失权重系数。"""
 
+    amp_grad_pen_batch_size: int | None = 4096
+    """AMP 梯度惩罚使用的专家子批量大小。None 或非正值表示使用完整 mini-batch。"""
+
+    amp_reward_batch_size: int | None = 24576
+    """Rollout 结束后分块计算 AMP reward 的批量大小。None 或非正值表示一次性计算。"""
+
 #############################
 # AMP-ROA Runner Config     #
 #############################

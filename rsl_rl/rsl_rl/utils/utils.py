@@ -66,6 +66,42 @@ class Normalizer(RunningMeanStd):
         std_torch = torch.sqrt(torch.tensor(self.var + self.epsilon, device=device, dtype=torch.float32))
         return torch.clamp((input - mean_torch) / std_torch, -self.clip_obs, self.clip_obs)
 
+    def update_from_torch_batches(self, batches) -> None:
+        """Update statistics from one or more tensor batches without copying samples to CPU."""
+        batch_moments = []
+        total_count = 0
+        with torch.no_grad():
+            for batch in batches:
+                if batch.numel() == 0:
+                    continue
+                batch = batch.detach()
+                batch_count = batch.shape[0]
+                batch_moments.append(
+                    (
+                        batch.mean(dim=0),
+                        batch.var(dim=0, unbiased=False),
+                        batch_count,
+                    )
+                )
+                total_count += batch_count
+
+            if total_count == 0:
+                return
+
+            combined_mean = sum(mean * count for mean, _, count in batch_moments) / total_count
+            combined_var = sum(
+                count * (var + torch.square(mean - combined_mean))
+                for mean, var, count in batch_moments
+            ) / total_count
+
+        # Only the per-feature moments cross the device boundary. The complete AMP
+        # history batches remain on the training device.
+        self.update_from_moments(
+            combined_mean.cpu().numpy(),
+            combined_var.cpu().numpy(),
+            total_count,
+        )
+
     # def update_normalizer(self, rollouts, expert_loader):
     #     policy_data_generator = rollouts.feed_forward_generator_amp(None, mini_batch_size=expert_loader.batch_size)
     #     expert_data_generator = expert_loader.dataset.feed_forward_generator_amp(expert_loader.batch_size)

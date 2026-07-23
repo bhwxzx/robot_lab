@@ -70,6 +70,9 @@ class Discriminator(nn.Module):
         self.amp_linear.train()
 
         self.task_reward_lerp = task_reward_lerp
+        self._normalizer_cache_key = None
+        self._normalizer_mean = None
+        self._normalizer_std = None
 
     def forward(self, x):
         """
@@ -109,19 +112,46 @@ class Discriminator(nn.Module):
             )
         original_shape = observation.shape
         frames = observation.reshape(-1, normalizer_dim)
-        normalized_frames = normalizer.normalize_torch(frames, self.device)
+        cache_key = (
+            id(normalizer),
+            float(normalizer.count),
+            frames.device.type,
+            frames.device.index,
+            frames.dtype,
+        )
+        if cache_key != self._normalizer_cache_key:
+            self._normalizer_mean = torch.as_tensor(
+                normalizer.mean, device=frames.device, dtype=frames.dtype
+            )
+            self._normalizer_std = torch.sqrt(
+                torch.as_tensor(
+                    normalizer.var + normalizer.epsilon,
+                    device=frames.device,
+                    dtype=frames.dtype,
+                )
+            )
+            self._normalizer_cache_key = cache_key
+        normalized_frames = torch.clamp(
+            (frames - self._normalizer_mean) / self._normalizer_std,
+            -normalizer.clip_obs,
+            normalizer.clip_obs,
+        )
         return normalized_frames.reshape(original_shape)
 
-    def update_amp_normalizer(self, normalizer, observation):
-        """Update shared per-frame normalization statistics from flattened histories."""
+    def update_amp_normalizer(self, normalizer, *observations):
+        """Update shared per-frame statistics from one or more flattened histories."""
         normalizer_dim = int(normalizer.mean.shape[0])
-        if observation.shape[-1] % normalizer_dim != 0:
-            raise ValueError(
-                "AMP observation dimension must be divisible by the normalizer dimension: "
-                f"got observation={observation.shape[-1]}, normalizer={normalizer_dim}."
-            )
-        frames = observation.detach().reshape(-1, normalizer_dim)
-        normalizer.update(frames.cpu().numpy())
+        frame_batches = []
+        for observation in observations:
+            if observation.shape[-1] % normalizer_dim != 0:
+                raise ValueError(
+                    "AMP observation dimension must be divisible by the normalizer dimension: "
+                    f"got observation={observation.shape[-1]}, normalizer={normalizer_dim}."
+                )
+            frame_batches.append(observation.detach().reshape(-1, normalizer_dim))
+
+        normalizer.update_from_torch_batches(frame_batches)
+        self._normalizer_cache_key = None
 
     def compute_grad_pen(self, expert_state, expert_next_state, lambda_=10):
         """
