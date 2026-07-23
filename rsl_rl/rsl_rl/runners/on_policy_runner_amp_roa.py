@@ -43,8 +43,6 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
             print(f"Synchronizing parameters for rank {self.gpu_global_rank}...")
             self.alg.broadcast_parameters()
 
-        current_amp_obs = amp_obs.clone() if amp_obs is not None else None
-
         start_iter = self.current_learning_iteration
         tot_iter = start_iter + num_learning_iterations
         
@@ -53,6 +51,9 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
 
         for it in range(start_iter, tot_iter):
             start = time.time()
+            completed_reward_sums = []
+            completed_episode_lengths = []
+            completed_episode_masks = []
             
             # 是否在这一步让网络强制使用 History Encoder
             hist_encoding = (it % dagger_update_freq == 0)
@@ -68,26 +69,45 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
                     next_amp_obs = obs["amp"].to(self.device)
                     if len(next_amp_obs.shape) == 3:
                         next_amp_obs = next_amp_obs.view(next_amp_obs.shape[0], -1)
-                    next_amp_obs_with_term = next_amp_obs.clone()
-                    amp_transition_valid = ~dones.bool()
-                    reset_env_ids = dones.nonzero(as_tuple=False).flatten()
+                    done_mask = dones.bool().reshape(-1)
 
-                    if len(reset_env_ids) > 0:
+                    if hist_encoding:
+                        # DAgger rollouts do not query AMP rewards or write AMP replay.
+                        next_amp_obs_with_term = next_amp_obs
+                        amp_transition_valid = None
+                    else:
                         obs_extras = extras.get("observations", {})
                         terminal_obs_dict = obs_extras.get("terminal_obs")
                         if terminal_obs_dict is None:
                             terminal_obs_dict = extras.get("terminal_obs")
                             
                         if terminal_obs_dict is not None and "amp" in terminal_obs_dict:
-                            term_amp = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
+                            term_amp = terminal_obs_dict["amp"].to(self.device)
                             if len(term_amp.shape) == 3:
                                 term_amp = term_amp.view(term_amp.shape[0], -1)
-                            next_amp_obs_with_term[reset_env_ids] = term_amp
-                            amp_transition_valid[reset_env_ids] = True
+
+                            if term_amp.shape[0] == next_amp_obs.shape[0]:
+                                next_amp_obs_with_term = torch.where(
+                                    done_mask.unsqueeze(-1),
+                                    term_amp,
+                                    next_amp_obs,
+                                )
+                            else:
+                                # Compatibility path for wrappers that return only
+                                # the terminal observations of reset environments.
+                                reset_env_ids = done_mask.nonzero(as_tuple=False).flatten()
+                                next_amp_obs_with_term = next_amp_obs.clone()
+                                next_amp_obs_with_term[reset_env_ids] = term_amp
+                            amp_transition_valid = torch.ones_like(done_mask)
                         else:
                             # IsaacLab 当前不会返回 pre-reset terminal_obs。上一有效窗口
                             # 只用于计算该终止步的保守 AMP reward，不写入 replay buffer。
-                            next_amp_obs_with_term[reset_env_ids] = current_amp_obs[reset_env_ids]
+                            next_amp_obs_with_term = torch.where(
+                                done_mask.unsqueeze(-1),
+                                amp_obs,
+                                next_amp_obs,
+                            )
+                            amp_transition_valid = ~done_mask
 
                     self.alg.process_env_step(
                         obs,
@@ -97,10 +117,10 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
                         next_amp_obs_with_term,
                         amp_transition_valid=amp_transition_valid,
                         process_amp=not hist_encoding,
+                        defer_amp_reward=not hist_encoding,
                     )
                         
                     amp_obs = next_amp_obs
-                    current_amp_obs = next_amp_obs.clone() 
 
                     if self.log_dir is not None:
                         if "episode" in extras:
@@ -110,11 +130,21 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
 
                         cur_reward_sum += rewards
                         cur_episode_length += 1
-                        new_ids = (dones > 0).nonzero(as_tuple=False)
-                        rewbuffer.extend(cur_reward_sum[new_ids][:, 0].cpu().numpy().tolist())
-                        lenbuffer.extend(cur_episode_length[new_ids][:, 0].cpu().numpy().tolist())
-                        cur_reward_sum[new_ids] = 0
-                        cur_episode_length[new_ids] = 0
+                        completed_reward_sums.append(torch.where(done_mask, cur_reward_sum, 0.0))
+                        completed_episode_lengths.append(torch.where(done_mask, cur_episode_length, 0.0))
+                        completed_episode_masks.append(done_mask)
+                        cur_reward_sum *= ~done_mask
+                        cur_episode_length *= ~done_mask
+
+                if not hist_encoding:
+                    self.alg.finalize_amp_rollout_rewards()
+
+                if completed_episode_masks:
+                    completed_mask = torch.stack(completed_episode_masks).flatten()
+                    completed_rewards = torch.stack(completed_reward_sums).flatten()
+                    completed_lengths = torch.stack(completed_episode_lengths).flatten()
+                    rewbuffer.extend(completed_rewards[completed_mask].cpu().tolist())
+                    lenbuffer.extend(completed_lengths[completed_mask].cpu().tolist())
 
                 stop = time.time()
                 collection_time = stop - start

@@ -157,7 +157,7 @@ class RolloutStorage:
             yield self.observations[i], self.actions[i], self.privileged_actions[i], self.dones[i]
 
     # for reinforcement learning with feedforward networks
-    def mini_batch_generator(self, num_mini_batches, num_epochs=8):
+    def mini_batch_generator(self, num_mini_batches, num_epochs=8, yield_indices=False):
         if self.training_type != "rl":
             raise ValueError("This function is only available for reinforcement learning training.")
         batch_size = self.num_envs * self.num_transitions_per_env
@@ -197,10 +197,14 @@ class RolloutStorage:
                 old_sigma_batch = old_sigma[batch_idx]
 
                 # yield the mini-batch
-                yield obs_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, old_mu_batch, old_sigma_batch, (
+                sample = (obs_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, old_mu_batch, old_sigma_batch, (
                     None,
                     None,
-                ), None
+                ), None)
+                if yield_indices:
+                    yield (*sample, batch_idx)
+                else:
+                    yield sample
 
     # for reinfrocement learning with recurrent networks
     def recurrent_mini_batch_generator(self, num_mini_batches, num_epochs=8):

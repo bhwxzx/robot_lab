@@ -50,6 +50,8 @@ class AMPROAPPO:
         amp_task_reward_lerp=0.3,
         amp_discr_hidden_dims=None,
         disc_learning_rate=1e-4,
+        amp_grad_pen_batch_size=4096,
+        amp_reward_batch_size=24576,
         # Distributed training parameters
         multi_gpu_cfg: dict | None = None,
         **kwargs
@@ -58,6 +60,8 @@ class AMPROAPPO:
             print(f"[AMP_ROA_PPO] 忽略了多余的配置参数: {list(kwargs.keys())}")
         
         self.device = device
+        if torch.cuda.is_available() and str(device).startswith("cuda"):
+            torch.set_float32_matmul_precision("high")
         self.is_multi_gpu = multi_gpu_cfg is not None
         if multi_gpu_cfg is not None:
             self.gpu_global_rank = multi_gpu_cfg["global_rank"]
@@ -78,9 +82,16 @@ class AMPROAPPO:
         self.amploss_coef = 1.0  
         self.amp_reward_coef = amp_reward_coef
         self.min_std = min_std
+        self.amp_grad_pen_batch_size = amp_grad_pen_batch_size
+        self.amp_reward_batch_size = amp_reward_batch_size
 
         self.amp_storage = ReplayBuffer(amp_data.observation_dim, amp_replay_buffer_size, device)
         self.amp_transition = RolloutStorage.Transition()
+        self._amp_reward_states = None
+        self._amp_reward_next_states = None
+        self._amp_transition_valid = None
+        self._amp_timeout_bonuses = None
+        self._amp_reward_step = 0
 
         # --- [Policy] ---
         self.policy = policy
@@ -126,8 +137,19 @@ class AMPROAPPO:
         self.vel_loss_coef = vel_loss_coef
 
     def init_storage(self, training_type, num_envs, num_transitions_per_env, obs, actions_shape):
+        storage_obs = obs.exclude("amp") if "amp" in obs else obs
         self.storage = RolloutStorage(
-            training_type, num_envs, num_transitions_per_env, obs, actions_shape, self.device,
+            training_type, num_envs, num_transitions_per_env, storage_obs, actions_shape, self.device,
+        )
+        amp_rollout_shape = (num_transitions_per_env, num_envs, self.amp_data.observation_dim)
+        self._amp_reward_next_states = torch.empty(amp_rollout_shape, device=self.device)
+        if not self.discriminator.use_history_window:
+            self._amp_reward_states = torch.empty(amp_rollout_shape, device=self.device)
+        self._amp_transition_valid = torch.empty(
+            num_transitions_per_env, num_envs, dtype=torch.bool, device=self.device
+        )
+        self._amp_timeout_bonuses = torch.zeros(
+            num_transitions_per_env, num_envs, device=self.device
         )
 
     def act(self, obs, amp_obs=None, hist_encoding=False):
@@ -137,7 +159,7 @@ class AMPROAPPO:
         self.transition.actions_log_prob = self.policy.get_actions_log_prob(self.transition.actions).detach()
         self.transition.action_mean = self.policy.action_mean.detach()
         self.transition.action_sigma = self.policy.action_std.detach()
-        self.transition.observations = obs
+        self.transition.observations = obs.exclude("amp") if "amp" in obs else obs
         if amp_obs is not None:
             self.amp_transition.observations = amp_obs
         return self.transition.actions
@@ -151,6 +173,7 @@ class AMPROAPPO:
         amp_obs,
         amp_transition_valid=None,
         process_amp=True,
+        defer_amp_reward=False,
     ):
         self.policy.update_normalization(obs)
         self.transition.dones = dones
@@ -162,38 +185,113 @@ class AMPROAPPO:
             if amp_transition_valid is None:
                 amp_transition_valid = ~dones.bool()
             amp_transition_valid = amp_transition_valid.reshape(-1)
-            if torch.any(amp_transition_valid):
+
+            if defer_amp_reward:
+                if self._amp_reward_step != self.storage.step:
+                    raise RuntimeError(
+                        "Deferred AMP reward buffer is out of sync with rollout storage: "
+                        f"amp_step={self._amp_reward_step}, storage_step={self.storage.step}."
+                    )
+                self._amp_reward_next_states[self._amp_reward_step].copy_(amp_obs)
+                if self._amp_reward_states is not None:
+                    self._amp_reward_states[self._amp_reward_step].copy_(
+                        self.amp_transition.observations
+                    )
+                self._amp_transition_valid[self._amp_reward_step].copy_(amp_transition_valid)
+                # Keep the unmodified task reward in rollout storage. It is replaced
+                # with the task/AMP blend after the complete rollout is collected.
+                self.transition.rewards = rewards.clone()
+            else:
                 self.amp_storage.insert(
                     self.amp_transition.observations[amp_transition_valid],
                     amp_obs[amp_transition_valid],
                 )
+                # AMP reward is used only for teacher PPO rollouts. DAgger rollouts train
+                # the history encoder exclusively and must not affect the discriminator.
+                amp_rewards, _ = self.discriminator.predict_amp_reward(
+                    self.amp_transition.observations,
+                    amp_obs,
+                    task_reward=rewards,
+                    normalizer=self.amp_normalizer,
+                )
 
-            # AMP reward is used only for teacher PPO rollouts. DAgger rollouts train
-            # the history encoder exclusively and must not affect the discriminator.
-            amp_rewards, _ = self.discriminator.predict_amp_reward(
-                self.amp_transition.observations,
-                amp_obs,
-                task_reward=rewards,
-                normalizer=self.amp_normalizer,
-            )
-
-            # predict_amp_reward always returns the complete reward used by PPO:
-            # pure AMP at lerp=0, a task/AMP blend for 0<lerp<1, and pure task at lerp=1.
-            self.transition.rewards = amp_rewards
+                # predict_amp_reward always returns the complete reward used by PPO:
+                # pure AMP at lerp=0, a task/AMP blend for 0<lerp<1, and pure task at lerp=1.
+                self.transition.rewards = amp_rewards
         else:
             # DAgger only needs the observation batches for supervised distillation.
             # Keep valid task rewards in storage for a complete rollout, but do not
             # query or update any AMP component on these student-policy transitions.
             self.transition.rewards = rewards.clone()
 
+        timeout_bonus = None
         if "time_outs" in extras:
-            self.transition.rewards += self.gamma * torch.squeeze(
+            timeout_bonus = self.gamma * torch.squeeze(
                 self.transition.values * extras["time_outs"].unsqueeze(1).to(self.device), 1
             )
+            if not defer_amp_reward:
+                self.transition.rewards += timeout_bonus
+
+        if defer_amp_reward:
+            self._amp_timeout_bonuses[self._amp_reward_step].zero_()
+            if timeout_bonus is not None:
+                self._amp_timeout_bonuses[self._amp_reward_step].copy_(timeout_bonus)
 
         self.storage.add_transitions(self.transition)
+        if defer_amp_reward:
+            self._amp_reward_step += 1
         self.transition.clear()
         self.policy.reset(dones)
+
+    def finalize_amp_rollout_rewards(self):
+        """Compute and write teacher rollout AMP rewards in large inference batches."""
+        if self._amp_reward_step != self.storage.step:
+            raise RuntimeError(
+                "Cannot finalize AMP rewards with incomplete deferred buffers: "
+                f"amp_step={self._amp_reward_step}, storage_step={self.storage.step}."
+            )
+        if self._amp_reward_step == 0:
+            return
+
+        num_samples = self._amp_reward_step * self.storage.num_envs
+        task_rewards = self.storage.rewards[: self._amp_reward_step].reshape(-1)
+        next_states = self._amp_reward_next_states[: self._amp_reward_step].flatten(0, 1)
+        states = (
+            next_states
+            if self._amp_reward_states is None
+            else self._amp_reward_states[: self._amp_reward_step].flatten(0, 1)
+        )
+        valid = self._amp_transition_valid[: self._amp_reward_step].reshape(-1)
+        replay_states = states[valid]
+        replay_next_states = next_states[valid]
+        # Keep insertion batches within ReplayBuffer capacity for configurations
+        # whose rollout contains more transitions than the complete replay buffer.
+        replay_chunk_size = self.amp_storage.buffer_size
+        for start in range(0, replay_states.shape[0], replay_chunk_size):
+            end = min(start + replay_chunk_size, replay_states.shape[0])
+            self.amp_storage.insert(
+                replay_states[start:end],
+                replay_next_states[start:end],
+            )
+
+        batch_size = self.amp_reward_batch_size
+        if batch_size is None or batch_size <= 0:
+            batch_size = num_samples
+
+        for start in range(0, num_samples, batch_size):
+            end = min(start + batch_size, num_samples)
+            amp_rewards, _ = self.discriminator.predict_amp_reward(
+                states[start:end],
+                next_states[start:end],
+                task_reward=task_rewards[start:end],
+                normalizer=self.amp_normalizer,
+            )
+            task_rewards[start:end].copy_(amp_rewards)
+
+        task_rewards.add_(
+            self._amp_timeout_bonuses[: self._amp_reward_step].reshape(-1)
+        )
+        self._amp_reward_step = 0
 
     def compute_returns(self, obs):
         last_values = self.policy.evaluate(obs).detach()
@@ -210,7 +308,25 @@ class AMPROAPPO:
         mean_grad_pen_loss = 0
         mean_policy_pred = 0
         mean_expert_pred = 0
-        generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
+        rollout_obs = self.storage.observations.flatten(0, 1)
+        latent_batch_size = (
+            self.storage.num_envs
+            * self.storage.num_transitions_per_env
+            // self.num_mini_batches
+        )
+        cached_hist_latents = []
+        with torch.inference_mode():
+            for start in range(0, rollout_obs.batch_size[0], latent_batch_size):
+                cached_hist_latents.append(
+                    self.policy.infer_hist_latent(rollout_obs[start : start + latent_batch_size])
+                )
+        cached_hist_latents = torch.cat(cached_hist_latents, dim=0)
+
+        generator = self.storage.mini_batch_generator(
+            self.num_mini_batches,
+            self.num_learning_epochs,
+            yield_indices=True,
+        )
         amp_policy_generator = self.amp_storage.feed_forward_generator(
             self.num_learning_epochs * self.num_mini_batches,
             self.storage.num_envs * self.storage.num_transitions_per_env // self.num_mini_batches,
@@ -224,7 +340,7 @@ class AMPROAPPO:
             (
                 obs_batch, actions_batch, target_values_batch, advantages_batch,
                 returns_batch, old_actions_log_prob_batch, old_mu_batch, old_sigma_batch,
-                hid_states_batch, masks_batch,
+                hid_states_batch, masks_batch, batch_indices,
             ) = sample
 
             if self.normalize_advantage_per_mini_batch:
@@ -279,9 +395,8 @@ class AMPROAPPO:
                 value_loss = (returns_batch - value_batch).pow(2).mean()
 
             # --- [ROA: Privileged Regularization Loss] ---
-            priv_latent_batch = self.policy.infer_priv_latent(obs_batch)
-            with torch.inference_mode():
-                hist_latent_batch = self.policy.infer_hist_latent(obs_batch)
+            priv_latent_batch = self.policy.actor_latent
+            hist_latent_batch = cached_hist_latents[batch_indices]
             priv_reg_loss = (priv_latent_batch - hist_latent_batch.detach()).norm(p=2, dim=1).mean()
             
             # Dynamic coeff schedule (4 parameters: [start_val, end_val, start_iter, fade_iters])
@@ -315,7 +430,24 @@ class AMPROAPPO:
             policy_loss = torch.nn.MSELoss()(policy_d, -1 * torch.ones_like(policy_d))
             amp_loss = 0.5 * (expert_loss + policy_loss)
             
-            grad_pen_loss = self.discriminator.compute_grad_pen(expert_state, expert_next_state, lambda_=10)
+            grad_pen_state = expert_state
+            grad_pen_next_state = expert_next_state
+            if (
+                self.amp_grad_pen_batch_size is not None
+                and self.amp_grad_pen_batch_size > 0
+                and self.amp_grad_pen_batch_size < expert_state.shape[0]
+            ):
+                grad_pen_indices = torch.randperm(expert_state.shape[0], device=expert_state.device)[
+                    : self.amp_grad_pen_batch_size
+                ]
+                grad_pen_state = expert_state[grad_pen_indices]
+                grad_pen_next_state = expert_next_state[grad_pen_indices]
+
+            grad_pen_loss = self.discriminator.compute_grad_pen(
+                grad_pen_state,
+                grad_pen_next_state,
+                lambda_=10,
+            )
 
             # ====== 解耦的 Loss ======
             loss = (surrogate_loss + 
@@ -345,10 +477,6 @@ class AMPROAPPO:
             nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.max_grad_norm)
             self.amp_optimizer.step()
 
-            if self.amp_normalizer is not None:
-                self.discriminator.update_amp_normalizer(self.amp_normalizer, sample_amp_policy[1])
-                self.discriminator.update_amp_normalizer(self.amp_normalizer, sample_amp_expert[1])
-
             mean_value_loss += value_loss.item()
             mean_surrogate_loss += surrogate_loss.item()
             mean_entropy += entropy_batch.mean().item()
@@ -357,6 +485,16 @@ class AMPROAPPO:
             mean_grad_pen_loss += grad_pen_loss.item()
             mean_policy_pred += policy_d.mean().item()
             mean_expert_pred += expert_d.mean().item()
+
+        if self.amp_normalizer is not None:
+            # Keep normalization fixed throughout the PPO epochs and update it once
+            # from equally sized policy/expert samples after all optimizer steps.
+            self.discriminator.update_amp_normalizer(
+                self.amp_normalizer,
+                sample_amp_policy[1],
+                sample_amp_expert[1],
+            )
+
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_value_loss /= num_updates
         mean_surrogate_loss /= num_updates
@@ -394,7 +532,6 @@ class AMPROAPPO:
             
         for (obs_batch, _, _, _, _, _, _, _, hid_states_batch, masks_batch) in generator:
             with torch.inference_mode():
-                self.policy.act(obs_batch, hist_encoding=True, masks=masks_batch, hidden_states=hid_states_batch[0] if hid_states_batch else None)
                 priv_latent_batch = self.policy.infer_priv_latent(obs_batch)
                 true_vel_batch = self.policy.get_true_vel(obs_batch)
                 
