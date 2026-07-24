@@ -2758,7 +2758,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # Root penalties
         self.rewards.lin_vel_z_l2.weight = -1.0 #-1.0
-        self.rewards.ang_vel_xy_l2.weight = -0.2 # -0.05
+        self.rewards.ang_vel_xy_l2.weight = -0.1 # -0.05
         self.rewards.flat_orientation_l2.weight = -5.0 # -5.0
         self.rewards.base_height_l2.weight = -10.0 # -50.0 
         self.rewards.base_height_l2.params["target_height"] = 0.69 # 0.647
@@ -2796,7 +2796,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.ankle_torque_limit.weight = -0.1
         self.rewards.ankle_action.weight = -0.002
 
-        self.rewards.penalize_hip_roll_action.weight = -0.2
+        self.rewards.penalize_hip_roll_action.weight = -0.0
 
         self.rewards.stand_still.weight = -3.0
 
@@ -2812,7 +2812,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.joint_deviation_legs.params["asset_cfg"].joint_names = [".*_thigh_joint",".*_shank_joint"]
 
         # Action penalties
-        self.rewards.action_rate_l2.weight = -0.2 # -0.01 
+        self.rewards.action_rate_l2.weight = -0.15 # -0.01 
         self.rewards.action_smoothness.weight = -0.075 # -0.15 
 
         # Contact sensorstand_still
@@ -2833,7 +2833,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.rew_keep_ankle_pitch_zero_in_air.params["sensor_cfg"].body_names = [self.foot_link_name]
 
         self.rewards.bipedal_gait_reward.weight = 5.0
-        self.rewards.feet_air_time.weight = 1.5
+        self.rewards.feet_air_time.weight = 2.0
         self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
         self.rewards.feet_air_time.params["threshold"] = 0.4
         self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
