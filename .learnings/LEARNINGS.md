@@ -21,6 +21,67 @@ Whenever adding a custom network (e.g., `ActorCriticROA`) or algorithm (e.g., `A
 
 ---
 
+## [LRN-20260725-001] correction
+
+**Logged**: 2026-07-25T12:03:00+08:00
+**Priority**: high
+**Status**: pending
+**Area**: infra
+
+### Summary
+判断训练是否仍在推进时，不能把活跃进程或持续增长的 W&B `.wandb` 事务文件当作训练健康证据。
+
+### Details
+本次 W&B 上传故障中，训练进程、`wandb-core` 和 GPU 监控进程都仍存活，`.wandb` 文件也在上传器 fatal 后继续更新，因此最初误判训练仍在正常记录。进一步读取 TensorBoard 事件后发现，训练标量停在 step 2471（2026-07-24 22:02:31），checkpoint 停在 `model_2000.pt`（21:48:12）。`.wandb` 的后续增长可能仅来自 W&B 系统监控记录，不能证明训练 step 在增加。
+
+### Suggested Action
+诊断 IsaacLab/RSL-RL 静默卡死时，应优先验证训练日志或 TensorBoard 中的最新 step 和时间戳；进程状态、CPU/GPU 活动和 `.wandb` 文件 mtime 只能作为辅助信号。至少交叉检查事件文件最新 scalar step、训练日志 mtime，以及 checkpoint/迭代输出。
+
+### Metadata
+- Source: conversation
+- Related Files: `wandb/run-20260724_204645-b3c9dvzd/run-b3c9dvzd.wandb`, `logs/rsl_rl/LW_leg_rough_amp_roa/2026-07-24_20-46-34/events.out.tfevents.1784897204.youngHit.594998.0`
+- Tags: wandb, tensorboard, rsl-rl, silent-hang, monitoring, diagnosis
+- Pattern-Key: troubleshoot.training_progress_requires_step_evidence
+- Recurrence-Count: 1
+- First-Seen: 2026-07-25
+- Last-Seen: 2026-07-25
+
+---
+
+## [LRN-20260725-002] correction
+
+**Logged**: 2026-07-25T13:09:15+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+训练监督与调优 skill 必须以通用内核和版本化算法画像支持所有算法，不能把 AMP-ROA 当成默认训练模型。
+
+### Details
+用户指出，监督、自动恢复和受控调优能力不仅要适用于 AMP-ROA，也要覆盖当前其他算法，并能在未来新增算法时自动发现能力缺口。将进度解析、健康指标、恢复参数、保护参数和调优指标硬编码到单一算法，会让已有算法行为不一致，也会使新算法被错误套用旧算法的安全约束。
+
+未知算法的自动适配必须分层：系统可以自动扫描训练入口和配置、提取算法身份、使用通用画像执行保守监督，并生成候选画像；但在画像经过审核前不能自动调优，也不能静默修改持久化 skill。这样既能适应新算法，又保留用户对代码修改和调优权限的最终控制。
+
+### Suggested Action
+使用版本化算法画像注册表驱动日志解析、健康判断、恢复要求、参数保护和指标别名。每次运行先解析 `backend + algorithm + runner` 的精确身份并锁定画像指纹；持续扫描源码覆盖率。未知身份只进入通用监督和候选画像生成流程，待用户批准后再持久化升级并开放调优。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/SKILL.md`, `.agents/skills/monitor-tune-isaaclab-training/references/algorithm-profiles.json`, `.agents/skills/monitor-tune-isaaclab-training/scripts/discover_algorithm_profile.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/scan_algorithm_coverage.py`
+- Tags: training, monitoring, tuning, algorithm-profiles, extensibility, authorization
+- Pattern-Key: design.training_skill_algorithm_profiles
+- Recurrence-Count: 1
+- First-Seen: 2026-07-25
+- Last-Seen: 2026-07-25
+
+### Resolution
+- **Resolved**: 2026-07-25T13:09:15+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已实现 11 个版本化画像、当前 RSL-RL 算法覆盖扫描、未知算法候选生成、通用只读监督回退，以及画像审核前禁止调优的边界。
+
+---
+
 ## [LRN-20260721-001] correction
 
 **Logged**: 2026-07-21T00:00:00+08:00
