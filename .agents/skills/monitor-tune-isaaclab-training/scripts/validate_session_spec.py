@@ -1,0 +1,844 @@
+#!/usr/bin/env python3
+"""Validate a per-session authorization contract for training supervision and tuning."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+from algorithm_profiles import (
+    DEFAULT_REGISTRY_PATH,
+    ProfileError,
+    load_registry,
+    profile_fingerprint,
+    profile_matches,
+    resolve_profile,
+)
+
+PARAMETER_PATH_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
+IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+COMMAND_PLACEHOLDER_RE = re.compile(r"\{([a-z0-9_]+)\}")
+ALLOWED_COMMAND_PLACEHOLDERS = {
+    "artifact_path",
+    "artifact_kind",
+    "candidate_id",
+    "artifact_sha256",
+    "checkpoint_path",
+    "checkpoint_sha256",
+    "command_schedule_json",
+    "duration_steps",
+    "gpu_index",
+    "result_path",
+    "require_idle_gpu_flag",
+    "run_id",
+    "scenario_id",
+    "scenario_overrides_json",
+    "seed",
+    "video_path",
+}
+ARTIFACT_KINDS = {"native", "jit", "onnx"}
+SCENARIO_CATEGORIES = {
+    "nominal",
+    "command",
+    "terrain",
+    "dynamics",
+    "disturbance",
+    "latency",
+}
+AGGREGATIONS = {"max", "min", "mean"}
+
+
+class SpecError(ValueError):
+    """Raised when a session specification violates the authorization schema."""
+
+
+def _expect_object(value: Any, path: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise SpecError(f"{path} must be an object")
+    return value
+
+
+def _check_keys(value: dict[str, Any], allowed: set[str], path: str) -> None:
+    unknown = sorted(set(value) - allowed)
+    if unknown:
+        raise SpecError(f"{path} contains unknown field(s): {', '.join(unknown)}")
+
+
+def _expect_bool(value: Any, path: str) -> bool:
+    if not isinstance(value, bool):
+        raise SpecError(f"{path} must be a boolean")
+    return value
+
+
+def _expect_int(value: Any, path: str, minimum: int, maximum: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise SpecError(f"{path} must be an integer")
+    if not minimum <= value <= maximum:
+        raise SpecError(f"{path} must be between {minimum} and {maximum}")
+    return value
+
+
+def _expect_number(value: Any, path: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise SpecError(f"{path} must be a finite number")
+    result = float(value)
+    if not math.isfinite(result):
+        raise SpecError(f"{path} must be a finite number")
+    return result
+
+
+def _expect_nonempty_string(value: Any, path: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise SpecError(f"{path} must be a non-empty string")
+    return value
+
+
+def _validate_argv(value: Any, path: str) -> list[str]:
+    if not isinstance(value, list) or not value:
+        raise SpecError(f"{path} must be a non-empty argv array")
+    for index, item in enumerate(value):
+        _expect_nonempty_string(item, f"{path}[{index}]")
+        if "\x00" in item:
+            raise SpecError(f"{path}[{index}] contains a NUL byte")
+    return value
+
+
+def _validate_scalar(value: Any, path: str) -> None:
+    if value is None or isinstance(value, (dict, list)):
+        raise SpecError(f"{path} must be a JSON scalar")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise SpecError(f"{path} must be finite")
+
+
+def _validate_json_value(value: Any, path: str) -> None:
+    try:
+        encoded = json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise SpecError(f"{path} must be finite JSON data") from exc
+    if len(encoded) > 100_000:
+        raise SpecError(f"{path} exceeds 100,000 encoded characters")
+
+
+def _validate_parameter(parameter: Any, index: int) -> dict[str, Any]:
+    path = f"tuning.allowed_parameters[{index}]"
+    obj = _expect_object(parameter, path)
+    _check_keys(obj, {"path", "values", "range", "baseline"}, path)
+    parameter_path = _expect_nonempty_string(obj.get("path"), f"{path}.path")
+    if not PARAMETER_PATH_RE.fullmatch(parameter_path):
+        raise SpecError(f"{path}.path contains unsupported characters")
+
+    has_values = "values" in obj
+    has_range = "range" in obj
+    if has_values == has_range:
+        raise SpecError(f"{path} must contain exactly one of values or range")
+
+    if has_values:
+        values = obj["values"]
+        if not isinstance(values, list) or not values:
+            raise SpecError(f"{path}.values must be a non-empty array")
+        if len(values) > 256:
+            raise SpecError(f"{path}.values may contain at most 256 values")
+        for value_index, value in enumerate(values):
+            _validate_scalar(value, f"{path}.values[{value_index}]")
+    else:
+        range_obj = _expect_object(obj["range"], f"{path}.range")
+        _check_keys(range_obj, {"min", "max", "step"}, f"{path}.range")
+        minimum = _expect_number(range_obj.get("min"), f"{path}.range.min")
+        maximum = _expect_number(range_obj.get("max"), f"{path}.range.max")
+        step = _expect_number(range_obj.get("step"), f"{path}.range.step")
+        if maximum < minimum:
+            raise SpecError(f"{path}.range.max must be greater than or equal to min")
+        if step <= 0:
+            raise SpecError(f"{path}.range.step must be positive")
+        estimated_values = math.floor((maximum - minimum) / step + 1e-12) + 1
+        if estimated_values > 256:
+            raise SpecError(f"{path}.range expands to more than 256 values")
+
+    if "baseline" in obj:
+        _validate_scalar(obj["baseline"], f"{path}.baseline")
+    return obj
+
+
+def _validate_objectives(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list) or not value:
+        raise SpecError("tuning.objectives must be a non-empty array")
+    seen: set[str] = set()
+    for index, item in enumerate(value):
+        path = f"tuning.objectives[{index}]"
+        obj = _expect_object(item, path)
+        _check_keys(obj, {"metric", "goal", "weight"}, path)
+        metric = _expect_nonempty_string(obj.get("metric"), f"{path}.metric")
+        if metric in seen:
+            raise SpecError(f"{path}.metric duplicates {metric}")
+        seen.add(metric)
+        if obj.get("goal") not in {"maximize", "minimize"}:
+            raise SpecError(f"{path}.goal must be maximize or minimize")
+        weight = _expect_number(obj.get("weight"), f"{path}.weight")
+        if weight <= 0:
+            raise SpecError(f"{path}.weight must be positive")
+    return value
+
+
+def _validate_constraints(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        raise SpecError("tuning.constraints must be an array")
+    for index, item in enumerate(value):
+        path = f"tuning.constraints[{index}]"
+        obj = _expect_object(item, path)
+        _check_keys(obj, {"metric", "op", "value"}, path)
+        _expect_nonempty_string(obj.get("metric"), f"{path}.metric")
+        if obj.get("op") not in {"<=", ">=", "<", ">"}:
+            raise SpecError(f"{path}.op must be one of <=, >=, <, >")
+        _expect_number(obj.get("value"), f"{path}.value")
+    return value
+
+
+def _validate_evaluation(
+    value: Any,
+    profile: dict[str, Any],
+    mode: str,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    evaluation = _expect_object(value, "evaluation")
+    _check_keys(
+        evaluation,
+        {
+            "enabled",
+            "require_for_final_selection",
+            "artifacts",
+            "scenarios",
+            "gates",
+            "parity",
+            "visual_review",
+            "output_dir",
+            "gpu_index",
+            "require_idle_gpu",
+            "max_concurrent_runs",
+            "run_timeout_minutes",
+            "allow_reject_candidate",
+            "allow_retune_on_failure",
+        },
+        "evaluation",
+    )
+    enabled = _expect_bool(evaluation.get("enabled"), "evaluation.enabled")
+    require_final = _expect_bool(
+        evaluation.get("require_for_final_selection"),
+        "evaluation.require_for_final_selection",
+    )
+    if not enabled:
+        if require_final:
+            raise SpecError(
+                "evaluation.require_for_final_selection cannot be true when evaluation is disabled"
+            )
+        return evaluation
+    if not require_final:
+        raise SpecError(
+            "enabled evaluation must require policy evaluation before final selection"
+        )
+    if profile["is_generic"]:
+        raise SpecError(
+            "final policy evaluation requires a reviewed non-generic algorithm profile"
+        )
+
+    capabilities = profile["evaluation_capabilities"]
+    supported = set(capabilities["supported_artifacts"])
+    artifacts = evaluation.get("artifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        raise SpecError("evaluation.artifacts must be a non-empty array")
+    artifact_kinds: list[str] = []
+    required_artifacts: set[str] = set()
+    required_placeholders = {
+        "artifact_path",
+        "artifact_kind",
+        "candidate_id",
+        "artifact_sha256",
+        "checkpoint_path",
+        "checkpoint_sha256",
+        "command_schedule_json",
+        "duration_steps",
+        "gpu_index",
+        "scenario_id",
+        "scenario_overrides_json",
+        "seed",
+        "result_path",
+        "require_idle_gpu_flag",
+        "run_id",
+        "video_path",
+    }
+    for index, item in enumerate(artifacts):
+        path = f"evaluation.artifacts[{index}]"
+        artifact = _expect_object(item, path)
+        _check_keys(artifact, {"kind", "required", "command"}, path)
+        kind = artifact.get("kind")
+        if kind not in ARTIFACT_KINDS:
+            raise SpecError(
+                f"{path}.kind must be one of {', '.join(sorted(ARTIFACT_KINDS))}"
+            )
+        if kind not in supported:
+            raise SpecError(
+                f"{path}.kind {kind} is not supported by profile {profile['id']}"
+            )
+        artifact_kinds.append(kind)
+        if _expect_bool(artifact.get("required"), f"{path}.required"):
+            required_artifacts.add(kind)
+        command = _validate_argv(artifact.get("command"), f"{path}.command")
+        placeholders: set[str] = set()
+        for command_index, token in enumerate(command):
+            token_placeholders = set(COMMAND_PLACEHOLDER_RE.findall(token))
+            unsupported = sorted(
+                token_placeholders - ALLOWED_COMMAND_PLACEHOLDERS
+            )
+            if unsupported:
+                raise SpecError(
+                    f"{path}.command[{command_index}] contains unsupported "
+                    f"placeholder(s): {', '.join(unsupported)}"
+                )
+            placeholders.update(token_placeholders)
+        missing_placeholders = sorted(required_placeholders - placeholders)
+        if missing_placeholders:
+            raise SpecError(
+                f"{path}.command is missing required placeholder(s): "
+                f"{', '.join(missing_placeholders)}"
+            )
+    if len(artifact_kinds) != len(set(artifact_kinds)):
+        raise SpecError("evaluation.artifacts contains duplicate kinds")
+    if "native" not in required_artifacts:
+        raise SpecError("evaluation must require the native policy artifact")
+    if {"jit", "onnx"} & supported and not ({"jit", "onnx"} & required_artifacts):
+        raise SpecError(
+            "a profile with export support must require at least one of jit or onnx"
+        )
+
+    scenarios = evaluation.get("scenarios")
+    if not isinstance(scenarios, list) or not scenarios:
+        raise SpecError("evaluation.scenarios must be a non-empty array")
+    scenario_ids: list[str] = []
+    required_categories: set[str] = set()
+    required_video_count = 0
+    for index, item in enumerate(scenarios):
+        path = f"evaluation.scenarios[{index}]"
+        scenario = _expect_object(item, path)
+        _check_keys(
+            scenario,
+            {
+                "id",
+                "category",
+                "required",
+                "seeds",
+                "duration_steps",
+                "overrides",
+                "command_schedule",
+                "video",
+            },
+            path,
+        )
+        scenario_id = _expect_nonempty_string(scenario.get("id"), f"{path}.id")
+        if not IDENTIFIER_RE.fullmatch(scenario_id):
+            raise SpecError(f"{path}.id contains unsupported characters")
+        scenario_ids.append(scenario_id)
+        category = scenario.get("category")
+        if category not in SCENARIO_CATEGORIES:
+            raise SpecError(
+                f"{path}.category must be one of "
+                f"{', '.join(sorted(SCENARIO_CATEGORIES))}"
+            )
+        required = _expect_bool(scenario.get("required"), f"{path}.required")
+        if required:
+            required_categories.add(category)
+        seeds = scenario.get("seeds")
+        if not isinstance(seeds, list) or not seeds:
+            raise SpecError(f"{path}.seeds must be a non-empty array")
+        if len(seeds) > 16:
+            raise SpecError(f"{path}.seeds may contain at most 16 seeds")
+        for seed_index, seed in enumerate(seeds):
+            _expect_int(seed, f"{path}.seeds[{seed_index}]", 0, 2**31 - 1)
+        if len(seeds) != len(set(seeds)):
+            raise SpecError(f"{path}.seeds must be unique")
+        duration_steps = _expect_int(
+            scenario.get("duration_steps"),
+            f"{path}.duration_steps",
+            1,
+            10_000_000,
+        )
+        overrides = _expect_object(scenario.get("overrides"), f"{path}.overrides")
+        for override_path, override_value in overrides.items():
+            if (
+                not isinstance(override_path, str)
+                or not PARAMETER_PATH_RE.fullmatch(override_path)
+            ):
+                raise SpecError(
+                    f"{path}.overrides contains an unsupported parameter path"
+                )
+            _validate_json_value(
+                override_value,
+                f"{path}.overrides.{override_path}",
+            )
+        command_schedule = scenario.get("command_schedule")
+        if not isinstance(command_schedule, list):
+            raise SpecError(f"{path}.command_schedule must be an array")
+        previous_end = -1
+        for segment_index, segment_value in enumerate(command_schedule):
+            segment_path = f"{path}.command_schedule[{segment_index}]"
+            segment = _expect_object(segment_value, segment_path)
+            _check_keys(
+                segment,
+                {"start_step", "end_step", "command"},
+                segment_path,
+            )
+            start_step = _expect_int(
+                segment.get("start_step"),
+                f"{segment_path}.start_step",
+                0,
+                duration_steps - 1,
+            )
+            end_step = _expect_int(
+                segment.get("end_step"),
+                f"{segment_path}.end_step",
+                0,
+                duration_steps - 1,
+            )
+            if end_step < start_step:
+                raise SpecError(
+                    f"{segment_path}.end_step must not precede start_step"
+                )
+            if start_step != previous_end + 1:
+                raise SpecError(
+                    f"{path}.command_schedule must be ordered and contiguous"
+                )
+            command = segment.get("command")
+            if not isinstance(command, list) or len(command) != 3:
+                raise SpecError(
+                    f"{segment_path}.command must contain [vx, vy, yaw_rate]"
+                )
+            for command_index, component in enumerate(command):
+                _expect_number(
+                    component,
+                    f"{segment_path}.command[{command_index}]",
+                )
+            previous_end = end_step
+        if command_schedule and previous_end != duration_steps - 1:
+            raise SpecError(
+                f"{path}.command_schedule must cover every evaluation step"
+            )
+        if category == "command" and not command_schedule:
+            raise SpecError(
+                f"{path}.command_schedule is required for command scenarios"
+            )
+        video = _expect_bool(scenario.get("video"), f"{path}.video")
+        if required and video:
+            required_video_count += len(seeds) * len(required_artifacts)
+    if len(scenario_ids) != len(set(scenario_ids)):
+        raise SpecError("evaluation.scenarios contains duplicate IDs")
+    if "nominal" not in required_categories:
+        raise SpecError("evaluation must contain a required nominal scenario")
+    if not (required_categories - {"nominal"}):
+        raise SpecError(
+            "evaluation must contain at least one required non-nominal stress scenario"
+        )
+
+    gates = evaluation.get("gates")
+    if not isinstance(gates, list) or not gates:
+        raise SpecError("evaluation.gates must be a non-empty array")
+    for index, item in enumerate(gates):
+        path = f"evaluation.gates[{index}]"
+        gate = _expect_object(item, path)
+        _check_keys(
+            gate,
+            {"metric", "op", "value", "aggregation", "artifacts", "scenarios"},
+            path,
+        )
+        _expect_nonempty_string(gate.get("metric"), f"{path}.metric")
+        if gate.get("op") not in {"<=", ">=", "<", ">"}:
+            raise SpecError(f"{path}.op must be one of <=, >=, <, >")
+        _expect_number(gate.get("value"), f"{path}.value")
+        if gate.get("aggregation") not in AGGREGATIONS:
+            raise SpecError(
+                f"{path}.aggregation must be one of "
+                f"{', '.join(sorted(AGGREGATIONS))}"
+            )
+        for selector_name, known_values in (
+            ("artifacts", set(artifact_kinds)),
+            ("scenarios", set(scenario_ids)),
+        ):
+            selectors = gate.get(selector_name)
+            if not isinstance(selectors, list) or not selectors:
+                raise SpecError(f"{path}.{selector_name} must be a non-empty array")
+            for selector_index, selector in enumerate(selectors):
+                _expect_nonempty_string(
+                    selector,
+                    f"{path}.{selector_name}[{selector_index}]",
+                )
+                if selector != "*" and selector not in known_values:
+                    raise SpecError(
+                        f"{path}.{selector_name} references unknown value {selector}"
+                    )
+
+    parity = _expect_object(evaluation.get("parity"), "evaluation.parity")
+    _check_keys(
+        parity,
+        {"required", "reference_artifact", "max_abs_action_error"},
+        "evaluation.parity",
+    )
+    parity_required = _expect_bool(
+        parity.get("required"), "evaluation.parity.required"
+    )
+    reference = parity.get("reference_artifact")
+    if reference not in artifact_kinds:
+        raise SpecError(
+            "evaluation.parity.reference_artifact must name a selected artifact"
+        )
+    parity_limit = _expect_number(
+        parity.get("max_abs_action_error"),
+        "evaluation.parity.max_abs_action_error",
+    )
+    if parity_limit < 0:
+        raise SpecError(
+            "evaluation.parity.max_abs_action_error must be non-negative"
+        )
+    if required_artifacts - {reference} and not parity_required:
+        raise SpecError(
+            "evaluation.parity.required must be true when multiple artifacts are required"
+        )
+
+    visual = _expect_object(
+        evaluation.get("visual_review"), "evaluation.visual_review"
+    )
+    _check_keys(
+        visual,
+        {"required", "minimum_reviewed_videos", "require_notes"},
+        "evaluation.visual_review",
+    )
+    visual_required = _expect_bool(
+        visual.get("required"), "evaluation.visual_review.required"
+    )
+    minimum_videos = _expect_int(
+        visual.get("minimum_reviewed_videos"),
+        "evaluation.visual_review.minimum_reviewed_videos",
+        1,
+        100_000,
+    )
+    _expect_bool(
+        visual.get("require_notes"), "evaluation.visual_review.require_notes"
+    )
+    if not visual_required:
+        raise SpecError("final policy evaluation requires visual review")
+    if required_video_count == 0:
+        raise SpecError(
+            "at least one required evaluation scenario must record video"
+        )
+    if minimum_videos > required_video_count:
+        raise SpecError(
+            "evaluation.visual_review.minimum_reviewed_videos exceeds the "
+            "number of required videos"
+        )
+
+    output_dir = Path(
+        _expect_nonempty_string(
+            evaluation.get("output_dir"), "evaluation.output_dir"
+        )
+    )
+    if not output_dir.is_absolute():
+        raise SpecError("evaluation.output_dir must be an absolute path")
+    _expect_int(
+        evaluation.get("gpu_index"),
+        "evaluation.gpu_index",
+        0,
+        1024,
+    )
+    if not _expect_bool(
+        evaluation.get("require_idle_gpu"),
+        "evaluation.require_idle_gpu",
+    ):
+        raise SpecError("final policy evaluation requires an idle GPU")
+    _expect_int(
+        evaluation.get("max_concurrent_runs"),
+        "evaluation.max_concurrent_runs",
+        1,
+        8,
+    )
+    _expect_int(
+        evaluation.get("run_timeout_minutes"),
+        "evaluation.run_timeout_minutes",
+        1,
+        10080,
+    )
+    allow_reject = _expect_bool(
+        evaluation.get("allow_reject_candidate"),
+        "evaluation.allow_reject_candidate",
+    )
+    if require_final and not allow_reject:
+        raise SpecError(
+            "final selection requires evaluation.allow_reject_candidate=true"
+        )
+    allow_retune = _expect_bool(
+        evaluation.get("allow_retune_on_failure"),
+        "evaluation.allow_retune_on_failure",
+    )
+    if allow_retune and mode != "tune":
+        raise SpecError(
+            "evaluation.allow_retune_on_failure requires tune mode"
+        )
+    return evaluation
+
+
+def validate_spec(
+    spec: Any,
+    registry_path: str | Path = DEFAULT_REGISTRY_PATH,
+) -> dict[str, Any]:
+    """Validate and return a session specification."""
+    root = _expect_object(spec, "session")
+    _check_keys(
+        root,
+        {
+            "version",
+            "mode",
+            "algorithm",
+            "training",
+            "monitoring",
+            "recovery",
+            "tuning",
+            "evaluation",
+            "cleanup",
+        },
+        "session",
+    )
+
+    if root.get("version") != 3:
+        raise SpecError("version must be 3")
+    mode = root.get("mode")
+    if mode not in {"monitor", "tune"}:
+        raise SpecError("mode must be monitor or tune")
+
+    algorithm = _expect_object(root.get("algorithm"), "algorithm")
+    _check_keys(
+        algorithm,
+        {
+            "backend",
+            "name",
+            "runner_class",
+            "profile_id",
+            "profile_version",
+            "profile_fingerprint",
+            "unknown_algorithm_policy",
+        },
+        "algorithm",
+    )
+    backend = _expect_nonempty_string(algorithm.get("backend"), "algorithm.backend")
+    algorithm_name = _expect_nonempty_string(algorithm.get("name"), "algorithm.name")
+    runner_class = _expect_nonempty_string(
+        algorithm.get("runner_class"), "algorithm.runner_class"
+    )
+    for field, value in (
+        ("backend", backend),
+        ("name", algorithm_name),
+        ("runner_class", runner_class),
+    ):
+        if value == "auto":
+            raise SpecError(f"algorithm.{field} must be resolved before approval")
+    profile_id = _expect_nonempty_string(
+        algorithm.get("profile_id"), "algorithm.profile_id"
+    )
+    profile_version = _expect_int(
+        algorithm.get("profile_version"), "algorithm.profile_version", 1, 2**31 - 1
+    )
+    fingerprint = _expect_nonempty_string(
+        algorithm.get("profile_fingerprint"), "algorithm.profile_fingerprint"
+    )
+    unknown_policy = algorithm.get("unknown_algorithm_policy")
+    if unknown_policy not in {"reject", "runtime_generic", "propose_persistent"}:
+        raise SpecError(
+            "algorithm.unknown_algorithm_policy must be reject, runtime_generic, or propose_persistent"
+        )
+    try:
+        registry = load_registry(registry_path)
+        profile = resolve_profile(registry, profile_id)
+    except ProfileError as exc:
+        raise SpecError(str(exc)) from exc
+    if profile_version != profile["profile_version"]:
+        raise SpecError(
+            f"algorithm.profile_version does not match registry version {profile['profile_version']}"
+        )
+    expected_fingerprint = profile_fingerprint(profile)
+    if fingerprint != expected_fingerprint:
+        raise SpecError(
+            f"algorithm.profile_fingerprint must be {expected_fingerprint}"
+        )
+    if not profile_matches(profile, backend, algorithm_name, runner_class):
+        raise SpecError("selected algorithm profile does not match the exact identity")
+    if profile["is_generic"] and unknown_policy == "reject":
+        raise SpecError("generic profiles require runtime_generic or propose_persistent")
+    if mode == "tune" and profile["is_generic"]:
+        raise SpecError(
+            "tune mode requires a reviewed non-generic algorithm profile"
+        )
+
+    training = _expect_object(root.get("training"), "training")
+    _check_keys(training, {"command", "resume_command", "cwd", "log_path", "run_id", "checkpoint_path"}, "training")
+    _validate_argv(training.get("command"), "training.command")
+    _expect_nonempty_string(training.get("cwd"), "training.cwd")
+    _expect_nonempty_string(training.get("log_path"), "training.log_path")
+    _expect_nonempty_string(training.get("run_id"), "training.run_id")
+    if "checkpoint_path" in training:
+        _expect_nonempty_string(training["checkpoint_path"], "training.checkpoint_path")
+
+    monitoring = _expect_object(root.get("monitoring"), "monitoring")
+    _check_keys(
+        monitoring,
+        {
+            "check_interval_seconds",
+            "stale_after_seconds",
+            "pid",
+            "gpu_index",
+            "tensorboard_path",
+            "expected_process_pattern",
+            "low_gpu_utilization_percent",
+        },
+        "monitoring",
+    )
+    interval = _expect_int(monitoring.get("check_interval_seconds"), "monitoring.check_interval_seconds", 60, 3600)
+    stale_after = _expect_int(monitoring.get("stale_after_seconds"), "monitoring.stale_after_seconds", 120, 86400)
+    if stale_after < interval:
+        raise SpecError("monitoring.stale_after_seconds must be at least the check interval")
+    if monitoring.get("pid") is not None:
+        _expect_int(monitoring["pid"], "monitoring.pid", 1, 2**31 - 1)
+    if monitoring.get("gpu_index") is not None:
+        _expect_int(monitoring["gpu_index"], "monitoring.gpu_index", 0, 1024)
+    if monitoring.get("tensorboard_path") is not None:
+        _expect_nonempty_string(
+            monitoring["tensorboard_path"], "monitoring.tensorboard_path"
+        )
+    _expect_nonempty_string(monitoring.get("expected_process_pattern"), "monitoring.expected_process_pattern")
+    low_gpu = _expect_number(
+        monitoring.get("low_gpu_utilization_percent"), "monitoring.low_gpu_utilization_percent"
+    )
+    if not 0 <= low_gpu <= 100:
+        raise SpecError("monitoring.low_gpu_utilization_percent must be between 0 and 100")
+
+    recovery = _expect_object(root.get("recovery"), "recovery")
+    _check_keys(recovery, {"enabled", "max_restarts", "cooldown_seconds"}, "recovery")
+    recovery_enabled = _expect_bool(recovery.get("enabled"), "recovery.enabled")
+    max_restarts = _expect_int(recovery.get("max_restarts"), "recovery.max_restarts", 0, 10)
+    _expect_int(recovery.get("cooldown_seconds"), "recovery.cooldown_seconds", 0, 86400)
+    if recovery_enabled:
+        resume_command = _validate_argv(training.get("resume_command"), "training.resume_command")
+        for required_arg in profile["resume_required_args"]:
+            if required_arg not in resume_command:
+                raise SpecError(
+                    f"training.resume_command must contain profile-required argument {required_arg}"
+                )
+        if max_restarts == 0:
+            raise SpecError("recovery.max_restarts must be positive when recovery is enabled")
+    elif "resume_command" in training:
+        _validate_argv(training["resume_command"], "training.resume_command")
+
+    cleanup = _expect_object(root.get("cleanup"), "cleanup")
+    _check_keys(cleanup, {"remove_created_temp_files"}, "cleanup")
+    _expect_bool(cleanup.get("remove_created_temp_files"), "cleanup.remove_created_temp_files")
+
+    _validate_evaluation(root.get("evaluation"), profile, mode)
+
+    if mode == "monitor":
+        if root.get("tuning") is not None:
+            raise SpecError("tuning must be null or omitted in monitor mode")
+        return root
+
+    tuning = _expect_object(root.get("tuning"), "tuning")
+    _check_keys(
+        tuning,
+        {
+            "allowed_parameters",
+            "protected_parameters_unlocked",
+            "max_trials",
+            "seeds",
+            "trial_timeout_minutes",
+            "max_concurrent_trials",
+            "mutation_scope",
+            "objectives",
+            "constraints",
+        },
+        "tuning",
+    )
+    parameters = tuning.get("allowed_parameters")
+    if not isinstance(parameters, list) or not parameters:
+        raise SpecError("tuning.allowed_parameters must be a non-empty array")
+    validated_parameters = [_validate_parameter(parameter, index) for index, parameter in enumerate(parameters)]
+    parameter_paths = [parameter["path"] for parameter in validated_parameters]
+    if len(set(parameter_paths)) != len(parameter_paths):
+        raise SpecError("tuning.allowed_parameters contains duplicate paths")
+
+    unlocked = tuning.get("protected_parameters_unlocked", [])
+    if not isinstance(unlocked, list):
+        raise SpecError("tuning.protected_parameters_unlocked must be an array")
+    for index, path in enumerate(unlocked):
+        _expect_nonempty_string(path, f"tuning.protected_parameters_unlocked[{index}]")
+        if path not in parameter_paths:
+            raise SpecError(f"protected unlock path is not an allowed parameter: {path}")
+    for path in parameter_paths:
+        if (
+            any(
+                re.search(pattern, path, re.IGNORECASE)
+                for pattern in profile["protected_parameter_patterns"]
+            )
+            and path not in unlocked
+        ):
+            raise SpecError(f"protected parameter requires an exact unlock entry: {path}")
+
+    _expect_int(tuning.get("max_trials"), "tuning.max_trials", 2, 64)
+    seeds = tuning.get("seeds")
+    if not isinstance(seeds, list) or not seeds:
+        raise SpecError("tuning.seeds must be a non-empty array")
+    if len(seeds) > 16:
+        raise SpecError("tuning.seeds may contain at most 16 seeds")
+    for index, seed in enumerate(seeds):
+        _expect_int(seed, f"tuning.seeds[{index}]", 0, 2**31 - 1)
+    if len(set(seeds)) != len(seeds):
+        raise SpecError("tuning.seeds must be unique")
+    _expect_int(tuning.get("trial_timeout_minutes"), "tuning.trial_timeout_minutes", 1, 10080)
+    _expect_int(tuning.get("max_concurrent_trials"), "tuning.max_concurrent_trials", 1, 8)
+    if tuning.get("mutation_scope") != "overrides_only":
+        raise SpecError("tuning.mutation_scope must be overrides_only")
+    _validate_objectives(tuning.get("objectives"))
+    _validate_constraints(tuning.get("constraints", []))
+    return root
+
+
+def load_and_validate(
+    path: str | Path,
+    registry_path: str | Path = DEFAULT_REGISTRY_PATH,
+) -> dict[str, Any]:
+    """Load and validate a JSON session specification."""
+    spec_path = Path(path)
+    try:
+        data = json.loads(spec_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise SpecError(f"session file does not exist: {spec_path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SpecError(f"invalid JSON at line {exc.lineno}, column {exc.colno}: {exc.msg}") from exc
+    return validate_spec(data, registry_path)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("session", help="Path to the session JSON document")
+    parser.add_argument("--registry", default=str(DEFAULT_REGISTRY_PATH))
+    parser.add_argument("--print-normalized", action="store_true", help="Print the validated JSON")
+    args = parser.parse_args()
+    try:
+        spec = load_and_validate(args.session, args.registry)
+    except SpecError as exc:
+        print(f"INVALID: {exc}", file=sys.stderr)
+        return 2
+    print("VALID")
+    if args.print_normalized:
+        print(json.dumps(spec, indent=2, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

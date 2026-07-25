@@ -1,0 +1,392 @@
+#!/usr/bin/env python3
+"""Collect profile-driven, non-mutating health evidence for a training process."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import time
+from pathlib import Path
+from typing import Any
+
+from algorithm_profiles import (
+    DEFAULT_REGISTRY_PATH,
+    ProfileError,
+    load_registry,
+    resolve_profile,
+)
+
+
+ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
+def _read_tail(path: Path, byte_count: int = 1024 * 1024) -> str:
+    with path.open("rb") as stream:
+        stream.seek(0, os.SEEK_END)
+        size = stream.tell()
+        stream.seek(max(0, size - byte_count))
+        return stream.read().decode("utf-8", errors="replace")
+
+
+def _latest_log_progress(
+    path: Path,
+    patterns: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    text = ANSI_RE.sub("", _read_tail(path))
+    latest: tuple[int, dict[str, Any]] | None = None
+    for pattern in patterns:
+        for match in re.finditer(pattern["regex"], text):
+            target_text = match.groupdict().get("target")
+            candidate = {
+                "name": pattern["name"],
+                "current": int(match.group("current")),
+                "target": int(target_text) if target_text is not None else None,
+                "completion_offset": pattern["completion_offset"],
+            }
+            if latest is None or match.start() > latest[0]:
+                latest = (match.start(), candidate)
+    return latest[1] if latest else None
+
+
+def _tensorboard_progress(path: Path | None) -> dict[str, Any]:
+    if path is None:
+        return {
+            "path": None,
+            "available": None,
+            "step": None,
+            "wall_time_unix": None,
+            "tag": None,
+            "error": None,
+        }
+    try:
+        from tensorboard.backend.event_processing.event_accumulator import (
+            EventAccumulator,
+        )
+
+        accumulator = EventAccumulator(str(path), size_guidance={"scalars": 1})
+        accumulator.Reload()
+        latest = None
+        for tag in accumulator.Tags().get("scalars", []):
+            events = accumulator.Scalars(tag)
+            if not events:
+                continue
+            event = events[-1]
+            candidate = (float(event.wall_time), int(event.step), tag)
+            if latest is None or candidate > latest:
+                latest = candidate
+        if latest is None:
+            return {
+                "path": str(path),
+                "available": False,
+                "step": None,
+                "wall_time_unix": None,
+                "tag": None,
+                "error": "no scalar events",
+            }
+        wall_time, step, tag = latest
+        return {
+            "path": str(path),
+            "available": True,
+            "step": step,
+            "wall_time_unix": wall_time,
+            "tag": tag,
+            "error": None,
+        }
+    except (ImportError, OSError, KeyError, ValueError) as exc:
+        return {
+            "path": str(path),
+            "available": False,
+            "step": None,
+            "wall_time_unix": None,
+            "tag": None,
+            "error": str(exc),
+        }
+
+
+def _process_info(pid: int | None, expected_pattern: str | None) -> dict[str, Any]:
+    if pid is None:
+        return {"pid": None, "alive": None, "matches_expected": None, "cmdline": None}
+    proc_dir = Path("/proc") / str(pid)
+    alive = proc_dir.exists()
+    cmdline: str | None = None
+    matches: bool | None = None
+    if alive:
+        try:
+            raw = (proc_dir / "cmdline").read_bytes()
+            cmdline = " ".join(
+                part.decode("utf-8", errors="replace")
+                for part in raw.split(b"\0")
+                if part
+            )
+        except OSError:
+            cmdline = None
+        matches = (
+            expected_pattern in cmdline
+            if expected_pattern and cmdline is not None
+            else None
+        )
+    return {
+        "pid": pid,
+        "alive": alive,
+        "matches_expected": matches,
+        "cmdline": cmdline,
+    }
+
+
+def _gpu_info(gpu_index: int | None) -> dict[str, Any]:
+    if gpu_index is None:
+        return {
+            "index": None,
+            "available": None,
+            "utilization_percent": None,
+            "memory_used_mb": None,
+            "error": None,
+        }
+    command = [
+        "nvidia-smi",
+        f"--id={gpu_index}",
+        "--query-gpu=utilization.gpu,memory.used",
+        "--format=csv,noheader,nounits",
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        first_line = result.stdout.strip().splitlines()[0]
+        utilization, memory_used = [
+            part.strip() for part in first_line.split(",", maxsplit=1)
+        ]
+        return {
+            "index": gpu_index,
+            "available": True,
+            "utilization_percent": float(utilization),
+            "memory_used_mb": float(memory_used),
+            "error": None,
+        }
+    except (FileNotFoundError, subprocess.SubprocessError, ValueError, IndexError) as exc:
+        return {
+            "index": gpu_index,
+            "available": False,
+            "utilization_percent": None,
+            "memory_used_mb": None,
+            "error": str(exc),
+        }
+
+
+def collect_health(
+    log_path: Path,
+    profile: dict[str, Any],
+    stale_after_seconds: int,
+    pid: int | None,
+    expected_process_pattern: str | None,
+    gpu_index: int | None,
+    low_gpu_utilization_percent: float,
+    tensorboard_path: Path | None = None,
+    previous_log_progress: int | None = None,
+    previous_tensorboard_step: int | None = None,
+    previous_observed_at: float | None = None,
+    now: float | None = None,
+) -> dict[str, Any]:
+    """Collect evidence and classify state without changing the process."""
+    timestamp = time.time() if now is None else now
+    log_exists = log_path.is_file()
+    log_mtime: float | None = None
+    log_age: float | None = None
+    log_stale: bool | None = None
+    log_progress: dict[str, Any] | None = None
+    if log_exists:
+        log_mtime = log_path.stat().st_mtime
+        log_age = max(0.0, timestamp - log_mtime)
+        log_stale = log_age >= stale_after_seconds
+        log_progress = _latest_log_progress(
+            log_path,
+            profile["progress_patterns"],
+        )
+
+    tensorboard = _tensorboard_progress(tensorboard_path)
+    process = _process_info(pid, expected_process_pattern)
+    gpu = _gpu_info(gpu_index)
+
+    log_current = log_progress["current"] if log_progress else None
+    log_advanced = (
+        log_current is not None
+        and previous_log_progress is not None
+        and log_current > previous_log_progress
+    )
+    tensorboard_advanced = (
+        tensorboard["step"] is not None
+        and previous_tensorboard_step is not None
+        and tensorboard["step"] > previous_tensorboard_step
+    )
+    tensorboard_age = (
+        max(0.0, timestamp - tensorboard["wall_time_unix"])
+        if tensorboard["wall_time_unix"] is not None
+        else None
+    )
+    tensorboard_recent = (
+        tensorboard_age is not None and tensorboard_age < stale_after_seconds
+    )
+    progress_advanced = log_advanced or tensorboard_advanced
+    completed = (
+        log_progress is not None
+        and log_progress["target"] is not None
+        and log_progress["current"] + log_progress["completion_offset"]
+        >= log_progress["target"]
+    )
+    unchanged_too_long = (
+        previous_observed_at is not None
+        and not progress_advanced
+        and timestamp - previous_observed_at >= stale_after_seconds
+    )
+    progress_stale = (
+        unchanged_too_long
+        or (
+            tensorboard["step"] is not None
+            and tensorboard_age is not None
+            and tensorboard_age >= stale_after_seconds
+            and not progress_advanced
+        )
+        or (
+            tensorboard["step"] is None
+            and log_stale is True
+            and not progress_advanced
+        )
+    )
+
+    evidence: list[str] = []
+    if completed:
+        state = "completed"
+        evidence.append("profile_progress_reached_target")
+    elif process["matches_expected"] is False:
+        state = "unknown"
+        evidence.append("pid_does_not_match_expected_process")
+    elif process["alive"] is False:
+        if progress_stale:
+            state = "stalled"
+            evidence.extend(["process_not_alive", "training_progress_stale"])
+        else:
+            state = "stopped"
+            evidence.append("process_not_alive")
+    elif progress_advanced:
+        state = "healthy"
+        evidence.append("training_progress_advanced")
+    elif tensorboard_recent:
+        state = "healthy"
+        evidence.append("tensorboard_scalar_is_recent")
+    elif (
+        progress_stale
+        and process["alive"] is True
+        and gpu["available"] is True
+        and gpu["utilization_percent"] <= low_gpu_utilization_percent
+    ):
+        state = "stalled"
+        evidence.extend(
+            ["training_progress_stale", "gpu_utilization_low", "process_still_alive"]
+        )
+    elif (
+        previous_log_progress is None
+        and previous_tensorboard_step is None
+        and (log_progress is not None or tensorboard["step"] is not None)
+    ):
+        state = "observing"
+        evidence.append("initial_progress_baseline_recorded")
+    elif not log_exists and tensorboard["available"] is not True:
+        state = "unknown"
+        evidence.append("progress_sources_missing")
+    else:
+        state = "suspect"
+        evidence.append("training_progress_not_confirmed")
+        if log_stale:
+            evidence.append("log_stale")
+        if gpu["available"] is True and gpu["utilization_percent"] > low_gpu_utilization_percent:
+            evidence.append("gpu_activity_is_auxiliary_only")
+
+    latest_iteration = (
+        log_progress["current"]
+        if log_progress and log_progress["name"] == "learning_iteration"
+        else None
+    )
+    target_iteration = (
+        log_progress["target"]
+        if log_progress and log_progress["name"] == "learning_iteration"
+        else None
+    )
+    return {
+        "timestamp_unix": timestamp,
+        "profile_id": profile["id"],
+        "state": state,
+        "auto_recovery_candidate": state == "stalled" and not completed,
+        "evidence": evidence,
+        "progress": {
+            "log": log_progress,
+            "log_advanced": log_advanced,
+            "tensorboard": tensorboard,
+            "tensorboard_age_seconds": tensorboard_age,
+            "tensorboard_advanced": tensorboard_advanced,
+            "previous_observed_at": previous_observed_at,
+            "stale": progress_stale,
+        },
+        "log": {
+            "path": str(log_path),
+            "exists": log_exists,
+            "mtime_unix": log_mtime,
+            "age_seconds": log_age,
+            "stale": log_stale,
+            "latest_iteration": latest_iteration,
+            "target_iteration": target_iteration,
+        },
+        "process": process,
+        "gpu": gpu,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--log", required=True)
+    parser.add_argument("--profile-id", default="generic")
+    parser.add_argument("--registry", default=str(DEFAULT_REGISTRY_PATH))
+    parser.add_argument("--tensorboard")
+    parser.add_argument("--stale-after-seconds", required=True, type=int)
+    parser.add_argument("--pid", type=int)
+    parser.add_argument("--expected-process-pattern")
+    parser.add_argument("--gpu-index", type=int)
+    parser.add_argument("--low-gpu-utilization-percent", type=float, default=5.0)
+    parser.add_argument("--previous-log-progress", type=int)
+    parser.add_argument("--previous-tensorboard-step", type=int)
+    parser.add_argument("--previous-observed-at", type=float)
+    parser.add_argument("--now", type=float)
+    args = parser.parse_args()
+    try:
+        profile = resolve_profile(
+            load_registry(args.registry),
+            args.profile_id,
+        )
+    except ProfileError as exc:
+        parser.error(str(exc))
+    result = collect_health(
+        Path(args.log),
+        profile,
+        args.stale_after_seconds,
+        args.pid,
+        args.expected_process_pattern,
+        args.gpu_index,
+        args.low_gpu_utilization_percent,
+        Path(args.tensorboard) if args.tensorboard else None,
+        args.previous_log_progress,
+        args.previous_tensorboard_step,
+        args.previous_observed_at,
+        args.now,
+    )
+    print(json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
