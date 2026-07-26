@@ -16,11 +16,28 @@ Keep `mutation_scope` at `overrides_only`. If a parameter requires editing track
 
 ## Experimental design
 
-Run an unchanged baseline with the same environment count, seed set, evaluation window, hardware, code state, algorithm profile, and checkpoint semantics as candidates.
+Choose screening and confirmation seeds before observing outcomes. Run an
+unchanged baseline with the same environment count, seed stage, evaluation
+window, hardware, code state, algorithm profile, and checkpoint semantics as
+candidates. Screen every trial on the same small seed set, then confirm only
+the baseline and top-k eligible candidates on the remaining seeds. Use at least
+two total confirmation seeds; prefer three or more for a final recommendation
+when the budget permits.
 
-Store each trial separately with effective configuration, argv, git state, profile ID/fingerprint, seed, log, checkpoints, parsed metrics, and stop reason.
+Do not treat a resume from the same RNG state as an independent seed. If trials
+share a pretrained checkpoint, label the result as fine-tuning variability
+rather than full-training variability.
 
-Prefer one GPU-heavy trial at a time. Run a short algorithm-appropriate smoke stage before full trials. Reject crashes, non-finite state, throughput collapse, incomplete checkpoint state, or hard constraints.
+Store each trial and retry separately with effective configuration and diff,
+exact argv, unique run ID, Git state, profile ID/fingerprint, stage, seed, log,
+checkpoints, parsed metrics, anomaly decision, and stop reason.
+
+Prefer one GPU-heavy trial at a time. Bind state to the exact approved session
+and deterministic plan, require an idle GPU and exclusive lock, and never reuse
+a prior attempt's outputs. Run a short algorithm-appropriate smoke stage before
+full trials. Reject crashes, non-finite state, sustained approved anomaly
+conditions, incomplete checkpoint state, unauthorized effective-config
+differences, or hard constraints.
 
 ## Metrics
 
@@ -37,13 +54,38 @@ Add only relevant algorithm metrics:
 - ROA variants: history latent, velocity, privileged regularization, and DAgger-route losses.
 - New algorithms: metrics whose meaning and direction were verified during profile review.
 
-Do not compare algorithms using metrics they do not share. Use profile-specific constraints before weighted objectives. Require all approved seeds.
+Do not compare algorithms using metrics they do not share. Use profile-specific
+constraints before weighted objectives. Check hard constraints on every seed,
+not only on their mean.
+
+For final training ranking, report each objective's mean, sample standard
+deviation, range, and 95% t interval. Pair every candidate seed with the same
+baseline seed and report mean and worst paired improvement. Enforce any
+predeclared minimum improvement before scoring. Identify the multi-objective
+Pareto front, then use the approved normalized weighted score only to order
+surviving Pareto candidates.
+
+## Physical-feedback input
+
+Use `hardware-feedback-retuning.md` when supervised deployment feedback
+motivates another experiment. Treat the user report as evidence about a
+specific archived policy and test, not as permission to edit a reward or
+algorithm.
+
+First exclude artifact, observation/history, normalization, reset, timing,
+configuration, communication, calibration, actuator, and mechanism failures.
+Reproduce the reported segment in simulation and define a measurable signature.
+Only then offer relevant paths already present in
+`tuning.allowed_parameters`. Do not automatically select a path or narrow,
+expand, or replace its user-approved domain. A newly approved session is
+required even when every proposed path existed in the earlier session.
 
 ## Stop and promotion
 
 Stop when budget is exhausted, all candidates violate constraints, infrastructure prevents fair comparison, seed variation dominates, or the next useful experiment needs unauthorized changes.
 
-Report the training-ranked candidate, baseline deltas, seed uncertainty,
+Report the screening selection, training-ranked candidate, paired baseline
+deltas, seed uncertainty,
 exclusions, profile limitations, and next authorization. Do not apply
 candidates to tracked files automatically. A training-ranked candidate is not a
 final strategy. Require the closed-loop Native/deployment-artifact and visual

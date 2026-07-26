@@ -305,7 +305,7 @@ def build_plan(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("session", help="Validated version-3 session JSON")
+    parser.add_argument("session", help="Validated version-3-through-6 session JSON")
     parser.add_argument("candidates", help="Candidate checkpoint/artifact manifest")
     parser.add_argument("--output", help="Optional JSON output path")
     args = parser.parse_args()

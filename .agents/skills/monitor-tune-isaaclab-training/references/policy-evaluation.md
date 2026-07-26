@@ -15,6 +15,7 @@ review of recorded robot motion.
 - Visual review
 - Execution workflow
 - Result schemas
+- Qualified policy archive
 - Failure and retuning rules
 - Real-robot boundary
 
@@ -36,7 +37,10 @@ behavior on the physical robot.
 
 ## Authorization boundary
 
-The version-3 session owns evaluation authority. Require the user to approve:
+The version-4, version-5, or version-6 session owns evaluation and optional
+archival authority. Version 3 remains valid only for legacy evaluation without
+archival. Require the user
+to approve:
 
 - candidate count and exact checkpoint/artifact paths;
 - artifact formats;
@@ -157,7 +161,9 @@ and cite timestamps in notes.
 
 1. Resolve and validate the non-generic algorithm profile.
 2. Confirm the current Play/export/deployment tensor path.
-3. Approve the version-3 session including `evaluation`.
+3. Approve the version-4, version-5, or version-6 session including
+   `evaluation` and, when requested,
+   the separate `archive` contract.
 4. Export required artifacts and verify that paths are isolated by candidate.
 5. Create a candidate manifest:
 
@@ -220,6 +226,13 @@ conda run -n isaacsim-5.1 python \
 
 13. Pass the plan and results to `rank_trials.py`. Only a training-eligible
     candidate that also passes policy evaluation may populate `final_selection`.
+
+## Qualified policy archive
+
+Read `policy-archive.md` before writing outside the training repository. Policy
+storage requires the final candidate's JIT and ONNX artifacts to be required,
+evaluated, hash-stable, and simulation-qualified. Archival is not evidence of
+hardware readiness and performs no Git commit or push.
 
 ## Result schemas
 
@@ -297,3 +310,8 @@ After simulation qualification, require a separate supervised hardware plan:
 
 Only supervised physical evidence can advance the candidate beyond
 `simulation_qualified_hardware_candidate`.
+
+Record that evidence through the separate version-5 or version-6 contract in
+`hardware-feedback-retuning.md`. Physical feedback may propose another bounded
+simulation cycle, but it does not extend tuning paths, start trials, or excuse
+deployment-runtime and hardware diagnosis.
