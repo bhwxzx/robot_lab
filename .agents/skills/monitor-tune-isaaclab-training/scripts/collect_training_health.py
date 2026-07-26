@@ -51,7 +51,7 @@ def _latest_log_progress(
     return latest[1] if latest else None
 
 
-def _tensorboard_progress(path: Path | None) -> dict[str, Any]:
+def tensorboard_progress(path: Path | None) -> dict[str, Any]:
     if path is None:
         return {
             "path": None,
@@ -95,7 +95,9 @@ def _tensorboard_progress(path: Path | None) -> dict[str, Any]:
             "tag": tag,
             "error": None,
         }
-    except (ImportError, OSError, KeyError, ValueError) as exc:
+    except Exception as exc:
+        # TensorBoard readers can raise backend-specific corruption errors.
+        # This source is auxiliary evidence and must not break reconciliation.
         return {
             "path": str(path),
             "available": False,
@@ -210,7 +212,7 @@ def collect_health(
             profile["progress_patterns"],
         )
 
-    tensorboard = _tensorboard_progress(tensorboard_path)
+    tensorboard = tensorboard_progress(tensorboard_path)
     process = _process_info(pid, expected_process_pattern)
     gpu = _gpu_info(gpu_index)
 

@@ -139,3 +139,74 @@ complex
 - **Notes**: 已实现版本 3 会话契约、评估矩阵、RSL-RL 闭环执行器、硬指标与视频审阅门槛、结果晋级验证，以及训练排名与最终选择分离。
 
 ---
+## [FEAT-20260726-004] concrete_rsl_rl_tuning_executor
+
+**Logged**: 2026-07-26T17:05:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Requested Capability
+把自动调优 Skill 从合成执行契约推进为可调用真实 RSL-RL 训练入口的执行器，
+同时增加超时、资源门禁、并发状态保护、可恢复日志和故障测试。
+
+### User Context
+第一轮已经具备分阶段多 seed、稳健排名和仿真评估，但还需要把审批参数安全
+映射到真实训练命令，并在长期自动运行时避免重复启动、无界等待、磁盘耗尽、
+GPU 过热或状态文件损坏。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+增加 RSL-RL adapter contract，将已审批参数映射到 Hydra 路径并生成唯一 seed
+和 run name；从真实 stdout 定位日志目录，读取 dump 配置、提取指标和
+checkpoint 哈希。执行器增加状态锁、总/单次超时、SIGTERM 到精确 SIGKILL
+升级、磁盘/GPU 健康门禁和 hash-chain 状态日志，并用合成 RSL-RL 与故障
+注入测试覆盖。
+
+### Metadata
+- Frequency: first_time
+- Related Features: robust_multiseed_automated_tuning, training_watchdog
+
+### Resolution
+- **Resolved**: 2026-07-26T17:05:00+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已实现真实 RSL-RL adapter、运行身份配置归一化、一次性 baseline 配置引导、终端/checkpoint 回执、状态锁、资源与时间限制、优雅终止和 hash-chain 恢复；真实 GPU smoke 因现有训练占用而未启动。
+
+---
+## [FEAT-20260726-005] live_transactional_training_supervision
+
+**Logged**: 2026-07-26T18:15:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Requested Capability
+继续优化自动调优 Skill，使真实 RSL-RL 训练在运行期间即可被监督和安全
+停止，同时强化调度器崩溃恢复并记录可复现实验环境。
+
+### User Context
+训练结束后的指标检查无法及时阻止 NaN、质量崩塌或资源浪费；启动进程与
+写状态之间的故障窗口也可能留下重复任务或不可复用 attempt。正式自动调优
+前需要在线证据、事务化状态和可复现清单。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+将日志解析器改为流式状态机，在完整 iteration 和非有限指标时刷新原子摘要；
+加入 warm-up 门槛与 TensorBoard 第二证据。用 reserve-attempt、launch receipt
+和 hash-chain 状态构成两阶段启动，支持截断尾记录恢复与孤儿阻断。每次
+trial 记录 Git、命令、运行库、GPU 和审批输入文件哈希。
+
+### Metadata
+- Frequency: recurring
+- Related Features: concrete_rsl_rl_tuning_executor, training_watchdog
+
+### Resolution
+- **Resolved**: 2026-07-26T18:15:00+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已实现流式摘要、实时非有限检测、warm-up、TensorBoard 辅助证据、事务化 attempt、launch receipt 恢复、截断 journal 尾修复和可复现清单，并通过慢训练、崩塌、NaN、启动失败和恢复测试。真实 PPO smoke 因现有 GPU 训练占用而延期。
+
+---
