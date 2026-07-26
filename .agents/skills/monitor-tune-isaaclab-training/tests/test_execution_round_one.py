@@ -3,9 +3,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -13,7 +16,10 @@ from unittest.mock import patch
 
 SKILL = Path(__file__).resolve().parents[1]
 SCRIPTS = SKILL / "scripts"
+REPO = SKILL.parents[2]
 FAKE_TRAINING = Path(__file__).resolve().parent / "fake_training_command.py"
+FAKE_RSL = Path(__file__).resolve().parent / "fake_rsl_rl_train.py"
+RSL_ADAPTER = SCRIPTS / "rsl_rl_trial_adapter.py"
 sys.path.insert(0, str(SCRIPTS))
 
 from algorithm_profiles import (  # noqa: E402
@@ -27,9 +33,13 @@ from execute_trial_plan import (  # noqa: E402
     _ACTIVE_CHILDREN,
     _append_confirmation_runs,
     _collect_completed_results,
+    _persist_state,
+    _process_start_ticks,
+    execution_state_lock,
     initialize_state,
     launch_next,
     reconcile,
+    recover_state_from_journal,
     state_summary,
 )
 from rank_trials import rank  # noqa: E402
@@ -200,6 +210,81 @@ class ExecutionRoundOneTests(unittest.TestCase):
         plan_path.write_text(json.dumps(plan), encoding="utf-8")
         return session_path, plan_path
 
+    def _adapter_session(
+        self,
+        mode: str = "healthy",
+        delay_seconds: float = 0.0,
+    ) -> dict[str, object]:
+        session = self._session()
+        self.baseline.unlink(missing_ok=True)
+        training_command = [
+            sys.executable,
+            str(FAKE_RSL),
+            "--fake-log-root",
+            str(self.root / "rsl-logs"),
+        ]
+        if mode != "healthy":
+            training_command.extend(["--fake-mode", mode])
+        if delay_seconds:
+            training_command.extend(
+                ["--fake-delay-seconds", str(delay_seconds)]
+            )
+        session["training"]["command"] = training_command
+        parameter = session["tuning"]["allowed_parameters"][0]
+        parameter.update(
+            {
+                "path": "agent.algorithm.learning_rate",
+                "values": [0.001, 0.002, 0.003],
+                "baseline": 0.001,
+            }
+        )
+        session["tuning"]["objectives"][0]["metric"] = "mean_reward"
+        session["tuning"]["constraints"][0]["metric"] = "illegal_contact"
+        execution = session["execution"]
+        execution["run_command"] = [
+            sys.executable,
+            str(RSL_ADAPTER),
+            "--contract",
+            "{adapter_contract_path}",
+            "--executor-run-id",
+            "{run_id}",
+            "--overrides-json",
+            "{overrides_json}",
+            "--effective-config",
+            "{effective_config_path}",
+            "--result",
+            "{result_path}",
+            "--summary",
+            "{summary_path}",
+            "--terminal",
+            "{terminal_path}",
+            "--log-path",
+            "{log_path}",
+        ]
+        execution["effective_config"]["allow_baseline_bootstrap"] = True
+        execution["adapter"] = {
+            "id": "rsl-rl",
+            "parameter_cli_map": {
+                "agent.algorithm.learning_rate":
+                    "agent.algorithm.learning_rate",
+            },
+            "runtime_config_paths": {
+                "agent.run_name": "run_id",
+                "agent.seed": "seed",
+                "env.seed": "seed",
+            },
+            "summary_last": 5,
+            "require_checkpoint": True,
+        }
+        execution["resource_limits"] = {
+            "campaign_timeout_minutes": 120,
+            "min_free_disk_gb": 0,
+            "max_gpu_temperature_c": 100,
+            "stop_grace_seconds": 1,
+        }
+        execution["quality_rules"][0]["metric"] = "mean_reward"
+        return session
+
     def test_staged_executor_is_single_run_and_resumable(self) -> None:
         spec = validate_spec(self._session())
         plan = build_plan(spec)
@@ -296,6 +381,37 @@ class ExecutionRoundOneTests(unittest.TestCase):
         self.assertEqual(detect_anomalies(spec, healthy)["status"], "healthy")
         self.assertEqual(
             detect_anomalies(spec, stopped)["status"],
+            "stop_approved",
+        )
+
+    def test_quality_rule_honors_minimum_progress(self) -> None:
+        session = self._session()
+        session["execution"]["quality_rules"][0]["minimum_progress"] = 10
+        spec = validate_spec(session)
+        warmup = {
+            "records": [
+                {"progress": 7, "score": -1.0},
+                {"progress": 8, "score": -2.0},
+                {"progress": 9, "score": -3.0},
+            ],
+            "non_finite_metrics": [],
+        }
+        eligible = {
+            "records": [
+                {"progress": 10, "score": -1.0},
+                {"progress": 11, "score": -2.0},
+                {"progress": 12, "score": -3.0},
+            ],
+            "non_finite_metrics": [],
+        }
+        warmup_report = detect_anomalies(spec, warmup)
+        self.assertEqual(warmup_report["status"], "healthy")
+        self.assertEqual(
+            warmup_report["insufficient_data_rules"][0]["minimum_progress"],
+            10,
+        )
+        self.assertEqual(
+            detect_anomalies(spec, eligible)["status"],
             "stop_approved",
         )
 
@@ -420,6 +536,372 @@ class ExecutionRoundOneTests(unittest.TestCase):
         self.assertEqual(run["status"], "failed")
         self.assertEqual(state["stage"], "blocked")
         self.assertEqual(run["attempts"], 1)
+
+    def test_state_lock_rejects_concurrent_transition(self) -> None:
+        spec = validate_spec(self._session())
+        with execution_state_lock(spec):
+            with self.assertRaisesRegex(SpecError, "state lock"):
+                with execution_state_lock(spec):
+                    pass
+
+    def test_hash_chained_journal_recovers_latest_state(self) -> None:
+        spec = validate_spec(self._session())
+        plan = build_plan(spec)
+        session_path, plan_path = self._write_contract(spec, plan)
+        state_path, state = initialize_state(
+            spec,
+            session_path,
+            plan,
+            plan_path,
+        )
+        _persist_state(spec, state_path, state, "initialize")
+        state["selection_failure_reason"] = "recover-this-snapshot"
+        _persist_state(spec, state_path, state, "test-transition")
+        state_path.write_text('{"corrupt":true}', encoding="utf-8")
+        recovered_path, recovered = recover_state_from_journal(
+            spec,
+            session_path,
+            plan_path,
+        )
+        self.assertEqual(recovered_path, state_path)
+        self.assertEqual(
+            recovered["selection_failure_reason"],
+            "recover-this-snapshot",
+        )
+
+    def test_journal_recovery_discards_only_truncated_tail(self) -> None:
+        spec = validate_spec(self._session())
+        plan = build_plan(spec)
+        session_path, plan_path = self._write_contract(spec, plan)
+        state_path, state = initialize_state(
+            spec,
+            session_path,
+            plan,
+            plan_path,
+        )
+        _persist_state(spec, state_path, state, "initialize")
+        journal_path = Path(spec["execution"]["state_dir"]) / (
+            "execution_events.jsonl"
+        )
+        with journal_path.open("ab") as stream:
+            stream.write(b'{"version":1,"sequence":2')
+        state_path.write_text('{"corrupt":true}', encoding="utf-8")
+        _, recovered = recover_state_from_journal(
+            spec,
+            session_path,
+            plan_path,
+        )
+        self.assertEqual(recovered["stage"], "screening")
+        self.assertTrue(journal_path.read_bytes().endswith(b"\n"))
+        self.assertNotIn(
+            b'"sequence":2',
+            journal_path.read_bytes(),
+        )
+
+    def test_launch_failure_consumes_attempt_and_retry_uses_new_directory(
+        self,
+    ) -> None:
+        session = self._session()
+        session["execution"]["max_retries_per_run"] = 1
+        spec = validate_spec(session)
+        plan = build_plan(spec)
+        session_path, plan_path = self._write_contract(spec, plan)
+        _, state = initialize_state(spec, session_path, plan, plan_path)
+        approved_command = spec["execution"]["run_command"]
+        spec["execution"]["run_command"] = [
+            "/path/that/does/not/exist",
+            *approved_command[1:],
+        ]
+        transitions: list[tuple[str, str]] = []
+
+        def record_transition(
+            current_state: dict[str, object],
+            action: str,
+        ) -> None:
+            run = next(iter(current_state["runs"].values()))
+            transitions.append((action, run["status"]))
+
+        with patch("execute_trial_plan._gpu_idle", return_value=True):
+            state = launch_next(spec, state, record_transition)
+            run = next(iter(state["runs"].values()))
+            self.assertEqual(run["status"], "pending")
+            self.assertEqual(run["attempts"], 1)
+            self.assertTrue(
+                (Path(run["run_dir"]) / "attempt-1").is_dir()
+            )
+            spec["execution"]["run_command"] = approved_command
+            state = launch_next(spec, state, record_transition)
+            self.assertEqual(run["attempts"], 2)
+            self.assertIn("attempt-2", run["log_path"])
+            _ACTIVE_CHILDREN[run["pid"]].wait(timeout=10)
+            state = reconcile(spec, plan, state)
+        self.assertEqual(run["status"], "completed")
+        self.assertIn(("reserve-attempt", "launching"), transitions)
+        self.assertIn(("launch-failed", "pending"), transitions)
+        self.assertIn(("launch-started", "running"), transitions)
+
+    def test_reconcile_restores_process_identity_from_launch_receipt(
+        self,
+    ) -> None:
+        spec = validate_spec(self._session())
+        plan = build_plan(spec)
+        session_path, plan_path = self._write_contract(spec, plan)
+        _, state = initialize_state(spec, session_path, plan, plan_path)
+        with patch("execute_trial_plan._gpu_idle", return_value=True):
+            state = launch_next(spec, state)
+            run = next(
+                item for item in state["runs"].values()
+                if item["status"] == "running"
+            )
+            _ACTIVE_CHILDREN[run["pid"]].wait(timeout=10)
+            run["status"] = "launching"
+            run["pid"] = None
+            run["process_group"] = None
+            run["process_start_ticks"] = None
+            run["launched_at"] = None
+            run["launch_receipt_sha256"] = None
+            state = reconcile(spec, plan, state)
+        self.assertEqual(run["status"], "completed")
+        self.assertIsInstance(run["pid"], int)
+        self.assertIsInstance(run["process_start_ticks"], int)
+
+    def test_trial_timeout_escalates_exact_process_to_sigkill(self) -> None:
+        spec = validate_spec(self._session())
+        spec["execution"]["resource_limits"] = {
+            "campaign_timeout_minutes": 120,
+            "min_free_disk_gb": 0,
+            "max_gpu_temperature_c": 100,
+            "stop_grace_seconds": 1,
+        }
+        plan = build_plan(spec)
+        session_path, plan_path = self._write_contract(spec, plan)
+        _, state = initialize_state(spec, session_path, plan, plan_path)
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import signal,time;"
+                    "signal.signal(signal.SIGTERM,lambda *_:None);"
+                    "time.sleep(60)"
+                ),
+                "timeout-test-token",
+            ],
+            start_new_session=True,
+        )
+        try:
+            time.sleep(0.05)
+            run = next(iter(state["runs"].values()))
+            run.update(
+                {
+                    "status": "running",
+                    "attempts": 1,
+                    "pid": process.pid,
+                    "process_group": process.pid,
+                    "process_start_ticks": _process_start_ticks(process.pid),
+                    "argv": [
+                        sys.executable,
+                        "-c",
+                        (
+                            "import signal,time;"
+                            "signal.signal(signal.SIGTERM,lambda *_:None);"
+                            "time.sleep(60)"
+                        ),
+                        "timeout-test-token",
+                    ],
+                    "launched_at": time.time() - 3601,
+                }
+            )
+            state = reconcile(spec, plan, state)
+            self.assertEqual(run["status"], "stopping_trial_timeout")
+            run["stop_requested_at"] = time.time() - 2
+            state = reconcile(spec, plan, state)
+            self.assertEqual(run["status"], "stopping_forced")
+            process.wait(timeout=5)
+            state = reconcile(spec, plan, state)
+            self.assertEqual(run["status"], "failed")
+            self.assertEqual(run["stop_reason"], "approved_trial_timeout")
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=5)
+
+    def test_executor_runs_adapter_and_bootstraps_exact_baseline(self) -> None:
+        session = self._session()
+        self.baseline.unlink()
+        session["training"]["command"] = [
+            sys.executable,
+            str(FAKE_RSL),
+            "--fake-log-root",
+            str(self.root / "rsl-logs"),
+        ]
+        parameter = session["tuning"]["allowed_parameters"][0]
+        parameter.update(
+            {
+                "path": "agent.algorithm.learning_rate",
+                "values": [0.001, 0.002, 0.003],
+                "baseline": 0.001,
+            }
+        )
+        session["tuning"]["objectives"][0]["metric"] = "mean_reward"
+        session["tuning"]["constraints"][0]["metric"] = "illegal_contact"
+        execution = session["execution"]
+        execution["run_command"] = [
+            sys.executable,
+            str(RSL_ADAPTER),
+            "--contract",
+            "{adapter_contract_path}",
+            "--executor-run-id",
+            "{run_id}",
+            "--overrides-json",
+            "{overrides_json}",
+            "--effective-config",
+            "{effective_config_path}",
+            "--result",
+            "{result_path}",
+            "--summary",
+            "{summary_path}",
+            "--terminal",
+            "{terminal_path}",
+            "--log-path",
+            "{log_path}",
+        ]
+        execution["effective_config"]["allow_baseline_bootstrap"] = True
+        execution["adapter"] = {
+            "id": "rsl-rl",
+            "parameter_cli_map": {
+                "agent.algorithm.learning_rate":
+                    "agent.algorithm.learning_rate",
+            },
+            "runtime_config_paths": {
+                "agent.run_name": "run_id",
+                "agent.seed": "seed",
+                "env.seed": "seed",
+            },
+            "summary_last": 3,
+            "require_checkpoint": True,
+        }
+        execution["resource_limits"] = {
+            "campaign_timeout_minutes": 120,
+            "min_free_disk_gb": 0,
+            "max_gpu_temperature_c": 100,
+            "stop_grace_seconds": 1,
+        }
+        execution["quality_rules"][0]["metric"] = "mean_reward"
+        spec = validate_spec(session)
+        plan = build_plan(spec)
+        session_path, plan_path = self._write_contract(spec, plan)
+        _, state = initialize_state(spec, session_path, plan, plan_path)
+        with (
+            patch("execute_trial_plan._gpu_idle", return_value=True),
+            patch(
+                "execute_trial_plan._resource_preflight",
+                return_value={
+                    "checked_at": time.time(),
+                    "free_disk_gb": 100.0,
+                    "gpu_temperature_c": 40,
+                },
+            ),
+        ):
+            state = launch_next(spec, state)
+            run = next(
+                item for item in state["runs"].values()
+                if item["status"] == "running"
+            )
+            _ACTIVE_CHILDREN[run["pid"]].wait(timeout=10)
+            state = reconcile(spec, plan, state)
+        self.assertEqual(
+            run["status"],
+            "completed",
+            (
+                f"{run['failure_reason']}\n"
+                f"{Path(run['log_path']).read_text(encoding='utf-8')}"
+            ),
+        )
+        self.assertTrue(self.baseline.is_file())
+        self.assertEqual(run["terminal_receipt"]["status"], "completed")
+        self.assertEqual(
+            run["config_report"]["verified_runtime_values"]["agent.seed"][
+                "expected"
+            ],
+            42,
+        )
+
+    def test_live_collapse_stops_exact_adapter_process_group(self) -> None:
+        session = self._adapter_session("collapse", 0.3)
+        rule = session["execution"]["quality_rules"][0]
+        rule["consecutive_windows"] = 3
+        rule["minimum_progress"] = 0
+        spec = validate_spec(session)
+        plan = build_plan(spec)
+        session_path, plan_path = self._write_contract(spec, plan)
+        _, state = initialize_state(spec, session_path, plan, plan_path)
+        with (
+            patch("execute_trial_plan._gpu_idle", return_value=True),
+            patch(
+                "execute_trial_plan._resource_preflight",
+                return_value={
+                    "checked_at": time.time(),
+                    "free_disk_gb": 100.0,
+                    "gpu_temperature_c": 40,
+                },
+            ),
+        ):
+            state = launch_next(spec, state)
+            run = next(
+                item for item in state["runs"].values()
+                if item["status"] == "running"
+            )
+            deadline = time.time() + 10
+            while time.time() < deadline:
+                summary_path = Path(run["summary_path"])
+                if summary_path.exists():
+                    summary = json.loads(summary_path.read_text())
+                    if len(summary["records"]) >= 3:
+                        break
+                time.sleep(0.02)
+            self.assertTrue(_process_start_ticks(run["pid"]))
+            state = reconcile(spec, plan, state)
+            self.assertEqual(run["status"], "stopping_quality_rule")
+            _ACTIVE_CHILDREN[run["pid"]].wait(timeout=10)
+            state = reconcile(spec, plan, state)
+        self.assertEqual(run["status"], "failed")
+        self.assertEqual(run["stop_reason"], "approved_quality_stop_rule")
+
+    def test_trial_reproducibility_manifest_is_hash_bound(self) -> None:
+        session = self._session()
+        session["training"]["cwd"] = str(REPO)
+        session["execution"]["reproducibility"] = {
+            "enabled": True,
+            "capture_git_diff": False,
+            "capture_gpu": False,
+            "package_names": ["PyYAML"],
+            "input_paths": [str(self.baseline)],
+        }
+        spec = validate_spec(session)
+        plan = build_plan(spec)
+        session_path, plan_path = self._write_contract(spec, plan)
+        _, state = initialize_state(spec, session_path, plan, plan_path)
+        with patch("execute_trial_plan._gpu_idle", return_value=True):
+            state = launch_next(spec, state)
+            run = next(
+                item for item in state["runs"].values()
+                if item["status"] == "running"
+            )
+            _ACTIVE_CHILDREN[run["pid"]].wait(timeout=10)
+            state = reconcile(spec, plan, state)
+        self.assertEqual(run["status"], "completed")
+        manifest_path = Path(run["reproducibility_path"])
+        manifest = json.loads(manifest_path.read_text())
+        self.assertEqual(manifest["git"]["root"], str(REPO))
+        self.assertEqual(
+            manifest["inputs"][0]["sha256"],
+            hashlib.sha256(self.baseline.read_bytes()).hexdigest(),
+        )
+        self.assertEqual(
+            run["reproducibility_sha256"],
+            hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        )
 
     def test_versions3_through5_keep_static_plan_and_ranking(self) -> None:
         for version in (3, 4, 5):

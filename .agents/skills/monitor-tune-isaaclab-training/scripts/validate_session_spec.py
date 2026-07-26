@@ -58,8 +58,10 @@ HARDWARE_FEEDBACK_OUTPUT_MODES = {
     "prepare_authorized_draft",
 }
 EXECUTION_PLACEHOLDERS = {
+    "adapter_contract_path",
     "effective_config_path",
     "gpu_index",
+    "log_path",
     "overrides_json",
     "result_path",
     "run_dir",
@@ -67,6 +69,7 @@ EXECUTION_PLACEHOLDERS = {
     "seed",
     "stage",
     "summary_path",
+    "terminal_path",
     "trial_id",
 }
 REQUIRED_EXECUTION_PLACEHOLDERS = {
@@ -336,7 +339,10 @@ def _validate_seed_array(
     return value
 
 
-def _validate_execution_template(value: Any) -> list[str]:
+def _validate_execution_template(
+    value: Any,
+    required_placeholders: set[str] | None = None,
+) -> list[str]:
     argv = _validate_argv(value, "execution.run_command")
     placeholders: set[str] = set()
     for index, token in enumerate(argv):
@@ -365,7 +371,12 @@ def _validate_execution_template(value: Any) -> list[str]:
                 f"execution.run_command[{index}] cannot format or convert placeholders"
             )
         placeholders.update(found)
-    missing = sorted(REQUIRED_EXECUTION_PLACEHOLDERS - placeholders)
+    required = (
+        REQUIRED_EXECUTION_PLACEHOLDERS
+        if required_placeholders is None
+        else required_placeholders
+    )
+    missing = sorted(required - placeholders)
     if missing:
         raise SpecError(
             "execution.run_command is missing required placeholder(s): "
@@ -379,6 +390,10 @@ def _validate_execution_contract(
     version: int,
     mode: str,
     monitoring_gpu_index: int | None,
+    algorithm: dict[str, Any] | None = None,
+    parameter_paths: list[str] | None = None,
+    required_metrics: set[str] | None = None,
+    training_command: list[str] | None = None,
 ) -> dict[str, Any] | None:
     if value is None:
         if version == 6 and mode == "tune":
@@ -401,6 +416,9 @@ def _validate_execution_contract(
             "effective_config",
             "quality_rules",
             "nonfinite_action",
+            "adapter",
+            "resource_limits",
+            "reproducibility",
         },
         "execution",
     )
@@ -411,7 +429,24 @@ def _validate_execution_contract(
     )
     if not state_dir.is_absolute():
         raise SpecError("execution.state_dir must be an absolute path")
-    _validate_execution_template(execution.get("run_command"))
+    adapter_template_fields = {
+        "adapter_contract_path",
+        "effective_config_path",
+        "log_path",
+        "overrides_json",
+        "result_path",
+        "run_id",
+        "summary_path",
+        "terminal_path",
+    }
+    _validate_execution_template(
+        execution.get("run_command"),
+        (
+            adapter_template_fields
+            if execution.get("adapter") is not None
+            else REQUIRED_EXECUTION_PLACEHOLDERS
+        ),
+    )
     gpu_index = _expect_int(
         execution.get("gpu_index"),
         "execution.gpu_index",
@@ -443,6 +478,7 @@ def _validate_execution_contract(
             "enabled",
             "baseline_path",
             "require_exact_override_match",
+            "allow_baseline_bootstrap",
         },
         "execution.effective_config",
     )
@@ -466,6 +502,231 @@ def _validate_execution_contract(
         "execution.effective_config.require_exact_override_match",
     ):
         raise SpecError("effective config must require exact override matching")
+    if "allow_baseline_bootstrap" in effective:
+        _expect_bool(
+            effective["allow_baseline_bootstrap"],
+            "execution.effective_config.allow_baseline_bootstrap",
+        )
+
+    adapter_value = execution.get("adapter")
+    limits_value = execution.get("resource_limits")
+    if (adapter_value is None) != (limits_value is None):
+        raise SpecError(
+            "execution.adapter and execution.resource_limits must be provided together"
+        )
+    if adapter_value is not None:
+        if (
+            algorithm is None
+            or parameter_paths is None
+            or required_metrics is None
+            or training_command is None
+        ):
+            raise SpecError("execution adapter validation requires tune fields")
+        adapter = _expect_object(adapter_value, "execution.adapter")
+        _check_keys(
+            adapter,
+            {
+                "id",
+                "parameter_cli_map",
+                "runtime_config_paths",
+                "summary_last",
+                "require_checkpoint",
+            },
+            "execution.adapter",
+        )
+        if adapter.get("id") != "rsl-rl":
+            raise SpecError("execution.adapter.id must be rsl-rl")
+        if algorithm.get("backend") != "rsl_rl":
+            raise SpecError("rsl-rl adapter requires algorithm.backend=rsl_rl")
+        parameter_map = _expect_object(
+            adapter.get("parameter_cli_map"),
+            "execution.adapter.parameter_cli_map",
+        )
+        if set(parameter_map) != set(parameter_paths):
+            raise SpecError(
+                "execution.adapter.parameter_cli_map keys must exactly match "
+                "tuning.allowed_parameters paths"
+            )
+        for path, cli_path_value in parameter_map.items():
+            cli_path = _expect_nonempty_string(
+                cli_path_value,
+                f"execution.adapter.parameter_cli_map.{path}",
+            )
+            if not PARAMETER_PATH_RE.fullmatch(cli_path):
+                raise SpecError(
+                    f"execution adapter CLI path contains unsupported characters: {cli_path}"
+                )
+        runtime_paths = _expect_object(
+            adapter.get("runtime_config_paths"),
+            "execution.adapter.runtime_config_paths",
+        )
+        if not runtime_paths:
+            raise SpecError(
+                "execution.adapter.runtime_config_paths must not be empty"
+            )
+        for path, identity_value in runtime_paths.items():
+            if not PARAMETER_PATH_RE.fullmatch(path):
+                raise SpecError(
+                    f"execution adapter runtime config path is invalid: {path}"
+                )
+            if identity_value not in {"seed", "run_id"}:
+                raise SpecError(
+                    "execution adapter runtime config values must be seed or run_id"
+                )
+            if path in parameter_map:
+                raise SpecError(
+                    "runtime config paths cannot also be tunable parameter paths"
+                )
+        _expect_int(
+            adapter.get("summary_last"),
+            "execution.adapter.summary_last",
+            1,
+            10000,
+        )
+        _expect_bool(
+            adapter.get("require_checkpoint"),
+            "execution.adapter.require_checkpoint",
+        )
+        placeholders = {
+            field
+            for token in execution["run_command"]
+            for _, field, _, _ in Formatter().parse(token)
+            if field is not None
+        }
+        adapter_required = {
+            "adapter_contract_path",
+            "log_path",
+            "run_id",
+            "terminal_path",
+        }
+        missing_adapter = sorted(adapter_required - placeholders)
+        if missing_adapter:
+            raise SpecError(
+                "rsl-rl adapter command is missing placeholder(s): "
+                + ", ".join(missing_adapter)
+            )
+        reserved_prefixes = (
+            "--seed",
+            "--run_name",
+            "--run-name",
+        )
+        if any(
+            token == prefix or token.startswith(prefix + "=")
+            for token in training_command
+            for prefix in reserved_prefixes
+        ):
+            raise SpecError(
+                "adapter-managed training.command cannot set seed or run name"
+            )
+
+        limits = _expect_object(limits_value, "execution.resource_limits")
+        _check_keys(
+            limits,
+            {
+                "campaign_timeout_minutes",
+                "min_free_disk_gb",
+                "max_gpu_temperature_c",
+                "stop_grace_seconds",
+            },
+            "execution.resource_limits",
+        )
+        _expect_int(
+            limits.get("campaign_timeout_minutes"),
+            "execution.resource_limits.campaign_timeout_minutes",
+            1,
+            10080,
+        )
+        min_disk = _expect_number(
+            limits.get("min_free_disk_gb"),
+            "execution.resource_limits.min_free_disk_gb",
+        )
+        if not 0 <= min_disk <= 100000:
+            raise SpecError(
+                "execution.resource_limits.min_free_disk_gb must be between 0 and 100000"
+            )
+        _expect_int(
+            limits.get("max_gpu_temperature_c"),
+            "execution.resource_limits.max_gpu_temperature_c",
+            40,
+            100,
+        )
+        _expect_int(
+            limits.get("stop_grace_seconds"),
+            "execution.resource_limits.stop_grace_seconds",
+            1,
+            600,
+        )
+
+    reproducibility_value = execution.get("reproducibility")
+    if reproducibility_value is not None:
+        reproducibility = _expect_object(
+            reproducibility_value,
+            "execution.reproducibility",
+        )
+        _check_keys(
+            reproducibility,
+            {
+                "enabled",
+                "capture_git_diff",
+                "capture_gpu",
+                "package_names",
+                "input_paths",
+            },
+            "execution.reproducibility",
+        )
+        _expect_bool(
+            reproducibility.get("enabled"),
+            "execution.reproducibility.enabled",
+        )
+        _expect_bool(
+            reproducibility.get("capture_git_diff"),
+            "execution.reproducibility.capture_git_diff",
+        )
+        _expect_bool(
+            reproducibility.get("capture_gpu"),
+            "execution.reproducibility.capture_gpu",
+        )
+        package_names = reproducibility.get("package_names")
+        if not isinstance(package_names, list) or len(package_names) > 32:
+            raise SpecError(
+                "execution.reproducibility.package_names must be an array "
+                "with at most 32 entries"
+            )
+        for index, package_name in enumerate(package_names):
+            package_name = _expect_nonempty_string(
+                package_name,
+                f"execution.reproducibility.package_names[{index}]",
+            )
+            if not re.fullmatch(r"[A-Za-z0-9_.-]+", package_name):
+                raise SpecError(
+                    "execution reproducibility package name contains "
+                    "unsupported characters"
+                )
+        if len(package_names) != len(set(package_names)):
+            raise SpecError(
+                "execution.reproducibility.package_names must be unique"
+            )
+        input_paths = reproducibility.get("input_paths")
+        if not isinstance(input_paths, list) or len(input_paths) > 64:
+            raise SpecError(
+                "execution.reproducibility.input_paths must be an array "
+                "with at most 64 entries"
+            )
+        for index, input_path_value in enumerate(input_paths):
+            input_path = Path(
+                _expect_nonempty_string(
+                    input_path_value,
+                    f"execution.reproducibility.input_paths[{index}]",
+                )
+            )
+            if not input_path.is_absolute():
+                raise SpecError(
+                    "execution reproducibility input paths must be absolute"
+                )
+        if len(input_paths) != len(set(input_paths)):
+            raise SpecError(
+                "execution.reproducibility.input_paths must be unique"
+            )
 
     rules = execution.get("quality_rules")
     if not isinstance(rules, list):
@@ -484,6 +745,7 @@ def _validate_execution_contract(
                 "op",
                 "value",
                 "consecutive_windows",
+                "minimum_progress",
                 "action",
             },
             path,
@@ -504,6 +766,13 @@ def _validate_execution_contract(
             1,
             100,
         )
+        if "minimum_progress" in rule:
+            _expect_int(
+                rule["minimum_progress"],
+                f"{path}.minimum_progress",
+                0,
+                10**9,
+            )
         if rule.get("action") not in {"mark_suspect", "stop_trial"}:
             raise SpecError(
                 f"{path}.action must be mark_suspect or stop_trial"
@@ -1243,12 +1512,6 @@ def validate_spec(
         version,
         mode,
     )
-    _validate_execution_contract(
-        root.get("execution"),
-        version,
-        mode,
-        monitoring_gpu_index,
-    )
     archive_contract = _validate_archive(
         root.get("archive"),
         version,
@@ -1266,6 +1529,12 @@ def validate_spec(
         )
 
     if mode == "monitor":
+        _validate_execution_contract(
+            root.get("execution"),
+            version,
+            mode,
+            monitoring_gpu_index,
+        )
         if root.get("tuning") is not None:
             raise SpecError("tuning must be null or omitted in monitor mode")
         return root
@@ -1316,7 +1585,16 @@ def validate_spec(
     _expect_int(tuning.get("max_trials"), "tuning.max_trials", 2, 64)
     seeds = _validate_seed_array(tuning.get("seeds"), "tuning.seeds")
     _expect_int(tuning.get("trial_timeout_minutes"), "tuning.trial_timeout_minutes", 1, 10080)
-    _expect_int(tuning.get("max_concurrent_trials"), "tuning.max_concurrent_trials", 1, 8)
+    max_concurrent_trials = _expect_int(
+        tuning.get("max_concurrent_trials"),
+        "tuning.max_concurrent_trials",
+        1,
+        8,
+    )
+    if version >= 6 and max_concurrent_trials != 1:
+        raise SpecError(
+            "version-6 execution requires tuning.max_concurrent_trials=1"
+        )
     if tuning.get("mutation_scope") != "overrides_only":
         raise SpecError("tuning.mutation_scope must be overrides_only")
     _validate_objectives(tuning.get("objectives"), version)
@@ -1403,6 +1681,21 @@ def validate_spec(
         raise SpecError(
             "seed_strategy and ranking require session version 6"
         )
+    required_metrics = {
+        objective["metric"] for objective in tuning["objectives"]
+    } | {
+        constraint["metric"] for constraint in tuning.get("constraints", [])
+    }
+    _validate_execution_contract(
+        root.get("execution"),
+        version,
+        mode,
+        monitoring_gpu_index,
+        algorithm=algorithm,
+        parameter_paths=parameter_paths,
+        required_metrics=required_metrics,
+        training_command=training["command"],
+    )
     return root
 
 

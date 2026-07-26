@@ -876,3 +876,72 @@ Validate positive `FrameDuration`, derive floor/ceil frame indices from `bounded
 - **Notes**: 备份状态数据库后精准清除 Codex 全局状态、Webview origin 和当前工作区 Codex View 状态；正式 VS Code 配置中已验证页面正常加载。
 
 ---
+## [LRN-20260726-004] best_practice
+
+**Logged**: 2026-07-26T17:05:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+多 seed RSL-RL 有效配置核验必须区分调优参数与由执行器强制设置的运行身份字段。
+
+### Details
+RSL-RL 会把 `seed` 和 `run_name` 写入 `agent.yaml`，环境 seed 也会进入
+`env.yaml`。不同 seed/run ID 因此会产生合法配置差异。若把整个 dump 与
+baseline 做未经建模的严格差分，所有后续 seed 都会被误判为未授权变更；若
+直接忽略这些字段，又会丢失运行身份核验。
+
+### Suggested Action
+在审批会话中逐路径声明 runtime config binding，值只能来自当前执行器的
+`seed` 或 `run_id`。先验证候选 dump 的字段与本次运行身份完全一致，再仅为
+baseline 差分进行归一化；这些路径不得同时成为可调参数，其他配置差异继续
+严格拒绝。
+
+### Metadata
+- Source: conversation
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/scripts/validate_effective_config.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/execute_trial_plan.py`
+- Tags: rsl-rl, seed, run-name, effective-config, authorization
+- Pattern-Key: harden.runtime_identity_config_diff
+
+### Resolution
+- **Resolved**: 2026-07-26T17:05:00+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已通过 runtime_config_paths 契约和端到端多层测试实现。
+
+---
+## [LRN-20260726-005] best_practice
+
+**Logged**: 2026-07-26T18:15:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+训练质量规则只有在训练期间持续产生原子结构化摘要时才是真正的在线保护。
+
+### Details
+只在子进程退出后调用一次批量日志解析，会让执行器运行中的
+`stop_trial` 规则一直拿不到 `summary_path`。接口看似支持在线异常终止，
+但真实训练中只能做事后拒绝。直接反复解析整个外部重定向日志还会引入缓冲
+可见性和大日志性能问题。
+
+### Suggested Action
+复用同一个流式解析状态机处理子进程 stdout；只在完整 progress record
+结束或首次看到非有限值时原子替换滚动摘要。有限阈值使用明确
+`minimum_progress` 避开 warm-up，非有限值不受 warm-up 限制。用慢速假训练
+验证摘要在进程退出前出现，并由执行器对精确 PID/PGID/start-ticks/argv
+身份发送停止信号。
+
+### Metadata
+- Source: conversation
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/scripts/summarize_training_log.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/rsl_rl_trial_adapter.py`
+- Tags: streaming-log, online-quality, atomic-summary, warmup, exact-process
+- Pattern-Key: harden.live_training_quality_evidence
+
+### Resolution
+- **Resolved**: 2026-07-26T18:15:00+08:00
+- **Commit/PR**: N/A
+- **Notes**: 流式解析器与真实 adapter 在线摘要已实现，并通过 collapse 与 NaN 故障注入。
+
+---

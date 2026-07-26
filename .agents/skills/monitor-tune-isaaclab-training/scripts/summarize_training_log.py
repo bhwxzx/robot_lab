@@ -48,12 +48,134 @@ def _progress_match(
     return None
 
 
-def _finish_progress(
-    current: dict[str, Any] | None,
-    rows: deque[dict[str, Any]],
-) -> None:
-    if current is not None:
-        rows.append(current)
+class StreamingLogSummary:
+    """Incrementally parse training output and expose bounded snapshots."""
+
+    def __init__(
+        self,
+        path: Path,
+        last: int,
+        profile: dict[str, Any],
+    ) -> None:
+        self.path = path
+        self.profile = profile
+        self.rows: deque[dict[str, Any]] = deque(maxlen=last)
+        self.current: dict[str, Any] | None = None
+        self.non_finite: deque[dict[str, Any]] = deque(maxlen=1000)
+        self.lines_seen = 0
+
+    def feed_line(self, raw_line: str) -> dict[str, bool]:
+        """Consume one line and report completed-progress/non-finite events."""
+        self.lines_seen += 1
+        line = ANSI_RE.sub("", raw_line.rstrip("\n"))
+        progress = _progress_match(
+            line,
+            self.profile["progress_patterns"],
+        )
+        completed = False
+        if progress:
+            if self.current is not None:
+                self.rows.append(self.current)
+                completed = True
+            progress_name, progress_value, target = progress
+            self.current = {
+                "progress_name": progress_name,
+                "progress": progress_value,
+                "target_progress": target,
+            }
+            if progress_name == "learning_iteration":
+                self.current["iteration"] = progress_value
+                self.current["target_iteration"] = target
+            return {"completed": completed, "non_finite": False}
+        if self.current is None:
+            return {"completed": False, "non_finite": False}
+        computation_match = COMPUTATION_RE.search(line)
+        if computation_match:
+            self.current["steps_per_second"] = float(
+                computation_match.group(1)
+            )
+            self.current["collection_time_seconds"] = float(
+                computation_match.group(2)
+            )
+            self.current["learning_time_seconds"] = float(
+                computation_match.group(3)
+            )
+            return {"completed": False, "non_finite": False}
+        value_match = VALUE_RE.match(line)
+        if not value_match:
+            return {"completed": False, "non_finite": False}
+        label = value_match.group(1).strip()
+        metric = self.profile["metric_aliases"].get(
+            label,
+            normalize_metric_name(label),
+        )
+        if not metric:
+            return {"completed": False, "non_finite": False}
+        value = float(value_match.group(2))
+        if math.isfinite(value):
+            self.current[metric] = value
+            return {"completed": False, "non_finite": False}
+        self.current[metric] = None
+        self.non_finite.append(
+            {
+                "progress": self.current["progress"],
+                "metric": metric,
+            }
+        )
+        return {"completed": False, "non_finite": True}
+
+    def finish(self) -> None:
+        """Finalize the current progress record exactly once."""
+        if self.current is not None:
+            self.rows.append(self.current)
+            self.current = None
+
+    def snapshot(self, include_current: bool = False) -> dict[str, Any]:
+        """Return the same schema as parse_log without mutating parser state."""
+        retained = list(self.rows)
+        if include_current and self.current is not None:
+            retained.append(dict(self.current))
+            retained = retained[-self.rows.maxlen :]
+        aggregate: dict[str, float] = {}
+        excluded = {
+            "progress",
+            "target_progress",
+            "iteration",
+            "target_iteration",
+        }
+        metric_names = sorted(
+            {
+                key
+                for row in retained
+                for key, value in row.items()
+                if key not in excluded
+                and isinstance(value, (int, float))
+                and not isinstance(value, bool)
+            }
+        )
+        for metric in metric_names:
+            values = [
+                float(row[metric])
+                for row in retained
+                if isinstance(row.get(metric), (int, float))
+            ]
+            if values:
+                aggregate[metric] = fmean(values)
+        latest = retained[-1] if retained else None
+        return {
+            "log_path": str(self.path),
+            "profile_id": self.profile["id"],
+            "window_size": len(retained),
+            "first_progress": retained[0]["progress"] if retained else None,
+            "last_progress": latest["progress"] if latest else None,
+            "first_iteration": retained[0].get("iteration") if retained else None,
+            "last_iteration": latest.get("iteration") if latest else None,
+            "latest": latest,
+            "mean": aggregate,
+            "non_finite_metrics": list(self.non_finite),
+            "records": retained,
+            "iterations": retained,
+        }
 
 
 def parse_log(
@@ -62,97 +184,12 @@ def parse_log(
     profile: dict[str, Any],
 ) -> dict[str, Any]:
     """Parse a log while retaining only the requested number of progress records."""
-    rows: deque[dict[str, Any]] = deque(maxlen=last)
-    current: dict[str, Any] | None = None
-    non_finite: deque[dict[str, Any]] = deque(maxlen=1000)
-    aliases = profile["metric_aliases"]
-
+    parser = StreamingLogSummary(path, last, profile)
     with path.open("r", encoding="utf-8", errors="replace") as stream:
         for raw_line in stream:
-            line = ANSI_RE.sub("", raw_line.rstrip("\n"))
-            progress = _progress_match(line, profile["progress_patterns"])
-            if progress:
-                _finish_progress(current, rows)
-                progress_name, progress_value, target = progress
-                current = {
-                    "progress_name": progress_name,
-                    "progress": progress_value,
-                    "target_progress": target,
-                }
-                if progress_name == "learning_iteration":
-                    current["iteration"] = progress_value
-                    current["target_iteration"] = target
-                continue
-            if current is None:
-                continue
-            computation_match = COMPUTATION_RE.search(line)
-            if computation_match:
-                current["steps_per_second"] = float(computation_match.group(1))
-                current["collection_time_seconds"] = float(computation_match.group(2))
-                current["learning_time_seconds"] = float(computation_match.group(3))
-                continue
-            value_match = VALUE_RE.match(line)
-            if not value_match:
-                continue
-            label = value_match.group(1).strip()
-            metric = aliases.get(label, normalize_metric_name(label))
-            if not metric:
-                continue
-            value = float(value_match.group(2))
-            if math.isfinite(value):
-                current[metric] = value
-            else:
-                current[metric] = None
-                non_finite.append(
-                    {
-                        "progress": current["progress"],
-                        "metric": metric,
-                    }
-                )
-    _finish_progress(current, rows)
-
-    retained = list(rows)
-    aggregate: dict[str, float] = {}
-    excluded = {
-        "progress",
-        "target_progress",
-        "iteration",
-        "target_iteration",
-    }
-    metric_names = sorted(
-        {
-            key
-            for row in retained
-            for key, value in row.items()
-            if key not in excluded
-            and isinstance(value, (int, float))
-            and not isinstance(value, bool)
-        }
-    )
-    for metric in metric_names:
-        values = [
-            float(row[metric])
-            for row in retained
-            if isinstance(row.get(metric), (int, float))
-        ]
-        if values:
-            aggregate[metric] = fmean(values)
-
-    latest = retained[-1] if retained else None
-    return {
-        "log_path": str(path),
-        "profile_id": profile["id"],
-        "window_size": len(retained),
-        "first_progress": retained[0]["progress"] if retained else None,
-        "last_progress": latest["progress"] if latest else None,
-        "first_iteration": retained[0].get("iteration") if retained else None,
-        "last_iteration": latest.get("iteration") if latest else None,
-        "latest": latest,
-        "mean": aggregate,
-        "non_finite_metrics": list(non_finite),
-        "records": retained,
-        "iterations": retained,
-    }
+            parser.feed_line(raw_line)
+    parser.finish()
+    return parser.snapshot()
 
 
 def main() -> int:

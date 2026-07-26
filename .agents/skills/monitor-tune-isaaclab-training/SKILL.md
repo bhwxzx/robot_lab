@@ -127,9 +127,35 @@ conda run -n isaacsim-5.1 python \
 Use `--action launch-next` only when reconcile reports no active child, and use
 `--action reconcile` on each scheduled check. Require exact session-plan
 matching, unique per-stage run IDs, an idle approved GPU, the inherited GPU
-lock, exact Linux process identity, attempt-isolated outputs, finite structured
-results, and a passing effective-config diff. A quality-stop rule may signal
-only that executor's exact recorded process group.
+lock, state-transition lock, disk and temperature preflight, total and
+per-trial time limits, exact Linux process identity, attempt-isolated outputs,
+finite structured results, and a passing effective-config diff. A quality or
+timeout stop may signal only that executor's exact recorded process group,
+using SIGTERM before the approved SIGKILL grace threshold. Recover a damaged
+state only from the verified hash-chained execution journal.
+
+For `rsl_rl`, use the included `rsl_rl_trial_adapter.py`. Bind every approved
+tuning path to its reviewed Hydra path, and bind dumped seed/run-name fields as
+runtime identity fields rather than tuning parameters. Require its terminal
+receipt and checkpoint hash. If approved, only the first unchanged baseline
+may bootstrap an absent effective-config baseline; never overwrite it.
+
+Require the adapter to stream an atomic rolling summary after each complete
+iteration and immediately on non-finite metrics. Use an approved
+`minimum_progress` for finite quality rules that must ignore warm-up. Record
+TensorBoard scalar progress as secondary evidence; never let GPU activity or a
+fresh event file override stalled monotonic training progress.
+
+Treat launch as a journaled two-phase transaction: reserve an isolated attempt,
+write its reproducibility evidence, start the exact child, then persist a
+hash-bound launch receipt. Consume failed starts without reusing their output
+directories. Recover receipt-backed exact processes after scheduler failure,
+but block and never signal an orphan with no valid receipt. Accept only a
+truncated final journal record during explicit state recovery.
+
+When reproducibility capture is enabled, bind each run to source Git state,
+exact argv, profile, runtime/package versions, GPU identity, and explicitly
+approved critical input hashes. Reject completion if that manifest changes.
 
 Run an unchanged baseline in the same seed stage as every candidate. Isolate
 trial and retry outputs. Use structured argv and verified configuration

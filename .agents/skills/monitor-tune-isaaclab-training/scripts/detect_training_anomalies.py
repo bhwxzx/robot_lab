@@ -48,15 +48,35 @@ def detect_anomalies(
     non_finite = summary.get("non_finite_metrics")
     if not isinstance(non_finite, list):
         raise SpecError("training summary must contain non_finite_metrics")
+    if any(not isinstance(record, dict) for record in records):
+        raise SpecError("training summary records must be objects")
 
     triggered: list[dict[str, Any]] = []
     insufficient: list[dict[str, Any]] = []
     for rule in execution["quality_rules"]:
         count = rule["consecutive_windows"]
+        minimum_progress = rule.get("minimum_progress")
+        eligible_records = (
+            [
+                record
+                for record in records
+                if isinstance(record.get("progress"), int)
+                and record["progress"] >= minimum_progress
+            ]
+            if minimum_progress is not None
+            else records
+        )
+        latest_progress = next(
+            (
+                record.get("progress")
+                for record in reversed(records)
+                if isinstance(record, dict)
+                and isinstance(record.get("progress"), int)
+            ),
+            None,
+        )
         metric_values: list[float] = []
-        for record in records[-count:]:
-            if not isinstance(record, dict):
-                raise SpecError("training summary records must be objects")
+        for record in eligible_records[-count:]:
             value = record.get(rule["metric"])
             if (
                 isinstance(value, bool)
@@ -71,6 +91,8 @@ def detect_anomalies(
                     "rule_id": rule["id"],
                     "required_windows": count,
                     "available_windows": len(metric_values),
+                    "minimum_progress": minimum_progress,
+                    "latest_progress": latest_progress,
                 }
             )
             continue

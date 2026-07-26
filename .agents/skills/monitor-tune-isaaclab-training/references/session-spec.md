@@ -181,17 +181,15 @@ Version-6 tune sessions require a root-level `execution` object:
   "state_dir": "/absolute/path/to/tuning_execution",
   "run_command": [
     "conda", "run", "-n", "isaacsim-5.1", "python",
-    "/absolute/path/to/approved_training_adapter.py",
-    "--seed={seed}",
-    "--trial-id={trial_id}",
-    "--stage={stage}",
-    "--run-id={run_id}",
-    "--run-dir={run_dir}",
+    "/absolute/path/to/rsl_rl_trial_adapter.py",
+    "--contract={adapter_contract_path}",
+    "--executor-run-id={run_id}",
     "--overrides-json={overrides_json}",
     "--result={result_path}",
     "--summary={summary_path}",
     "--effective-config={effective_config_path}",
-    "--device=cuda:{gpu_index}"
+    "--terminal={terminal_path}",
+    "--log-path={log_path}"
   ],
   "gpu_index": 0,
   "require_idle_gpu": true,
@@ -199,7 +197,36 @@ Version-6 tune sessions require a root-level `execution` object:
   "effective_config": {
     "enabled": true,
     "baseline_path": "/absolute/path/to/baseline_effective_config.json",
-    "require_exact_override_match": true
+    "require_exact_override_match": true,
+    "allow_baseline_bootstrap": true
+  },
+  "adapter": {
+    "id": "rsl-rl",
+    "parameter_cli_map": {
+      "agent.algorithm.learning_rate": "agent.algorithm.learning_rate"
+    },
+    "runtime_config_paths": {
+      "agent.seed": "seed",
+      "agent.run_name": "run_id",
+      "env.seed": "seed"
+    },
+    "summary_last": 100,
+    "require_checkpoint": true
+  },
+  "resource_limits": {
+    "campaign_timeout_minutes": 1440,
+    "min_free_disk_gb": 50,
+    "max_gpu_temperature_c": 85,
+    "stop_grace_seconds": 30
+  },
+  "reproducibility": {
+    "enabled": true,
+    "capture_git_diff": true,
+    "capture_gpu": true,
+    "package_names": ["torch", "rsl-rl-lib", "PyYAML"],
+    "input_paths": [
+      "/absolute/path/to/critical_training_config.py"
+    ]
   },
   "quality_rules": [
     {
@@ -208,6 +235,7 @@ Version-6 tune sessions require a root-level `execution` object:
       "op": "<",
       "value": 10000,
       "consecutive_windows": 3,
+      "minimum_progress": 10,
       "action": "mark_suspect"
     }
   ],
@@ -215,15 +243,29 @@ Version-6 tune sessions require a root-level `execution` object:
 }
 ```
 
-All required placeholders must appear exactly in the approved argv template;
-`gpu_index` is optional only as a placeholder, not as an execution field.
+Legacy custom adapters require the run, trial, stage, seed, output, and
+effective-config placeholders. The built-in `rsl-rl` adapter instead requires
+the attempt contract, exact run-ID token, log, terminal, result, summary,
+effective-config, and override placeholders shown above. Its parameter map must exactly cover the
+approved tuning paths. Runtime config paths may bind only to `seed` or
+`run_id`; they are identity checks, not additional tuning permissions.
 `state_dir` and the effective baseline must be absolute regular paths.
 `require_idle_gpu` and exact override matching must be true. Retries are
-bounded from zero through three.
+bounded from zero through three. The optional one-time baseline bootstrap is
+valid only for the unchanged baseline. Adapter sessions must also approve the
+campaign timeout, minimum free disk, maximum GPU temperature, and SIGTERM grace
+period.
 
-The child adapter must atomically refresh `summary_path`, write the complete
-effective JSON configuration to `effective_config_path`, and write a finite
-completed result to `result_path`. Read
+`reproducibility` is optional for backward compatibility. When enabled, package
+names must be explicit and every input path must be an absolute file path.
+Missing packages, linked/missing inputs, Git evidence failure, or GPU identity
+query failure blocks the attempt before training.
+
+The RSL-RL adapter derives exact child argv from `training.command`, adds seed
+and unique run name, and maps only approved Hydra paths. It writes the complete
+dumped effective JSON configuration, live rolling summaries, finite metrics,
+newest checkpoint evidence, and a terminal receipt. `minimum_progress` may be
+added to any quality rule to define its finite-metric warm-up boundary. Read
 `execution-and-robust-ranking.md` for state transitions, output schemas,
 anomaly semantics, and commands.
 

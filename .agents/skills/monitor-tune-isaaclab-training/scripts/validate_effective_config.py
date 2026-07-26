@@ -80,6 +80,7 @@ def validate_effective_config(
     baseline_path: Path,
     candidate_path: Path,
     overrides: dict[str, Any],
+    runtime_values: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return a hash-bound diff report or reject any unauthorized difference."""
     if spec.get("version") != 6 or spec.get("mode") != "tune":
@@ -105,6 +106,20 @@ def validate_effective_config(
         )
     baseline = flatten_config(_load_object(baseline_path, "baseline config"))
     candidate = flatten_config(_load_object(candidate_path, "candidate config"))
+    normalized_runtime: dict[str, dict[str, Any]] = {}
+    for path, expected in (runtime_values or {}).items():
+        if path not in baseline or path not in candidate:
+            raise SpecError(f"runtime config path is missing: {path}")
+        if not _same_scalar(candidate[path], expected):
+            raise SpecError(
+                f"runtime config path {path} does not match this run identity"
+            )
+        normalized_runtime[path] = {
+            "baseline": baseline[path],
+            "candidate": candidate[path],
+            "expected": expected,
+        }
+        candidate[path] = baseline[path]
     changed: dict[str, dict[str, Any]] = {}
     for path in sorted(set(baseline) | set(candidate)):
         before = baseline.get(path, {"__missing__": True})
@@ -139,6 +154,7 @@ def validate_effective_config(
         "candidate_sha256": _sha256(candidate_path),
         "authorized_parameter_paths": sorted(authorized),
         "verified_overrides": overrides,
+        "verified_runtime_values": normalized_runtime,
         "changed_paths": changed,
     }
 
