@@ -214,6 +214,7 @@ def build_plan(
                             ensure_ascii=False,
                         ),
                         "duration_steps": scenario["duration_steps"],
+                        "executor_run_id": run_id,
                         "gpu_index": evaluation["gpu_index"],
                         "result_path": str(result_path),
                         "require_idle_gpu_flag": "--require_idle_gpu",
@@ -244,6 +245,7 @@ def build_plan(
                             "artifact_sha256": candidate["artifact_sha256"][
                                 artifact_kind
                             ],
+                            "checkpoint_path": candidate["checkpoint_path"],
                             "checkpoint_sha256": candidate["checkpoint_sha256"],
                             "artifact_required": artifact_spec["required"],
                             "scenario_id": scenario_id,
@@ -254,6 +256,7 @@ def build_plan(
                             "overrides": scenario["overrides"],
                             "command_schedule": scenario["command_schedule"],
                             "command": command,
+                            "run_dir": str(run_dir),
                             "result_path": str(result_path),
                             "video_path": str(video_path),
                             "video_required": video_required,
@@ -278,6 +281,10 @@ def build_plan(
             "max_abs_action_error": evaluation["parity"][
                 "max_abs_action_error"
             ],
+            "closed_loop_metrics": evaluation["parity"].get(
+                "closed_loop_metrics",
+                [],
+            ),
         }
         for candidate in candidates
         for artifact in required_artifacts

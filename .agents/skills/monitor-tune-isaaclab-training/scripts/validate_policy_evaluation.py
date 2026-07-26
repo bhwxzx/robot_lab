@@ -308,18 +308,18 @@ def evaluate_results(
             }
             for artifact in sorted(required_artifacts):
                 artifact_runs = [
-                    actual
+                    (expected, actual)
                     for expected, actual in completed
                     if expected["artifact"] == artifact
                 ]
                 values = [
                     actual["metrics"]["max_abs_action_error"]
-                    for actual in artifact_runs
+                    for _, actual in artifact_runs
                     if "max_abs_action_error" in actual["metrics"]
                 ]
                 missing_parity_runs = [
                     actual["run_id"]
-                    for actual in artifact_runs
+                    for _, actual in artifact_runs
                     if "max_abs_action_error" not in actual["metrics"]
                 ]
                 if not values or missing_parity_runs:
@@ -338,6 +338,59 @@ def evaluate_results(
                             "limit": limit,
                         }
                     )
+                reference_runs = {
+                    (expected["scenario_id"], expected["seed"]): actual
+                    for expected, actual in completed
+                    if expected["artifact"] == reference
+                }
+                for metric_contract in evaluation["parity"].get(
+                    "closed_loop_metrics",
+                    [],
+                ):
+                    metric_name = metric_contract["metric"]
+                    deltas: list[float] = []
+                    missing_pairs: list[str] = []
+                    for expected, actual in artifact_runs:
+                        key = (expected["scenario_id"], expected["seed"])
+                        reference_actual = reference_runs.get(key)
+                        if (
+                            reference_actual is None
+                            or metric_name not in actual["metrics"]
+                            or metric_name not in reference_actual["metrics"]
+                        ):
+                            missing_pairs.append(actual["run_id"])
+                            continue
+                        deltas.append(
+                            abs(
+                                actual["metrics"][metric_name]
+                                - reference_actual["metrics"][metric_name]
+                            )
+                        )
+                    if missing_pairs or not deltas:
+                        parity_failures.append(
+                            {
+                                "artifact": artifact,
+                                "metric": metric_name,
+                                "reason": "missing closed-loop parity pair",
+                                "runs": missing_pairs,
+                            }
+                        )
+                        continue
+                    aggregation = metric_contract["aggregation"]
+                    aggregated_delta = _aggregate(deltas, aggregation)
+                    maximum_delta = float(
+                        metric_contract["max_abs_delta"]
+                    )
+                    if aggregated_delta > maximum_delta:
+                        parity_failures.append(
+                            {
+                                "artifact": artifact,
+                                "metric": metric_name,
+                                "aggregation": aggregation,
+                                "absolute_delta": aggregated_delta,
+                                "limit": maximum_delta,
+                            }
+                        )
 
         if gate_failures:
             reasons.append("one or more metric gates failed")

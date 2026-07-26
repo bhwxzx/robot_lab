@@ -48,6 +48,8 @@ to approve:
 - metric thresholds and aggregations;
 - video-review count;
 - output directory, concurrency, and time limit;
+- executor state directory, retry budget, termination grace period, disk,
+  temperature, and minimum finalized-video size;
 - exact GPU and the requirement that it be idle before launch;
 - whether evaluation may reject a candidate;
 - whether failure may start another already-authorized tuning trial.
@@ -204,19 +206,34 @@ approval.
 8. Confirm the approved GPU is idle. Do not overlap evaluation with training or
    another GPU-heavy task unless the user creates a separate contract that
    explicitly allows and budgets that interference.
-9. Run matrix cells with approved concurrency and timeouts.
-10. Inspect the required videos and create visual reviews.
-11. Consolidate per-run results:
+9. Initialize the hash-bound evaluation state:
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/execute_evaluation_plan.py \
+  SESSION.json EVALUATION_PLAN.json --action initialize
+```
+
+10. Use `--action launch-next` for one matrix cell and `--action reconcile` on
+    scheduled checks. The executor reserves a unique attempt before launch,
+    records exact PID, process group, start ticks, argv, and receipt, enforces
+    timeout and resource gates, and promotes only hash-stable complete results
+    and finalized videos. Recover a damaged state only with
+    `--action recover-state`.
+11. Inspect the required videos and their `motion_evidence.review_windows`,
+    then create visual reviews.
+12. Consolidate per-run results and bind them to the executor state:
 
 ```bash
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/collect_evaluation_results.py \
   EVALUATION_PLAN.json \
+  --execution-state /absolute/policy_evaluation/.executor/evaluation_state.json \
   --visual-reviews VISUAL_REVIEWS.json \
   --output EVALUATION_RESULTS.json
 ```
 
-12. Validate promotion:
+13. Validate promotion:
 
 ```bash
 conda run -n isaacsim-5.1 python \
@@ -224,7 +241,7 @@ conda run -n isaacsim-5.1 python \
   SESSION.json EVALUATION_PLAN.json EVALUATION_RESULTS.json
 ```
 
-13. Pass the plan and results to `rank_trials.py`. Only a training-eligible
+14. Pass the plan and results to `rank_trials.py`. Only a training-eligible
     candidate that also passes policy evaluation may populate `final_selection`.
 
 ## Qualified policy archive
@@ -252,6 +269,23 @@ Each matrix cell writes:
     "termination_rate": 0.0,
     "tracking_xy_rmse": 0.42,
     "max_abs_action_error": 0.000002
+  },
+  "motion_evidence": {
+    "step_dt_seconds": 0.02,
+    "peak_steps": {
+      "max_tilt": 731,
+      "max_abs_action": 730
+    },
+    "termination_first_steps": {},
+    "review_windows": [
+      {
+        "start_step": 701,
+        "end_step": 761,
+        "start_seconds": 14.02,
+        "end_seconds": 15.24,
+        "evidence": ["max_abs_action", "max_tilt"]
+      }
+    ]
   }
 }
 ```
@@ -278,6 +312,12 @@ A visual-review file contains:
 Use `completed` only after the requested number of simulation steps finishes
 with finite outputs and the video is finalized. Missing, crashed, timed-out, or
 partial runs remain ineligible.
+
+The evaluator's action-parity metric compares Native and deployment actions on
+the exact same observations. `parity.closed_loop_metrics` separately compares
+Native and deployment outcomes for matching scenario/seed cells. Both layers
+must pass. Peak-step review windows are evidence-selection hints, not a
+replacement for watching the recorded motion.
 
 ## Failure and retuning rules
 

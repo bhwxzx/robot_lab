@@ -199,6 +199,21 @@ conda run -n isaacsim-5.1 python \
   SESSION.json CANDIDATES.json --output EVALUATION_PLAN.json
 ```
 
+When the approved session contains `evaluation.execution`, initialize and
+advance the matrix with:
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/execute_evaluation_plan.py \
+  SESSION.json EVALUATION_PLAN.json --action initialize
+```
+
+Use `--action launch-next` for one cell and `--action reconcile` on each
+scheduled check. Require attempt isolation, a shared training/evaluation GPU
+lock, exact process identity, timeout escalation, checkpoint/artifact
+revalidation, finalized-video size, canonical result/video hashes, and
+hash-chained state recovery. Never treat `awaiting_visual_review` as qualified.
+
 Use the training task for stress evaluation. Do not rely on a Play-only
 configuration that disables corruption, forces, pushes, or dynamics
 randomization. For RSL-RL, use
@@ -215,14 +230,19 @@ Require:
 2. Native plus at least one supported deployment artifact;
 3. finite closed-loop metrics and every approved hard gate;
 4. deployment-artifact action parity against Native inference;
-5. recorded motion and an actual visual review with notes.
+5. approved closed-loop metric deltas against the matching Native
+   scenario/seed;
+6. recorded motion, peak-step review windows, and an actual visual review with
+   notes.
 
 Consolidate and validate:
 
 ```bash
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/collect_evaluation_results.py \
-  EVALUATION_PLAN.json --visual-reviews VISUAL_REVIEWS.json \
+  EVALUATION_PLAN.json \
+  --execution-state EVALUATION_STATE.json \
+  --visual-reviews VISUAL_REVIEWS.json \
   --output EVALUATION_RESULTS.json
 
 conda run -n isaacsim-5.1 python \

@@ -36,6 +36,7 @@ parser.add_argument("--scenario_id", required=True)
 parser.add_argument("--scenario_overrides_json", default="{}")
 parser.add_argument("--command_schedule_json", default="[]")
 parser.add_argument("--duration_steps", type=int, required=True)
+parser.add_argument("--executor_run_id")
 parser.add_argument("--result_path", required=True)
 parser.add_argument("--run_id", required=True)
 parser.add_argument("--video_path", required=True)
@@ -104,8 +105,19 @@ def _assert_artifact_hashes() -> None:
             raise RuntimeError(f"{label} SHA-256 does not match the approved plan")
 
 
+def _assert_executor_identity() -> None:
+    if (
+        args_cli.executor_run_id is not None
+        and args_cli.executor_run_id != args_cli.run_id
+    ):
+        raise RuntimeError(
+            "--executor_run_id must exactly match the approved --run_id"
+        )
+
+
 try:
     _assert_artifact_hashes()
+    _assert_executor_identity()
     _assert_gpu_idle(args_cli.device)
 except RuntimeError as exc:
     print(f"ERROR: {exc}", file=sys.stderr)
@@ -344,6 +356,38 @@ def _finalize_video(video_path: Path) -> str:
     return str(video_path)
 
 
+def _review_windows(
+    peak_steps: dict[str, int | None],
+    termination_first_steps: dict[str, int],
+    duration_steps: int,
+    step_dt: float,
+) -> list[dict[str, Any]]:
+    """Return bounded video windows around objective motion-risk evidence."""
+    evidence_by_step: dict[int, list[str]] = {}
+    for metric, step in peak_steps.items():
+        if step is not None:
+            evidence_by_step.setdefault(step, []).append(metric)
+    for term_name, step in termination_first_steps.items():
+        evidence_by_step.setdefault(step, []).append(
+            f"termination:{term_name}"
+        )
+    windows: list[dict[str, Any]] = []
+    radius = 30
+    for step in sorted(evidence_by_step):
+        start_step = max(0, step - radius)
+        end_step = min(duration_steps - 1, step + radius)
+        windows.append(
+            {
+                "start_step": start_step,
+                "end_step": end_step,
+                "start_seconds": start_step * step_dt,
+                "end_seconds": (end_step + 1) * step_dt,
+                "evidence": sorted(evidence_by_step[step]),
+            }
+        )
+    return windows
+
+
 @hydra_task_config(args_cli.task, args_cli.agent)
 def main(
     env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg,
@@ -454,6 +498,14 @@ def main(
     max_abs_joint_velocity = 0.0
     max_abs_applied_torque = 0.0
     max_abs_action_error = 0.0
+    peak_steps: dict[str, int | None] = {
+        "max_abs_action": None,
+        "max_abs_action_error": None,
+        "max_abs_applied_torque": None,
+        "max_abs_joint_velocity": None,
+        "max_tilt": None,
+    }
+    termination_first_steps: dict[str, int] = {}
     start_time = time.monotonic()
 
     for step in range(args_cli.duration_steps):
@@ -472,8 +524,14 @@ def main(
                 actions = native_actions
             else:
                 actions = artifact_policy(observations)
-                error = torch.max(torch.abs(native_actions - actions)).item()
-                max_abs_action_error = max(max_abs_action_error, float(error))
+                error = float(
+                    torch.max(torch.abs(native_actions - actions)).item()
+                )
+                if error > max_abs_action_error or peak_steps[
+                    "max_abs_action_error"
+                ] is None:
+                    max_abs_action_error = error
+                    peak_steps["max_abs_action_error"] = step
             if not torch.isfinite(actions).all():
                 raise FloatingPointError("policy produced non-finite actions")
             observations, rewards, dones, extras = env.step(actions)
@@ -490,14 +548,20 @@ def main(
         timeout_count += int(timeouts.sum().item())
         for term_name in termination_term_names:
             term_value = termination_manager.get_term(term_name)
+            term_count = int(term_value.sum().item())
             termination_term_counts[term_name] = (
                 termination_term_counts.get(term_name, 0)
-                + int(term_value.sum().item())
+                + term_count
             )
-        max_abs_action = max(
-            max_abs_action,
-            float(torch.max(torch.abs(actions)).item()),
-        )
+            if term_count and term_name not in termination_first_steps:
+                termination_first_steps[term_name] = step
+        current_max_action = float(torch.max(torch.abs(actions)).item())
+        if (
+            current_max_action > max_abs_action
+            or peak_steps["max_abs_action"] is None
+        ):
+            max_abs_action = current_max_action
+            peak_steps["max_abs_action"] = step
         if previous_actions is not None:
             delta = actions - previous_actions
             action_rate_sq_sum += float(torch.square(delta).sum().item())
@@ -509,15 +573,31 @@ def main(
             gravity_xy = robot.data.projected_gravity_b[:, :2]
             tilt = torch.linalg.vector_norm(gravity_xy, dim=1)
             tilt_sq_sum += float(torch.square(tilt).sum().item())
-            max_tilt = max(max_tilt, float(torch.max(tilt).item()))
-            max_abs_joint_velocity = max(
-                max_abs_joint_velocity,
-                float(torch.max(torch.abs(robot.data.joint_vel)).item()),
+            current_max_tilt = float(torch.max(tilt).item())
+            if (
+                current_max_tilt > max_tilt
+                or peak_steps["max_tilt"] is None
+            ):
+                max_tilt = current_max_tilt
+                peak_steps["max_tilt"] = step
+            current_max_joint_velocity = float(
+                torch.max(torch.abs(robot.data.joint_vel)).item()
             )
-            max_abs_applied_torque = max(
-                max_abs_applied_torque,
-                float(torch.max(torch.abs(robot.data.applied_torque)).item()),
+            if (
+                current_max_joint_velocity > max_abs_joint_velocity
+                or peak_steps["max_abs_joint_velocity"] is None
+            ):
+                max_abs_joint_velocity = current_max_joint_velocity
+                peak_steps["max_abs_joint_velocity"] = step
+            current_max_applied_torque = float(
+                torch.max(torch.abs(robot.data.applied_torque)).item()
             )
+            if (
+                current_max_applied_torque > max_abs_applied_torque
+                or peak_steps["max_abs_applied_torque"] is None
+            ):
+                max_abs_applied_torque = current_max_applied_torque
+                peak_steps["max_abs_applied_torque"] = step
             if active_scheduled_command is None:
                 command = env.unwrapped.command_manager.get_command(
                     "base_velocity"
@@ -581,6 +661,7 @@ def main(
         if normalized_name == "illegal_contact":
             metrics["illegal_contact_rate"] = metric_value
 
+    step_dt = float(env.unwrapped.step_dt)
     env.close()
     recorded_video = _finalize_video(video_path)
     result = {
@@ -596,6 +677,17 @@ def main(
         "artifact_path": str(artifact_path),
         "video_path": recorded_video,
         "metrics": metrics,
+        "motion_evidence": {
+            "step_dt_seconds": step_dt,
+            "peak_steps": peak_steps,
+            "termination_first_steps": termination_first_steps,
+            "review_windows": _review_windows(
+                peak_steps,
+                termination_first_steps,
+                args_cli.duration_steps,
+                step_dt,
+            ),
+        },
     }
     result_path.write_text(
         json.dumps(

@@ -24,6 +24,7 @@ from typing import Any, Callable, Iterator
 from build_trial_plan import build_confirmation_runs, build_plan
 from collect_training_health import tensorboard_progress
 from detect_training_anomalies import detect_anomalies
+from execution_safety import gpu_lock_path
 from rank_trials import select_confirmation_candidates
 from validate_effective_config import validate_effective_config
 from validate_session_spec import SpecError, load_and_validate
@@ -1174,7 +1175,7 @@ def launch_next(
     gpu_index = spec["execution"]["gpu_index"]
     if spec["execution"]["require_idle_gpu"] and not _gpu_idle(gpu_index):
         raise SpecError("approved GPU is not idle")
-    lock_path = Path(spec["execution"]["state_dir"]) / f".gpu-{gpu_index}.lock"
+    lock_path = gpu_lock_path(gpu_index)
     lock_stream = lock_path.open("a+", encoding="utf-8")
     try:
         fcntl.flock(lock_stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)

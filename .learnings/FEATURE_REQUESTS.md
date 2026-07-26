@@ -38,6 +38,43 @@ complex
 
 ---
 
+## [FEAT-20260726-006] transactional_policy_evaluation_execution
+
+**Logged**: 2026-07-26T18:52:49+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Requested Capability
+把 Native/JIT/ONNX 策略评估从计划、人工启动和结果汇总升级为可恢复的
+自动执行流水线，并自动提供运动风险视频时间段和两层部署一致性证据。
+
+### User Context
+训练与多 seed 调优已经具备事务化执行，但最终 Play/部署产物验证仍存在
+人工断点。策略不能只靠训练曲线或单步 action 一致性晋级，还需要同场景
+闭环行为差异、完整视频和实际视觉审核。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+新增一次只执行一个矩阵单元的评估状态机，使用 attempt 隔离、共享 GPU
+锁、精确进程身份、超时升级、启动回执和 hash-chain journal；完成后重新
+核验 checkpoint/artifact，原子晋升规范结果与视频。评估器记录峰值 step
+及视频审阅窗口，并在相同 scenario/seed 下比较部署产物与 Native 的闭环
+指标差异。结果汇总绑定执行状态中的结果与视频哈希。
+
+### Metadata
+- Frequency: recurring
+- Related Features: closed_loop_policy_evaluation, live_transactional_training_supervision
+
+### Resolution
+- **Resolved**: 2026-07-26T18:52:49+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已实现事务化评估执行、训练/评估共享 GPU 锁、闭环 parity、运动证据窗口、状态绑定汇总及崩溃、超时、篡改、视频缺失和恢复测试；真实 Isaac Sim 评估仍受空闲 GPU 门禁约束。
+
+---
+
 ## [FEAT-20260726-002] hardware_feedback_driven_retuning
 
 **Logged**: 2026-07-26T13:30:03+08:00

@@ -301,6 +301,7 @@ Set `evaluation` before calling any checkpoint a final policy. Read
         "--duration_steps={duration_steps}",
         "--seed={seed}",
         "--run_id={run_id}",
+        "--executor_run_id", "{executor_run_id}",
         "--result_path={result_path}",
         "--video_path={video_path}"
       ]
@@ -327,6 +328,7 @@ Set `evaluation` before calling any checkpoint a final policy. Read
         "--duration_steps={duration_steps}",
         "--seed={seed}",
         "--run_id={run_id}",
+        "--executor_run_id", "{executor_run_id}",
         "--result_path={result_path}",
         "--video_path={video_path}"
       ]
@@ -386,7 +388,19 @@ Set `evaluation` before calling any checkpoint a final policy. Read
   "parity": {
     "required": true,
     "reference_artifact": "native",
-    "max_abs_action_error": 0.00001
+    "max_abs_action_error": 0.00001,
+    "closed_loop_metrics": [
+      {
+        "metric": "tracking_xy_rmse",
+        "max_abs_delta": 0.1,
+        "aggregation": "max"
+      },
+      {
+        "metric": "termination_rate",
+        "max_abs_delta": 0.001,
+        "aggregation": "max"
+      }
+    ]
   },
   "visual_review": {
     "required": true,
@@ -399,13 +413,28 @@ Set `evaluation` before calling any checkpoint a final policy. Read
   "max_concurrent_runs": 1,
   "run_timeout_minutes": 30,
   "allow_reject_candidate": true,
-  "allow_retune_on_failure": false
+  "allow_retune_on_failure": false,
+  "execution": {
+    "state_dir": "/absolute/path/to/policy_evaluation/.executor",
+    "max_retries_per_run": 1,
+    "stop_grace_seconds": 30,
+    "min_free_disk_gb": 10,
+    "max_gpu_temperature_c": 85,
+    "minimum_video_bytes": 1024
+  }
 }
 ```
 
 The example thresholds and overrides are illustrative. Inspect the exact task,
 units, event configuration, command ranges, and hardware limits before approval.
 Use the training task rather than a Play-only task that disables disturbances.
+`evaluation.execution` is optional for legacy manual evaluation, but required
+by `execute_evaluation_plan.py`. Its state directory must be inside
+`evaluation.output_dir`. Automated commands must pass `{executor_run_id}` as a
+standalone argv token so recovery can identify an orphan without relying on a
+partial command match. Automated deployment-artifact evaluation also requires
+at least one approved `closed_loop_metrics` delta against the Native run with
+the same scenario and seed.
 
 If evaluation is absent, disabled, incomplete, or failed, ranking may report a
 training candidate but must leave `final_selection` null. Enabling
