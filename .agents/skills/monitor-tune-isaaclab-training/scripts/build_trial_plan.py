@@ -93,7 +93,7 @@ def build_plan(spec: dict[str, Any]) -> dict[str, Any]:
         }
         for index, overrides in enumerate(selected, start=1)
     )
-    return {
+    base = {
         "version": 3,
         "mode": "tune",
         "run_id": spec["training"]["run_id"],
@@ -105,6 +105,96 @@ def build_plan(spec: dict[str, Any]) -> dict[str, Any]:
         "planned_run_count": len(trials) * len(tuning["seeds"]),
         "trials": trials,
     }
+    if spec["version"] < 6:
+        return base
+
+    strategy = tuning["seed_strategy"]
+    if len(trials) - 1 < strategy["confirmation_top_k"]:
+        raise SpecError(
+            "authorized grid contains fewer non-baseline trials than "
+            "confirmation_top_k"
+        )
+    screening_seeds = strategy["screening_seeds"]
+    confirmation_seeds = strategy["confirmation_seeds"]
+    screening_runs = [
+        {
+            "run_id": (
+                f"{spec['training']['run_id']}--screening--"
+                f"{trial['trial_id']}--seed-{seed}"
+            ),
+            "stage": "screening",
+            "trial_id": trial["trial_id"],
+            "seed": seed,
+            "overrides": trial["overrides"],
+        }
+        for trial in trials
+        for seed in screening_seeds
+    ]
+    remaining_confirmation = [
+        seed for seed in confirmation_seeds if seed not in screening_seeds
+    ]
+    maximum_confirmation_runs = (
+        strategy["confirmation_top_k"] + 1
+    ) * len(remaining_confirmation)
+    return {
+        **base,
+        "version": 4,
+        "seed_strategy": strategy,
+        "stages": {
+            "screening": {
+                "status": "planned",
+                "seeds": screening_seeds,
+                "runs": screening_runs,
+            },
+            "confirmation": {
+                "status": "awaiting_screening_selection",
+                "seeds": confirmation_seeds,
+                "remaining_seeds": remaining_confirmation,
+                "confirmation_top_k": strategy["confirmation_top_k"],
+                "selected_trial_ids": [],
+                "runs": [],
+            },
+        },
+        "runs": screening_runs,
+        "planned_run_count": len(screening_runs) + maximum_confirmation_runs,
+    }
+
+
+def build_confirmation_runs(
+    spec: dict[str, Any],
+    plan: dict[str, Any],
+    selected_trial_ids: list[str],
+) -> list[dict[str, Any]]:
+    """Build remaining-seed runs for baseline and selected screening candidates."""
+    if spec.get("version") != 6 or plan.get("version") != 4:
+        raise SpecError("confirmation staging requires version-6 session and version-4 plan")
+    top_k = spec["tuning"]["seed_strategy"]["confirmation_top_k"]
+    if (
+        len(selected_trial_ids) != top_k
+        or "baseline" in selected_trial_ids
+        or len(set(selected_trial_ids)) != len(selected_trial_ids)
+    ):
+        raise SpecError("confirmation selection must contain exact unique non-baseline top_k")
+    trials = {trial["trial_id"]: trial for trial in plan["trials"]}
+    unknown = sorted(set(selected_trial_ids) - set(trials))
+    if unknown:
+        raise SpecError(f"confirmation selection contains unknown trials: {unknown}")
+    chosen = ["baseline", *selected_trial_ids]
+    remaining = plan["stages"]["confirmation"]["remaining_seeds"]
+    return [
+        {
+            "run_id": (
+                f"{spec['training']['run_id']}--confirmation--"
+                f"{trial_id}--seed-{seed}"
+            ),
+            "stage": "confirmation",
+            "trial_id": trial_id,
+            "seed": seed,
+            "overrides": trials[trial_id]["overrides"],
+        }
+        for trial_id in chosen
+        for seed in remaining
+    ]
 
 
 def main() -> int:

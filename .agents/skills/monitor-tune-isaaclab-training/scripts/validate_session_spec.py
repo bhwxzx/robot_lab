@@ -8,8 +8,10 @@ import json
 import math
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from string import Formatter
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from algorithm_profiles import (
     DEFAULT_REGISTRY_PATH,
@@ -51,6 +53,33 @@ SCENARIO_CATEGORIES = {
     "latency",
 }
 AGGREGATIONS = {"max", "min", "mean"}
+HARDWARE_FEEDBACK_OUTPUT_MODES = {
+    "proposal_only",
+    "prepare_authorized_draft",
+}
+EXECUTION_PLACEHOLDERS = {
+    "effective_config_path",
+    "gpu_index",
+    "overrides_json",
+    "result_path",
+    "run_dir",
+    "run_id",
+    "seed",
+    "stage",
+    "summary_path",
+    "trial_id",
+}
+REQUIRED_EXECUTION_PLACEHOLDERS = {
+    "effective_config_path",
+    "overrides_json",
+    "result_path",
+    "run_dir",
+    "run_id",
+    "seed",
+    "stage",
+    "summary_path",
+    "trial_id",
+}
 
 
 class SpecError(ValueError):
@@ -164,14 +193,20 @@ def _validate_parameter(parameter: Any, index: int) -> dict[str, Any]:
     return obj
 
 
-def _validate_objectives(value: Any) -> list[dict[str, Any]]:
+def _validate_objectives(
+    value: Any,
+    version: int = 5,
+) -> list[dict[str, Any]]:
     if not isinstance(value, list) or not value:
         raise SpecError("tuning.objectives must be a non-empty array")
     seen: set[str] = set()
     for index, item in enumerate(value):
         path = f"tuning.objectives[{index}]"
         obj = _expect_object(item, path)
-        _check_keys(obj, {"metric", "goal", "weight"}, path)
+        allowed = {"metric", "goal", "weight"}
+        if version >= 6:
+            allowed.add("minimum_improvement")
+        _check_keys(obj, allowed, path)
         metric = _expect_nonempty_string(obj.get("metric"), f"{path}.metric")
         if metric in seen:
             raise SpecError(f"{path}.metric duplicates {metric}")
@@ -181,21 +216,301 @@ def _validate_objectives(value: Any) -> list[dict[str, Any]]:
         weight = _expect_number(obj.get("weight"), f"{path}.weight")
         if weight <= 0:
             raise SpecError(f"{path}.weight must be positive")
+        if "minimum_improvement" in obj:
+            improvement = _expect_number(
+                obj["minimum_improvement"],
+                f"{path}.minimum_improvement",
+            )
+            if improvement < 0:
+                raise SpecError(
+                    f"{path}.minimum_improvement must be non-negative"
+                )
     return value
 
 
-def _validate_constraints(value: Any) -> list[dict[str, Any]]:
+def _validate_constraints(
+    value: Any,
+    version: int = 5,
+) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         raise SpecError("tuning.constraints must be an array")
     for index, item in enumerate(value):
         path = f"tuning.constraints[{index}]"
         obj = _expect_object(item, path)
-        _check_keys(obj, {"metric", "op", "value"}, path)
+        allowed = {"metric", "op", "value"}
+        if version >= 6:
+            allowed.add("scope")
+        _check_keys(obj, allowed, path)
         _expect_nonempty_string(obj.get("metric"), f"{path}.metric")
         if obj.get("op") not in {"<=", ">=", "<", ">"}:
             raise SpecError(f"{path}.op must be one of <=, >=, <, >")
         _expect_number(obj.get("value"), f"{path}.value")
+        if "scope" in obj and obj["scope"] not in {"mean", "each_seed"}:
+            raise SpecError(f"{path}.scope must be mean or each_seed")
     return value
+
+
+def _validate_hardware_feedback_contract(
+    value: Any,
+    version: int,
+    mode: str,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if version not in {5, 6}:
+        raise SpecError(
+            "hardware feedback authorization requires session version 5 or 6"
+        )
+    contract = _expect_object(value, "hardware_feedback")
+    _check_keys(
+        contract,
+        {
+            "enabled",
+            "output_mode",
+            "output_dir",
+            "require_policy_manifest",
+            "verify_artifact_hashes",
+            "stop_on_safety_event",
+            "require_new_session_approval",
+        },
+        "hardware_feedback",
+    )
+    enabled = _expect_bool(contract.get("enabled"), "hardware_feedback.enabled")
+    output_mode = contract.get("output_mode")
+    if output_mode not in HARDWARE_FEEDBACK_OUTPUT_MODES:
+        raise SpecError(
+            "hardware_feedback.output_mode must be proposal_only or "
+            "prepare_authorized_draft"
+        )
+    output_dir = Path(
+        _expect_nonempty_string(
+            contract.get("output_dir"),
+            "hardware_feedback.output_dir",
+        )
+    )
+    if not output_dir.is_absolute():
+        raise SpecError("hardware_feedback.output_dir must be an absolute path")
+    required_true = {
+        "require_policy_manifest":
+            "hardware feedback must bind to an archived policy manifest",
+        "verify_artifact_hashes":
+            "hardware feedback must verify JIT and ONNX hashes",
+        "stop_on_safety_event":
+            "hardware feedback must stop on a safety event",
+        "require_new_session_approval":
+            "feedback-driven retuning requires a newly approved session",
+    }
+    for field, message in required_true.items():
+        if not _expect_bool(
+            contract.get(field),
+            f"hardware_feedback.{field}",
+        ):
+            raise SpecError(message)
+    if (
+        enabled
+        and output_mode == "prepare_authorized_draft"
+        and mode != "tune"
+    ):
+        raise SpecError(
+            "prepare_authorized_draft requires tune mode and existing "
+            "authorized parameter domains"
+        )
+    return contract
+
+
+def _validate_seed_array(
+    value: Any,
+    path: str,
+    minimum_length: int = 1,
+) -> list[int]:
+    if not isinstance(value, list) or len(value) < minimum_length:
+        raise SpecError(
+            f"{path} must contain at least {minimum_length} seed(s)"
+        )
+    if len(value) > 16:
+        raise SpecError(f"{path} may contain at most 16 seeds")
+    for index, seed in enumerate(value):
+        _expect_int(seed, f"{path}[{index}]", 0, 2**31 - 1)
+    if len(value) != len(set(value)):
+        raise SpecError(f"{path} must contain unique seeds")
+    return value
+
+
+def _validate_execution_template(value: Any) -> list[str]:
+    argv = _validate_argv(value, "execution.run_command")
+    placeholders: set[str] = set()
+    for index, token in enumerate(argv):
+        try:
+            parsed = list(Formatter().parse(token))
+        except ValueError as exc:
+            raise SpecError(
+                f"execution.run_command[{index}] has invalid braces: {exc}"
+            ) from exc
+        found = {
+            field_name
+            for _, field_name, _, _ in parsed
+            if field_name is not None
+        }
+        unknown = sorted(found - EXECUTION_PLACEHOLDERS)
+        if unknown:
+            raise SpecError(
+                "execution.run_command"
+                f"[{index}] contains unknown placeholder(s): {', '.join(unknown)}"
+            )
+        if any(
+            field_name is not None and (format_spec or conversion)
+            for _, field_name, format_spec, conversion in parsed
+        ):
+            raise SpecError(
+                f"execution.run_command[{index}] cannot format or convert placeholders"
+            )
+        placeholders.update(found)
+    missing = sorted(REQUIRED_EXECUTION_PLACEHOLDERS - placeholders)
+    if missing:
+        raise SpecError(
+            "execution.run_command is missing required placeholder(s): "
+            + ", ".join(missing)
+        )
+    return argv
+
+
+def _validate_execution_contract(
+    value: Any,
+    version: int,
+    mode: str,
+    monitoring_gpu_index: int | None,
+) -> dict[str, Any] | None:
+    if value is None:
+        if version == 6 and mode == "tune":
+            raise SpecError("version-6 tune sessions require execution")
+        return None
+    if version != 6:
+        raise SpecError("execution authorization requires session version 6")
+    if mode != "tune":
+        raise SpecError("execution authorization requires tune mode")
+    execution = _expect_object(value, "execution")
+    _check_keys(
+        execution,
+        {
+            "enabled",
+            "state_dir",
+            "run_command",
+            "gpu_index",
+            "require_idle_gpu",
+            "max_retries_per_run",
+            "effective_config",
+            "quality_rules",
+            "nonfinite_action",
+        },
+        "execution",
+    )
+    if not _expect_bool(execution.get("enabled"), "execution.enabled"):
+        raise SpecError("version-6 tune execution must be enabled")
+    state_dir = Path(
+        _expect_nonempty_string(execution.get("state_dir"), "execution.state_dir")
+    )
+    if not state_dir.is_absolute():
+        raise SpecError("execution.state_dir must be an absolute path")
+    _validate_execution_template(execution.get("run_command"))
+    gpu_index = _expect_int(
+        execution.get("gpu_index"),
+        "execution.gpu_index",
+        0,
+        1024,
+    )
+    if monitoring_gpu_index is not None and gpu_index != monitoring_gpu_index:
+        raise SpecError(
+            "execution.gpu_index must match monitoring.gpu_index"
+        )
+    if not _expect_bool(
+        execution.get("require_idle_gpu"),
+        "execution.require_idle_gpu",
+    ):
+        raise SpecError("version-6 execution must require an idle GPU")
+    _expect_int(
+        execution.get("max_retries_per_run"),
+        "execution.max_retries_per_run",
+        0,
+        3,
+    )
+    effective = _expect_object(
+        execution.get("effective_config"),
+        "execution.effective_config",
+    )
+    _check_keys(
+        effective,
+        {
+            "enabled",
+            "baseline_path",
+            "require_exact_override_match",
+        },
+        "execution.effective_config",
+    )
+    if not _expect_bool(
+        effective.get("enabled"),
+        "execution.effective_config.enabled",
+    ):
+        raise SpecError("version-6 execution requires effective config checks")
+    baseline_path = Path(
+        _expect_nonempty_string(
+            effective.get("baseline_path"),
+            "execution.effective_config.baseline_path",
+        )
+    )
+    if not baseline_path.is_absolute():
+        raise SpecError(
+            "execution.effective_config.baseline_path must be absolute"
+        )
+    if not _expect_bool(
+        effective.get("require_exact_override_match"),
+        "execution.effective_config.require_exact_override_match",
+    ):
+        raise SpecError("effective config must require exact override matching")
+
+    rules = execution.get("quality_rules")
+    if not isinstance(rules, list):
+        raise SpecError("execution.quality_rules must be an array")
+    if len(rules) > 64:
+        raise SpecError("execution.quality_rules may contain at most 64 rules")
+    seen_rule_ids: set[str] = set()
+    for index, rule_value in enumerate(rules):
+        path = f"execution.quality_rules[{index}]"
+        rule = _expect_object(rule_value, path)
+        _check_keys(
+            rule,
+            {
+                "id",
+                "metric",
+                "op",
+                "value",
+                "consecutive_windows",
+                "action",
+            },
+            path,
+        )
+        rule_id = _expect_nonempty_string(rule.get("id"), f"{path}.id")
+        if not IDENTIFIER_RE.fullmatch(rule_id):
+            raise SpecError(f"{path}.id contains unsupported characters")
+        if rule_id in seen_rule_ids:
+            raise SpecError(f"{path}.id duplicates {rule_id}")
+        seen_rule_ids.add(rule_id)
+        _expect_nonempty_string(rule.get("metric"), f"{path}.metric")
+        if rule.get("op") not in {"<=", ">=", "<", ">"}:
+            raise SpecError(f"{path}.op must be one of <=, >=, <, >")
+        _expect_number(rule.get("value"), f"{path}.value")
+        _expect_int(
+            rule.get("consecutive_windows"),
+            f"{path}.consecutive_windows",
+            1,
+            100,
+        )
+        if rule.get("action") not in {"mark_suspect", "stop_trial"}:
+            raise SpecError(
+                f"{path}.action must be mark_suspect or stop_trial"
+            )
+    if execution.get("nonfinite_action") != "stop_trial":
+        raise SpecError("execution.nonfinite_action must be stop_trial")
+    return execution
 
 
 def _validate_evaluation(
@@ -587,6 +902,139 @@ def _validate_evaluation(
     return evaluation
 
 
+def _validate_archive(
+    value: Any,
+    version: int,
+    mode: str,
+    evaluation: dict[str, Any] | None,
+    remove_created_temp_files: bool,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if version < 4:
+        raise SpecError(
+            "policy archive authorization requires session version 4, 5, or 6"
+        )
+    archive = _expect_object(value, "archive")
+    _check_keys(
+        archive,
+        {
+            "enabled",
+            "copy_after_qualification",
+            "storage_root",
+            "collection",
+            "directory_naming",
+            "timezone",
+            "required_artifacts",
+            "require_clean_git_worktree",
+            "write_manifest",
+            "description_notes",
+            "git_action",
+        },
+        "archive",
+    )
+    enabled = _expect_bool(archive.get("enabled"), "archive.enabled")
+    copy_after = _expect_bool(
+        archive.get("copy_after_qualification"),
+        "archive.copy_after_qualification",
+    )
+    if not enabled:
+        if copy_after:
+            raise SpecError(
+                "archive.copy_after_qualification cannot be true when archive is disabled"
+            )
+        return archive
+    if mode != "tune":
+        raise SpecError("policy archive requires tune mode")
+    if not copy_after:
+        raise SpecError(
+            "enabled archive must set copy_after_qualification=true"
+        )
+    if not isinstance(evaluation, dict) or not evaluation.get("enabled"):
+        raise SpecError("policy archive requires enabled final policy evaluation")
+
+    storage_root = Path(
+        _expect_nonempty_string(
+            archive.get("storage_root"),
+            "archive.storage_root",
+        )
+    )
+    if not storage_root.is_absolute():
+        raise SpecError("archive.storage_root must be an absolute path")
+
+    collection = _expect_nonempty_string(
+        archive.get("collection"),
+        "archive.collection",
+    )
+    collection_path = PurePosixPath(collection)
+    if (
+        collection_path.is_absolute()
+        or not collection_path.parts
+        or any(
+            part in {"", ".", ".."} or not IDENTIFIER_RE.fullmatch(part)
+            for part in collection_path.parts
+        )
+    ):
+        raise SpecError(
+            "archive.collection must be a safe relative POSIX path"
+        )
+    if archive.get("directory_naming") != "local_timestamp_seconds":
+        raise SpecError(
+            "archive.directory_naming must be local_timestamp_seconds"
+        )
+    timezone_name = _expect_nonempty_string(
+        archive.get("timezone"),
+        "archive.timezone",
+    )
+    try:
+        ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError as exc:
+        raise SpecError("archive.timezone is not available") from exc
+
+    required_artifacts = archive.get("required_artifacts")
+    if (
+        not isinstance(required_artifacts, list)
+        or len(required_artifacts) != 2
+        or set(required_artifacts) != {"jit", "onnx"}
+    ):
+        raise SpecError(
+            "archive.required_artifacts must contain exactly jit and onnx"
+        )
+    evaluation_required = {
+        artifact["kind"]
+        for artifact in evaluation["artifacts"]
+        if artifact["required"]
+    }
+    if not {"jit", "onnx"} <= evaluation_required:
+        raise SpecError(
+            "archive requires jit and onnx to be required evaluation artifacts"
+        )
+    if not _expect_bool(
+        archive.get("require_clean_git_worktree"),
+        "archive.require_clean_git_worktree",
+    ):
+        raise SpecError("policy archive requires a clean storage Git worktree")
+    if not _expect_bool(
+        archive.get("write_manifest"),
+        "archive.write_manifest",
+    ):
+        raise SpecError("policy archive requires archive_manifest.json")
+    notes = archive.get("description_notes")
+    if not isinstance(notes, str):
+        raise SpecError("archive.description_notes must be a string")
+    if len(notes) > 4000:
+        raise SpecError(
+            "archive.description_notes may contain at most 4000 characters"
+        )
+    if archive.get("git_action") != "none":
+        raise SpecError("archive.git_action must be none")
+    if not remove_created_temp_files:
+        raise SpecError(
+            "policy archive requires cleanup.remove_created_temp_files=true"
+        )
+    return archive
+
+
 def validate_spec(
     spec: Any,
     registry_path: str | Path = DEFAULT_REGISTRY_PATH,
@@ -604,13 +1052,17 @@ def validate_spec(
             "recovery",
             "tuning",
             "evaluation",
+            "archive",
+            "hardware_feedback",
+            "execution",
             "cleanup",
         },
         "session",
     )
 
-    if root.get("version") != 3:
-        raise SpecError("version must be 3")
+    version = root.get("version")
+    if version not in {3, 4, 5, 6}:
+        raise SpecError("version must be 3, 4, 5, or 6")
     mode = root.get("mode")
     if mode not in {"monitor", "tune"}:
         raise SpecError("mode must be monitor or tune")
@@ -679,13 +1131,53 @@ def validate_spec(
         )
 
     training = _expect_object(root.get("training"), "training")
-    _check_keys(training, {"command", "resume_command", "cwd", "log_path", "run_id", "checkpoint_path"}, "training")
+    _check_keys(
+        training,
+        {
+            "command",
+            "resume_command",
+            "cwd",
+            "log_path",
+            "run_id",
+            "checkpoint_path",
+            "source_git_commit",
+            "source_git_dirty",
+        },
+        "training",
+    )
     _validate_argv(training.get("command"), "training.command")
     _expect_nonempty_string(training.get("cwd"), "training.cwd")
     _expect_nonempty_string(training.get("log_path"), "training.log_path")
-    _expect_nonempty_string(training.get("run_id"), "training.run_id")
+    training_run_id = _expect_nonempty_string(
+        training.get("run_id"),
+        "training.run_id",
+    )
+    if version == 6 and not IDENTIFIER_RE.fullmatch(training_run_id):
+        raise SpecError(
+            "version-6 training.run_id must contain only letters, digits, "
+            "dot, underscore, or hyphen"
+        )
     if "checkpoint_path" in training:
         _expect_nonempty_string(training["checkpoint_path"], "training.checkpoint_path")
+    has_source_commit = "source_git_commit" in training
+    has_source_dirty = "source_git_dirty" in training
+    if has_source_commit != has_source_dirty:
+        raise SpecError(
+            "training.source_git_commit and source_git_dirty must appear together"
+        )
+    if has_source_commit:
+        source_commit = _expect_nonempty_string(
+            training["source_git_commit"],
+            "training.source_git_commit",
+        )
+        if not re.fullmatch(r"[0-9a-f]{40}", source_commit):
+            raise SpecError(
+                "training.source_git_commit must be a full lowercase Git SHA"
+            )
+        _expect_bool(
+            training["source_git_dirty"],
+            "training.source_git_dirty",
+        )
 
     monitoring = _expect_object(root.get("monitoring"), "monitoring")
     _check_keys(
@@ -707,8 +1199,9 @@ def validate_spec(
         raise SpecError("monitoring.stale_after_seconds must be at least the check interval")
     if monitoring.get("pid") is not None:
         _expect_int(monitoring["pid"], "monitoring.pid", 1, 2**31 - 1)
-    if monitoring.get("gpu_index") is not None:
-        _expect_int(monitoring["gpu_index"], "monitoring.gpu_index", 0, 1024)
+    monitoring_gpu_index = monitoring.get("gpu_index")
+    if monitoring_gpu_index is not None:
+        _expect_int(monitoring_gpu_index, "monitoring.gpu_index", 0, 1024)
     if monitoring.get("tensorboard_path") is not None:
         _expect_nonempty_string(
             monitoring["tensorboard_path"], "monitoring.tensorboard_path"
@@ -739,9 +1232,38 @@ def validate_spec(
 
     cleanup = _expect_object(root.get("cleanup"), "cleanup")
     _check_keys(cleanup, {"remove_created_temp_files"}, "cleanup")
-    _expect_bool(cleanup.get("remove_created_temp_files"), "cleanup.remove_created_temp_files")
+    remove_created_temp_files = _expect_bool(
+        cleanup.get("remove_created_temp_files"),
+        "cleanup.remove_created_temp_files",
+    )
 
-    _validate_evaluation(root.get("evaluation"), profile, mode)
+    evaluation = _validate_evaluation(root.get("evaluation"), profile, mode)
+    _validate_hardware_feedback_contract(
+        root.get("hardware_feedback"),
+        version,
+        mode,
+    )
+    _validate_execution_contract(
+        root.get("execution"),
+        version,
+        mode,
+        monitoring_gpu_index,
+    )
+    archive_contract = _validate_archive(
+        root.get("archive"),
+        version,
+        mode,
+        evaluation,
+        remove_created_temp_files,
+    )
+    if (
+        isinstance(archive_contract, dict)
+        and archive_contract.get("enabled")
+        and not has_source_commit
+    ):
+        raise SpecError(
+            "policy archive requires the recorded training source Git state"
+        )
 
     if mode == "monitor":
         if root.get("tuning") is not None:
@@ -761,6 +1283,8 @@ def validate_spec(
             "mutation_scope",
             "objectives",
             "constraints",
+            "seed_strategy",
+            "ranking",
         },
         "tuning",
     )
@@ -790,21 +1314,95 @@ def validate_spec(
             raise SpecError(f"protected parameter requires an exact unlock entry: {path}")
 
     _expect_int(tuning.get("max_trials"), "tuning.max_trials", 2, 64)
-    seeds = tuning.get("seeds")
-    if not isinstance(seeds, list) or not seeds:
-        raise SpecError("tuning.seeds must be a non-empty array")
-    if len(seeds) > 16:
-        raise SpecError("tuning.seeds may contain at most 16 seeds")
-    for index, seed in enumerate(seeds):
-        _expect_int(seed, f"tuning.seeds[{index}]", 0, 2**31 - 1)
-    if len(set(seeds)) != len(seeds):
-        raise SpecError("tuning.seeds must be unique")
+    seeds = _validate_seed_array(tuning.get("seeds"), "tuning.seeds")
     _expect_int(tuning.get("trial_timeout_minutes"), "tuning.trial_timeout_minutes", 1, 10080)
     _expect_int(tuning.get("max_concurrent_trials"), "tuning.max_concurrent_trials", 1, 8)
     if tuning.get("mutation_scope") != "overrides_only":
         raise SpecError("tuning.mutation_scope must be overrides_only")
-    _validate_objectives(tuning.get("objectives"))
-    _validate_constraints(tuning.get("constraints", []))
+    _validate_objectives(tuning.get("objectives"), version)
+    _validate_constraints(tuning.get("constraints", []), version)
+    if version == 6:
+        seed_strategy = _expect_object(
+            tuning.get("seed_strategy"),
+            "tuning.seed_strategy",
+        )
+        _check_keys(
+            seed_strategy,
+            {
+                "screening_seeds",
+                "confirmation_seeds",
+                "confirmation_top_k",
+            },
+            "tuning.seed_strategy",
+        )
+        screening_seeds = _validate_seed_array(
+            seed_strategy.get("screening_seeds"),
+            "tuning.seed_strategy.screening_seeds",
+        )
+        confirmation_seeds = _validate_seed_array(
+            seed_strategy.get("confirmation_seeds"),
+            "tuning.seed_strategy.confirmation_seeds",
+            minimum_length=2,
+        )
+        if not set(screening_seeds) <= set(confirmation_seeds):
+            raise SpecError(
+                "screening seeds must be a subset of confirmation seeds"
+            )
+        if set(screening_seeds) == set(confirmation_seeds):
+            raise SpecError(
+                "screening seeds must be a proper subset of confirmation seeds"
+            )
+        if confirmation_seeds != seeds:
+            raise SpecError(
+                "tuning.seeds must exactly equal confirmation_seeds"
+            )
+        top_k = _expect_int(
+            seed_strategy.get("confirmation_top_k"),
+            "tuning.seed_strategy.confirmation_top_k",
+            1,
+            63,
+        )
+        if top_k >= tuning["max_trials"]:
+            raise SpecError(
+                "confirmation_top_k must be less than tuning.max_trials"
+            )
+        ranking = _expect_object(tuning.get("ranking"), "tuning.ranking")
+        _check_keys(
+            ranking,
+            {
+                "require_paired_baseline",
+                "constraint_scope",
+                "minimum_final_training_seeds",
+                "pareto_front_required",
+            },
+            "tuning.ranking",
+        )
+        for field in ("require_paired_baseline", "pareto_front_required"):
+            if not _expect_bool(ranking.get(field), f"tuning.ranking.{field}"):
+                raise SpecError(f"tuning.ranking.{field} must be true")
+        if ranking.get("constraint_scope") != "each_seed":
+            raise SpecError(
+                "tuning.ranking.constraint_scope must be each_seed"
+            )
+        minimum_final = _expect_int(
+            ranking.get("minimum_final_training_seeds"),
+            "tuning.ranking.minimum_final_training_seeds",
+            2,
+            16,
+        )
+        if minimum_final > len(confirmation_seeds):
+            raise SpecError(
+                "minimum_final_training_seeds exceeds confirmation seed count"
+            )
+        for constraint in tuning.get("constraints", []):
+            if constraint.get("scope", "each_seed") != "each_seed":
+                raise SpecError(
+                    "version-6 constraints must use scope=each_seed"
+                )
+    elif "seed_strategy" in tuning or "ranking" in tuning:
+        raise SpecError(
+            "seed_strategy and ranking require session version 6"
+        )
     return root
 
 

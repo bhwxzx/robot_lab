@@ -1,12 +1,21 @@
 # Session authorization specification
 
-Use JSON version `3`. Resolve the algorithm profile before approval, then validate with `scripts/validate_session_spec.py`.
+Use JSON version `6` for automated staged trial execution and robust multi-seed
+ranking. Version `6` also supports physical deployment feedback. Version `5`
+remains valid for feedback workflows without the executor, version `4` remains
+valid for policy evaluation and archival without hardware feedback, and
+version `3` remains accepted only for legacy sessions without `archive`.
+Resolve the algorithm profile before approval, then validate with
+`scripts/validate_session_spec.py`.
 
 ## Contents
 
 - Monitor example
 - Tune fields
+- Automated execution
 - Final policy evaluation
+- Qualified policy archive
+- Hardware-feedback retuning
 - Runtime progress snapshot
 - Results format
 
@@ -14,7 +23,7 @@ Use JSON version `3`. Resolve the algorithm profile before approval, then valida
 
 ```json
 {
-  "version": 3,
+  "version": 5,
   "mode": "monitor",
   "algorithm": {
     "backend": "rsl_rl",
@@ -62,6 +71,9 @@ Use JSON version `3`. Resolve the algorithm profile before approval, then valida
   },
   "tuning": null,
   "evaluation": null,
+  "archive": null,
+  "hardware_feedback": null,
+  "execution": null,
   "cleanup": {
     "remove_created_temp_files": true
   }
@@ -82,7 +94,8 @@ Set `pid` after starting or attaching. The validator checks profile-required res
 
 ## Tune fields
 
-Change `mode` to `tune` and replace `tuning`:
+For a version-6 automated run, change `version` to `6`, change `mode` to
+`tune`, and replace `tuning`:
 
 ```json
 {
@@ -105,6 +118,17 @@ Change `mode` to `tune` and replace `tuning`:
   "protected_parameters_unlocked": [],
   "max_trials": 6,
   "seeds": [42, 43, 44],
+  "seed_strategy": {
+    "screening_seeds": [42],
+    "confirmation_seeds": [42, 43, 44],
+    "confirmation_top_k": 2
+  },
+  "ranking": {
+    "require_paired_baseline": true,
+    "constraint_scope": "each_seed",
+    "minimum_final_training_seeds": 3,
+    "pareto_front_required": true
+  },
   "trial_timeout_minutes": 120,
   "max_concurrent_trials": 1,
   "mutation_scope": "overrides_only",
@@ -112,7 +136,8 @@ Change `mode` to `tune` and replace `tuning`:
     {
       "metric": "mean_reward",
       "goal": "maximize",
-      "weight": 1
+      "weight": 1,
+      "minimum_improvement": 1.0
     },
     {
       "metric": "error_vel_xy",
@@ -124,7 +149,8 @@ Change `mode` to `tune` and replace `tuning`:
     {
       "metric": "illegal_contact",
       "op": "<=",
-      "value": 0.06
+      "value": 0.06,
+      "scope": "each_seed"
     }
   ]
 }
@@ -132,9 +158,74 @@ Change `mode` to `tune` and replace `tuning`:
 
 Treat all example parameter paths as illustrative. Inspect the current effective configuration first.
 
-`max_trials` includes the unchanged baseline. Every configuration runs every listed seed. The plan builder selects a deterministic bounded subset when the authorized grid is larger than the budget.
+`max_trials` includes the unchanged baseline. Every configuration runs the same
+screening seeds. The baseline and selected top-k candidates then run the
+remaining confirmation seeds. `seeds` must exactly equal
+`confirmation_seeds`, and screening must be a proper subset so confirmation
+adds independent evidence. The plan builder selects a deterministic bounded
+subset when the authorized grid is larger than the budget. The grid must expose
+at least `confirmation_top_k` non-baseline trials.
 
 Any allowed path matched by the selected profile's protected patterns also requires the exact same path in `protected_parameters_unlocked`.
+
+Versions 3–5 retain the static plan: every trial runs every listed `seeds`
+entry and they do not accept `seed_strategy`, `ranking`, or `execution`.
+
+## Automated execution
+
+Version-6 tune sessions require a root-level `execution` object:
+
+```json
+{
+  "enabled": true,
+  "state_dir": "/absolute/path/to/tuning_execution",
+  "run_command": [
+    "conda", "run", "-n", "isaacsim-5.1", "python",
+    "/absolute/path/to/approved_training_adapter.py",
+    "--seed={seed}",
+    "--trial-id={trial_id}",
+    "--stage={stage}",
+    "--run-id={run_id}",
+    "--run-dir={run_dir}",
+    "--overrides-json={overrides_json}",
+    "--result={result_path}",
+    "--summary={summary_path}",
+    "--effective-config={effective_config_path}",
+    "--device=cuda:{gpu_index}"
+  ],
+  "gpu_index": 0,
+  "require_idle_gpu": true,
+  "max_retries_per_run": 0,
+  "effective_config": {
+    "enabled": true,
+    "baseline_path": "/absolute/path/to/baseline_effective_config.json",
+    "require_exact_override_match": true
+  },
+  "quality_rules": [
+    {
+      "id": "throughput-collapse",
+      "metric": "steps_per_second",
+      "op": "<",
+      "value": 10000,
+      "consecutive_windows": 3,
+      "action": "mark_suspect"
+    }
+  ],
+  "nonfinite_action": "stop_trial"
+}
+```
+
+All required placeholders must appear exactly in the approved argv template;
+`gpu_index` is optional only as a placeholder, not as an execution field.
+`state_dir` and the effective baseline must be absolute regular paths.
+`require_idle_gpu` and exact override matching must be true. Retries are
+bounded from zero through three.
+
+The child adapter must atomically refresh `summary_path`, write the complete
+effective JSON configuration to `effective_config_path`, and write a finite
+completed result to `result_path`. Read
+`execution-and-robust-ranking.md` for state transitions, output schemas,
+anomaly semantics, and commands.
 
 ## Final policy evaluation
 
@@ -279,6 +370,78 @@ training candidate but must leave `final_selection` null. Enabling
 `allow_retune_on_failure` does not add parameters; it only permits another
 bounded trial using the existing authorized tuning paths.
 
+## Qualified policy archive
+
+Policy archival is a separate external-write authorization. It is available
+only in a version-4, version-5, or version-6 tune session after final policy
+evaluation. The evaluation
+must mark both `jit` and `onnx` artifact entries as required.
+
+Record the training source state in `training` when the run starts:
+
+```json
+{
+  "source_git_commit": "0123456789abcdef0123456789abcdef01234567",
+  "source_git_dirty": false
+}
+```
+
+Use the full commit SHA. If the training source was dirty, preserve that fact;
+do not substitute the later archive-time worktree state.
+
+```json
+{
+  "enabled": true,
+  "copy_after_qualification": true,
+  "storage_root": "/home/young/liufengrong/policy_storage",
+  "collection": "LW/leg_loco",
+  "directory_naming": "local_timestamp_seconds",
+  "timezone": "Asia/Shanghai",
+  "required_artifacts": ["jit", "onnx"],
+  "require_clean_git_worktree": true,
+  "write_manifest": true,
+  "description_notes": "rough terrain policy; supervised hardware test candidate",
+  "git_action": "none"
+}
+```
+
+Set the root-level `archive` field to this object. The collection must be an
+existing safe relative path under the exact Git worktree. The archiver refuses
+dirty storage, symlinks, changed hashes, duplicate pairs, missing formats,
+failed evaluation, absent visual review, and destination collisions.
+
+The operation creates `policy.pt`, `policy.onnx`, `策略说明.txt`, and
+`archive_manifest.json` in one timestamped directory. It never overwrites an
+existing directory and never commits or pushes. The description must say that
+simulation qualification permits only supervised hardware testing and does not
+mean `hardware_ready`.
+
+## Hardware-feedback retuning
+
+Physical feedback processing is a separate version-5 or version-6
+authorization. Read
+`hardware-feedback-retuning.md` before accepting a report or suggesting another
+training cycle.
+
+```json
+{
+  "enabled": true,
+  "output_mode": "proposal_only",
+  "output_dir": "/absolute/path/to/hardware_feedback_results",
+  "require_policy_manifest": true,
+  "verify_artifact_hashes": true,
+  "stop_on_safety_event": true,
+  "require_new_session_approval": true
+}
+```
+
+Set the root-level `hardware_feedback` field to this object. Use
+`proposal_only` for diagnosis without a parameter-choice draft. Use
+`prepare_authorized_draft` only in tune mode; it can expose existing authorized
+parameter options but cannot select them or launch trials. Both modes bind the
+report to an exact archived JIT/ONNX pair and require a new approved session
+before feedback-driven tuning.
+
 ## Runtime progress snapshot
 
 After every check, persist:
@@ -313,4 +476,8 @@ Provide one training row per trial and seed:
 }
 ```
 
-Use `completed` only for a finite, fully evaluated run. The ranker rejects missing seeds, metrics, non-finite values, failed constraints, and an incomplete baseline.
+Use `completed` only for a finite, fully evaluated run. The ranker rejects
+missing seeds, metrics, non-finite values, failed constraints, and an
+incomplete baseline. Version 6 also requires the complete confirmation seed
+set, same-seed baseline pairs, per-seed hard constraints, uncertainty
+statistics, and Pareto evidence.

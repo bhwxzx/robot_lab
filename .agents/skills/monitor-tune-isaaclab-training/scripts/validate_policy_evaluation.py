@@ -378,7 +378,7 @@ def evaluate_results(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("session", help="Validated version-3 session JSON")
+    parser.add_argument("session", help="Validated version-3-through-6 session JSON")
     parser.add_argument("plan", help="Evaluation plan JSON")
     parser.add_argument("results", help="Consolidated evaluation results JSON")
     parser.add_argument("--output", help="Optional JSON output path")
