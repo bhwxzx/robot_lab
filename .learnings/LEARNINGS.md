@@ -21,6 +21,47 @@ Whenever adding a custom network (e.g., `ActorCriticROA`) or algorithm (e.g., `A
 
 ---
 
+## [LRN-20260726-006] best_practice
+
+**Logged**: 2026-07-26T18:52:49+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+训练和评估执行器必须共享主机级 GPU 租约；评估完成证据必须同时绑定策略、
+规范结果和最终视频哈希。
+
+### Details
+如果训练与评估只在各自 state directory 内加 GPU 锁，两者可能同时观察到
+GPU 空闲并竞态启动。只在评估计划生成时校验策略哈希也不足以防止执行前
+替换；只校验 result JSON 则无法证明视频与完成时一致。安全链路应在启动前
+和完成时重复校验 checkpoint/artifact，跨执行器共享同一用户级 GPU 锁，
+并在规范结果晋升时记录 result/video 哈希。结果汇总必须对照执行状态重新
+检查这些哈希。
+
+### Suggested Action
+所有 GPU 子任务使用同一用户和 GPU index 派生的 flock 路径；执行器保留
+attempt 原始输出，只将通过身份、有限值、视频大小和策略哈希检查的结果
+晋升为 canonical output。汇总时传入 executor state，拒绝完成后被修改的
+结果或视频。
+
+### Metadata
+- Source: conversation
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/scripts/execution_safety.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/execute_evaluation_plan.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/collect_evaluation_results.py`
+- Tags: gpu-lock, evaluation, transaction, artifact-hash, video-integrity
+- Pattern-Key: harden.shared_gpu_lease_and_evaluation_evidence
+- Recurrence-Count: 1
+- First-Seen: 2026-07-26
+- Last-Seen: 2026-07-26
+
+### Resolution
+- **Resolved**: 2026-07-26T18:52:49+08:00
+- **Commit/PR**: N/A
+- **Notes**: 共享 GPU 锁和评估证据哈希链已实现，并通过竞态门禁、篡改和恢复故障测试。
+
+---
+
 ## [LRN-20260725-001] correction
 
 **Logged**: 2026-07-25T12:03:00+08:00

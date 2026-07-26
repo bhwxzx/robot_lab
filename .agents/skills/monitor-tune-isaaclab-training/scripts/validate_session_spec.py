@@ -34,6 +34,7 @@ ALLOWED_COMMAND_PLACEHOLDERS = {
     "checkpoint_sha256",
     "command_schedule_json",
     "duration_steps",
+    "executor_run_id",
     "gpu_index",
     "result_path",
     "require_idle_gpu_flag",
@@ -807,6 +808,7 @@ def _validate_evaluation(
             "run_timeout_minutes",
             "allow_reject_candidate",
             "allow_retune_on_failure",
+            "execution",
         },
         "evaluation",
     )
@@ -855,6 +857,9 @@ def _validate_evaluation(
         "run_id",
         "video_path",
     }
+    execution_enabled = evaluation.get("execution") is not None
+    if execution_enabled:
+        required_placeholders.add("executor_run_id")
     for index, item in enumerate(artifacts):
         path = f"evaluation.artifacts[{index}]"
         artifact = _expect_object(item, path)
@@ -889,6 +894,11 @@ def _validate_evaluation(
             raise SpecError(
                 f"{path}.command is missing required placeholder(s): "
                 f"{', '.join(missing_placeholders)}"
+            )
+        if execution_enabled and "{executor_run_id}" not in command:
+            raise SpecError(
+                f"{path}.command must pass {{executor_run_id}} as a "
+                "standalone argv token"
             )
     if len(artifact_kinds) != len(set(artifact_kinds)):
         raise SpecError("evaluation.artifacts contains duplicate kinds")
@@ -1066,7 +1076,12 @@ def _validate_evaluation(
     parity = _expect_object(evaluation.get("parity"), "evaluation.parity")
     _check_keys(
         parity,
-        {"required", "reference_artifact", "max_abs_action_error"},
+        {
+            "required",
+            "reference_artifact",
+            "max_abs_action_error",
+            "closed_loop_metrics",
+        },
         "evaluation.parity",
     )
     parity_required = _expect_bool(
@@ -1088,6 +1103,46 @@ def _validate_evaluation(
     if required_artifacts - {reference} and not parity_required:
         raise SpecError(
             "evaluation.parity.required must be true when multiple artifacts are required"
+        )
+    closed_loop_metrics = parity.get("closed_loop_metrics", [])
+    if not isinstance(closed_loop_metrics, list):
+        raise SpecError(
+            "evaluation.parity.closed_loop_metrics must be an array"
+        )
+    closed_loop_names: list[str] = []
+    for index, metric_value in enumerate(closed_loop_metrics):
+        path = f"evaluation.parity.closed_loop_metrics[{index}]"
+        metric = _expect_object(metric_value, path)
+        _check_keys(
+            metric,
+            {"metric", "max_abs_delta", "aggregation"},
+            path,
+        )
+        metric_name = _expect_nonempty_string(
+            metric.get("metric"),
+            f"{path}.metric",
+        )
+        closed_loop_names.append(metric_name)
+        maximum_delta = _expect_number(
+            metric.get("max_abs_delta"),
+            f"{path}.max_abs_delta",
+        )
+        if maximum_delta < 0:
+            raise SpecError(f"{path}.max_abs_delta must be non-negative")
+        if metric.get("aggregation") not in {"max", "mean"}:
+            raise SpecError(f"{path}.aggregation must be max or mean")
+    if len(closed_loop_names) != len(set(closed_loop_names)):
+        raise SpecError(
+            "evaluation.parity.closed_loop_metrics contains duplicate metrics"
+        )
+    if (
+        execution_enabled
+        and required_artifacts - {reference}
+        and not closed_loop_metrics
+    ):
+        raise SpecError(
+            "automated deployment-artifact evaluation requires at least one "
+            "closed-loop parity metric"
         )
 
     visual = _expect_object(
@@ -1168,6 +1223,74 @@ def _validate_evaluation(
         raise SpecError(
             "evaluation.allow_retune_on_failure requires tune mode"
         )
+    execution_value = evaluation.get("execution")
+    if execution_value is not None:
+        execution = _expect_object(execution_value, "evaluation.execution")
+        _check_keys(
+            execution,
+            {
+                "state_dir",
+                "max_retries_per_run",
+                "stop_grace_seconds",
+                "min_free_disk_gb",
+                "max_gpu_temperature_c",
+                "minimum_video_bytes",
+            },
+            "evaluation.execution",
+        )
+        state_dir = Path(
+            _expect_nonempty_string(
+                execution.get("state_dir"),
+                "evaluation.execution.state_dir",
+            )
+        )
+        if not state_dir.is_absolute():
+            raise SpecError(
+                "evaluation.execution.state_dir must be an absolute path"
+            )
+        try:
+            state_dir.relative_to(output_dir)
+        except ValueError as exc:
+            raise SpecError(
+                "evaluation.execution.state_dir must be inside evaluation.output_dir"
+            ) from exc
+        _expect_int(
+            execution.get("max_retries_per_run"),
+            "evaluation.execution.max_retries_per_run",
+            0,
+            10,
+        )
+        _expect_int(
+            execution.get("stop_grace_seconds"),
+            "evaluation.execution.stop_grace_seconds",
+            1,
+            300,
+        )
+        minimum_free_disk = _expect_number(
+            execution.get("min_free_disk_gb"),
+            "evaluation.execution.min_free_disk_gb",
+        )
+        if minimum_free_disk <= 0:
+            raise SpecError(
+                "evaluation.execution.min_free_disk_gb must be positive"
+            )
+        _expect_int(
+            execution.get("max_gpu_temperature_c"),
+            "evaluation.execution.max_gpu_temperature_c",
+            1,
+            120,
+        )
+        _expect_int(
+            execution.get("minimum_video_bytes"),
+            "evaluation.execution.minimum_video_bytes",
+            1,
+            10_000_000_000,
+        )
+        if evaluation["max_concurrent_runs"] != 1:
+            raise SpecError(
+                "automated evaluation execution currently requires "
+                "evaluation.max_concurrent_runs=1"
+            )
     return evaluation
 
 
