@@ -24,6 +24,7 @@ from validate_hardware_feedback import (  # noqa: E402
     authorized_output_path,
     load_and_validate_feedback,
 )
+from validate_hardware_qualification import qualify  # noqa: E402
 from validate_session_spec import SpecError, validate_spec  # noqa: E402
 
 
@@ -383,6 +384,105 @@ class HardwareFeedbackTests(unittest.TestCase):
             str(self.root / "output" / "proposal.json"),
         )
         self.assertEqual(accepted.name, "proposal.json")
+
+    def test_repeated_physical_matrix_gets_only_bounded_qualification(self) -> None:
+        session = self._session(self._algorithm())
+        session["hardware_feedback"]["qualification"] = {
+            "enabled": True,
+            "final_authority": "supervised_hardware",
+            "minimum_total_tests": 4,
+            "required_scenarios": [
+                "standing",
+                "start_stop",
+                "low_speed",
+                "turn",
+            ],
+            "minimum_tests_per_scenario": 1,
+            "require_high_evidence_confidence": True,
+            "required_telemetry_channels": [
+                "action",
+                "control_timestamp",
+                "imu_roll",
+            ],
+            "require_all_assessments_pass": True,
+            "require_zero_safety_events": True,
+            "status_label": "hardware_validated_for_test_envelope",
+        }
+        session_path, base_feedback_path, base_feedback = self._write_case(session)
+        feedback_paths = []
+        for index, scenario in enumerate(
+            ("standing", "start_stop", "low_speed", "turn"),
+            start=1,
+        ):
+            feedback = json.loads(json.dumps(base_feedback))
+            feedback["feedback_id"] = f"feedback-{index:03d}"
+            feedback["test"]["scenario"] = scenario
+            feedback["test"]["started_at"] = (
+                f"2026-07-26T14:0{index}:00+08:00"
+            )
+            feedback["observations"] = []
+            feedback["user_assessment"] = {
+                "overall": "pass",
+                "notes": "supervised test passed",
+            }
+            video = self.root / f"motion-{index}.mp4"
+            telemetry = self.root / f"telemetry-{index}.csv"
+            video.write_bytes(f"video-{index}".encode())
+            telemetry.write_text(
+                f"t,roll,action\n0,0,{index}\n",
+                encoding="utf-8",
+            )
+            feedback["evidence"]["video_files"] = [
+                {"path": str(video), "sha256": _sha256(video)}
+            ]
+            feedback["evidence"]["telemetry_files"] = [
+                {"path": str(telemetry), "sha256": _sha256(telemetry)}
+            ]
+            path = (
+                base_feedback_path
+                if index == 1
+                else self.root / f"feedback-{index}.json"
+            )
+            path.write_text(json.dumps(feedback), encoding="utf-8")
+            feedback_paths.append(str(path))
+        bundle_path = self.root / "qualification.json"
+        bundle_path.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "qualification_id": "qualification-001",
+                    "feedback_paths": feedback_paths,
+                }
+            ),
+            encoding="utf-8",
+        )
+        report = qualify(session_path, bundle_path)
+        self.assertTrue(report["qualified"])
+        self.assertEqual(
+            report["status"],
+            "hardware_validated_for_test_envelope",
+        )
+        self.assertFalse(report["hardware_ready"])
+        self.assertFalse(report["generalization_claim"])
+        self.assertEqual(report["tested_envelope"]["scenario_test_counts"]["turn"], 1)
+
+        duplicate = json.loads(bundle_path.read_text(encoding="utf-8"))
+        copied_feedback = json.loads(
+            Path(duplicate["feedback_paths"][0]).read_text(encoding="utf-8")
+        )
+        copied_feedback["feedback_id"] = "feedback-duplicate"
+        copied_feedback["test"]["started_at"] = "2026-07-26T14:05:00+08:00"
+        duplicate_path = self.root / "feedback-duplicate.json"
+        duplicate_path.write_text(json.dumps(copied_feedback), encoding="utf-8")
+        duplicate["feedback_paths"][-1] = str(duplicate_path)
+        duplicate_bundle = self.root / "qualification-duplicate.json"
+        duplicate_bundle.write_text(json.dumps(duplicate), encoding="utf-8")
+        blocked = qualify(session_path, duplicate_bundle)
+        self.assertFalse(blocked["qualified"])
+        self.assertIn(
+            "video and telemetry evidence files cannot be reused",
+            blocked["failures"],
+        )
 
 
 if __name__ == "__main__":

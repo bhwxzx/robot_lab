@@ -247,3 +247,40 @@ trial 记录 Git、命令、运行库、GPU 和审批输入文件哈希。
 - **Notes**: 已实现流式摘要、实时非有限检测、warm-up、TensorBoard 辅助证据、事务化 attempt、launch receipt 恢复、截断 journal 尾修复和可复现清单，并通过慢训练、崩塌、NaN、启动失败和恢复测试。真实 PPO smoke 因现有 GPU 训练占用而延期。
 
 ---
+## [FEAT-20260727-001] approval_gated_first_run_configuration
+
+**Logged**: 2026-07-27T16:07:08+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Requested Capability
+训练监督与自动调优 Skill 首次运行时，应引导并配置本机运行目录、Conda、
+GPU、策略仓库，以及双机互通所需的专用 Git coordination 仓库、机器身份和
+worker 分支。
+
+### User Context
+双机通过 Git 邮箱协作需要两边使用一致的远端、机器表和分支，同时每台机器
+又有不同的源码、状态、评估和反馈路径。靠临时手工填写容易把运行文件放入
+源码仓库、泄露凭据、覆盖既有配置，或在未验证环境时直接开始训练。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+增加哈希绑定的 `plan/apply/verify` 首次运行工具。先生成零执行计划并展示
+精确 SHA-256，批准后只创建本地目录、写入新配置和回执、克隆已有私有 HTTPS
+远端；禁止 push、凭据落盘、覆盖、reset、stash、删除和安装。最后只读验证
+Git 根目录/远端、Conda、GPU、目录、policy storage，并让双机分别绑定
+`local_machine_id`。
+
+### Metadata
+- Frequency: first_time
+- Related Features: distributed_git_mailbox, fixed_single_seed, training_watchdog
+
+### Resolution
+- **Resolved**: 2026-07-27T16:07:08+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已实现首次运行计划、精确哈希批准、幂等应用、环境/漂移验证、双机参考流程及安全测试；未创建或写入任何真实远端。
+
+---

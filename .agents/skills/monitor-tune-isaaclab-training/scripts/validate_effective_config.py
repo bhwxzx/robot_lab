@@ -83,8 +83,10 @@ def validate_effective_config(
     runtime_values: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return a hash-bound diff report or reject any unauthorized difference."""
-    if spec.get("version") != 6 or spec.get("mode") != "tune":
-        raise SpecError("effective config validation requires a version-6 tune session")
+    if spec.get("version", 0) < 6 or spec.get("mode") != "tune":
+        raise SpecError(
+            "effective config validation requires a version-6-or-newer tune session"
+        )
     if (
         not baseline_path.is_absolute()
         or not candidate_path.is_absolute()
@@ -161,7 +163,7 @@ def validate_effective_config(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("session", help="Validated version-6 tune session")
+    parser.add_argument("session", help="Validated version-6-or-newer tune session")
     parser.add_argument("baseline", help="Baseline effective config JSON")
     parser.add_argument("candidate", help="Candidate effective config JSON")
     parser.add_argument(

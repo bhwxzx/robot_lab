@@ -173,3 +173,41 @@ ValueError: empty separator
 - **Notes**: 改用 `chr(96)` 构造围栏后，版本 4 会话示例验证通过。
 
 ---
+## [ERR-20260727-001] unittest_path_invocation
+
+**Logged**: 2026-07-27T16:07:08+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+`python -m unittest` 把包含隐藏目录和连字符的文件路径当成模块名时返回
+`ValueError: Empty module name`。
+
+### Error
+```text
+ValueError: Empty module name
+```
+
+### Context
+- Command/operation attempted: 直接把 `.agents/.../test_first_run_configuration.py` 传给 `python -m unittest`
+- Input or parameters used: 文件路径而非可导入模块名
+- Environment details if relevant: `isaacsim-5.1` Python 3.11
+
+### Suggested Fix
+对该测试目录使用 `python -m unittest discover -s ... -p 'test_first_run_configuration.py'`。
+
+### Metadata
+- Reproducible: yes
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/tests/test_first_run_configuration.py`
+- Pattern-Key: tests.unittest_hidden_path_invocation
+- Recurrence-Count: 2
+- First-Seen: 2026-07-27
+- Last-Seen: 2026-07-27
+
+### Resolution
+- **Resolved**: 2026-07-27T16:07:08+08:00
+- **Commit/PR**: N/A
+- **Notes**: 改用 unittest discovery 后首次运行配置测试全部通过。
+
+---

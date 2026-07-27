@@ -1,7 +1,9 @@
 # Session authorization specification
 
-Use JSON version `6` for automated staged trial execution and robust multi-seed
-ranking. Version `6` also supports physical deployment feedback. Version `5`
+Use JSON version `7` for optional multi-host Git-mailbox execution. Use version
+`6` for automated staged trial execution on one host. Versions `6` and `7`
+support explicit fixed-single-seed selection or robust multi-seed ranking and
+physical deployment feedback. Version `5`
 remains valid for feedback workflows without the executor, version `4` remains
 valid for policy evaluation and archival without hardware feedback, and
 version `3` remains accepted only for legacy sessions without `archive`.
@@ -13,6 +15,7 @@ Resolve the algorithm profile before approval, then validate with
 - Monitor example
 - Tune fields
 - Automated execution
+- Distributed Git mailbox
 - Final policy evaluation
 - Qualified policy archive
 - Hardware-feedback retuning
@@ -119,6 +122,7 @@ For a version-6 automated run, change `version` to `6`, change `mode` to
   "max_trials": 6,
   "seeds": [42, 43, 44],
   "seed_strategy": {
+    "mode": "robust_multi_seed",
     "screening_seeds": [42],
     "confirmation_seeds": [42, 43, 44],
     "confirmation_top_k": 2
@@ -166,10 +170,57 @@ adds independent evidence. The plan builder selects a deterministic bounded
 subset when the authorized grid is larger than the budget. The grid must expose
 at least `confirmation_top_k` non-baseline trials.
 
+For the user-approved fixed-seed workflow, use this shape instead:
+
+```json
+{
+  "seeds": [42],
+  "seed_strategy": {
+    "mode": "fixed_single_seed",
+    "screening_seeds": [42],
+    "confirmation_seeds": [42],
+    "confirmation_top_k": 2,
+    "final_authority": "supervised_hardware"
+  },
+  "ranking": {
+    "require_paired_baseline": true,
+    "constraint_scope": "each_seed",
+    "minimum_final_training_seeds": 1,
+    "pareto_front_required": true
+  }
+}
+```
+
+This mode creates no extra confirmation-seed runs. Its training result is
+`single_seed_selected`, not robustly ranked. It requires enabled Play and
+deployment-artifact evaluation plus the supervised hardware qualification
+contract below; it makes no cross-seed or generalization claim.
+
 Any allowed path matched by the selected profile's protected patterns also requires the exact same path in `protected_parameters_unlocked`.
 
 Versions 3–5 retain the static plan: every trial runs every listed `seeds`
 entry and they do not accept `seed_strategy`, `ranking`, or `execution`.
+
+## Distributed Git mailbox
+
+For two or more HTTPS-connected hosts, change the automated tune session to
+version `7`, record a clean full source commit in `training`, and add a
+root-level `distributed` contract. Read
+`distributed-git-mailbox.md` for the complete schema and commands.
+
+Version 7 retains the version-6 execution, seed, ranking, evaluation, archive,
+and hardware-feedback contracts. With `assignment_mode=by_seed`, worker seed
+assignments exactly partition `tuning.seeds`. With `fixed_single_seed`, require
+`assignment_mode=by_trial` and assign the same single seed to every worker;
+candidate trials are then divided deterministically and every exact
+seed-and-overrides combination is published once. Set
+`distributed.calibration.enabled=false` with `worker_ids=[]` for the default
+parameter-search campaign. This deliberately leaves host effects uncontrolled,
+so reports must not claim host invariance. Enable calibration only for a
+separately approved host-effect diagnostic; then `worker_ids` must contain
+every worker exactly once and the unchanged calibration baseline runs on each
+host without entering candidate ranking. Git transports only immutable JSON
+metadata, not model artifacts, videos, logs, or credentials.
 
 ## Automated execution
 
@@ -444,7 +495,7 @@ bounded trial using the existing authorized tuning paths.
 ## Qualified policy archive
 
 Policy archival is a separate external-write authorization. It is available
-only in a version-4, version-5, or version-6 tune session after final policy
+only in a version-4, version-5, version-6, or version-7 tune session after final policy
 evaluation. The evaluation
 must mark both `jit` and `onnx` artifact entries as required.
 
@@ -489,7 +540,7 @@ mean `hardware_ready`.
 
 ## Hardware-feedback retuning
 
-Physical feedback processing is a separate version-5 or version-6
+Physical feedback processing is a separate version-5, version-6, or version-7
 authorization. Read
 `hardware-feedback-retuning.md` before accepting a report or suggesting another
 training cycle.
@@ -502,7 +553,23 @@ training cycle.
   "require_policy_manifest": true,
   "verify_artifact_hashes": true,
   "stop_on_safety_event": true,
-  "require_new_session_approval": true
+  "require_new_session_approval": true,
+  "qualification": {
+    "enabled": true,
+    "final_authority": "supervised_hardware",
+    "minimum_total_tests": 4,
+    "required_scenarios": ["standing", "start_stop", "low_speed", "turn"],
+    "minimum_tests_per_scenario": 1,
+    "require_high_evidence_confidence": true,
+    "required_telemetry_channels": [
+      "action",
+      "control_timestamp",
+      "imu_roll"
+    ],
+    "require_all_assessments_pass": true,
+    "require_zero_safety_events": true,
+    "status_label": "hardware_validated_for_test_envelope"
+  }
 }
 ```
 
@@ -512,6 +579,14 @@ Set the root-level `hardware_feedback` field to this object. Use
 parameter options but cannot select them or launch trials. Both modes bind the
 report to an exact archived JIT/ONNX pair and require a new approved session
 before feedback-driven tuning.
+
+`qualification` is optional for feedback diagnosis but mandatory when
+`fixed_single_seed` names supervised hardware as final authority. The required
+scenario list must contain at least three unique scenarios, and the minimum
+test count must cover each scenario at the approved repetition count. The
+qualification report can state only
+`hardware_validated_for_test_envelope`; it always keeps
+`hardware_ready=false` and `generalization_claim=false`.
 
 ## Runtime progress snapshot
 

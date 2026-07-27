@@ -39,7 +39,23 @@ Use session version `5` and add:
   "require_policy_manifest": true,
   "verify_artifact_hashes": true,
   "stop_on_safety_event": true,
-  "require_new_session_approval": true
+  "require_new_session_approval": true,
+  "qualification": {
+    "enabled": true,
+    "final_authority": "supervised_hardware",
+    "minimum_total_tests": 4,
+    "required_scenarios": ["standing", "start_stop", "low_speed", "turn"],
+    "minimum_tests_per_scenario": 1,
+    "require_high_evidence_confidence": true,
+    "required_telemetry_channels": [
+      "action",
+      "control_timestamp",
+      "imu_roll"
+    ],
+    "require_all_assessments_pass": true,
+    "require_zero_safety_events": true,
+    "status_label": "hardware_validated_for_test_envelope"
+  }
 }
 ```
 
@@ -48,6 +64,10 @@ Set the root-level `hardware_feedback` field to this object.
 parameter-choice draft. `prepare_authorized_draft` requires tune mode and can
 list only the existing `tuning.allowed_parameters`; its output remains
 non-executable and pending user selection and approval.
+
+The `qualification` block is optional unless supervised hardware is the
+approved final authority. It defines a repeated-test matrix and never grants
+unbounded hardware readiness.
 
 ## Feedback record
 
@@ -190,6 +210,24 @@ conda run -n isaacsim-5.1 python \
   --output /absolute/approved/output/RETUNE_PROPOSAL.json
 ```
 
+Aggregate an approved repeated physical-test matrix:
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_hardware_qualification.py \
+  SESSION.json HARDWARE_QUALIFICATION_BUNDLE.json \
+  --output /absolute/approved/output/HARDWARE_QUALIFICATION.json
+```
+
+The bundle contains `version`, `qualification_id`, and a unique array of
+absolute `feedback_paths`. Every feedback item is validated independently.
+Qualification requires one exact artifact/deployment identity, unique
+timestamps and evidence files, the approved scenario coverage, high-confidence
+video and telemetry, required telemetry channels, all-pass assessments, no
+major/critical observations, and zero safety events. A pass is labeled only
+`hardware_validated_for_test_envelope`; the report retains
+`hardware_ready=false` and `generalization_claim=false`.
+
 The proposal classifies the leading cause as safety, incomplete deployment
 contract, deployment runtime/tensor path, hardware/calibration, insufficient
 evidence, no retune, or a training/Sim-to-Real candidate. Training candidates
@@ -199,7 +237,7 @@ categories, and matching existing authorized paths.
 The optional `authorization_draft` deliberately leaves
 `selected_parameter_paths` empty. The user must choose the paths, exact
 domains, objectives, constraints, seeds, trial budget, evaluation scenarios,
-and gates, then approve a new version-5 or version-6 session. Never feed the
+and gates, then approve a new version-5, version-6, or version-7 session. Never feed the
 proposal itself
 to `build_trial_plan.py`.
 

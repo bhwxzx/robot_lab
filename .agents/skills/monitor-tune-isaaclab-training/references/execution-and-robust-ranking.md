@@ -1,41 +1,44 @@
-# Staged execution and robust ranking
+# Staged execution and evidence-aware ranking
 
-Use this workflow only with an approved version-6 tune session. Versions 3–5
+Use this workflow only with an approved version-6 or version-7 tune session. Versions 3–5
 retain their prior static-plan behavior and do not gain execution authority.
 
 ## Contents
 
-- Seed stages
+- Seed modes
 - Execution contract
 - Child command outputs
 - Effective-config gate
 - State transitions and recovery
 - Quality anomaly rules
-- Robust ranking
+- Evidence-aware ranking
 - Commands
 
-## Seed stages
+## Seed modes
 
-Use the same fixed screening seed set for the unchanged baseline and every
-candidate. After screening, retain the baseline and exactly
-`confirmation_top_k` eligible candidates. Run only the remaining confirmation
-seeds for those trials.
+Choose the seed mode before observing results:
 
-The screening set must be a proper subset of the confirmation set.
-Confirmation must contain at least two seeds, and
-`minimum_final_training_seeds` controls whether the final ranking has enough
-independent training evidence. The grid must contain at least
-`confirmation_top_k` non-baseline trials. Choose every seed before observing
-outcomes.
+- `robust_multi_seed`: use the same screening seed set for the unchanged
+  baseline and every candidate. After screening, retain the baseline and exact
+  top-k candidates, then run only their remaining confirmation seeds.
+- `fixed_single_seed`: set `tuning.seeds`, `screening_seeds`, and
+  `confirmation_seeds` to the same one-element array. Rank top-k immediately
+  after screening and create no extra confirmation jobs. Require
+  `final_authority=supervised_hardware`.
+
+Robust mode requires screening to be a proper subset of at least two
+confirmation seeds. Fixed mode requires
+`minimum_final_training_seeds=1`. Both modes require at least
+`confirmation_top_k` non-baseline trials and choose the seed before outcomes.
 
 Do not count repeated resume from the same RNG state as an independent training
-seed. If every run starts from one common pretrained checkpoint, report that
-the seed evidence covers fine-tuning variability rather than full-training
-variability.
+seed. Fixed mode reports `single_seed_selected` and makes no generalization or
+cross-seed robustness claim. Its final acceptance depends on Play/deployment
+artifact checks followed by the approved supervised physical-test matrix.
 
 ## Execution contract
 
-Add root-level `execution` to a version-6 tune session:
+Add root-level `execution` to a version-6 or version-7 tune session:
 
 ```json
 {

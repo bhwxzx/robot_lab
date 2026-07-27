@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import fcntl
 import hashlib
 import importlib.metadata
@@ -249,7 +250,9 @@ def _load_plan(path: Path) -> dict[str, Any]:
         or not isinstance(plan.get("trials"), list)
         or not isinstance(plan.get("stages"), dict)
     ):
-        raise SpecError("version-6 execution requires a version-4 staged trial plan")
+        raise SpecError(
+            "version-6-or-newer execution requires a version-4 staged trial plan"
+        )
     run_ids = [run.get("run_id") for run in plan["runs"]]
     if (
         any(not isinstance(run_id, str) or not run_id for run_id in run_ids)
@@ -269,6 +272,156 @@ def _validate_plan_against_spec(
             "trial plan does not exactly match the validated session; "
             "rebuild it with build_trial_plan.py"
         )
+
+
+def _prepare_distributed_job(
+    spec: dict[str, Any],
+    plan: dict[str, Any],
+    prepared: dict[str, Any],
+    worker_id: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Bind one published version-7 job to an isolated local executor state."""
+    if spec.get("version") != 7:
+        raise SpecError("distributed job execution requires a version-7 session")
+    _validate_plan_against_spec(spec, plan)
+    if (
+        prepared.get("schema_version") != 1
+        or not isinstance(prepared.get("job"), dict)
+        or not isinstance(prepared.get("receipt"), dict)
+        or prepared.get("job_sha256") != _object_sha256(prepared["job"])
+        or prepared.get("receipt_sha256")
+        != _object_sha256(prepared["receipt"])
+    ):
+        raise SpecError("prepared distributed job or receipt hash is invalid")
+    job = prepared["job"]
+    receipt = prepared["receipt"]
+    distributed = spec["distributed"]
+    worker = next(
+        (item for item in distributed["workers"] if item["id"] == worker_id),
+        None,
+    )
+    if worker is None:
+        raise SpecError(f"distributed job names unknown worker {worker_id}")
+    if (
+        job.get("schema_version") != 1
+        or job.get("campaign_id") != distributed["campaign_id"]
+        or job.get("worker_id") != worker_id
+        or job.get("worker_branch") != worker["branch"]
+        or job.get("session_sha256") != _object_sha256(spec)
+        or job.get("plan_sha256") != _object_sha256(plan)
+        or job.get("source_git_commit") != spec["training"]["source_git_commit"]
+    ):
+        raise SpecError("distributed job identity or hash binding failed")
+    if (
+        receipt.get("event") != "claimed"
+        or receipt.get("job_sha256") != prepared["job_sha256"]
+        or receipt.get("worker_id") != worker_id
+        or receipt.get("job_id") != job.get("job_id")
+    ):
+        raise SpecError("prepared distributed claim receipt binding failed")
+    run = job.get("run")
+    if not isinstance(run, dict) or job.get("job_id") != run.get("run_id"):
+        raise SpecError("distributed job run identity is invalid")
+    kind = job.get("kind")
+    if kind == "trial":
+        if not any(run == approved for approved in plan["runs"]):
+            selection = job.get("selection")
+            if (
+                not isinstance(selection, dict)
+                or job.get("selection_sha256") != _object_sha256(selection)
+                or selection.get("campaign_id") != distributed["campaign_id"]
+                or selection.get("session_sha256") != _object_sha256(spec)
+                or selection.get("plan_sha256") != _object_sha256(plan)
+                or not isinstance(selection.get("selected_trial_ids"), list)
+            ):
+                raise SpecError(
+                    "distributed confirmation job selection binding failed"
+                )
+            try:
+                confirmation_runs = build_confirmation_runs(
+                    spec,
+                    plan,
+                    selection["selected_trial_ids"],
+                )
+            except SpecError as exc:
+                raise SpecError(
+                    "distributed confirmation selection is invalid"
+                ) from exc
+            if not any(run == approved for approved in confirmation_runs):
+                raise SpecError(
+                    "distributed trial job is not an exact approved plan run"
+                )
+    elif kind == "calibration":
+        calibration = distributed["calibration"]
+        expected_id = (
+            f"{distributed['campaign_id']}--calibration--"
+            f"{worker_id}--seed-{calibration['seed']}"
+        )
+        if run != {
+            "run_id": expected_id,
+            "stage": "calibration",
+            "trial_id": "baseline",
+            "seed": calibration["seed"],
+            "overrides": {},
+        }:
+            raise SpecError("distributed calibration job is not the approved baseline")
+    else:
+        raise SpecError("distributed job kind must be trial or calibration")
+
+    source_repo = Path(worker["source_repo"]).resolve()
+    try:
+        source_root = subprocess.run(
+            ["git", "-C", str(source_repo), "rev-parse", "--show-toplevel"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        ).stdout.strip()
+        source_head = subprocess.run(
+            ["git", "-C", str(source_repo), "rev-parse", "HEAD"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        ).stdout.strip()
+        source_status = subprocess.run(
+            ["git", "-C", str(source_repo), "status", "--porcelain=v1"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SpecError("could not inspect distributed worker source repository") from exc
+    if Path(source_root).resolve() != source_repo:
+        raise SpecError("distributed worker source_repo must be its Git worktree root")
+    if source_head != spec["training"]["source_git_commit"] or source_status:
+        raise SpecError(
+            "distributed worker source must be clean at the approved commit"
+        )
+
+    runtime_spec = copy.deepcopy(spec)
+    job_state_dir = Path(worker["state_dir"]) / "jobs" / job["job_id"]
+    runtime_spec["training"]["cwd"] = str(source_repo)
+    runtime_spec["training"]["log_path"] = str(job_state_dir / "training.log")
+    runtime_spec["monitoring"]["gpu_index"] = worker["gpu_index"]
+    runtime_spec["execution"]["gpu_index"] = worker["gpu_index"]
+    runtime_spec["execution"]["state_dir"] = str(job_state_dir)
+    runtime_spec["execution"]["effective_config"]["baseline_path"] = worker[
+        "effective_config_baseline_path"
+    ]
+    runtime_plan = {
+        **copy.deepcopy(plan),
+        "runs": [copy.deepcopy(run)],
+        "planned_run_count": 1,
+        "distributed_job": {
+            "job_id": job["job_id"],
+            "job_sha256": _object_sha256(job),
+            "kind": kind,
+            "worker_id": worker_id,
+        },
+    }
+    return runtime_spec, runtime_plan
 
 
 def _run_record(
@@ -313,9 +466,12 @@ def initialize_state(
     session_path: Path,
     plan: dict[str, Any],
     plan_path: Path,
+    *,
+    plan_already_validated: bool = False,
 ) -> tuple[Path, dict[str, Any]]:
     """Create or load an execution state bound to exact session and plan hashes."""
-    _validate_plan_against_spec(spec, plan)
+    if not plan_already_validated:
+        _validate_plan_against_spec(spec, plan)
     path = _state_path(spec)
     session_hash = _sha256(session_path)
     plan_hash = _sha256(plan_path)
@@ -342,6 +498,7 @@ def initialize_state(
         "stage": "screening",
         "screening_selection": [],
         "selection_failure_reason": None,
+        "distributed_job": plan.get("distributed_job"),
         "runs": {
             run["run_id"]: _run_record(spec, run) for run in plan["runs"]
         },
@@ -788,6 +945,8 @@ def _append_confirmation_runs(
     plan: dict[str, Any],
     state: dict[str, Any],
 ) -> None:
+    if state.get("distributed_job") is not None:
+        return
     screening_runs = [
         run for run in state["runs"].values() if run["stage"] == "screening"
     ]
@@ -1351,6 +1510,7 @@ def state_summary(state: dict[str, Any]) -> dict[str, Any]:
     return {
         "version": state["version"],
         "stage": state["stage"],
+        "distributed_job": state.get("distributed_job"),
         "counts": dict(sorted(counts.items())),
         "active": active,
         "screening_selection": state["screening_selection"],
@@ -1360,8 +1520,13 @@ def state_summary(state: dict[str, Any]) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("session", help="Validated version-6 tune session JSON")
+    parser.add_argument("session", help="Validated version-6-or-newer tune session JSON")
     parser.add_argument("plan", help="Version-4 staged trial plan JSON")
+    parser.add_argument(
+        "--distributed-job",
+        help="Prepared immutable version-7 job JSON; requires --worker-id",
+    )
+    parser.add_argument("--worker-id", help="Exact approved distributed worker ID")
     parser.add_argument(
         "--action",
         choices={
@@ -1378,12 +1543,29 @@ def main() -> int:
     plan_path = Path(args.plan).resolve()
     try:
         spec = load_and_validate(session_path)
-        if spec.get("version") != 6:
-            raise SpecError("trial execution requires session version 6")
+        if spec.get("version", 0) < 6:
+            raise SpecError("trial execution requires session version 6 or newer")
         plan = _load_plan(plan_path)
+        distributed_mode = args.distributed_job is not None
+        if distributed_mode != (args.worker_id is not None):
+            raise SpecError(
+                "--distributed-job and --worker-id must be provided together"
+            )
+        if distributed_mode:
+            job = _load_object(
+                Path(args.distributed_job).resolve(),
+                "distributed job",
+            )
+            spec, plan = _prepare_distributed_job(
+                spec,
+                plan,
+                job,
+                args.worker_id,
+            )
         with execution_state_lock(spec):
             if args.action == "recover-state":
-                _validate_plan_against_spec(spec, plan)
+                if not distributed_mode:
+                    _validate_plan_against_spec(spec, plan)
                 state_path, state = recover_state_from_journal(
                     spec,
                     session_path,
@@ -1395,6 +1577,7 @@ def main() -> int:
                     session_path,
                     plan,
                     plan_path,
+                    plan_already_validated=distributed_mode,
                 )
                 if args.action == "reconcile":
                     state = reconcile(spec, plan, state)
