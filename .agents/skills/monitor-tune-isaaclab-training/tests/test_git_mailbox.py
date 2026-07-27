@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -21,9 +22,18 @@ sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(TESTS))
 
 from build_trial_plan import build_plan  # noqa: E402
+from archive_policy_candidate import _validate_lease_grant  # noqa: E402
 from git_mailbox import (  # noqa: E402
     MailboxError,
     _build_jobs,
+    _sha256,
+    archive_complete,
+    archive_grant,
+    archive_prepare,
+    archive_release,
+    archive_request,
+    archive_revoke,
+    archive_status,
     cancel,
     claim,
     collect,
@@ -51,6 +61,10 @@ def _run(*args: str, cwd: Path | None = None) -> str:
             f"command failed: {' '.join(args)}\n{completed.stderr}"
         )
     return completed.stdout.strip()
+
+
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _init_source(root: Path) -> tuple[Path, Path, str]:
@@ -110,6 +124,37 @@ def _init_mailbox(root: Path) -> tuple[Path, Path, Path]:
     return origin, coordinator, worker
 
 
+def _init_policy_storage(root: Path) -> tuple[Path, Path, Path, str]:
+    origin = root / "policy-origin.git"
+    seed = root / "policy-seed"
+    pc_a = root / "policy-pc-a"
+    pc_b = root / "policy-pc-b"
+    _run("git", "init", "--bare", str(origin))
+    _run("git", "init", "-b", "master", str(seed))
+    collection = seed / "LW" / "leg_loco"
+    collection.mkdir(parents=True)
+    (collection / ".gitkeep").write_text("keep\n", encoding="utf-8")
+    _run("git", "add", "LW/leg_loco/.gitkeep", cwd=seed)
+    _run(
+        "git",
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "-m",
+        "initialize policy storage",
+        cwd=seed,
+    )
+    _run("git", "remote", "add", "origin", str(origin), cwd=seed)
+    _run("git", "push", "-u", "origin", "master", cwd=seed)
+    _run("git", "symbolic-ref", "HEAD", "refs/heads/master", cwd=origin)
+    _run("git", "clone", str(origin), str(pc_a))
+    _run("git", "clone", str(origin), str(pc_b))
+    commit = _run("git", "rev-parse", "HEAD", cwd=pc_a)
+    return origin, pc_a, pc_b, commit
+
+
 class GitMailboxTests(unittest.TestCase):
     def setUp(self) -> None:
         from test_execution_round_one import ExecutionRoundOneTests
@@ -125,8 +170,29 @@ class GitMailboxTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.session = helper._session()
+        from test_evaluation_executor import EvaluationExecutorTests
+
+        evaluation_helper = EvaluationExecutorTests(methodName="runTest")
+        evaluation_helper.temp = self.temp
+        evaluation_helper.root = self.root
+        evaluation_helper.output = self.root / "evaluation"
+        self.session["evaluation"] = evaluation_helper._session()["evaluation"]
+        onnx_artifact = next(
+            artifact
+            for artifact in self.session["evaluation"]["artifacts"]
+            if artifact["kind"] == "onnx"
+        )
+        self.session["evaluation"]["artifacts"].append(
+            {**onnx_artifact, "kind": "jit"}
+        )
         self.source_a, self.source_b, source_commit = _init_source(self.root)
         self.origin, self.coordinator, self.worker_clone = _init_mailbox(self.root)
+        (
+            self.policy_origin,
+            self.policy_a,
+            self.policy_b,
+            self.policy_base_commit,
+        ) = _init_policy_storage(self.root)
         self.session["version"] = 7
         self.session["training"]["source_git_commit"] = source_commit
         self.session["training"]["source_git_dirty"] = False
@@ -172,6 +238,32 @@ class GitMailboxTests(unittest.TestCase):
                 "worker_ids": ["pc-a", "pc-b"],
             },
         }
+        self.session["archive"] = {
+            "enabled": True,
+            "copy_after_qualification": True,
+            "storage_root": None,
+            "collection": "LW/leg_loco",
+            "directory_naming": "local_timestamp_seconds",
+            "timezone": "Asia/Shanghai",
+            "required_artifacts": ["jit", "onnx"],
+            "require_clean_git_worktree": True,
+            "write_manifest": True,
+            "description_notes": "mailbox lease test",
+            "git_action": "none",
+            "distributed_lease": {
+                "enabled": True,
+                "storage_remote_url": (
+                    "https://example.invalid/private/policy-storage.git"
+                ),
+                "storage_branch": "master",
+                "authorized_worker_ids": ["pc-a", "pc-b"],
+                "worker_storage_roots": {
+                    "pc-a": str(self.policy_a),
+                    "pc-b": str(self.policy_b),
+                },
+                "takeover_policy": "explicit_revoke_only",
+            },
+        }
         validate_spec(self.session)
         self.plan = build_plan(self.session)
         self.session_path = self.root / "session.json"
@@ -179,7 +271,11 @@ class GitMailboxTests(unittest.TestCase):
         self.session_path.write_text(json.dumps(self.session), encoding="utf-8")
         self.plan_path.write_text(json.dumps(self.plan), encoding="utf-8")
         self.remote_override = patch.dict(
-            os.environ, {"GIT_MAILBOX_ALLOW_TEST_REMOTE": "1"}
+            os.environ,
+            {
+                "GIT_MAILBOX_ALLOW_TEST_REMOTE": "1",
+                "POLICY_ARCHIVE_ALLOW_TEST_REMOTE": "1",
+            },
         )
         self.remote_override.start()
 
@@ -189,6 +285,48 @@ class GitMailboxTests(unittest.TestCase):
 
     def _trial_job_id(self) -> str:
         return self.plan["runs"][0]["run_id"]
+
+    def _archive_request(
+        self,
+        worker_id: str,
+        *,
+        candidate_id: str,
+        jit_hash: str,
+        onnx_hash: str,
+    ) -> dict[str, object]:
+        identity: dict[str, object] = {
+            "schema_version": 1,
+            "event": "policy_archive_requested",
+            "campaign_id": self.session["distributed"]["campaign_id"],
+            "session_sha256": _sha256(self.session),
+            "worker_id": worker_id,
+            "candidate_id": candidate_id,
+            "artifacts": {
+                "jit": {"sha256": jit_hash},
+                "onnx": {"sha256": onnx_hash},
+            },
+            "storage_remote_url": self.session["archive"][
+                "distributed_lease"
+            ]["storage_remote_url"],
+            "storage_branch": "master",
+            "storage_base_commit": self.policy_base_commit,
+        }
+        return {**identity, "request_id": _sha256(identity)}
+
+    def _publish_archive_request(
+        self,
+        worker_id: str,
+        request: dict[str, object],
+    ) -> Path:
+        path = self.root / f"{worker_id}-{request['request_id']}.json"
+        path.write_text(json.dumps(request), encoding="utf-8")
+        archive_request(
+            self.worker_clone,
+            self.session_path,
+            worker_id,
+            path,
+        )
+        return path
 
     def _publish_training_result(
         self,
@@ -419,6 +557,183 @@ class GitMailboxTests(unittest.TestCase):
         with self.assertRaisesRegex(MailboxError, "must be clean"):
             status(self.worker_clone, self.session_path, "pc-a")
 
+    def test_policy_archive_lease_serializes_workers_and_requires_revoke(
+        self,
+    ) -> None:
+        publish(self.coordinator, self.session_path, self.plan_path)
+        request_a = self._archive_request(
+            "pc-a",
+            candidate_id="trial-001",
+            jit_hash="1" * 64,
+            onnx_hash="2" * 64,
+        )
+        request_b = self._archive_request(
+            "pc-b",
+            candidate_id="trial-002",
+            jit_hash="3" * 64,
+            onnx_hash="4" * 64,
+        )
+        self._publish_archive_request("pc-a", request_a)
+        self._publish_archive_request("pc-b", request_b)
+        grant_a = archive_grant(
+            self.coordinator,
+            self.session_path,
+            "pc-a",
+            str(request_a["request_id"]),
+        )["grant"]
+        _validate_lease_grant(
+            self.session,
+            "pc-a",
+            grant_a,
+            "trial-001",
+            {
+                "jit": {"sha256": "1" * 64},
+                "onnx": {"sha256": "2" * 64},
+            },
+        )
+        with self.assertRaisesRegex(SpecError, "artifact hash"):
+            _validate_lease_grant(
+                self.session,
+                "pc-a",
+                grant_a,
+                "trial-001",
+                {
+                    "jit": {"sha256": "9" * 64},
+                    "onnx": {"sha256": "2" * 64},
+                },
+            )
+        with self.assertRaisesRegex(MailboxError, "another policy archive lease"):
+            archive_grant(
+                self.coordinator,
+                self.session_path,
+                "pc-b",
+                str(request_b["request_id"]),
+            )
+        materialized = self.root / "grant-a.json"
+        archive_prepare(
+            self.worker_clone,
+            self.session_path,
+            "pc-a",
+            str(grant_a["lease_id"]),
+            materialized,
+        )
+        self.assertEqual(
+            json.loads(materialized.read_text(encoding="utf-8")),
+            grant_a,
+        )
+        active = archive_status(
+            self.coordinator,
+            self.session_path,
+        )["active_lease"]
+        self.assertEqual(active["worker_id"], "pc-a")
+        archive_revoke(
+            self.coordinator,
+            self.session_path,
+            str(grant_a["lease_id"]),
+            "explicitly approved failed-worker recovery",
+        )
+        grant_b = archive_grant(
+            self.coordinator,
+            self.session_path,
+            "pc-b",
+            str(request_b["request_id"]),
+        )["grant"]
+        self.assertEqual(grant_b["worker_id"], "pc-b")
+
+    def test_policy_archive_release_requires_committed_remote_evidence(
+        self,
+    ) -> None:
+        publish(self.coordinator, self.session_path, self.plan_path)
+        archive_dir = self.policy_a / "LW" / "leg_loco" / "2026-07-27-18-00-00"
+        archive_dir.mkdir()
+        policy_pt = archive_dir / "policy.pt"
+        policy_onnx = archive_dir / "policy.onnx"
+        description = archive_dir / "策略说明.txt"
+        manifest = archive_dir / "archive_manifest.json"
+        policy_pt.write_bytes(b"jit-policy")
+        policy_onnx.write_bytes(b"onnx-policy")
+        description.write_text("simulation candidate\n", encoding="utf-8")
+        manifest.write_text('{"version": 1}\n', encoding="utf-8")
+        request = self._archive_request(
+            "pc-a",
+            candidate_id="trial-001",
+            jit_hash=_file_sha256(policy_pt),
+            onnx_hash=_file_sha256(policy_onnx),
+        )
+        self._publish_archive_request("pc-a", request)
+        grant = archive_grant(
+            self.coordinator,
+            self.session_path,
+            "pc-a",
+            str(request["request_id"]),
+        )["grant"]
+        receipt = {
+            "version": 1,
+            "status": "archived_simulation_qualified_hardware_candidate",
+            "candidate_id": "trial-001",
+            "archive_path": str(archive_dir),
+            "files": {
+                "jit": str(policy_pt),
+                "onnx": str(policy_onnx),
+                "description": str(description),
+                "manifest": str(manifest),
+            },
+            "sha256": {
+                "policy.pt": _file_sha256(policy_pt),
+                "policy.onnx": _file_sha256(policy_onnx),
+            },
+            "manifest_sha256": _file_sha256(manifest),
+            "storage_base_commit": self.policy_base_commit,
+            "distributed_archive_lease": {
+                "lease_id": grant["lease_id"],
+                "worker_id": "pc-a",
+                "request_sha256": grant["request_sha256"],
+                "storage_base_commit": self.policy_base_commit,
+            },
+        }
+        receipt_path = self.root / "archive-receipt.json"
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+        with self.assertRaisesRegex(MailboxError, "separately approved commit"):
+            archive_complete(
+                self.worker_clone,
+                self.session_path,
+                "pc-a",
+                str(grant["lease_id"]),
+                receipt_path,
+            )
+        _run("git", "add", "LW/leg_loco/2026-07-27-18-00-00", cwd=self.policy_a)
+        _run(
+            "git",
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-m",
+            "archive candidate",
+            cwd=self.policy_a,
+        )
+        _run("git", "push", "origin", "master", cwd=self.policy_a)
+        archive_complete(
+            self.worker_clone,
+            self.session_path,
+            "pc-a",
+            str(grant["lease_id"]),
+            receipt_path,
+        )
+        released = archive_release(
+            self.coordinator,
+            self.session_path,
+            str(grant["lease_id"]),
+        )
+        self.assertEqual(released["state"], "archive_lease_released")
+        self.assertIsNone(
+            archive_status(
+                self.coordinator,
+                self.session_path,
+            )["active_lease"]
+        )
+
     def test_changed_publication_collides(self) -> None:
         publish(self.coordinator, self.session_path, self.plan_path)
         changed = json.loads(json.dumps(self.plan))
@@ -467,6 +782,23 @@ class GitMailboxTests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(SpecError, "every worker exactly once"):
             validate_spec(partial_calibration)
+
+        automatic_takeover = json.loads(json.dumps(self.session))
+        automatic_takeover["archive"]["distributed_lease"][
+            "takeover_policy"
+        ] = "timeout"
+        with self.assertRaisesRegex(SpecError, "explicit_revoke_only"):
+            validate_spec(automatic_takeover)
+
+        unknown_archive_worker = json.loads(json.dumps(self.session))
+        unknown_archive_worker["archive"]["distributed_lease"][
+            "authorized_worker_ids"
+        ] = ["pc-c"]
+        unknown_archive_worker["archive"]["distributed_lease"][
+            "worker_storage_roots"
+        ] = {"pc-c": str(self.root / "policy-pc-c")}
+        with self.assertRaisesRegex(SpecError, "configured distributed workers"):
+            validate_spec(unknown_archive_worker)
 
 
 if __name__ == "__main__":

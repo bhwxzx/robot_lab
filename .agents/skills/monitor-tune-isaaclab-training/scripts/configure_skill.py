@@ -461,6 +461,8 @@ def normalize_answers(value: dict[str, Any]) -> dict[str, Any]:
                 "artifact_policy",
                 "assignment_mode_default",
                 "host_effect_calibration_default_enabled",
+                "policy_storage_remote_url",
+                "policy_storage_branch",
             },
             "answers.distributed",
         )
@@ -513,6 +515,40 @@ def normalize_answers(value: dict[str, Any]) -> dict[str, Any]:
                 "answers.distributed.assignment_mode_default must be by_trial "
                 "or by_seed"
             )
+        policy_storage_remote_value = distributed_value[
+            "policy_storage_remote_url"
+        ]
+        policy_storage_branch_value = distributed_value[
+            "policy_storage_branch"
+        ]
+        if (policy_storage_remote_value is None) != (
+            policy_storage_branch_value is None
+        ):
+            raise SetupError(
+                "answers.distributed policy_storage_remote_url and "
+                "policy_storage_branch must both be null or both be set"
+            )
+        policy_storage_remote: str | None = None
+        policy_storage_branch: str | None = None
+        if policy_storage_remote_value is not None:
+            policy_storage_remote = _safe_https_url(
+                policy_storage_remote_value,
+                "answers.distributed.policy_storage_remote_url",
+            )
+            policy_storage_branch = _safe_branch(
+                policy_storage_branch_value,
+                "answers.distributed.policy_storage_branch",
+            )
+            missing_storage = [
+                machine["id"]
+                for machine in machines
+                if machine["policy_storage_root"] is None
+            ]
+            if missing_storage:
+                raise SetupError(
+                    "shared policy storage requires policy_storage_root for "
+                    f"every machine: {missing_storage}"
+                )
         distributed = {
             "transport": "git_mailbox",
             "remote_url": _safe_https_url(
@@ -529,6 +565,8 @@ def normalize_answers(value: dict[str, Any]) -> dict[str, Any]:
                 distributed_value["host_effect_calibration_default_enabled"],
                 "answers.distributed.host_effect_calibration_default_enabled",
             ),
+            "policy_storage_remote_url": policy_storage_remote,
+            "policy_storage_branch": policy_storage_branch,
         }
     return {
         "version": 1,
@@ -644,6 +682,35 @@ def build_plan(answers_value: dict[str, Any]) -> dict[str, Any]:
         raise SetupError(
             "local source_repo origin does not match answers.source_remote_url"
         )
+    if (
+        answers["distributed"] is not None
+        and answers["distributed"]["policy_storage_remote_url"] is not None
+    ):
+        storage = _git_root(
+            Path(local["policy_storage_root"]),
+            "local policy_storage_root",
+        )
+        storage_origin = _git(
+            storage,
+            "remote",
+            "get-url",
+            "origin",
+        ).stdout.strip()
+        if storage_origin != answers["distributed"]["policy_storage_remote_url"]:
+            raise SetupError(
+                "local policy_storage_root origin does not match "
+                "answers.distributed.policy_storage_remote_url"
+            )
+        storage_branch = _git(
+            storage,
+            "branch",
+            "--show-current",
+        ).stdout.strip()
+        if storage_branch != answers["distributed"]["policy_storage_branch"]:
+            raise SetupError(
+                "local policy_storage_root branch does not match "
+                "answers.distributed.policy_storage_branch"
+            )
     answers_sha256 = _sha256(answers)
     configuration = _configuration_from_answers(answers, answers_sha256)
     config_dir = Path(answers["configuration_dir"])
@@ -1121,6 +1188,40 @@ def verify_configuration(
         try:
             storage = Path(local["policy_storage_root"])
             _git_root(storage, "policy_storage_root")
+            if (
+                configuration["distributed"] is not None
+                and configuration["distributed"][
+                    "policy_storage_remote_url"
+                ]
+                is not None
+            ):
+                storage_origin = _git(
+                    storage,
+                    "remote",
+                    "get-url",
+                    "origin",
+                ).stdout.strip()
+                if (
+                    storage_origin
+                    != configuration["distributed"][
+                        "policy_storage_remote_url"
+                    ]
+                ):
+                    blockers.append(
+                        "policy_storage_root origin differs from configuration"
+                    )
+                storage_branch = _git(
+                    storage,
+                    "branch",
+                    "--show-current",
+                ).stdout.strip()
+                if (
+                    storage_branch
+                    != configuration["distributed"]["policy_storage_branch"]
+                ):
+                    blockers.append(
+                        "policy_storage_root branch differs from configuration"
+                    )
             if _git(storage, "status", "--porcelain=v1").stdout:
                 warnings.append("policy_storage_root is currently dirty")
         except SetupError as exc:

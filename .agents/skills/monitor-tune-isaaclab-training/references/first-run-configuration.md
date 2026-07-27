@@ -82,7 +82,9 @@ necessary, the local absolute paths represented by that machine entry.
     "remote_state_unknown_after_seconds": 1800,
     "artifact_policy": "metadata_only",
     "assignment_mode_default": "by_trial",
-    "host_effect_calibration_default_enabled": false
+    "host_effect_calibration_default_enabled": false,
+    "policy_storage_remote_url": "https://gitee.example/user/policy_storage.git",
+    "policy_storage_branch": "master"
   }
 }
 ```
@@ -94,7 +96,15 @@ explicit approval. Keep `host_effect_calibration_default_enabled=false` for
 ordinary reward-weight and parameter searches so each exact trial is assigned
 once across the machines. Set it to `true` only when planning an explicitly
 approved host-effect diagnostic that repeats the unchanged baseline on every
-host.
+host. Set both policy-storage fields to `null` when distributed archive leases
+will not be used. Otherwise every machine must declare its own
+`policy_storage_root`, and every local clone must use the same approved remote
+and branch.
+
+Local W&B roots are session-specific evidence locations, not first-run
+credentials or shared configuration. Put each worker's absolute local root in
+the approved version-7 `history_prior.worker_roots` map. The history reader is
+local-only and does not need a W&B API key.
 
 ## Plan and approval
 
@@ -169,7 +179,9 @@ separately approved external write.
 5. Compare configuration fingerprints and machine/branch tables. The full
    fingerprints may differ because `local_machine_id` differs; the shared
    distributed object and machine list must be byte-identical.
-6. Only then draft a version-7 training session. Session authorization remains
+6. When sharing policy storage, verify that every local clone has the same
+   remote and branch and is clean before preparing an archive request.
+7. Only then draft a version-7 training session. Session authorization remains
    responsible for the exact campaign, seed strategy, worker assignment,
    source commit, parameter domains, budgets, evaluation, and recovery rules.
 

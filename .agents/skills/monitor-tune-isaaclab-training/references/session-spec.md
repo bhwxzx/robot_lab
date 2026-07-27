@@ -14,6 +14,7 @@ Resolve the algorithm profile before approval, then validate with
 
 - Monitor example
 - Tune fields
+- Bounded historical prior and adaptive rounds
 - Automated execution
 - Distributed Git mailbox
 - Final policy evaluation
@@ -201,6 +202,22 @@ Any allowed path matched by the selected profile's protected patterns also requi
 Versions 3–5 retain the static plan: every trial runs every listed `seeds`
 entry and they do not accept `seed_strategy`, `ranking`, or `execution`.
 
+## Bounded historical prior and adaptive rounds
+
+Versions 6 and 7 may add both `history_prior` and `adaptive_search` only with
+`fixed_single_seed`. Read `history-informed-adaptive-search.md` for the exact
+schema, commands, and evidence boundaries. The validator enforces a global
+maximum of 6 selected historical runs, at most 100 retained points per
+required metric per run, and at most 0.5 historical influence on first-round
+candidates. `config_path_map` and `metric_key_map` must exactly cover the
+already approved parameter and ranking contracts. This feature does not grant
+new tuning paths or values.
+
+The first plan requires a merged hash-bound prior. Each later plan appends one
+deterministic round only after all existing fixed-seed trials have completed.
+Existing trials and runs are immutable, historical combinations remain
+excluded, and the complete campaign remains bounded by `tuning.max_trials`.
+
 ## Distributed Git mailbox
 
 For two or more HTTPS-connected hosts, change the automated tune session to
@@ -221,6 +238,31 @@ separately approved host-effect diagnostic; then `worker_ids` must contain
 every worker exactly once and the unchanged calibration baseline runs on each
 host without entering candidate ranking. Git transports only immutable JSON
 metadata, not model artifacts, videos, logs, or credentials.
+
+For one shared policy-storage remote, set `archive.storage_root=null` and add
+this object inside `archive`:
+
+```json
+{
+  "distributed_lease": {
+    "enabled": true,
+    "storage_remote_url": "https://gitee.example/user/policy_storage.git",
+    "storage_branch": "master",
+    "authorized_worker_ids": ["pc-a", "pc-b"],
+    "worker_storage_roots": {
+      "pc-a": "/home/user-a/policy_storage",
+      "pc-b": "/home/user-b/policy_storage"
+    },
+    "takeover_policy": "explicit_revoke_only"
+  }
+}
+```
+
+The worker roots must correspond exactly to the authorized distributed workers
+and be absolute local clone paths. The coordinator may grant only one request
+at a time. Do not automatically expire, steal, or reassign a lease. PT/ONNX
+files stay out of the coordination repository; only request, grant, completion,
+release, and explicit-revoke metadata is exchanged.
 
 ## Automated execution
 
