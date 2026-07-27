@@ -284,3 +284,74 @@ Git 根目录/远端、Conda、GPU、目录、policy storage，并让双机分�
 - **Notes**: 已实现首次运行计划、精确哈希批准、幂等应用、环境/漂移验证、双机参考流程及安全测试；未创建或写入任何真实远端。
 
 ---
+## [FEAT-20260727-002] shared_policy_storage_archive_lease
+
+**Logged**: 2026-07-27T20:07:52+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Requested Capability
+两台调优电脑共用一个 `policy_storage` Git 仓库时，Skill 应避免并发归档、
+相互覆盖或基于过期分支写入，同时继续保存 JIT、ONNX 和策略说明。
+
+### User Context
+双机按不同奖励权重和参数组合并行训练后，都可能产生可归档候选。本地文件锁
+只能保护单个 clone，不能协调另一台电脑；策略二进制又不应进入元数据邮箱。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+在版本 7 会话中绑定共享策略远端、分支、授权 worker 和各机本地 clone。
+通过现有 Git 邮箱发布哈希绑定的 request，由协调机授予全局唯一 lease；
+worker 在远端 HEAD 一致且工作区干净时归档。策略仓库的 commit/push 保持
+独立批准，完成后发布远端提交证据，再由协调机复核并 release。失败接管只能
+显式 revoke，不允许按超时或静默自动推断。
+
+### Metadata
+- Frequency: recurring
+- Related Features: qualified_policy_storage_archive, distributed_git_mailbox
+
+### Resolution
+- **Resolved**: 2026-07-27T20:07:52+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已实现首次配置远端绑定、request/grant/prepare/complete/release/revoke、归档器租约校验、不可变事件校验、远端提交复核、文档与端到端测试；未操作真实远端或真实策略仓库。
+
+---
+## [FEAT-20260727-003] bounded_local_history_adaptive_tuning
+
+**Logged**: 2026-07-27T22:10:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: tuning
+
+### Requested Capability
+自动调优应从本机已有 W&B 训练记录中提取少量先验，决定第一轮如何采样，并在
+每轮结果完成后自动生成下一轮候选；双机模式下通过 Git 邮箱合并两边的历史
+摘要和发布新增任务。
+
+### User Context
+固定同一 seed 时，主要实验价值来自不同奖励权重和参数组合。完全静态均匀
+采样会忽略已有实验，但读取过多历史又会增加成本、放大旧配置偏差，并压缩新
+区域探索。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+只读本地 W&B 二进制记录，不访问云端；按会话精确映射参数与指标，限制时间、
+run 数和每 run 保留点数。历史只影响首轮一部分候选，其余保持确定性探索；
+后续轮次仅使用全部已完成 trial 的约束与目标，生成可重建的只追加计划。双机
+仅交换哈希绑定 JSON 元数据。
+
+### Metadata
+- Frequency: recurring
+- Related Features: fixed_single_seed, distributed_git_mailbox
+
+### Resolution
+- **Resolved**: 2026-07-27T22:10:00+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已实现本地历史索引、全局有界合并、首轮先验与探索混合、后续轮次扩展、单机计划接纳、双机元数据交换及防篡改测试。
+
+---

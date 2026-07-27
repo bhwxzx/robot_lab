@@ -28,6 +28,35 @@ from validate_policy_evaluation import (
 from validate_session_spec import SpecError, load_and_validate
 
 
+def _canonical_sha256(value: Any) -> str:
+    try:
+        encoded = json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise SpecError("value is not finite canonical JSON") from exc
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _load_object(path: Path, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise SpecError(f"{label} does not exist: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SpecError(
+            f"invalid {label} JSON at line {exc.lineno}: {exc.msg}"
+        ) from exc
+    if not isinstance(value, dict):
+        raise SpecError(f"{label} must be a JSON object")
+    _canonical_sha256(value)
+    return value
+
+
 def _load_training_runs(path: Path) -> list[dict[str, Any]]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -61,6 +90,79 @@ def _git(root: Path, *args: str) -> str:
         detail = result.stderr.strip() or result.stdout.strip()
         raise SpecError(f"git {' '.join(args)} failed: {detail}")
     return result.stdout.strip()
+
+
+def _distributed_lease(spec: dict[str, Any]) -> dict[str, Any] | None:
+    archive = spec.get("archive")
+    if not isinstance(archive, dict):
+        return None
+    lease = archive.get("distributed_lease")
+    return lease if isinstance(lease, dict) and lease.get("enabled") else None
+
+
+def _policy_storage_preflight(
+    spec: dict[str, Any],
+    worker_id: str,
+    *,
+    expected_base_commit: str | None = None,
+) -> dict[str, Any]:
+    lease = _distributed_lease(spec)
+    if lease is None:
+        raise SpecError("distributed policy archive lease is not enabled")
+    if worker_id not in lease["authorized_worker_ids"]:
+        raise SpecError("worker is not authorized for policy archive leases")
+    storage_root = Path(lease["worker_storage_roots"][worker_id]).resolve()
+    inventory = inspect_storage(storage_root, hash_artifacts=True)
+    if not inventory["git_clean"]:
+        raise SpecError("policy storage Git worktree is not clean")
+    actual_origin = _git(storage_root, "remote", "get-url", "origin")
+    if (
+        actual_origin != lease["storage_remote_url"]
+        and os.environ.get("POLICY_ARCHIVE_ALLOW_TEST_REMOTE") != "1"
+    ):
+        raise SpecError(
+            "policy storage origin does not match the approved lease remote"
+        )
+    current_branch = _git(storage_root, "branch", "--show-current")
+    if current_branch != lease["storage_branch"]:
+        raise SpecError(
+            "policy storage branch does not match the approved lease branch"
+        )
+    head = _git(storage_root, "rev-parse", "HEAD")
+    remote_lines = _git(
+        storage_root,
+        "ls-remote",
+        "--heads",
+        "origin",
+        f"refs/heads/{lease['storage_branch']}",
+    ).splitlines()
+    remote_commits = {
+        line.split()[0]
+        for line in remote_lines
+        if len(line.split()) == 2
+        and line.split()[1] == f"refs/heads/{lease['storage_branch']}"
+    }
+    if len(remote_commits) != 1:
+        raise SpecError(
+            "approved policy storage remote branch does not resolve exactly once"
+        )
+    remote_commit = next(iter(remote_commits))
+    if head != remote_commit:
+        raise SpecError(
+            "policy storage local HEAD must equal the approved remote branch "
+            "before requesting or using a lease"
+        )
+    if expected_base_commit is not None and head != expected_base_commit:
+        raise SpecError(
+            "policy storage base commit changed after the archive lease request"
+        )
+    return {
+        "root": str(storage_root),
+        "origin": lease["storage_remote_url"],
+        "branch": lease["storage_branch"],
+        "base_commit": head,
+        "inventory": inventory,
+    }
 
 
 def _source_git_state(cwd: Path) -> dict[str, Any]:
@@ -282,7 +384,9 @@ def _build_manifest(
     pair: dict[str, dict[str, str]],
     archived_at: datetime,
     archive_id: str,
+    storage_root: Path,
     storage_base_commit: str,
+    lease_binding: dict[str, Any] | None,
 ) -> dict[str, Any]:
     candidate_id = ranked["final_selection"]["trial_id"]
     profile = resolve_profile(
@@ -355,27 +459,20 @@ def _build_manifest(
             Path(spec["training"]["cwd"])
         ),
         "storage_repository": {
-            "root": spec["archive"]["storage_root"],
+            "root": str(storage_root),
             "base_commit": storage_base_commit,
             "git_action": "none",
         },
+        "distributed_archive_lease": lease_binding,
     }
 
 
-def archive_candidate(
+def _qualification_context(
     spec: dict[str, Any],
     training_runs: list[dict[str, Any]],
     plan: dict[str, Any],
     results: dict[str, Any],
-    now: datetime | None = None,
-) -> dict[str, Any]:
-    """Validate promotion evidence and atomically archive the final pair."""
-    archive = spec.get("archive")
-    if spec.get("version") not in {4, 5, 6}:
-        raise SpecError("policy archive requires session version 4, 5, or 6")
-    if not isinstance(archive, dict) or not archive.get("enabled"):
-        raise SpecError("session policy archive is not enabled")
-
+) -> tuple[dict[str, Any], dict[str, Any], str, dict[str, dict[str, str]]]:
     for planned_candidate_id in plan["candidate_ids"]:
         _validate_selected_plan_coverage(
             spec,
@@ -397,8 +494,151 @@ def archive_candidate(
     if candidate_id not in report["simulation_qualified_candidates"]:
         raise SpecError("final selection is not simulation-qualified")
     pair = _artifact_pair(plan, candidate_id)
+    return report, ranked, candidate_id, pair
 
-    storage_root = Path(archive["storage_root"])
+
+def build_distributed_archive_request(
+    spec: dict[str, Any],
+    training_runs: list[dict[str, Any]],
+    plan: dict[str, Any],
+    results: dict[str, Any],
+    worker_id: str,
+) -> dict[str, Any]:
+    """Build one hash-bound request without changing either Git repository."""
+    if spec.get("version") != 7 or _distributed_lease(spec) is None:
+        raise SpecError(
+            "distributed archive requests require a version-7 lease-enabled session"
+        )
+    _, _, candidate_id, pair = _qualification_context(
+        spec,
+        training_runs,
+        plan,
+        results,
+    )
+    storage = _policy_storage_preflight(spec, worker_id)
+    identity = {
+        "schema_version": 1,
+        "event": "policy_archive_requested",
+        "campaign_id": spec["distributed"]["campaign_id"],
+        "session_sha256": _canonical_sha256(spec),
+        "worker_id": worker_id,
+        "candidate_id": candidate_id,
+        "artifacts": {
+            "jit": {"sha256": pair["jit"]["sha256"]},
+            "onnx": {"sha256": pair["onnx"]["sha256"]},
+        },
+        "storage_remote_url": storage["origin"],
+        "storage_branch": storage["branch"],
+        "storage_base_commit": storage["base_commit"],
+    }
+    return {
+        **identity,
+        "request_id": _canonical_sha256(identity),
+    }
+
+
+def _validate_lease_grant(
+    spec: dict[str, Any],
+    worker_id: str,
+    grant: dict[str, Any],
+    candidate_id: str,
+    pair: dict[str, dict[str, str]],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if grant.get("event") != "policy_archive_granted":
+        raise SpecError("lease grant event is invalid")
+    request = grant.get("request")
+    if not isinstance(request, dict):
+        raise SpecError("lease grant must contain the exact archive request")
+    if grant.get("request_sha256") != _canonical_sha256(request):
+        raise SpecError("lease grant request hash does not match")
+    expected = {
+        "campaign_id": spec["distributed"]["campaign_id"],
+        "session_sha256": _canonical_sha256(spec),
+        "worker_id": worker_id,
+        "candidate_id": candidate_id,
+        "storage_remote_url": spec["archive"]["distributed_lease"][
+            "storage_remote_url"
+        ],
+        "storage_branch": spec["archive"]["distributed_lease"][
+            "storage_branch"
+        ],
+    }
+    for field, value in expected.items():
+        if request.get(field) != value:
+            raise SpecError(f"lease grant request {field} does not match")
+    expected_hashes = {
+        "jit": pair["jit"]["sha256"],
+        "onnx": pair["onnx"]["sha256"],
+    }
+    for kind, digest in expected_hashes.items():
+        record = request.get("artifacts", {}).get(kind)
+        if not isinstance(record, dict) or record.get("sha256") != digest:
+            raise SpecError(f"lease grant {kind} artifact hash does not match")
+    lease_id = grant.get("lease_id")
+    if (
+        not isinstance(lease_id, str)
+        or lease_id != request.get("request_id")
+    ):
+        raise SpecError("lease grant ID does not match the request")
+    storage = _policy_storage_preflight(
+        spec,
+        worker_id,
+        expected_base_commit=request.get("storage_base_commit"),
+    )
+    return request, storage
+
+
+def archive_candidate(
+    spec: dict[str, Any],
+    training_runs: list[dict[str, Any]],
+    plan: dict[str, Any],
+    results: dict[str, Any],
+    now: datetime | None = None,
+    *,
+    worker_id: str | None = None,
+    lease_grant: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Validate promotion evidence and atomically archive the final pair."""
+    archive = spec.get("archive")
+    if spec.get("version") not in {4, 5, 6, 7}:
+        raise SpecError("policy archive requires session version 4, 5, 6, or 7")
+    if not isinstance(archive, dict) or not archive.get("enabled"):
+        raise SpecError("session policy archive is not enabled")
+
+    report, ranked, candidate_id, pair = _qualification_context(
+        spec,
+        training_runs,
+        plan,
+        results,
+    )
+
+    lease_binding: dict[str, Any] | None = None
+    if _distributed_lease(spec) is not None:
+        if worker_id is None or lease_grant is None:
+            raise SpecError(
+                "distributed policy archive requires worker ID and lease grant"
+            )
+        request, storage = _validate_lease_grant(
+            spec,
+            worker_id,
+            lease_grant,
+            candidate_id,
+            pair,
+        )
+        storage_root = Path(storage["root"])
+        lease_binding = {
+            "lease_id": lease_grant["lease_id"],
+            "worker_id": worker_id,
+            "request_sha256": lease_grant["request_sha256"],
+            "storage_base_commit": request["storage_base_commit"],
+        }
+    else:
+        if worker_id is not None or lease_grant is not None:
+            raise SpecError(
+                "worker ID and lease grant are only valid for distributed archive"
+            )
+        storage_root = Path(archive["storage_root"])
+
     inventory = inspect_storage(storage_root, hash_artifacts=True)
     if archive["require_clean_git_worktree"] and not inventory["git_clean"]:
         raise SpecError("policy storage Git worktree is not clean")
@@ -477,7 +717,9 @@ def archive_candidate(
             pair,
             archived_at,
             archive_id,
+            resolved_root,
             locked_inventory["git_commit"],
+            lease_binding,
         )
         (temporary / "archive_manifest.json").write_text(
             json.dumps(
@@ -503,7 +745,8 @@ def archive_candidate(
         fcntl.flock(lock_fd, fcntl.LOCK_UN)
         os.close(lock_fd)
 
-    return {
+    manifest_path = destination / "archive_manifest.json"
+    receipt = {
         "version": 1,
         "status": "archived_simulation_qualified_hardware_candidate",
         "candidate_id": candidate_id,
@@ -522,6 +765,11 @@ def archive_candidate(
         "hardware_status": "supervised_real_robot_testing_required",
         "git_action": "none",
     }
+    if lease_binding is not None:
+        receipt["distributed_archive_lease"] = lease_binding
+        receipt["manifest_sha256"] = _sha256(manifest_path)
+        receipt["storage_base_commit"] = inventory["git_commit"]
+    return receipt
 
 
 def main() -> int:
@@ -533,6 +781,19 @@ def main() -> int:
     parser.add_argument("training_results", help="Per-trial training results")
     parser.add_argument("evaluation_plan", help="Evaluation plan JSON")
     parser.add_argument("evaluation_results", help="Evaluation results JSON")
+    parser.add_argument(
+        "--worker-id",
+        help="Distributed worker requesting or using the archive lease",
+    )
+    parser.add_argument(
+        "--lease-grant",
+        help="Materialized active policy archive lease grant JSON",
+    )
+    parser.add_argument(
+        "--prepare-lease-request",
+        action="store_true",
+        help="Build a request without copying policy artifacts",
+    )
     parser.add_argument("--output", help="Optional absolute receipt JSON path")
     args = parser.parse_args()
     try:
@@ -545,12 +806,38 @@ def main() -> int:
             if not output_path.parent.is_dir():
                 raise SpecError("--output parent directory does not exist")
         spec = load_and_validate(args.session)
-        receipt = archive_candidate(
-            spec,
-            _load_training_runs(Path(args.training_results)),
-            load_evaluation_plan(Path(args.evaluation_plan)),
-            load_evaluation_results(Path(args.evaluation_results)),
+        training_runs = _load_training_runs(Path(args.training_results))
+        evaluation_plan = load_evaluation_plan(Path(args.evaluation_plan))
+        evaluation_results = load_evaluation_results(
+            Path(args.evaluation_results)
         )
+        if args.prepare_lease_request:
+            if args.worker_id is None or args.lease_grant is not None:
+                raise SpecError(
+                    "--prepare-lease-request requires --worker-id and forbids "
+                    "--lease-grant"
+                )
+            receipt = build_distributed_archive_request(
+                spec,
+                training_runs,
+                evaluation_plan,
+                evaluation_results,
+                args.worker_id,
+            )
+        else:
+            grant = (
+                _load_object(Path(args.lease_grant), "lease grant")
+                if args.lease_grant is not None
+                else None
+            )
+            receipt = archive_candidate(
+                spec,
+                training_runs,
+                evaluation_plan,
+                evaluation_results,
+                worker_id=args.worker_id,
+                lease_grant=grant,
+            )
         encoded = json.dumps(
             receipt,
             indent=2,

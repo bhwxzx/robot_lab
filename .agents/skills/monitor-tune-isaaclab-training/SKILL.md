@@ -1,6 +1,6 @@
 ---
 name: monitor-tune-isaaclab-training
-description: Configure, supervise, diagnose, recover, distribute, execute, rank, closed-loop evaluate, safely archive, and improve IsaacLab policies from supervised physical-deployment feedback across RSL-RL and other backends through versioned algorithm profiles and explicit authorization. Use for first-run machine, Conda, GPU, path, policy-storage, or HTTPS Git-mailbox setup; training watchdogs; safe checkpoint resume; bounded fixed-single-seed or multi-seed tuning on one or multiple Git-connected computers; effective-config gates; learning-quality anomaly detection; Play and Native/JIT/ONNX deployment-artifact tests; video-based motion review; bounded real-robot qualification; final-policy promotion; qualified policy storage; real-robot feedback retuning; new-algorithm discovery; or approval-gated profile upgrades.
+description: Configure, supervise, diagnose, recover, distribute, execute, rank, closed-loop evaluate, safely archive, and improve IsaacLab policies from supervised physical-deployment feedback across RSL-RL and other backends through versioned algorithm profiles and explicit authorization. Use for first-run machine, Conda, GPU, path, policy-storage, or HTTPS Git-mailbox setup; training watchdogs; safe checkpoint resume; bounded local-W&B history priors and adaptive fixed-seed rounds; bounded fixed-single-seed or multi-seed tuning on one or multiple Git-connected computers; effective-config gates; learning-quality anomaly detection; Play and Native/JIT/ONNX deployment-artifact tests; video-based motion review; bounded real-robot qualification; final-policy promotion; qualified policy storage; real-robot feedback retuning; new-algorithm discovery; or approval-gated profile upgrades.
 ---
 
 # Monitor and Tune IsaacLab Training
@@ -75,10 +75,15 @@ evaluating, archiving, or preparing a feedback-driven tuning draft. Require:
   screening/confirmation seeds, paired-baseline and Pareto rules, exact child
   argv, state directory, GPU exclusivity, retry budget, effective-config
   baseline, and learning-quality stop rules.
+- for history-informed adaptive search, the exact local W&B roots and project,
+  parameter/metric mappings, time/run/point limits, first-round influence cap,
+  round count, trials per round, and exploration fraction.
 - in version-7 `tune` mode, a dedicated HTTPS coordination repository,
   coordinator/worker branches, `by_seed` or fixed-seed `by_trial` assignment,
   clean source commit, per-worker paths/GPU, an explicit host-calibration
-  choice, poll/grace intervals, and metadata-only artifact exchange.
+  choice, poll/grace intervals, metadata-only artifact exchange, and, when
+  sharing policy storage, one coordinator-granted archive lease with exact
+  per-worker clones and a common storage remote/branch.
 - for final selection, exact Native/deployment artifacts, evaluation commands,
   scenarios, seeds, runtime overrides, gates, videos, and retuning authority.
 - for archival, the exact storage root and collection, JIT and ONNX formats,
@@ -169,6 +174,16 @@ conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/build_trial_plan.py \
   SESSION.json --output TRIAL_PLAN.json
 ```
+
+When the approved fixed-seed session enables `history_prior` and
+`adaptive_search`, first read
+[references/history-informed-adaptive-search.md](references/history-informed-adaptive-search.md).
+Index only the bounded local W&B evidence, merge it without cloud access, and
+pass the hash-bound prior with `--history-prior`. Never widen parameter domains,
+reuse an exact historical combination, or let history supply more than the
+approved half of first-round candidates. Add a later round only after every
+existing trial has one valid completed result; the plan must be an append-only
+deterministic expansion.
 
 For version 6 or 7, initialize the hash-bound state and launch no more than one
 authorized child at a time:
@@ -342,11 +357,21 @@ conda run -n isaacsim-5.1 python \
   EVALUATION_RESULTS.json --output /absolute/ARCHIVE_RECEIPT.json
 ```
 
+For a version-7 shared policy-storage repository, first build and publish the
+hash-bound archive request, let the coordinator grant the only active lease,
+and materialize that grant. Pass the exact worker ID and grant to the archiver.
+Read [references/policy-archive.md](references/policy-archive.md) for the
+commands and state machine. Never infer lease ownership from time, a local lock,
+or a stale remote observation. Only explicit coordinator release or approved
+revoke closes a lease.
+
 Create one timestamped directory atomically with `policy.pt`, `policy.onnx`,
 `策略说明.txt`, and `archive_manifest.json`. State that the policy passed
 simulation and is eligible only for supervised hardware testing. Never call it
 hardware-ready. Do not commit or push the policy-storage repository unless the
-user separately authorizes those Git actions.
+user separately authorizes those Git actions. A shared-storage lease can be
+completed only after that separately approved commit is the exact remote branch
+head; release it only after the coordinator verifies the completion evidence.
 
 ## Adjust tuning from supervised physical feedback
 

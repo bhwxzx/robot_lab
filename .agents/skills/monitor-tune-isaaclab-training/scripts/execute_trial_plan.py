@@ -22,7 +22,10 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Iterator
 
-from build_trial_plan import build_confirmation_runs, build_plan
+from build_trial_plan import (
+    build_confirmation_runs,
+    validate_trial_plan,
+)
 from collect_training_health import tensorboard_progress
 from detect_training_anomalies import detect_anomalies
 from execution_safety import gpu_lock_path
@@ -245,7 +248,7 @@ def recover_state_from_journal(
 def _load_plan(path: Path) -> dict[str, Any]:
     plan = _load_object(path, "trial plan")
     if (
-        plan.get("version") != 4
+        plan.get("version") not in {4, 5}
         or not isinstance(plan.get("runs"), list)
         or not isinstance(plan.get("trials"), list)
         or not isinstance(plan.get("stages"), dict)
@@ -266,12 +269,64 @@ def _validate_plan_against_spec(
     spec: dict[str, Any],
     plan: dict[str, Any],
 ) -> None:
-    expected = build_plan(spec)
-    if plan != expected:
+    validate_trial_plan(spec, plan)
+
+
+def adopt_expanded_plan(
+    spec: dict[str, Any],
+    session_path: Path,
+    new_plan: dict[str, Any],
+    new_plan_path: Path,
+) -> tuple[Path, dict[str, Any]]:
+    """Atomically bind a completed executor state to one plan expansion."""
+    validate_trial_plan(spec, new_plan)
+    state_path = _state_path(spec)
+    if not state_path.is_file() or state_path.is_symlink():
+        raise SpecError("adaptive plan adoption requires an existing state")
+    state = _load_object(state_path, "execution state")
+    if state.get("session_sha256") != _sha256(session_path):
+        raise SpecError("execution state is bound to a different session")
+    old_plan_path = Path(state.get("plan_path", ""))
+    if (
+        not old_plan_path.is_file()
+        or old_plan_path.is_symlink()
+        or state.get("plan_sha256") != _sha256(old_plan_path)
+    ):
+        raise SpecError("existing execution plan binding is invalid")
+    old_plan = _load_plan(old_plan_path)
+    validate_trial_plan(spec, old_plan)
+    if (
+        old_plan.get("version") != 5
+        or new_plan.get("version") != 5
+        or len(new_plan["adaptive"]["rounds"])
+        != len(old_plan["adaptive"]["rounds"]) + 1
+        or new_plan["trials"][: len(old_plan["trials"])]
+        != old_plan["trials"]
+        or new_plan["runs"][: len(old_plan["runs"])] != old_plan["runs"]
+        or len(new_plan["runs"]) <= len(old_plan["runs"])
+    ):
         raise SpecError(
-            "trial plan does not exactly match the validated session; "
-            "rebuild it with build_trial_plan.py"
+            "adaptive plan adoption requires one exact append-only round"
         )
+    if any(
+        run["status"] in ACTIVE_STATUSES or run["status"] != "completed"
+        for run in state["runs"].values()
+    ):
+        raise SpecError(
+            "adaptive plan adoption requires every existing run to be completed"
+        )
+    new_runs = new_plan["runs"][len(old_plan["runs"]):]
+    if any(run["run_id"] in state["runs"] for run in new_runs):
+        raise SpecError("adaptive plan expansion collides with executor state")
+    for run in new_runs:
+        state["runs"][run["run_id"]] = _run_record(spec, run)
+    state["plan_path"] = str(new_plan_path.resolve())
+    state["plan_sha256"] = _sha256(new_plan_path)
+    state["stage"] = "screening"
+    state["screening_selection"] = []
+    state["selection_failure_reason"] = None
+    state["updated_at"] = time.time()
+    return state_path, state
 
 
 def _prepare_distributed_job(
@@ -1531,6 +1586,7 @@ def main() -> int:
         "--action",
         choices={
             "initialize",
+            "adopt-plan",
             "reconcile",
             "launch-next",
             "status",
@@ -1571,6 +1627,19 @@ def main() -> int:
                     session_path,
                     plan_path,
                 )
+            elif args.action == "adopt-plan":
+                if distributed_mode:
+                    raise SpecError(
+                        "distributed workers receive each adaptive round as "
+                        "separate immutable jobs"
+                    )
+                state_path, state = adopt_expanded_plan(
+                    spec,
+                    session_path,
+                    plan,
+                    plan_path,
+                )
+                _persist_state(spec, state_path, state, args.action)
             else:
                 state_path, state = initialize_state(
                     spec,

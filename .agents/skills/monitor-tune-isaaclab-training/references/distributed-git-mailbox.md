@@ -35,12 +35,12 @@ Add `distributed` to a version-7 tune session:
   "poll_interval_seconds": 600,
   "remote_state_unknown_after_seconds": 1800,
   "artifact_policy": "metadata_only",
-  "assignment_mode": "by_seed",
+  "assignment_mode": "by_trial",
   "workers": [
     {
       "id": "pc-a",
       "branch": "tune/lw-leg-round-01/worker-pc-a",
-      "assigned_seeds": [42, 44],
+      "assigned_seeds": [42],
       "source_repo": "/absolute/path/to/robot_lab",
       "state_dir": "/absolute/path/to/tuning/pc-a",
       "effective_config_baseline_path": "/absolute/path/to/tuning/pc-a/effective-config.json",
@@ -50,7 +50,7 @@ Add `distributed` to a version-7 tune session:
     {
       "id": "pc-b",
       "branch": "tune/lw-leg-round-01/worker-pc-b",
-      "assigned_seeds": [43],
+      "assigned_seeds": [42],
       "source_repo": "/absolute/path/to/robot_lab",
       "state_dir": "/absolute/path/to/tuning/pc-b",
       "effective_config_baseline_path": "/absolute/path/to/tuning/pc-b/effective-config.json",
@@ -98,6 +98,22 @@ worktree to the exact approved commit. Never let the mailbox script pull,
 checkout, reset, stash, or overwrite the user's source tree. If the worktree is
 dirty or its HEAD differs, the worker remains blocked until the user resolves
 it.
+
+## Bounded history and adaptive rounds
+
+When the approved fixed-seed session enables bounded local-W&B priors, follow
+`history-informed-adaptive-search.md`. Before publishing the first trial plan,
+the coordinator runs `history-initialize`; every worker scans only its
+authorized local root and runs `history-publish`; the coordinator requires all
+worker indexes and runs `history-collect`. The merged run cap remains global
+across both computers. The mailbox carries only finite, hash-bound summary
+metadata and never copies W&B files or contacts W&B cloud services.
+
+After every current trial has a valid terminal result, build one deterministic
+append-only plan expansion. `publish-adaptive-round` verifies the previous
+plan, immutable collected results, embedded result hash, budget, unique run
+IDs, and exact newly appended jobs before publication. Workers never invent a
+new round or change earlier jobs.
 
 ## Coordinator workflow
 
@@ -255,6 +271,42 @@ python scripts/git_mailbox.py result \
 The artifact manifest contains only `kind`, absolute local `path`, lowercase
 SHA-256, and `size_bytes`. Transfer a qualified top-k artifact separately under
 the existing evaluation and archive authorization.
+
+## Shared policy-storage lease
+
+When both computers use separate clones of one `policy_storage` remote, enable
+`archive.distributed_lease` in the version-7 session. Configure the exact HTTPS
+remote, branch, authorized workers, and each worker's absolute local storage
+root. The mailbox still carries JSON metadata only; JIT/ONNX artifacts never
+pass through the coordination repository.
+
+The worker builds and publishes a hash-bound archive request only after its
+storage clone is clean and exactly at the remote head. The coordinator reviews
+all requests and grants exactly one active lease:
+
+```bash
+python scripts/git_mailbox.py archive-status \
+  --repo /absolute/path/to/coordinator-mailbox \
+  --session SESSION_V7.json
+
+python scripts/git_mailbox.py archive-grant \
+  --repo /absolute/path/to/coordinator-mailbox \
+  --session SESSION_V7.json \
+  --worker pc-b \
+  --request-id EXACT_REQUEST_ID
+```
+
+The selected worker materializes that immutable grant, runs the qualified
+policy archiver, and leaves the new policy directory uncommitted. Staging,
+committing, and pushing `policy_storage` require separate explicit approval.
+After that approved push, the worker publishes completion and the coordinator
+rechecks the shared remote branch before releasing the lease.
+
+See [policy-archive.md](policy-archive.md#shared-repository-lease) for the full
+request, grant, archive, completion, release, and explicit-revoke commands.
+Never grant a second lease because a worker is merely silent or old. Only an
+explicitly approved `archive-revoke` can recover an incomplete lease; a lease
+with completion evidence must be released.
 
 ## Failure semantics
 

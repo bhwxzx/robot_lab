@@ -1057,3 +1057,76 @@ trial 和双机任务保持同一 seed，并认为策略是否可用应由 Play�
 - **Notes**: 默认关闭跨主机重复校准并保留显式按需校准；已加入唯一任务与校准开关测试。
 
 ---
+## [LRN-20260727-003] best_practice
+
+**Logged**: 2026-07-27T20:07:52+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+多个独立 Git clone 共用策略远端时，本地文件锁不能提供跨机器互斥；归档权
+必须由共享协调仓库中的唯一租约和精确远端提交证据来确定。
+
+### Details
+每台电脑的 `flock` 只覆盖自己的工作树。即使两边归档前都看到 clean，也可能
+从同一个旧 HEAD 同时生成策略目录并产生 push 冲突。协调机也不能依赖另一台
+电脑的本地路径存在，因此释放租约时应直接查询批准的共享远端分支。元数据
+邮箱只传 request、grant、completion 和 closure，策略二进制留在
+`policy_storage`。
+
+### Suggested Action
+先绑定 session、worker、候选、JIT/ONNX 哈希、远端、分支和 base commit，
+再授予一个活动租约。归档后保持租约，直到独立批准的 commit/push 已成为精确
+远端 HEAD，并由协调机复核后 release。禁止按时间自动接管；失败恢复使用显式
+revoke。为新会话版本增加真实归档端到端测试，避免文档声明支持但入口版本门
+仍拒绝新版本。
+
+### Metadata
+- Source: conversation
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/scripts/git_mailbox.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/archive_policy_candidate.py`
+- Tags: distributed-archive, git-lease, policy-storage, immutable-events
+- Pattern-Key: harden.shared_policy_storage_archive_lease
+
+### Resolution
+- **Resolved**: 2026-07-27T20:07:52+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已加入版本 7 全局归档租约、协调机远端复核、事件 schema 校验和端到端测试。
+
+---
+## [LRN-20260727-004] correction
+
+**Logged**: 2026-07-27T22:10:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: tuning
+
+### Summary
+历史训练记录可以帮助首轮采样，但不应读取过多，也不能取代当前会话的授权
+边界和新区域探索。
+
+### Details
+用户明确要求历史记录不要读取过多。历史 run 越多并不必然提高调优质量：
+旧代码、旧奖励定义或旧部署条件会带来偏差，深读大量 W&B 点也会增加扫描
+成本。双机还必须把上限解释成合并后的全局上限，不能让每台机器各保留完整
+额度后直接相加。
+
+### Suggested Action
+会话硬限制全局最多 6 个历史 run、每个必要指标每 run 最多保留 100 点，
+默认回看 30 天；每台机器最多深读 `2 * max_selected_runs` 个近期候选。历史
+最多影响首轮 50% 候选，剩余候选保持确定性多样探索。只接受当前授权网格内
+的参数组合，排除精确历史组合，并把索引、合并结果和后续轮次全部哈希绑定。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/scripts/index_local_wandb_history.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/merge_historical_priors.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/build_trial_plan.py`
+- Tags: local-wandb, bounded-history, adaptive-search, exploration
+- Pattern-Key: correct.bound_local_history_influence
+- See Also: FEAT-20260727-003
+
+### Resolution
+- **Resolved**: 2026-07-27T22:10:00+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已把 run、时间、点数、首轮影响比例和历史组合排除设为验证器与计划构建器硬门槛。
+
+---

@@ -1669,6 +1669,7 @@ def _validate_archive(
             "write_manifest",
             "description_notes",
             "git_action",
+            "distributed_lease",
         },
         "archive",
     )
@@ -1682,6 +1683,10 @@ def _validate_archive(
             raise SpecError(
                 "archive.copy_after_qualification cannot be true when archive is disabled"
             )
+        if archive.get("distributed_lease") is not None:
+            raise SpecError(
+                "archive.distributed_lease requires archive.enabled=true"
+            )
         return archive
     if mode != "tune":
         raise SpecError("policy archive requires tune mode")
@@ -1692,14 +1697,123 @@ def _validate_archive(
     if not isinstance(evaluation, dict) or not evaluation.get("enabled"):
         raise SpecError("policy archive requires enabled final policy evaluation")
 
-    storage_root = Path(
-        _expect_nonempty_string(
-            archive.get("storage_root"),
-            "archive.storage_root",
+    lease_value = archive.get("distributed_lease")
+    if lease_value is None:
+        storage_root = Path(
+            _expect_nonempty_string(
+                archive.get("storage_root"),
+                "archive.storage_root",
+            )
         )
-    )
-    if not storage_root.is_absolute():
-        raise SpecError("archive.storage_root must be an absolute path")
+        if not storage_root.is_absolute():
+            raise SpecError("archive.storage_root must be an absolute path")
+    else:
+        if version != 7:
+            raise SpecError(
+                "archive.distributed_lease requires session version 7"
+            )
+        if archive.get("storage_root") is not None:
+            raise SpecError(
+                "archive.storage_root must be null when distributed_lease is enabled"
+            )
+        lease = _expect_object(
+            lease_value,
+            "archive.distributed_lease",
+        )
+        _check_keys(
+            lease,
+            {
+                "enabled",
+                "storage_remote_url",
+                "storage_branch",
+                "authorized_worker_ids",
+                "worker_storage_roots",
+                "takeover_policy",
+            },
+            "archive.distributed_lease",
+        )
+        if not _expect_bool(
+            lease.get("enabled"),
+            "archive.distributed_lease.enabled",
+        ):
+            raise SpecError("archive.distributed_lease.enabled must be true")
+        storage_remote_url = _expect_nonempty_string(
+            lease.get("storage_remote_url"),
+            "archive.distributed_lease.storage_remote_url",
+        )
+        parsed = urlsplit(storage_remote_url)
+        if (
+            parsed.scheme != "https"
+            or not parsed.netloc
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise SpecError(
+                "archive.distributed_lease.storage_remote_url must be HTTPS "
+                "without embedded credentials, query, or fragment"
+            )
+        storage_branch = _expect_nonempty_string(
+            lease.get("storage_branch"),
+            "archive.distributed_lease.storage_branch",
+        )
+        if (
+            not GIT_BRANCH_RE.fullmatch(storage_branch)
+            or any(
+                part.startswith(".") or part.endswith(".lock")
+                for part in storage_branch.split("/")
+            )
+        ):
+            raise SpecError(
+                "archive.distributed_lease.storage_branch is not a safe Git branch"
+            )
+        authorized_workers = lease.get("authorized_worker_ids")
+        if (
+            not isinstance(authorized_workers, list)
+            or not authorized_workers
+            or len(authorized_workers) != len(set(authorized_workers))
+        ):
+            raise SpecError(
+                "archive.distributed_lease.authorized_worker_ids must be a "
+                "non-empty unique array"
+            )
+        for index, worker_id in enumerate(authorized_workers):
+            value = _expect_nonempty_string(
+                worker_id,
+                f"archive.distributed_lease.authorized_worker_ids[{index}]",
+            )
+            if not IDENTIFIER_RE.fullmatch(value):
+                raise SpecError(
+                    "archive.distributed_lease.authorized_worker_ids contains "
+                    "an unsafe worker ID"
+                )
+        storage_roots = _expect_object(
+            lease.get("worker_storage_roots"),
+            "archive.distributed_lease.worker_storage_roots",
+        )
+        if set(storage_roots) != set(authorized_workers):
+            raise SpecError(
+                "archive.distributed_lease.worker_storage_roots must contain "
+                "exactly the authorized workers"
+            )
+        for worker_id, root_value in storage_roots.items():
+            worker_root = Path(
+                _expect_nonempty_string(
+                    root_value,
+                    "archive.distributed_lease.worker_storage_roots"
+                    f"[{worker_id!r}]",
+                )
+            )
+            if not worker_root.is_absolute():
+                raise SpecError(
+                    "archive.distributed_lease worker storage roots must be absolute"
+                )
+        if lease.get("takeover_policy") != "explicit_revoke_only":
+            raise SpecError(
+                "archive.distributed_lease.takeover_policy must be "
+                "explicit_revoke_only"
+            )
 
     collection = _expect_nonempty_string(
         archive.get("collection"),
@@ -1774,6 +1888,222 @@ def _validate_archive(
     return archive
 
 
+def _validate_archive_distributed_lease(
+    archive: dict[str, Any] | None,
+    distributed: dict[str, Any] | None,
+) -> None:
+    if not isinstance(archive, dict) or not archive.get("enabled"):
+        return
+    lease = archive.get("distributed_lease")
+    if lease is None:
+        return
+    if not isinstance(distributed, dict) or not distributed.get("enabled"):
+        raise SpecError(
+            "archive.distributed_lease requires enabled distributed execution"
+        )
+    worker_ids = {worker["id"] for worker in distributed["workers"]}
+    authorized = set(lease["authorized_worker_ids"])
+    if not authorized <= worker_ids:
+        raise SpecError(
+            "archive.distributed_lease.authorized_worker_ids must name "
+            "configured distributed workers"
+        )
+
+
+def _validate_history_and_adaptive_search(
+    history_value: Any,
+    adaptive_value: Any,
+    *,
+    version: int,
+    mode: str,
+    parameter_paths: list[str] | None,
+    required_metrics: set[str] | None,
+    distributed: dict[str, Any] | None,
+    seed_strategy_mode: str | None,
+    max_trials: int | None,
+) -> None:
+    if history_value is None and adaptive_value is None:
+        return
+    if mode != "tune" or version not in {6, 7}:
+        raise SpecError(
+            "history_prior and adaptive_search require a version-6-or-7 tune session"
+        )
+    history = _expect_object(history_value, "history_prior")
+    _check_keys(
+        history,
+        {
+            "enabled",
+            "source",
+            "wandb_project",
+            "lookback_days",
+            "max_selected_runs",
+            "max_points_per_run",
+            "include_failed_runs",
+            "max_first_round_fraction",
+            "explicit_run_ids",
+            "config_path_map",
+            "metric_key_map",
+            "worker_roots",
+        },
+        "history_prior",
+    )
+    if not _expect_bool(history.get("enabled"), "history_prior.enabled"):
+        raise SpecError("history_prior.enabled must be true when configured")
+    if history.get("source") != "local_wandb":
+        raise SpecError("history_prior.source must be local_wandb")
+    _expect_nonempty_string(
+        history.get("wandb_project"),
+        "history_prior.wandb_project",
+    )
+    _expect_int(
+        history.get("lookback_days"),
+        "history_prior.lookback_days",
+        1,
+        365,
+    )
+    _expect_int(
+        history.get("max_selected_runs"),
+        "history_prior.max_selected_runs",
+        1,
+        6,
+    )
+    _expect_int(
+        history.get("max_points_per_run"),
+        "history_prior.max_points_per_run",
+        1,
+        100,
+    )
+    _expect_bool(
+        history.get("include_failed_runs"),
+        "history_prior.include_failed_runs",
+    )
+    first_round_fraction = _expect_number(
+        history.get("max_first_round_fraction"),
+        "history_prior.max_first_round_fraction",
+    )
+    if not 0 <= first_round_fraction <= 0.5:
+        raise SpecError(
+            "history_prior.max_first_round_fraction must be between 0 and 0.5"
+        )
+    explicit_ids = history.get("explicit_run_ids")
+    if (
+        not isinstance(explicit_ids, list)
+        or len(explicit_ids) > history["max_selected_runs"]
+        or len(explicit_ids) != len(set(explicit_ids))
+    ):
+        raise SpecError(
+            "history_prior.explicit_run_ids must be unique and no larger than "
+            "max_selected_runs"
+        )
+    for index, run_id in enumerate(explicit_ids):
+        value = _expect_nonempty_string(
+            run_id,
+            f"history_prior.explicit_run_ids[{index}]",
+        )
+        if not IDENTIFIER_RE.fullmatch(value):
+            raise SpecError(
+                "history_prior.explicit_run_ids contains an unsafe run ID"
+            )
+    config_map = _expect_object(
+        history.get("config_path_map"),
+        "history_prior.config_path_map",
+    )
+    expected_parameters = set(parameter_paths or [])
+    if set(config_map) != expected_parameters:
+        raise SpecError(
+            "history_prior.config_path_map must cover exactly the approved "
+            "parameter paths"
+        )
+    for parameter_path, wandb_path in config_map.items():
+        _expect_nonempty_string(
+            wandb_path,
+            f"history_prior.config_path_map[{parameter_path!r}]",
+        )
+    metric_map = _expect_object(
+        history.get("metric_key_map"),
+        "history_prior.metric_key_map",
+    )
+    if set(metric_map) != set(required_metrics or set()):
+        raise SpecError(
+            "history_prior.metric_key_map must cover exactly the objective and "
+            "constraint metrics"
+        )
+    for metric, wandb_key in metric_map.items():
+        _expect_nonempty_string(
+            wandb_key,
+            f"history_prior.metric_key_map[{metric!r}]",
+        )
+    roots = _expect_object(
+        history.get("worker_roots"),
+        "history_prior.worker_roots",
+    )
+    expected_workers = (
+        {worker["id"] for worker in distributed["workers"]}
+        if version == 7 and isinstance(distributed, dict)
+        else {"local"}
+    )
+    if set(roots) != expected_workers:
+        raise SpecError(
+            "history_prior.worker_roots must contain exactly the configured "
+            "workers, or only local for a version-6 session"
+        )
+    for worker_id, root_value in roots.items():
+        root = Path(
+            _expect_nonempty_string(
+                root_value,
+                f"history_prior.worker_roots[{worker_id!r}]",
+            )
+        )
+        if not root.is_absolute():
+            raise SpecError("history_prior worker roots must be absolute paths")
+
+    adaptive = _expect_object(adaptive_value, "adaptive_search")
+    _check_keys(
+        adaptive,
+        {
+            "enabled",
+            "max_rounds",
+            "trials_per_round",
+            "exploration_fraction",
+        },
+        "adaptive_search",
+    )
+    if not _expect_bool(adaptive.get("enabled"), "adaptive_search.enabled"):
+        raise SpecError("adaptive_search.enabled must be true when configured")
+    max_rounds = _expect_int(
+        adaptive.get("max_rounds"),
+        "adaptive_search.max_rounds",
+        1,
+        16,
+    )
+    trials_per_round = _expect_int(
+        adaptive.get("trials_per_round"),
+        "adaptive_search.trials_per_round",
+        1,
+        32,
+    )
+    exploration = _expect_number(
+        adaptive.get("exploration_fraction"),
+        "adaptive_search.exploration_fraction",
+    )
+    if not 0.25 <= exploration <= 0.75:
+        raise SpecError(
+            "adaptive_search.exploration_fraction must be between 0.25 and 0.75"
+        )
+    if seed_strategy_mode != "fixed_single_seed":
+        raise SpecError(
+            "adaptive_search currently requires fixed_single_seed"
+        )
+    if max_trials is None or trials_per_round >= max_trials:
+        raise SpecError(
+            "adaptive_search.trials_per_round must be less than tuning.max_trials"
+        )
+    if max_rounds * trials_per_round < max_trials - 1:
+        raise SpecError(
+            "adaptive_search round budget cannot cover tuning.max_trials"
+        )
+
+
 def validate_spec(
     spec: Any,
     registry_path: str | Path = DEFAULT_REGISTRY_PATH,
@@ -1795,6 +2125,8 @@ def validate_spec(
             "hardware_feedback",
             "execution",
             "distributed",
+            "history_prior",
+            "adaptive_search",
             "cleanup",
         },
         "session",
@@ -2000,7 +2332,7 @@ def validate_spec(
         )
 
     if mode == "monitor":
-        _validate_distributed_contract(
+        distributed_contract = _validate_distributed_contract(
             root.get("distributed"),
             version,
             mode,
@@ -2008,6 +2340,10 @@ def validate_spec(
             None,
             training.get("source_git_commit"),
             training.get("source_git_dirty"),
+        )
+        _validate_archive_distributed_lease(
+            archive_contract,
+            distributed_contract,
         )
         _validate_execution_contract(
             root.get("execution"),
@@ -2017,6 +2353,17 @@ def validate_spec(
         )
         if root.get("tuning") is not None:
             raise SpecError("tuning must be null or omitted in monitor mode")
+        _validate_history_and_adaptive_search(
+            root.get("history_prior"),
+            root.get("adaptive_search"),
+            version=version,
+            mode=mode,
+            parameter_paths=None,
+            required_metrics=None,
+            distributed=distributed_contract,
+            seed_strategy_mode=None,
+            max_trials=None,
+        )
         return root
 
     tuning = _expect_object(root.get("tuning"), "tuning")
@@ -2227,7 +2574,7 @@ def validate_spec(
         required_metrics=required_metrics,
         training_command=training["command"],
     )
-    _validate_distributed_contract(
+    distributed_contract = _validate_distributed_contract(
         root.get("distributed"),
         version,
         mode,
@@ -2236,6 +2583,27 @@ def validate_spec(
         training.get("source_git_commit"),
         training.get("source_git_dirty"),
     )
+    _validate_archive_distributed_lease(
+        archive_contract,
+        distributed_contract,
+    )
+    _validate_history_and_adaptive_search(
+        root.get("history_prior"),
+        root.get("adaptive_search"),
+        version=version,
+        mode=mode,
+        parameter_paths=parameter_paths,
+        required_metrics=required_metrics,
+        distributed=distributed_contract,
+        seed_strategy_mode=seed_strategy_mode,
+        max_trials=tuning["max_trials"],
+    )
+    if root.get("adaptive_search") is not None and any(
+        "baseline" not in parameter for parameter in validated_parameters
+    ):
+        raise SpecError(
+            "adaptive_search requires a baseline for every approved parameter"
+        )
     return root
 
 

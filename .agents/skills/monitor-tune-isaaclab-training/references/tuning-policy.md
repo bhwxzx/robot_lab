@@ -32,6 +32,15 @@ Store each trial and retry separately with effective configuration and diff,
 exact argv, unique run ID, Git state, profile ID/fingerprint, stage, seed, log,
 checkpoints, parsed metrics, anomaly decision, and stop reason.
 
+For an approved fixed-single-seed adaptive session, read
+`history-informed-adaptive-search.md`. Local W&B history is a bounded prior,
+not authority: read only the approved project, roots, run/time/point limits,
+exact parameter map, and exact metric map. Globally retain at most six runs and
+let history choose no more than half of first-round candidates. Exclude exact
+historical and already-tried combinations. Do not access cloud W&B or expand
+the authorized grid. Build each later round only from complete, constraint-
+checked results for every current trial and retain deterministic exploration.
+
 Prefer one GPU-heavy trial at a time. Bind state to the exact approved session
 and deterministic plan, require an idle GPU and exclusive lock, and never reuse
 a prior attempt's outputs. Run a short algorithm-appropriate smoke stage before

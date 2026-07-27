@@ -10,6 +10,7 @@ supervised hardware testing; it does not approve physical deployment.
 - Authorization and prerequisites
 - Inspection
 - Archive evidence
+- Shared-repository lease
 - Atomic write behavior
 - Failure rules
 - Git and hardware boundaries
@@ -108,6 +109,86 @@ plus gate definitions, parity expectations, the recorded training source,
 archive-time source observation, and the storage base commit. When the training
 source was dirty, state that the commit alone cannot fully reproduce the run.
 
+## Shared-repository lease
+
+Use this workflow only for a version-7 session whose `archive` contract enables
+`distributed_lease`. Each worker keeps a separate local clone of the same
+policy-storage remote. The coordination repository carries metadata only.
+
+On the worker that holds the final evaluated artifacts, build the request:
+
+```bash
+conda run -n isaacsim-5.1 python \
+  scripts/archive_policy_candidate.py \
+  SESSION.json TRAINING_RESULTS.json EVALUATION_PLAN.json \
+  EVALUATION_RESULTS.json --prepare-lease-request \
+  --worker-id pc-b --output /absolute/ARCHIVE_REQUEST.json
+
+conda run -n isaacsim-5.1 python scripts/git_mailbox.py archive-request \
+  --repo /absolute/worker-mailbox --session SESSION.json \
+  --worker pc-b --request-json /absolute/ARCHIVE_REQUEST.json
+```
+
+The request is accepted only when the worker's policy-storage clone is clean,
+on the approved branch, and exactly equal to its remote head. It binds the
+session, worker, candidate, JIT/ONNX hashes, remote, branch, and base commit.
+
+On the coordinator, inspect all requests and grant one:
+
+```bash
+conda run -n isaacsim-5.1 python scripts/git_mailbox.py archive-status \
+  --repo /absolute/coordinator-mailbox --session SESSION.json
+
+conda run -n isaacsim-5.1 python scripts/git_mailbox.py archive-grant \
+  --repo /absolute/coordinator-mailbox --session SESSION.json \
+  --worker pc-b --request-id EXACT_REQUEST_ID
+```
+
+No second grant is allowed while that lease is active. On the selected worker,
+materialize the remote grant and archive with it:
+
+```bash
+conda run -n isaacsim-5.1 python scripts/git_mailbox.py archive-prepare \
+  --repo /absolute/worker-mailbox --session SESSION.json \
+  --worker pc-b --lease-id EXACT_LEASE_ID \
+  --output /absolute/ARCHIVE_GRANT.json
+
+conda run -n isaacsim-5.1 python scripts/archive_policy_candidate.py \
+  SESSION.json TRAINING_RESULTS.json EVALUATION_PLAN.json \
+  EVALUATION_RESULTS.json --worker-id pc-b \
+  --lease-grant /absolute/ARCHIVE_GRANT.json \
+  --output /absolute/ARCHIVE_RECEIPT.json
+```
+
+The archiver still performs no Git action. After separate approval, commit and
+push the new policy directory in `policy_storage`. Only then publish completion
+and let the coordinator release the lease:
+
+```bash
+conda run -n isaacsim-5.1 python scripts/git_mailbox.py archive-complete \
+  --repo /absolute/worker-mailbox --session SESSION.json \
+  --worker pc-b --lease-id EXACT_LEASE_ID \
+  --archive-receipt /absolute/ARCHIVE_RECEIPT.json
+
+conda run -n isaacsim-5.1 python scripts/git_mailbox.py archive-release \
+  --repo /absolute/coordinator-mailbox --session SESSION.json \
+  --lease-id EXACT_LEASE_ID
+```
+
+Completion requires a clean local storage worktree whose HEAD is the exact
+remote branch head and tracks the receipt's four files and hashes. Release
+rechecks that remote head. If the holder fails before completion, keep the
+lease active until the user explicitly approves:
+
+```bash
+conda run -n isaacsim-5.1 python scripts/git_mailbox.py archive-revoke \
+  --repo /absolute/coordinator-mailbox --session SESSION.json \
+  --lease-id EXACT_LEASE_ID --reason "APPROVED_REASON"
+```
+
+Never infer revocation from elapsed time, stale progress, or a missing local
+process. A lease with completion evidence must be released, not revoked.
+
 ## Atomic write behavior
 
 The archiver:
@@ -145,7 +226,8 @@ create a collection, clean the repository, or commit on the user's behalf.
 Successful archival intentionally leaves new untracked files in
 `policy_storage`. Report this state and the archive receipt. Do not stage,
 commit, push, pull, or resolve repository conflicts without separate explicit
-authorization.
+authorization. In shared-repository mode, the lease remains active until a
+separately approved commit/push is proven and the coordinator releases it.
 
 Use this exact hardware statement:
 

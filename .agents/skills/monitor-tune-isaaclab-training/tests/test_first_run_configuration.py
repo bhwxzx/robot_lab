@@ -145,6 +145,8 @@ class FirstRunConfigurationTests(unittest.TestCase):
                 "artifact_policy": "metadata_only",
                 "assignment_mode_default": "by_trial",
                 "host_effect_calibration_default_enabled": False,
+                "policy_storage_remote_url": None,
+                "policy_storage_branch": None,
             },
         }
         mailbox = Path(answers["machines"][0]["mailbox_repo"])
@@ -293,6 +295,55 @@ class FirstRunConfigurationTests(unittest.TestCase):
         self.assertFalse(drift["ready_for_training"])
         self.assertIn(
             "mailbox_repo origin differs from configuration",
+            drift["blockers"],
+        )
+
+    def test_distributed_setup_binds_shared_policy_storage_remote(self) -> None:
+        answers = self._distributed_answers()
+        policy_remote = "https://example.invalid/private/policy-storage.git"
+        policy_a = self.root / "pc-a-policy-storage"
+        _init_git(policy_a)
+        _run(
+            "git",
+            "remote",
+            "add",
+            "origin",
+            policy_remote,
+            cwd=policy_a,
+        )
+        answers["machines"][0]["policy_storage_root"] = str(policy_a)
+        answers["machines"][1]["policy_storage_root"] = str(
+            self.root / "pc-b-policy-storage"
+        )
+        answers["distributed"]["policy_storage_remote_url"] = policy_remote
+        answers["distributed"]["policy_storage_branch"] = "main"
+        plan = build_plan(answers)
+        applied = apply_plan(plan, plan["plan_sha256"])
+        configuration = json.loads(
+            Path(applied["configuration_path"]).read_text(encoding="utf-8")
+        )
+        report = verify_configuration(
+            configuration,
+            check_runtime=False,
+            check_remote=False,
+        )
+        self.assertTrue(report["ready_for_training"])
+        _run(
+            "git",
+            "remote",
+            "set-url",
+            "origin",
+            "https://example.invalid/other/policy-storage.git",
+            cwd=policy_a,
+        )
+        drift = verify_configuration(
+            configuration,
+            check_runtime=False,
+            check_remote=False,
+        )
+        self.assertFalse(drift["ready_for_training"])
+        self.assertIn(
+            "policy_storage_root origin differs from configuration",
             drift["blockers"],
         )
 
