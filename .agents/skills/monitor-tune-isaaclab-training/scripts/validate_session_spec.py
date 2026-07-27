@@ -11,6 +11,7 @@ import sys
 from pathlib import Path, PurePosixPath
 from string import Formatter
 from typing import Any
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from algorithm_profiles import (
@@ -24,6 +25,9 @@ from algorithm_profiles import (
 
 PARAMETER_PATH_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+GIT_BRANCH_RE = re.compile(
+    r"^(?!/)(?!.*(?:\.\.|//|@\{|\\|\s))(?!.*[/.]$)[A-Za-z0-9._/-]+$"
+)
 COMMAND_PLACEHOLDER_RE = re.compile(r"\{([a-z0-9_]+)\}")
 ALLOWED_COMMAND_PLACEHOLDERS = {
     "artifact_path",
@@ -261,9 +265,9 @@ def _validate_hardware_feedback_contract(
 ) -> dict[str, Any] | None:
     if value is None:
         return None
-    if version not in {5, 6}:
+    if version not in {5, 6, 7}:
         raise SpecError(
-            "hardware feedback authorization requires session version 5 or 6"
+            "hardware feedback authorization requires session version 5, 6, or 7"
         )
     contract = _expect_object(value, "hardware_feedback")
     _check_keys(
@@ -276,6 +280,7 @@ def _validate_hardware_feedback_contract(
             "verify_artifact_hashes",
             "stop_on_safety_event",
             "require_new_session_approval",
+            "qualification",
         },
         "hardware_feedback",
     )
@@ -319,6 +324,122 @@ def _validate_hardware_feedback_contract(
             "prepare_authorized_draft requires tune mode and existing "
             "authorized parameter domains"
         )
+    qualification_value = contract.get("qualification")
+    if qualification_value is not None:
+        qualification = _expect_object(
+            qualification_value,
+            "hardware_feedback.qualification",
+        )
+        _check_keys(
+            qualification,
+            {
+                "enabled",
+                "final_authority",
+                "minimum_total_tests",
+                "required_scenarios",
+                "minimum_tests_per_scenario",
+                "require_high_evidence_confidence",
+                "required_telemetry_channels",
+                "require_all_assessments_pass",
+                "require_zero_safety_events",
+                "status_label",
+            },
+            "hardware_feedback.qualification",
+        )
+        qualification_enabled = _expect_bool(
+            qualification.get("enabled"),
+            "hardware_feedback.qualification.enabled",
+        )
+        if qualification_enabled and not enabled:
+            raise SpecError(
+                "hardware qualification requires hardware_feedback.enabled=true"
+            )
+        if qualification.get("final_authority") != "supervised_hardware":
+            raise SpecError(
+                "hardware_feedback.qualification.final_authority must be "
+                "supervised_hardware"
+            )
+        minimum_total = _expect_int(
+            qualification.get("minimum_total_tests"),
+            "hardware_feedback.qualification.minimum_total_tests",
+            1,
+            1000,
+        )
+        scenarios = qualification.get("required_scenarios")
+        if (
+            not isinstance(scenarios, list)
+            or len(scenarios) < 3
+            or any(not isinstance(item, str) or not item for item in scenarios)
+            or len(scenarios) != len(set(scenarios))
+        ):
+            raise SpecError(
+                "hardware_feedback.qualification.required_scenarios must "
+                "contain at least three unique scenario names"
+            )
+        unknown_scenarios = sorted(
+            set(scenarios)
+            - {
+                "standing",
+                "start_stop",
+                "low_speed",
+                "turn",
+                "disturbance",
+                "terrain",
+                "other",
+            }
+        )
+        if unknown_scenarios:
+            raise SpecError(
+                "hardware_feedback.qualification.required_scenarios contains "
+                f"unsupported values: {unknown_scenarios}"
+            )
+        minimum_per_scenario = _expect_int(
+            qualification.get("minimum_tests_per_scenario"),
+            "hardware_feedback.qualification.minimum_tests_per_scenario",
+            1,
+            100,
+        )
+        if minimum_total < len(scenarios) * minimum_per_scenario:
+            raise SpecError(
+                "qualification.minimum_total_tests cannot be smaller than "
+                "required scenario coverage"
+            )
+        channels = qualification.get("required_telemetry_channels")
+        if (
+            not isinstance(channels, list)
+            or not channels
+            or any(not isinstance(item, str) or not item for item in channels)
+            or len(channels) != len(set(channels))
+        ):
+            raise SpecError(
+                "qualification.required_telemetry_channels must be a non-empty "
+                "unique string array"
+            )
+        if not {"action", "control_timestamp"} <= set(channels):
+            raise SpecError(
+                "qualification.required_telemetry_channels must include action "
+                "and control_timestamp"
+            )
+        for field in (
+            "require_high_evidence_confidence",
+            "require_all_assessments_pass",
+            "require_zero_safety_events",
+        ):
+            if not _expect_bool(
+                qualification.get(field),
+                f"hardware_feedback.qualification.{field}",
+            ):
+                raise SpecError(
+                    f"hardware_feedback.qualification.{field} must be true"
+                )
+        if (
+            qualification.get("status_label")
+            != "hardware_validated_for_test_envelope"
+        ):
+            raise SpecError(
+                "hardware_feedback.qualification.status_label must be "
+                "hardware_validated_for_test_envelope"
+            )
     return contract
 
 
@@ -397,11 +518,11 @@ def _validate_execution_contract(
     training_command: list[str] | None = None,
 ) -> dict[str, Any] | None:
     if value is None:
-        if version == 6 and mode == "tune":
-            raise SpecError("version-6 tune sessions require execution")
+        if version >= 6 and mode == "tune":
+            raise SpecError("version-6-or-newer tune sessions require execution")
         return None
-    if version != 6:
-        raise SpecError("execution authorization requires session version 6")
+    if version < 6:
+        raise SpecError("execution authorization requires session version 6 or newer")
     if mode != "tune":
         raise SpecError("execution authorization requires tune mode")
     execution = _expect_object(value, "execution")
@@ -781,6 +902,232 @@ def _validate_execution_contract(
     if execution.get("nonfinite_action") != "stop_trial":
         raise SpecError("execution.nonfinite_action must be stop_trial")
     return execution
+
+
+def _validate_distributed_contract(
+    value: Any,
+    version: int,
+    mode: str,
+    seeds: list[int] | None,
+    seed_strategy_mode: str | None,
+    source_commit: str | None,
+    source_dirty: bool | None,
+) -> dict[str, Any] | None:
+    """Validate the version-7 Git mailbox authorization."""
+    if value is None:
+        if version == 7:
+            raise SpecError("version-7 sessions require distributed authorization")
+        return None
+    if version != 7:
+        raise SpecError("distributed authorization requires session version 7")
+    if mode != "tune":
+        raise SpecError("distributed authorization currently requires tune mode")
+    if seeds is None:
+        raise SpecError("distributed authorization requires validated tuning seeds")
+    if source_commit is None or source_dirty is None:
+        raise SpecError(
+            "distributed authorization requires training source Git commit and dirty state"
+        )
+    if source_dirty:
+        raise SpecError("distributed execution requires training.source_git_dirty=false")
+
+    distributed = _expect_object(value, "distributed")
+    _check_keys(
+        distributed,
+        {
+            "enabled",
+            "transport",
+            "campaign_id",
+            "remote_url",
+            "coordinator_id",
+            "coordinator_branch",
+            "poll_interval_seconds",
+            "remote_state_unknown_after_seconds",
+            "artifact_policy",
+            "assignment_mode",
+            "workers",
+            "calibration",
+        },
+        "distributed",
+    )
+    if not _expect_bool(distributed.get("enabled"), "distributed.enabled"):
+        raise SpecError("version-7 distributed execution must be enabled")
+    if distributed.get("transport") != "git_mailbox":
+        raise SpecError("distributed.transport must be git_mailbox")
+    campaign_id = _expect_nonempty_string(
+        distributed.get("campaign_id"), "distributed.campaign_id"
+    )
+    if not IDENTIFIER_RE.fullmatch(campaign_id):
+        raise SpecError("distributed.campaign_id contains unsupported characters")
+
+    remote_url = _expect_nonempty_string(
+        distributed.get("remote_url"), "distributed.remote_url"
+    )
+    parsed = urlsplit(remote_url)
+    if (
+        parsed.scheme != "https"
+        or not parsed.netloc
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise SpecError(
+            "distributed.remote_url must be an HTTPS URL without embedded "
+            "credentials, query, or fragment"
+        )
+
+    coordinator_id = _expect_nonempty_string(
+        distributed.get("coordinator_id"), "distributed.coordinator_id"
+    )
+    coordinator_branch = _expect_nonempty_string(
+        distributed.get("coordinator_branch"), "distributed.coordinator_branch"
+    )
+    if (
+        not GIT_BRANCH_RE.fullmatch(coordinator_branch)
+        or any(
+            part.startswith(".") or part.endswith(".lock")
+            for part in coordinator_branch.split("/")
+        )
+    ):
+        raise SpecError("distributed.coordinator_branch is not a safe Git branch")
+
+    poll = _expect_int(
+        distributed.get("poll_interval_seconds"),
+        "distributed.poll_interval_seconds",
+        60,
+        3600,
+    )
+    unknown_after = _expect_int(
+        distributed.get("remote_state_unknown_after_seconds"),
+        "distributed.remote_state_unknown_after_seconds",
+        120,
+        86400,
+    )
+    if unknown_after < 2 * poll:
+        raise SpecError(
+            "distributed.remote_state_unknown_after_seconds must be at least "
+            "twice the poll interval"
+        )
+    if distributed.get("artifact_policy") != "metadata_only":
+        raise SpecError("distributed.artifact_policy must be metadata_only")
+    assignment_mode = distributed.get("assignment_mode", "by_seed")
+    if assignment_mode not in {"by_seed", "by_trial"}:
+        raise SpecError("distributed.assignment_mode must be by_seed or by_trial")
+    if seed_strategy_mode == "fixed_single_seed" and assignment_mode != "by_trial":
+        raise SpecError(
+            "fixed_single_seed distributed tuning requires assignment_mode=by_trial"
+        )
+    if seed_strategy_mode != "fixed_single_seed" and assignment_mode == "by_trial":
+        raise SpecError(
+            "distributed assignment_mode=by_trial requires fixed_single_seed"
+        )
+
+    workers = distributed.get("workers")
+    if not isinstance(workers, list) or not 2 <= len(workers) <= 16:
+        raise SpecError("distributed.workers must contain between 2 and 16 workers")
+    worker_ids: set[str] = set()
+    branches: set[str] = {coordinator_branch}
+    assigned: set[int] = set()
+    for index, worker_value in enumerate(workers):
+        path = f"distributed.workers[{index}]"
+        worker = _expect_object(worker_value, path)
+        _check_keys(
+            worker,
+            {
+                "id",
+                "branch",
+                "assigned_seeds",
+                "source_repo",
+                "state_dir",
+                "effective_config_baseline_path",
+                "gpu_index",
+                "max_active_jobs",
+            },
+            path,
+        )
+        worker_id = _expect_nonempty_string(worker.get("id"), f"{path}.id")
+        if not IDENTIFIER_RE.fullmatch(worker_id) or worker_id in worker_ids:
+            raise SpecError(f"{path}.id must be a unique safe identifier")
+        worker_ids.add(worker_id)
+        branch = _expect_nonempty_string(worker.get("branch"), f"{path}.branch")
+        if (
+            not GIT_BRANCH_RE.fullmatch(branch)
+            or any(
+                part.startswith(".") or part.endswith(".lock")
+                for part in branch.split("/")
+            )
+            or branch in branches
+        ):
+            raise SpecError(f"{path}.branch must be a unique safe Git branch")
+        branches.add(branch)
+        worker_seeds = _validate_seed_array(
+            worker.get("assigned_seeds"), f"{path}.assigned_seeds"
+        )
+        overlap = assigned.intersection(worker_seeds)
+        if assignment_mode == "by_seed" and overlap:
+            raise SpecError(
+                f"{path}.assigned_seeds overlaps another worker: {sorted(overlap)}"
+            )
+        if assignment_mode == "by_trial" and worker_seeds != seeds:
+            raise SpecError(
+                f"{path}.assigned_seeds must exactly equal tuning.seeds "
+                "for by_trial assignment"
+            )
+        assigned.update(worker_seeds)
+        for field in (
+            "source_repo",
+            "state_dir",
+            "effective_config_baseline_path",
+        ):
+            worker_path = Path(
+                _expect_nonempty_string(worker.get(field), f"{path}.{field}")
+            )
+            if not worker_path.is_absolute():
+                raise SpecError(f"{path}.{field} must be an absolute path")
+        _expect_int(worker.get("gpu_index"), f"{path}.gpu_index", 0, 1024)
+        _expect_int(
+            worker.get("max_active_jobs"), f"{path}.max_active_jobs", 1, 1
+        )
+    if assigned != set(seeds):
+        raise SpecError(
+            "distributed worker seed assignments must cover tuning.seeds"
+        )
+    if coordinator_id not in worker_ids:
+        raise SpecError("distributed.coordinator_id must name one configured worker")
+
+    calibration = _expect_object(
+        distributed.get("calibration"), "distributed.calibration"
+    )
+    _check_keys(calibration, {"enabled", "seed", "worker_ids"}, "distributed.calibration")
+    calibration_enabled = _expect_bool(
+        calibration.get("enabled"), "distributed.calibration.enabled"
+    )
+    calibration_seed = _expect_int(
+        calibration.get("seed"), "distributed.calibration.seed", 0, 2**31 - 1
+    )
+    if seed_strategy_mode == "fixed_single_seed" and calibration_seed != seeds[0]:
+        raise SpecError(
+            "fixed_single_seed requires distributed.calibration.seed to equal "
+            "the training seed"
+        )
+    calibration_workers = calibration.get("worker_ids")
+    if not isinstance(calibration_workers, list):
+        raise SpecError("distributed.calibration.worker_ids must be an array")
+    if calibration_enabled and (
+        len(calibration_workers) != len(worker_ids)
+        or set(calibration_workers) != worker_ids
+        or len(set(calibration_workers)) != len(calibration_workers)
+    ):
+        raise SpecError(
+            "enabled distributed.calibration.worker_ids must contain every "
+            "worker exactly once"
+        )
+    if not calibration_enabled and calibration_workers:
+        raise SpecError(
+            "disabled distributed.calibration.worker_ids must be empty"
+        )
+    return distributed
 
 
 def _validate_evaluation(
@@ -1305,7 +1652,7 @@ def _validate_archive(
         return None
     if version < 4:
         raise SpecError(
-            "policy archive authorization requires session version 4, 5, or 6"
+            "policy archive authorization requires session version 4, 5, 6, or 7"
         )
     archive = _expect_object(value, "archive")
     _check_keys(
@@ -1447,14 +1794,15 @@ def validate_spec(
             "archive",
             "hardware_feedback",
             "execution",
+            "distributed",
             "cleanup",
         },
         "session",
     )
 
     version = root.get("version")
-    if version not in {3, 4, 5, 6}:
-        raise SpecError("version must be 3, 4, 5, or 6")
+    if version not in {3, 4, 5, 6, 7}:
+        raise SpecError("version must be 3, 4, 5, 6, or 7")
     mode = root.get("mode")
     if mode not in {"monitor", "tune"}:
         raise SpecError("mode must be monitor or tune")
@@ -1544,9 +1892,9 @@ def validate_spec(
         training.get("run_id"),
         "training.run_id",
     )
-    if version == 6 and not IDENTIFIER_RE.fullmatch(training_run_id):
+    if version >= 6 and not IDENTIFIER_RE.fullmatch(training_run_id):
         raise SpecError(
-            "version-6 training.run_id must contain only letters, digits, "
+            "version-6-or-newer training.run_id must contain only letters, digits, "
             "dot, underscore, or hyphen"
         )
     if "checkpoint_path" in training:
@@ -1630,7 +1978,7 @@ def validate_spec(
     )
 
     evaluation = _validate_evaluation(root.get("evaluation"), profile, mode)
-    _validate_hardware_feedback_contract(
+    hardware_feedback_contract = _validate_hardware_feedback_contract(
         root.get("hardware_feedback"),
         version,
         mode,
@@ -1652,6 +2000,15 @@ def validate_spec(
         )
 
     if mode == "monitor":
+        _validate_distributed_contract(
+            root.get("distributed"),
+            version,
+            mode,
+            None,
+            None,
+            training.get("source_git_commit"),
+            training.get("source_git_dirty"),
+        )
         _validate_execution_contract(
             root.get("execution"),
             version,
@@ -1722,7 +2079,8 @@ def validate_spec(
         raise SpecError("tuning.mutation_scope must be overrides_only")
     _validate_objectives(tuning.get("objectives"), version)
     _validate_constraints(tuning.get("constraints", []), version)
-    if version == 6:
+    seed_strategy_mode: str | None = None
+    if version >= 6:
         seed_strategy = _expect_object(
             tuning.get("seed_strategy"),
             "tuning.seed_strategy",
@@ -1730,12 +2088,20 @@ def validate_spec(
         _check_keys(
             seed_strategy,
             {
+                "mode",
                 "screening_seeds",
                 "confirmation_seeds",
                 "confirmation_top_k",
+                "final_authority",
             },
             "tuning.seed_strategy",
         )
+        seed_strategy_mode = seed_strategy.get("mode", "robust_multi_seed")
+        if seed_strategy_mode not in {"robust_multi_seed", "fixed_single_seed"}:
+            raise SpecError(
+                "tuning.seed_strategy.mode must be robust_multi_seed or "
+                "fixed_single_seed"
+            )
         screening_seeds = _validate_seed_array(
             seed_strategy.get("screening_seeds"),
             "tuning.seed_strategy.screening_seeds",
@@ -1743,19 +2109,54 @@ def validate_spec(
         confirmation_seeds = _validate_seed_array(
             seed_strategy.get("confirmation_seeds"),
             "tuning.seed_strategy.confirmation_seeds",
-            minimum_length=2,
+            minimum_length=(
+                1 if seed_strategy_mode == "fixed_single_seed" else 2
+            ),
         )
         if not set(screening_seeds) <= set(confirmation_seeds):
             raise SpecError(
                 "screening seeds must be a subset of confirmation seeds"
             )
-        if set(screening_seeds) == set(confirmation_seeds):
+        if (
+            seed_strategy_mode == "robust_multi_seed"
+            and set(screening_seeds) == set(confirmation_seeds)
+        ):
             raise SpecError(
                 "screening seeds must be a proper subset of confirmation seeds"
             )
         if confirmation_seeds != seeds:
             raise SpecError(
                 "tuning.seeds must exactly equal confirmation_seeds"
+            )
+        if seed_strategy_mode == "fixed_single_seed":
+            if len(seeds) != 1 or screening_seeds != seeds:
+                raise SpecError(
+                    "fixed_single_seed requires exactly one identical tuning, "
+                    "screening, and confirmation seed"
+                )
+            if seed_strategy.get("final_authority") != "supervised_hardware":
+                raise SpecError(
+                    "fixed_single_seed requires "
+                    "seed_strategy.final_authority=supervised_hardware"
+                )
+            if not isinstance(evaluation, dict) or not evaluation.get("enabled"):
+                raise SpecError(
+                    "fixed_single_seed requires enabled Play/deployment-artifact "
+                    "evaluation before physical tests"
+                )
+            qualification = (
+                hardware_feedback_contract.get("qualification")
+                if isinstance(hardware_feedback_contract, dict)
+                else None
+            )
+            if not isinstance(qualification, dict) or not qualification.get("enabled"):
+                raise SpecError(
+                    "fixed_single_seed requires enabled supervised hardware "
+                    "qualification"
+                )
+        elif "final_authority" in seed_strategy:
+            raise SpecError(
+                "seed_strategy.final_authority is only valid for fixed_single_seed"
             )
         top_k = _expect_int(
             seed_strategy.get("confirmation_top_k"),
@@ -1788,9 +2189,16 @@ def validate_spec(
         minimum_final = _expect_int(
             ranking.get("minimum_final_training_seeds"),
             "tuning.ranking.minimum_final_training_seeds",
-            2,
+            1 if seed_strategy_mode == "fixed_single_seed" else 2,
             16,
         )
+        if (
+            seed_strategy_mode == "fixed_single_seed"
+            and minimum_final != 1
+        ):
+            raise SpecError(
+                "fixed_single_seed requires minimum_final_training_seeds=1"
+            )
         if minimum_final > len(confirmation_seeds):
             raise SpecError(
                 "minimum_final_training_seeds exceeds confirmation seed count"
@@ -1798,11 +2206,11 @@ def validate_spec(
         for constraint in tuning.get("constraints", []):
             if constraint.get("scope", "each_seed") != "each_seed":
                 raise SpecError(
-                    "version-6 constraints must use scope=each_seed"
+                    "version-6-or-newer constraints must use scope=each_seed"
                 )
     elif "seed_strategy" in tuning or "ranking" in tuning:
         raise SpecError(
-            "seed_strategy and ranking require session version 6"
+            "seed_strategy and ranking require session version 6 or newer"
         )
     required_metrics = {
         objective["metric"] for objective in tuning["objectives"]
@@ -1818,6 +2226,15 @@ def validate_spec(
         parameter_paths=parameter_paths,
         required_metrics=required_metrics,
         training_command=training["command"],
+    )
+    _validate_distributed_contract(
+        root.get("distributed"),
+        version,
+        mode,
+        seeds,
+        seed_strategy_mode,
+        training.get("source_git_commit"),
+        training.get("source_git_dirty"),
     )
     return root
 

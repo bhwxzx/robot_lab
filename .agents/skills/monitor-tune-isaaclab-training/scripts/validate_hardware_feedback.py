@@ -349,8 +349,8 @@ def _validate_test(value: Any) -> dict[str, Any]:
 
 
 def _validate_observations(value: Any, duration_seconds: float) -> list[dict[str, Any]]:
-    if not isinstance(value, list) or not value:
-        raise SpecError("observations must be a non-empty array")
+    if not isinstance(value, list):
+        raise SpecError("observations must be an array")
     if len(value) > 256:
         raise SpecError("observations may contain at most 256 entries")
     normalized: list[dict[str, Any]] = []
@@ -504,6 +504,10 @@ def load_and_validate_feedback(
         )
     if not isinstance(assessment["notes"], str):
         raise SpecError("user_assessment.notes must be a string")
+    if assessment["overall"] != "pass" and not observations:
+        raise SpecError(
+            "mixed, fail, or unsafe assessments require at least one observation"
+        )
     normalized = {
         "version": 1,
         "feedback_id": feedback_id,

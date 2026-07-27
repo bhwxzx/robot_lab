@@ -986,3 +986,74 @@ baseline 差分进行归一化；这些路径不得同时成为可调参数，�
 - **Notes**: 流式解析器与真实 adapter 在线摘要已实现，并通过 collapse 与 NaN 故障注入。
 
 ---
+## [LRN-20260727-001] correction
+
+**Logged**: 2026-07-27T15:52:21+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+机器人运动策略调优可以固定使用同一个 seed；最终接受依据是精确策略在受监督实物测试矩阵中的效果，而不是强制多 seed 集合。
+
+### Details
+此前把多 seed 稳健排名作为版本 6/7 自动调优的硬门槛。用户明确选择所有
+trial 和双机任务保持同一 seed，并认为策略是否可用应由 Play、部署产物闭环
+检查以及实物部署效果决定。单 seed 结果仍可用于同条件候选比较，但不能标成
+跨 seed 鲁棒性，也不能把有限实物测试外推成普遍硬件就绪。
+
+### Suggested Action
+把 seed 方法做成显式模式：`fixed_single_seed` 要求相同的 tuning、screening
+和 confirmation seed，双机按 trial 分工，不生成额外 confirmation seed
+任务。训练结果标记 `single_seed_selected`。最终资格必须绑定精确产物、部署
+配置、机器人、场景覆盖、独立视频/遥测、零安全事件与人工 pass，并仅输出
+`hardware_validated_for_test_envelope`。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/scripts/validate_session_spec.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/rank_trials.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/validate_hardware_qualification.py`
+- Tags: fixed-seed, physical-deployment, evidence-boundary, distributed-tuning
+- Pattern-Key: correct.fixed_seed_hardware_authority
+- See Also: FEAT-20260726-003
+
+### Resolution
+- **Resolved**: 2026-07-27T15:52:21+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已加入固定单 seed 契约、双机按 trial 分工、证据标签和有限实物工况资格门。
+
+---
+## [LRN-20260727-002] correction
+
+**Logged**: 2026-07-27T16:21:18+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+双机固定 seed 调优默认应分担不同奖励权重和参数组合，不应强制在两台主机重复完全相同的 trial。
+
+### Details
+此前版本 7 强制每台主机额外运行同一基线，以控制主机或 GPU 差异。用户根据
+实际使用判断当前主机差异不是主要变量，希望把训练预算用于比较更多奖励权重
+和参数组合。默认流程因此应让每个精确的 seed 与 overrides 组合只运行一次，
+同时明确主机效应未受控制、不得声称跨主机一致性。若后续需要，可通过独立
+批准的校准诊断在每台主机重复同一基线。
+
+### Suggested Action
+固定单 seed 双机任务默认使用 `by_trial` 轮转分配，基线仅在协调主机运行一次，
+并设置 `distributed.calibration.enabled=false`、`worker_ids=[]`。保留显式开启
+校准的能力，但将其视为独立主机差异诊断，不计入候选排名或普通参数搜索预算。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/scripts/validate_session_spec.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/git_mailbox.py`, `.agents/skills/monitor-tune-isaaclab-training/references/distributed-git-mailbox.md`
+- Tags: distributed-tuning, fixed-seed, reward-weights, host-effects, calibration
+- Pattern-Key: correct.unique_trial_default_host_calibration_deferred
+- See Also: LRN-20260727-001
+
+### Resolution
+- **Resolved**: 2026-07-27T16:21:18+08:00
+- **Commit/PR**: N/A
+- **Notes**: 默认关闭跨主机重复校准并保留显式按需校准；已加入唯一任务与校准开关测试。
+
+---

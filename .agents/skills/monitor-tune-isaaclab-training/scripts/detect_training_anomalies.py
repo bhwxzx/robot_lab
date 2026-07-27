@@ -39,8 +39,10 @@ def detect_anomalies(
     summary: dict[str, Any],
 ) -> dict[str, Any]:
     """Return a deterministic stop/suspect decision without signaling a process."""
-    if spec.get("version") != 6 or spec.get("mode") != "tune":
-        raise SpecError("quality anomaly detection requires version-6 tune session")
+    if spec.get("version", 0) < 6 or spec.get("mode") != "tune":
+        raise SpecError(
+            "quality anomaly detection requires version-6-or-newer tune session"
+        )
     execution = spec["execution"]
     records = summary.get("records")
     if not isinstance(records, list):
@@ -142,7 +144,7 @@ def detect_anomalies(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("session", help="Validated version-6 tune session")
+    parser.add_argument("session", help="Validated version-6-or-newer tune session")
     parser.add_argument("summary", help="Structured training-log summary JSON")
     parser.add_argument("--output", help="Optional anomaly report JSON")
     args = parser.parse_args()

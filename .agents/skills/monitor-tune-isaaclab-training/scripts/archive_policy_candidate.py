@@ -528,7 +528,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "session",
-        help="Validated version-4, version-5, or version-6 session JSON",
+        help="Validated version-4, version-5, version-6, or version-7 session JSON",
     )
     parser.add_argument("training_results", help="Per-trial training results")
     parser.add_argument("evaluation_plan", help="Evaluation plan JSON")

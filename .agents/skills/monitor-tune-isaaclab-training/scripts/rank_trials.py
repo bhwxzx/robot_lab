@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rank paired multi-seed trials with constraints, uncertainty, and Pareto status."""
+"""Rank paired trials under robust-multi-seed or fixed-single-seed evidence."""
 
 from __future__ import annotations
 
@@ -365,8 +365,10 @@ def select_confirmation_candidates(
     runs: list[dict[str, Any]],
 ) -> list[str]:
     """Select exact top-k non-baseline trials after the approved screening seeds."""
-    if spec.get("version") != 6:
-        raise SpecError("staged confirmation selection requires session version 6")
+    if spec.get("version", 0) < 6:
+        raise SpecError(
+            "staged confirmation selection requires session version 6 or newer"
+        )
     eligible, _ = _aggregate(
         spec,
         runs,
@@ -388,7 +390,7 @@ def rank(
     runs: list[dict[str, Any]],
     evaluation_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Aggregate final seeds, apply robustness gates, and score eligible trials."""
+    """Aggregate approved seeds, apply gates, and score eligible trials."""
     if spec["mode"] != "tune":
         raise SpecError("ranking is only valid in tune mode")
     expected_seeds = (
@@ -424,6 +426,21 @@ def rank(
         "final_selection": None,
         "hardware_ready": False,
     }
+    seed_mode = (
+        spec["tuning"]["seed_strategy"].get("mode", "robust_multi_seed")
+        if spec["version"] >= 6
+        else "legacy"
+    )
+    result["seed_strategy_mode"] = seed_mode
+    result["training_evidence"] = (
+        "single_seed_selected"
+        if seed_mode == "fixed_single_seed"
+        else "robust_multi_seed_ranked"
+    )
+    if seed_mode == "fixed_single_seed":
+        result["final_authority"] = "supervised_hardware"
+        result["generalization_claim"] = False
+        result["policy_acceptance_status"] = "awaiting_supervised_hardware"
     evaluation = spec.get("evaluation")
     if not isinstance(evaluation, dict) or not evaluation.get("enabled"):
         result["selection_status"] = "training_ranking_only"

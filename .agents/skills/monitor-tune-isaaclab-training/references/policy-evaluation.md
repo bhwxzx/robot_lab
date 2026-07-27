@@ -37,7 +37,7 @@ behavior on the physical robot.
 
 ## Authorization boundary
 
-The version-4, version-5, or version-6 session owns evaluation and optional
+The version-4, version-5, version-6, or version-7 session owns evaluation and optional
 archival authority. Version 3 remains valid only for legacy evaluation without
 archival. Require the user
 to approve:
@@ -163,7 +163,7 @@ and cite timestamps in notes.
 
 1. Resolve and validate the non-generic algorithm profile.
 2. Confirm the current Play/export/deployment tensor path.
-3. Approve the version-4, version-5, or version-6 session including
+3. Approve the version-4, version-5, version-6, or version-7 session including
    `evaluation` and, when requested,
    the separate `archive` contract.
 4. Export required artifacts and verify that paths are isolated by candidate.
@@ -351,7 +351,7 @@ After simulation qualification, require a separate supervised hardware plan:
 Only supervised physical evidence can advance the candidate beyond
 `simulation_qualified_hardware_candidate`.
 
-Record that evidence through the separate version-5 or version-6 contract in
+Record that evidence through the separate version-5, version-6, or version-7 contract in
 `hardware-feedback-retuning.md`. Physical feedback may propose another bounded
 simulation cycle, but it does not extend tuning paths, start trials, or excuse
 deployment-runtime and hardware diagnosis.

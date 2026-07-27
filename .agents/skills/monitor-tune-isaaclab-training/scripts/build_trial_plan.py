@@ -109,6 +109,7 @@ def build_plan(spec: dict[str, Any]) -> dict[str, Any]:
         return base
 
     strategy = tuning["seed_strategy"]
+    strategy_mode = strategy.get("mode", "robust_multi_seed")
     if len(trials) - 1 < strategy["confirmation_top_k"]:
         raise SpecError(
             "authorized grid contains fewer non-baseline trials than "
@@ -147,7 +148,11 @@ def build_plan(spec: dict[str, Any]) -> dict[str, Any]:
                 "runs": screening_runs,
             },
             "confirmation": {
-                "status": "awaiting_screening_selection",
+                "status": (
+                    "selection_only_after_screening"
+                    if strategy_mode == "fixed_single_seed"
+                    else "awaiting_screening_selection"
+                ),
                 "seeds": confirmation_seeds,
                 "remaining_seeds": remaining_confirmation,
                 "confirmation_top_k": strategy["confirmation_top_k"],
@@ -165,9 +170,11 @@ def build_confirmation_runs(
     plan: dict[str, Any],
     selected_trial_ids: list[str],
 ) -> list[dict[str, Any]]:
-    """Build remaining-seed runs for baseline and selected screening candidates."""
-    if spec.get("version") != 6 or plan.get("version") != 4:
-        raise SpecError("confirmation staging requires version-6 session and version-4 plan")
+    """Build remaining-seed runs, or none for fixed-single-seed selection."""
+    if spec.get("version", 0) < 6 or plan.get("version") != 4:
+        raise SpecError(
+            "confirmation staging requires version-6-or-newer session and version-4 plan"
+        )
     top_k = spec["tuning"]["seed_strategy"]["confirmation_top_k"]
     if (
         len(selected_trial_ids) != top_k

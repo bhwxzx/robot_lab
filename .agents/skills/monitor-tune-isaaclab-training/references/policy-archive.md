@@ -38,7 +38,7 @@ to the nearest-looking directory.
 
 Require all of the following:
 
-1. a validated version-4, version-5, or version-6 tune session with
+1. a validated version-4, version-5, version-6, or version-7 tune session with
    `archive.enabled=true`;
 2. `copy_after_qualification=true`;
 3. an exact absolute storage root and safe relative collection;

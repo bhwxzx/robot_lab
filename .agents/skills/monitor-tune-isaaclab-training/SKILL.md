@@ -1,6 +1,6 @@
 ---
 name: monitor-tune-isaaclab-training
-description: Supervise, diagnose, recover, execute bounded multi-seed tuning, robustly rank, closed-loop evaluate, safely archive, and improve IsaacLab policies from supervised physical-deployment feedback across RSL-RL and other backends through versioned algorithm profiles and an explicit per-run authorization contract. Use for training watchdogs, safe checkpoint resume, staged seed trials, effective-config gates, learning-quality anomaly detection, multi-metric tuning, Play and Native/JIT/ONNX deployment-artifact tests, video-based motion review, final-policy promotion gates, qualified JIT/ONNX policy storage, real-robot feedback diagnosis, feedback-driven retuning proposals, new-algorithm discovery, or approval-gated skill profile upgrades.
+description: Configure, supervise, diagnose, recover, distribute, execute, rank, closed-loop evaluate, safely archive, and improve IsaacLab policies from supervised physical-deployment feedback across RSL-RL and other backends through versioned algorithm profiles and explicit authorization. Use for first-run machine, Conda, GPU, path, policy-storage, or HTTPS Git-mailbox setup; training watchdogs; safe checkpoint resume; bounded fixed-single-seed or multi-seed tuning on one or multiple Git-connected computers; effective-config gates; learning-quality anomaly detection; Play and Native/JIT/ONNX deployment-artifact tests; video-based motion review; bounded real-robot qualification; final-policy promotion; qualified policy storage; real-robot feedback retuning; new-algorithm discovery; or approval-gated profile upgrades.
 ---
 
 # Monitor and Tune IsaacLab Training
@@ -11,6 +11,25 @@ Operate every training session under one explicit mode:
 - `tune`: supervise and recover, then run bounded experiments using only parameters authorized for this session.
 
 Treat authorization as non-transferable. Never inherit mode, parameter choices, restart limits, algorithm identity, profile version, or cleanup permission from another run.
+
+## Complete first-run configuration
+
+Before the first use on each computer, read
+[references/first-run-configuration.md](references/first-run-configuration.md).
+Run `configure_skill.py locate` to find the versioned machine-local
+`configuration.json` and `setup_receipt.json` outside the source worktree. If
+either is absent, changed, or stale, run `configure_skill.py plan`, present the
+exact operations, discovery path, and plan SHA-256, and pause for explicit
+approval. Run `apply` only with that approved hash, then run `verify`.
+
+Do not begin monitoring, training, evaluation, archival, physical feedback, or
+Git-mailbox publication unless first-run verification reports the required
+local source, `isaacsim-5.1` environment, GPU, output paths, and optional
+mailbox clone. For multi-host use, require the same private HTTPS remote,
+machine table, and unique branches on all computers. The setup tool may create
+approved local directories and clone an existing initialized remote; it never
+creates a provider repository, stores credentials, pushes, overwrites, resets,
+stashes, deletes, installs packages, or grants session authority.
 
 ## Resolve the algorithm before approval
 
@@ -35,8 +54,11 @@ smoke-test needs before proposing a persistent profile upgrade.
 
 ## Establish the session contract
 
-Create a version 6 session JSON document for automated staged trial execution
-and robust multi-seed ranking. Version 6 also supports physical feedback.
+Create a version 7 session JSON document for approved multi-host Git-mailbox
+execution. Use version 6 for automated staged trial execution on one host.
+Versions 6 and 7 support either robust multi-seed ranking or explicit
+fixed-single-seed selection whose final authority is supervised hardware.
+They also support physical feedback.
 Version 5 remains valid for physical-feedback workflows without the new
 executor, version 4 remains valid for evaluation and archival without hardware
 feedback, and version 3 remains valid only for legacy sessions without policy
@@ -49,9 +71,14 @@ evaluating, archiving, or preparing a feedback-driven tuning draft. Require:
 - mode, commands, working directory, log, optional TensorBoard source, PID, and GPU;
 - check interval, stale threshold, restart limit, and cleanup permission;
 - in `tune` mode, every parameter path, domain, seed, trial budget, objective, and constraint.
-- in version-6 `tune` mode, screening/confirmation seeds, paired-baseline and
-  Pareto rules, exact child argv, state directory, GPU exclusivity, retry
-  budget, effective-config baseline, and learning-quality stop rules.
+- in version-6-or-7 `tune` mode, the explicit seed-strategy mode,
+  screening/confirmation seeds, paired-baseline and Pareto rules, exact child
+  argv, state directory, GPU exclusivity, retry budget, effective-config
+  baseline, and learning-quality stop rules.
+- in version-7 `tune` mode, a dedicated HTTPS coordination repository,
+  coordinator/worker branches, `by_seed` or fixed-seed `by_trial` assignment,
+  clean source commit, per-worker paths/GPU, an explicit host-calibration
+  choice, poll/grace intervals, and metadata-only artifact exchange.
 - for final selection, exact Native/deployment artifacts, evaluation commands,
   scenarios, seeds, runtime overrides, gates, videos, and retuning authority.
 - for archival, the exact storage root and collection, JIT and ONNX formats,
@@ -59,7 +86,9 @@ evaluating, archiving, or preparing a feedback-driven tuning draft. Require:
   requirement, and no Git action.
 - for physical feedback, proposal-only or pending-draft mode, exact output
   directory, archive-manifest and artifact-hash binding, safety-stop behavior,
-  and mandatory approval of a new session before any trial.
+  and mandatory approval of a new session before any trial. When physical
+  evidence is final authority, also approve the repeated-test count, required
+  scenarios, telemetry channels, and bounded qualification label.
 
 Validate the profile registry and session:
 
@@ -73,6 +102,32 @@ conda run -n isaacsim-5.1 python \
 ```
 
 Stop on validation failure. Do not silently select a nearby profile or relax a rule.
+
+## Distribute trials only when authorized
+
+For version 7, read
+[references/distributed-git-mailbox.md](references/distributed-git-mailbox.md).
+Use a dedicated private coordination repository rather than the source
+repository. Publish immutable jobs on the coordinator branch and let each
+worker publish receipts, progress, and results only on its own branch.
+
+Require a successful remote claim before local execution. In `by_seed` mode,
+keep every seed's baseline and candidates on one worker. In
+`fixed_single_seed` mode, give every worker the same seed and distribute
+candidate trials deterministically with `by_trial`; publish each exact
+seed-and-overrides combination once across the campaign. Default host-effect
+calibration to disabled so reward-weight and parameter search does not repeat
+identical work. Record that host effects are uncontrolled by design and make
+no host-invariance claim. Only after explicit approval, enable a separate
+unchanged calibration baseline on every host to diagnose machine effects; do
+not include those jobs in candidate ranking. Refuse dirty or mismatched source
+worktrees, invalid assignments, changed immutable events, embedded
+credentials, large artifacts, duplicate run IDs, and result/hash mismatches.
+Treat stale Git progress after a claim as `remote_state_unknown`, not proof of
+a dead run; never reassign or stop it without independent local evidence.
+Materialize the remotely published claim with `git_mailbox.py prepare-job`,
+then pass it with the exact worker ID to `execute_trial_plan.py
+--distributed-job`; never run the unfiltered full plan on a worker.
 
 ## Start or attach to training
 
@@ -100,7 +155,7 @@ Never kill a healthy, observing, suspect, or merely slow run. Before recovery, r
 
 Skip this section in `monitor` mode. Reject `tune` mode when the selected profile is generic.
 
-Read [references/tuning-policy.md](references/tuning-policy.md). For version-6
+Read [references/tuning-policy.md](references/tuning-policy.md). For version-6-or-7
 execution also read
 [references/execution-and-robust-ranking.md](references/execution-and-robust-ranking.md).
 Resolve each requested parameter to its current source, effective value, type,
@@ -115,7 +170,7 @@ conda run -n isaacsim-5.1 python \
   SESSION.json --output TRIAL_PLAN.json
 ```
 
-For version 6, initialize the hash-bound state and launch no more than one
+For version 6 or 7, initialize the hash-bound state and launch no more than one
 authorized child at a time:
 
 ```bash
@@ -166,9 +221,11 @@ Require an exact double unlock for every parameter matched by the resolved
 profile's protected patterns. Run every seed required by the applicable stage
 and stop on non-finite state, crashes, hard constraints, or budget exhaustion.
 
-In version 6, use the fixed screening seeds for all trials, then run the
-remaining confirmation seeds only for the baseline and approved top-k
-candidates. Do not reuse a single RNG continuation as independent seed
+In robust multi-seed mode, use the fixed screening seeds for all trials, then
+run the remaining confirmation seeds only for the baseline and approved top-k
+candidates. In `fixed_single_seed` mode, run that same exact seed for every
+baseline and candidate; after screening, record the top-k selection without
+creating confirmation-seed jobs. Do not describe this as robust multi-seed
 evidence.
 
 Rank results:
@@ -180,9 +237,11 @@ conda run -n isaacsim-5.1 python \
 ```
 
 Do not choose from total reward alone. Require each-seed constraints, identical
-paired baseline seeds, dispersion and confidence evidence, minimum-improvement
-gates when declared, and Pareto membership before weighted ordering. Treat
-simulation tuning as candidate selection, not real-robot readiness.
+paired baseline seeds, minimum-improvement gates when declared, and Pareto
+membership before weighted ordering. Require dispersion and confidence
+evidence only in robust multi-seed mode. Label fixed-seed output
+`single_seed_selected`, keep `generalization_claim=false`, and treat simulation
+tuning as candidate selection, not real-robot readiness.
 
 ## Evaluate motion before final selection
 
@@ -259,7 +318,7 @@ Evaluation-triggered retuning requires tune mode, remaining budget,
 ## Archive a qualified deployment candidate
 
 Read [references/policy-archive.md](references/policy-archive.md). Archive only
-when the approved version-4, version-5, or version-6 tune session enables
+when the approved version-4, version-5, version-6, or version-7 tune session enables
 `archive`, both
 JIT and ONNX are required evaluation artifacts, and final ranking reports
 `simulation_qualified_hardware_candidate`.
@@ -294,7 +353,7 @@ user separately authorizes those Git actions.
 Read
 [references/hardware-feedback-retuning.md](references/hardware-feedback-retuning.md).
 Accept only a version-1 feedback record under an approved version-5 or
-version-6
+version-6 or version-7
 `hardware_feedback` contract. Bind it to the exact archive manifest, candidate,
 JIT/ONNX hashes, deployment configuration, robot, firmware, control rate,
 supervised test envelope, observation segments, safety outcomes, and available
@@ -308,6 +367,22 @@ conda run -n isaacsim-5.1 python \
   SESSION.json HARDWARE_FEEDBACK.json \
   --output /absolute/approved/output/HARDWARE_FEEDBACK_VALIDATION.json
 ```
+
+When the session authorizes supervised hardware as final authority, validate
+each separately recorded test first, then aggregate the repeated-test matrix:
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_hardware_qualification.py \
+  SESSION.json HARDWARE_QUALIFICATION_BUNDLE.json \
+  --output /absolute/approved/output/HARDWARE_QUALIFICATION.json
+```
+
+Accept only `hardware_validated_for_test_envelope`. It binds one exact
+artifact/deployment identity, unique test times and evidence files, required
+scenario coverage, high-confidence video/telemetry, all-pass assessments, and
+zero safety events. It deliberately keeps `hardware_ready=false` and
+`generalization_claim=false`; validity ends at the recorded physical envelope.
 
 On emergency stop, fall, limit violation, communication timeout, damage,
 critical observation, or an unsafe user assessment, stop physical testing and
