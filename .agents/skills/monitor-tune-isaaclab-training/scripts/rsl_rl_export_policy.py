@@ -252,6 +252,19 @@ def _policy_tensor(observations: Any) -> torch.Tensor:
     return tensor
 
 
+def _cpu_observation_batch(observations: Any, sample_count: int) -> Any:
+    if isinstance(observations, torch.Tensor):
+        return observations[:sample_count].detach().cpu()
+    if isinstance(observations, Mapping):
+        return {
+            key: _cpu_observation_batch(value, sample_count)
+            for key, value in observations.items()
+        }
+    raise RuntimeError(
+        "observation batch contains an unsupported non-tensor value"
+    )
+
+
 def _action_tensor(value: Any) -> torch.Tensor:
     if isinstance(value, (tuple, list)):
         value = value[0]
@@ -326,25 +339,41 @@ def main(
             else policy_observation
         )
         with torch.no_grad():
-            native_action = _action_tensor(native_policy(observations))
-        native_action = native_action.detach().cpu()
+            native_device_action = _action_tensor(native_policy(observations))
+        native_device_action = native_device_action.detach().cpu()
         sample_count = min(
             args_cli.minimum_parity_samples,
             policy_input.shape[0],
-            native_action.shape[0],
+            native_device_action.shape[0],
         )
         if sample_count < args_cli.minimum_parity_samples:
             raise RuntimeError(
                 "environment batch does not cover minimum parity samples"
             )
         policy_input = policy_input[:sample_count].detach().cpu()
-        native_action = native_action[:sample_count]
+        native_device_action = native_device_action[:sample_count]
+        cpu_observations = _cpu_observation_batch(
+            observations,
+            sample_count,
+        )
         try:
             policy_module = runner.alg.policy
         except AttributeError:
             policy_module = runner.alg.actor_critic
         policy_module.cpu()
         policy_module.eval()
+        with torch.no_grad():
+            native_action = _action_tensor(native_policy(cpu_observations))
+        native_action = native_action.detach().cpu()
+        if native_device_action.shape != native_action.shape:
+            raise RuntimeError(
+                "Native device and CPU action shapes differ"
+            )
+        native_device_to_cpu_error = float(
+            torch.max(
+                torch.abs(native_device_action - native_action)
+            ).item()
+        )
         runner_name = agent_cfg.class_name
         if "ROA" in runner_name:
             if policy_observation.ndim <= 2:
@@ -403,7 +432,11 @@ def main(
                 raise RuntimeError(f"{kind} action shape differs from Native")
             error = float(torch.max(torch.abs(action - native_action)).item())
             if not finite or error > args_cli.max_abs_action_error:
-                raise RuntimeError(f"{kind} action parity gate failed")
+                raise RuntimeError(
+                    f"{kind} action parity gate failed: "
+                    f"finite={finite}, max_abs_action_error={error:.9g}, "
+                    f"limit={args_cli.max_abs_action_error:.9g}"
+                )
             artifacts[kind] = {
                 "path": str(path),
                 "sha256": _sha256(path),
@@ -425,6 +458,9 @@ def main(
                 "sample_count": sample_count,
                 "observation_batch_sha256": _tensor_digest(policy_input),
                 "native_output_sha256": _tensor_digest(native_action),
+                "native_device_to_cpu_max_abs_action_error": (
+                    native_device_to_cpu_error
+                ),
                 "history_contract": actual_history_contract,
                 "normalization_contract": normalization_contract,
             },
