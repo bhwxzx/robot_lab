@@ -207,11 +207,11 @@ Use `status` for a read-only next-action report. Use `advance` only with
 approved `mode=execute`; it may perform one exact transition and must stop
 after training ranking with `evaluation_required`.
 
-When the session separately enables `evaluation_handoff`, read
+When the session enables `policy_export` or `evaluation_handoff`, read
+[references/policy-export.md](references/policy-export.md) and
 [references/evaluation-handoff-controller.md](references/evaluation-handoff-controller.md).
-Use the Campaign Controller's immutable ranking and checkpoint inventory,
-advance only on the designated evaluation worker, and stop at
-`awaiting_visual_review`.
+Require separate execute permission, exact Native/JIT/ONNX parity, the
+designated worker, and stop at `awaiting_visual_review`.
 
 For version 6 or 7, initialize the hash-bound state and launch no more than one
 authorized child at a time:

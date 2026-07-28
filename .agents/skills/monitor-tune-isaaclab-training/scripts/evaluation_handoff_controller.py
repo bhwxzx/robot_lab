@@ -14,6 +14,10 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from build_evaluation_plan import _load_candidates, build_plan
+from build_policy_export_plan import (
+    build_plan as build_export_plan,
+    validate_plan as validate_export_plan,
+)
 from execute_evaluation_plan import (
     ACTIVE_STATUSES,
     _load_object as load_evaluation_object,
@@ -24,6 +28,16 @@ from execute_evaluation_plan import (
     launch_next as launch_evaluation,
     reconcile as reconcile_evaluation,
     state_summary as evaluation_summary,
+)
+from execute_policy_export_plan import (
+    ACTIVE_STATUSES as EXPORT_ACTIVE_STATUSES,
+    _persist_state as persist_export_state,
+    _state_path as export_state_path,
+    export_state_lock,
+    initialize_state as initialize_export_state,
+    launch_next as launch_export,
+    reconcile as reconcile_export,
+    state_summary as export_summary,
 )
 from validate_session_spec import SpecError, load_and_validate
 
@@ -175,11 +189,15 @@ def _new_state(
     worker_id: str | None,
 ) -> dict[str, Any]:
     return {
-        "version": 1,
+        "version": 2,
         "session_sha256": _file_sha256(session_path),
         "training_ranking_sha256": _file_sha256(ranking_path),
         "checkpoint_inventory_sha256": _file_sha256(inventory_path),
         "worker_id": worker_id,
+        "policy_export_plan_path": None,
+        "policy_export_plan_sha256": None,
+        "policy_export_manifest_path": None,
+        "policy_export_manifest_sha256": None,
         "candidate_manifest_path": None,
         "candidate_manifest_sha256": None,
         "evaluation_plan_path": None,
@@ -205,7 +223,7 @@ def _load_state(
         not events
         or events[-1].get("state") != state
         or events[-1].get("state_sha256") != _object_sha256(state)
-        or state.get("version") != 1
+        or state.get("version") != 2
         or state.get("session_sha256") != _file_sha256(session_path)
         or state.get("training_ranking_sha256") != _file_sha256(ranking_path)
         or state.get("checkpoint_inventory_sha256")
@@ -214,6 +232,8 @@ def _load_state(
     ):
         raise SpecError("evaluation handoff state binding is invalid")
     for path_key, hash_key in (
+        ("policy_export_plan_path", "policy_export_plan_sha256"),
+        ("policy_export_manifest_path", "policy_export_manifest_sha256"),
         ("candidate_manifest_path", "candidate_manifest_sha256"),
         ("evaluation_plan_path", "evaluation_plan_sha256"),
     ):
@@ -364,7 +384,79 @@ def _selected_candidates(
 def _decision(
     spec: dict[str, Any],
     state: dict[str, Any],
+    session_path: Path,
 ) -> dict[str, Any]:
+    export_contract = spec.get("policy_export")
+    if (
+        state.get("evaluation_plan_path") is None
+        and isinstance(export_contract, dict)
+        and export_contract.get("enabled")
+    ):
+        export_plan_value = state.get("policy_export_plan_path")
+        if export_plan_value is None:
+            return {
+                "next_action": "prepare_policy_export",
+                "reason": "policy_export_plan_absent",
+            }
+        export_plan_path = Path(export_plan_value)
+        export_state_file = export_state_path(spec)
+        if not export_state_file.exists():
+            return {
+                "next_action": "initialize_policy_export",
+                "reason": "policy_export_state_absent",
+                "policy_export_plan_path": str(export_plan_path),
+            }
+        export_plan = _load_json(
+            export_plan_path,
+            "policy export plan",
+        )
+        export_state = initialize_export_state(
+            spec,
+            session_path,
+            export_plan,
+            export_plan_path,
+        )
+        if (
+            export_state.get("session_sha256") != state["session_sha256"]
+            or export_state.get("plan_sha256")
+            != state["policy_export_plan_sha256"]
+        ):
+            raise SpecError(
+                "policy export executor state differs from handoff bindings"
+            )
+        summary = export_summary(export_state)
+        runs = list(export_state["runs"].values())
+        if any(run["status"] in EXPORT_ACTIVE_STATUSES for run in runs):
+            action, reason = (
+                "reconcile_policy_export",
+                "policy_export_child_active",
+            )
+        elif (
+            export_state.get("stage") == "blocked"
+            or any(run["status"] == "failed" for run in runs)
+        ):
+            action, reason = "blocked", "policy_export_contains_failed_run"
+        elif any(run["status"] == "pending" for run in runs):
+            action, reason = (
+                "launch_policy_export",
+                "pending_policy_export_available",
+            )
+        elif export_state.get("stage") == "completed":
+            action, reason = (
+                "prepare_evaluation",
+                "policy_export_manifest_ready",
+            )
+        else:
+            action, reason = (
+                "reconcile_policy_export",
+                "policy_export_stage_requires_reconcile",
+            )
+        return {
+            "next_action": action,
+            "reason": reason,
+            "policy_export": summary,
+            "policy_export_plan_path": str(export_plan_path),
+        }
     plan_path_value = state.get("evaluation_plan_path")
     if plan_path_value is None:
         return {
@@ -424,22 +516,172 @@ def _advance(
     action = decision["next_action"]
     if action in {"blocked", "awaiting_visual_review"}:
         return {"action_taken": "none", **decision}
-    if action == "prepare_evaluation":
+    if action == "prepare_policy_export":
         ranking, inventory = _validate_sources(
             spec,
             session_path,
             ranking_path,
             inventory_path,
         )
-        candidates = _selected_candidates(
+        plan = build_export_plan(
             spec,
             ranking,
             inventory,
-            state["worker_id"],
+            session_path=session_path,
+            ranking_path=ranking_path,
+            inventory_path=inventory_path,
+            worker_id=state["worker_id"],
         )
-        manifest = {"candidates": candidates}
-        manifest_path = root / "candidate_manifest.json"
-        _write_immutable(manifest_path, manifest)
+        validate_export_plan(spec, plan)
+        plan_path = root / "policy_export_plan.json"
+        _write_immutable(plan_path, plan)
+        state["policy_export_plan_path"] = str(plan_path)
+        state["policy_export_plan_sha256"] = _file_sha256(plan_path)
+    elif action in {
+        "initialize_policy_export",
+        "reconcile_policy_export",
+        "launch_policy_export",
+    }:
+        plan_path = Path(state["policy_export_plan_path"])
+        plan = _load_json(plan_path, "policy export plan")
+        validate_export_plan(spec, plan)
+        with export_state_lock(spec):
+            export_state = initialize_export_state(
+                spec,
+                session_path,
+                plan,
+                plan_path,
+            )
+            if action == "initialize_policy_export":
+                persist_export_state(
+                    spec,
+                    export_state,
+                    "handoff-initialize-policy-export",
+                )
+            elif action == "reconcile_policy_export":
+                export_state = reconcile_export(spec, plan, export_state)
+                persist_export_state(
+                    spec,
+                    export_state,
+                    "handoff-reconcile-policy-export",
+                )
+            else:
+                export_state = reconcile_export(spec, plan, export_state)
+                persist_export_state(
+                    spec,
+                    export_state,
+                    "handoff-reconcile-before-export-launch",
+                )
+
+                def persist_export_transition(
+                    value: dict[str, Any],
+                    transition: str,
+                ) -> None:
+                    persist_export_state(
+                        spec,
+                        value,
+                        f"handoff-{transition}",
+                    )
+
+                launch_export(
+                    spec,
+                    plan,
+                    export_state,
+                    persist_export_transition,
+                )
+    elif action == "prepare_evaluation":
+        ranking, inventory = _validate_sources(
+            spec,
+            session_path,
+            ranking_path,
+            inventory_path,
+        )
+        export_contract = spec.get("policy_export")
+        if isinstance(export_contract, dict) and export_contract.get("enabled"):
+            export_plan_path = Path(state["policy_export_plan_path"])
+            export_plan = _load_json(
+                export_plan_path,
+                "policy export plan",
+            )
+            export_state = initialize_export_state(
+                spec,
+                session_path,
+                export_plan,
+                export_plan_path,
+            )
+            manifest_value = export_state.get("manifest_path")
+            manifest_hash = export_state.get("manifest_sha256")
+            if (
+                export_state.get("stage") != "completed"
+                or not isinstance(manifest_value, str)
+                or not isinstance(manifest_hash, str)
+            ):
+                raise SpecError("policy export manifest is not ready")
+            manifest_path = Path(manifest_value)
+            manifest = _load_json(manifest_path, "policy export manifest")
+            manifest_candidates = manifest.get("candidates")
+            manifest_receipts = manifest.get("receipts")
+            if (
+                _file_sha256(manifest_path) != manifest_hash
+                or set(manifest)
+                != {
+                    "version",
+                    "session_sha256",
+                    "plan_sha256",
+                    "training_ranking_sha256",
+                    "checkpoint_inventory_sha256",
+                    "training_run_id",
+                    "algorithm",
+                    "worker_id",
+                    "candidates",
+                    "receipts",
+                }
+                or manifest.get("version") != 1
+                or manifest.get("session_sha256") != state["session_sha256"]
+                or manifest.get("plan_sha256")
+                != state["policy_export_plan_sha256"]
+                or manifest.get("training_ranking_sha256")
+                != state["training_ranking_sha256"]
+                or manifest.get("checkpoint_inventory_sha256")
+                != state["checkpoint_inventory_sha256"]
+                or manifest.get("training_run_id")
+                != spec["training"]["run_id"]
+                or manifest.get("algorithm") != spec["algorithm"]
+                or manifest.get("worker_id") != state["worker_id"]
+                or not isinstance(manifest_candidates, list)
+                or not isinstance(manifest_receipts, dict)
+                or len(manifest_candidates) != len(export_plan["runs"])
+                or {
+                    item.get("candidate_id")
+                    for item in manifest_candidates
+                    if isinstance(item, dict)
+                }
+                != {
+                    item["candidate_id"]
+                    for item in export_plan["runs"]
+                }
+                or set(manifest_receipts)
+                != {
+                    item["candidate_id"]
+                    for item in export_plan["runs"]
+                }
+            ):
+                raise SpecError("policy export manifest binding is invalid")
+            state["policy_export_manifest_path"] = str(manifest_path)
+            state["policy_export_manifest_sha256"] = manifest_hash
+            candidate_manifest = {"candidates": manifest["candidates"]}
+            manifest_path = root / "candidate_manifest.json"
+            _write_immutable(manifest_path, candidate_manifest)
+        else:
+            candidates = _selected_candidates(
+                spec,
+                ranking,
+                inventory,
+                state["worker_id"],
+            )
+            manifest = {"candidates": candidates}
+            manifest_path = root / "candidate_manifest.json"
+            _write_immutable(manifest_path, manifest)
         selected_artifacts = {
             artifact["kind"] for artifact in spec["evaluation"]["artifacts"]
         }
@@ -511,7 +753,7 @@ def _advance(
     state["last_action"] = action
     state["updated_at"] = time.time()
     _persist(root, state, action)
-    return {"action_taken": action, **_decision(spec, state)}
+    return {"action_taken": action, **_decision(spec, state, session_path)}
 
 
 def inspect_or_advance(
@@ -528,6 +770,14 @@ def inspect_or_advance(
         raise SpecError("session does not enable evaluation_handoff")
     if execute and contract["mode"] != "execute":
         raise SpecError("evaluation handoff advance requires mode=execute")
+    export_contract = spec.get("policy_export")
+    if (
+        execute
+        and isinstance(export_contract, dict)
+        and export_contract.get("enabled")
+        and export_contract["mode"] != "execute"
+    ):
+        raise SpecError("policy export advance requires policy_export.mode=execute")
     if worker_id != contract["evaluation_worker_id"]:
         raise SpecError("this is not the approved evaluation worker")
     _validate_sources(spec, session_path, ranking_path, inventory_path)
@@ -566,7 +816,7 @@ def inspect_or_advance(
             "state_path": str(root / STATE_NAME),
         }
     with _lock(root):
-        decision = _decision(spec, state)
+        decision = _decision(spec, state, session_path)
         result = (
             _advance(
                 spec,

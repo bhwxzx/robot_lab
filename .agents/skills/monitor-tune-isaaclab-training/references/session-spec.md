@@ -281,6 +281,67 @@ The controller may automate training transitions only and must stop before
 evaluation. It also emits a session- and ranking-bound checkpoint inventory.
 Read `campaign-controller.md`.
 
+## Policy export
+
+Versions 6 and 7 may place automatic export before evaluation:
+
+```json
+{
+  "policy_export": {
+    "enabled": true,
+    "mode": "shadow",
+    "adapter_id": "rsl-rl",
+    "worker_id": null,
+    "command": [
+      "conda", "run", "-n", "isaacsim-5.1", "python",
+      ".agents/skills/monitor-tune-isaaclab-training/scripts/rsl_rl_export_policy.py",
+      "--task=EXACT_TRAIN_TASK", "--headless", "--device=cuda:{gpu_index}",
+      "{require_idle_gpu_flag}",
+      "--checkpoint={checkpoint_path}",
+      "--checkpoint_sha256={checkpoint_sha256}",
+      "--candidate_id={candidate_id}", "--trial_id={trial_id}",
+      "--export_run_id", "{export_run_id}",
+      "--jit_path={jit_path}", "--onnx_path={onnx_path}",
+      "--result_path={result_path}", "--seed={seed}",
+      "--history_contract={history_contract}",
+      "--normalization_contract={normalization_contract}",
+      "--minimum_parity_samples={minimum_parity_samples}",
+      "--max_abs_action_error={max_abs_action_error}"
+    ],
+    "artifact_filenames": {
+      "jit": "policy.pt",
+      "onnx": "policy.onnx"
+    },
+    "output_dir": "/absolute/evaluation/policy-export",
+    "gpu_index": 0,
+    "require_idle_gpu": true,
+    "run_timeout_minutes": 20,
+    "execution": {
+      "max_retries_per_run": 1,
+      "stop_grace_seconds": 15,
+      "min_free_disk_gb": 5,
+      "max_gpu_temperature_c": 85,
+      "minimum_artifact_bytes": 1024
+    },
+    "parity": {
+      "minimum_samples": 16,
+      "max_abs_action_error": 0.00001,
+      "require_finite": true,
+      "history_contract": "current_observation",
+      "normalization_contract": "backend_export_helper"
+    }
+  }
+}
+```
+
+Use the exact reviewed profile history contract. ROA requires
+`flat_time_major_history` plus `current_frame_only`; DWAQ uses
+`flat_time_major_history` plus `combined_actor_input`; ordinary RSL-RL policies
+use `backend_export_helper`. `worker_id` must equal the evaluation handoff
+worker. Both JIT and ONNX must be selected evaluation artifacts. The output
+stays inside `evaluation.output_dir`. `mode=execute` is a separate
+authorization from evaluation handoff execution. Read `policy-export.md`.
+
 ## Evaluation handoff controller
 
 Versions 6 and 7 may separately authorize:
@@ -294,10 +355,7 @@ Versions 6 and 7 may separately authorize:
     "require_pareto": true,
     "checkpoint_seed": 42,
     "evaluation_worker_id": null,
-    "artifact_path_templates": {
-      "jit": "{rsl_rl_run_dir}/exported/policy.pt",
-      "onnx": "{rsl_rl_run_dir}/exported/policy.onnx"
-    },
+    "artifact_path_templates": {},
     "auto_build_plan": true,
     "auto_execute_evaluation": true,
     "stop_before_visual_review": true
@@ -307,8 +365,10 @@ Versions 6 and 7 may separately authorize:
 
 This requires an executable Campaign Controller and executable policy
 evaluation in the same tune session. Version 7 requires one exact worker ID;
-version 6 requires null. Template keys must exactly cover every selected
-non-Native evaluation artifact and resolve to already exported absolute files.
+version 6 requires null. Without `policy_export`, template keys must exactly
+cover every selected non-Native artifact and resolve to already exported
+absolute files. With `policy_export`, the mapping must be empty and only its
+hash-bound export manifest supplies artifacts.
 The controller selects only the approved Pareto Top-K at the exact checkpoint
 seed, builds the candidate manifest and evaluation matrix, advances one cell at
 a time, and stops at `awaiting_visual_review`. Read
