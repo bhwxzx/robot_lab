@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -281,9 +282,9 @@ def _make_runner(
 
 
 def _policy_tensor(observations: Any) -> torch.Tensor:
-    if isinstance(observations, dict):
+    if isinstance(observations, Mapping):
         if "policy" not in observations:
-            raise ValueError("observation dictionary does not contain policy")
+            raise ValueError("observation mapping does not contain policy")
         tensor = observations["policy"]
     else:
         tensor = observations
