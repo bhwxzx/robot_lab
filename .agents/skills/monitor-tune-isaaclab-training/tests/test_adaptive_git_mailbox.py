@@ -104,6 +104,14 @@ class AdaptiveGitMailboxTests(unittest.TestCase):
         }
         for root in roots.values():
             root.mkdir()
+        self.expected_context = {
+            "task_id": "adaptive-mailbox-task",
+            "profile_fingerprint": self.session["algorithm"][
+                "profile_fingerprint"
+            ],
+            "observation_contract_sha256": "b" * 64,
+            "reward_config_sha256": "c" * 64,
+        }
         self.session["history_prior"] = {
             "enabled": True,
             "source": "local_wandb",
@@ -125,12 +133,37 @@ class AdaptiveGitMailboxTests(unittest.TestCase):
             "worker_roots": {
                 worker_id: str(root) for worker_id, root in roots.items()
             },
+            "compatibility": {
+                "source_policy": "compatible",
+                "expected_context": self.expected_context,
+                "context_path_map": {
+                    key: f"context.{key}"
+                    for key in self.expected_context
+                },
+            },
+            "quality_gates": {
+                "progress_key": "_step",
+                "minimum_final_progress": 3,
+                "minimum_points_per_metric": 3,
+                "stability": {
+                    "metric": "score",
+                    "max_standard_deviation": 1.0,
+                    "max_abs_slope": 1.0,
+                },
+            },
         }
         self.session["adaptive_search"] = {
             "enabled": True,
             "max_rounds": 2,
             "trials_per_round": 2,
             "exploration_fraction": 0.5,
+            "stop_policy": {
+                "enabled": True,
+                "metric": "score",
+                "minimum_improvement": 0.5,
+                "patience_rounds": 1,
+                "minimum_feasible_trials": 1,
+            },
         }
         self.session["distributed"]["calibration"] = {
             "enabled": True,
@@ -161,10 +194,32 @@ class AdaptiveGitMailboxTests(unittest.TestCase):
             "status": "completed",
             "source_git_commit": self.spec["training"]["source_git_commit"],
             "source_git_match": True,
+            "source_policy": "compatible",
+            "observed_context": self.expected_context,
+            "context_match": True,
+            "guidance_eligible": True,
             "overrides": overrides,
             "overrides_sha256": _sha256(overrides),
             "metrics": {"score": score, "unsafe": 0.0},
             "retained_points": {"score": 3, "unsafe": 3},
+            "quality": {
+                "passed": True,
+                "final_progress": 3,
+                "metric_statistics": {
+                    "score": {
+                        "count": 3,
+                        "mean": score,
+                        "standard_deviation": 0.1,
+                        "slope": 0.0,
+                    },
+                    "unsafe": {
+                        "count": 3,
+                        "mean": 0.0,
+                        "standard_deviation": 0.0,
+                        "slope": 0.0,
+                    },
+                },
+            },
             "evidence": {
                 "wandb_path": f"/history/{worker_id}/{run_id}.wandb",
                 "size_bytes": 100,
@@ -173,7 +228,7 @@ class AdaptiveGitMailboxTests(unittest.TestCase):
             },
         }
         base = {
-            "schema_version": 1,
+            "schema_version": 2,
             "event": "local_wandb_history_indexed",
             "worker_id": worker_id,
             "session_sha256": _sha256(self.spec),
@@ -263,6 +318,52 @@ class AdaptiveGitMailboxTests(unittest.TestCase):
         )
         self.assertEqual(published["state"], "adaptive_round_published")
         self.assertEqual(published["published_jobs"], 2)
+        new_runs = expanded["runs"][len(plan["runs"]):]
+        for job in _build_jobs(
+            self.spec,
+            expanded,
+            runs=new_runs,
+            include_calibration=False,
+        ):
+            self.helper._publish_training_result(
+                job["worker_id"],
+                job["run"],
+                30.0,
+            )
+        final_result_path = self.root / "adaptive-round-2-results.json"
+        collect(
+            self.helper.coordinator,
+            self.session_path,
+            final_result_path,
+        )
+        final_report = json.loads(
+            final_result_path.read_text(encoding="utf-8")
+        )
+        stopped = extend_adaptive_plan(
+            self.spec,
+            expanded,
+            sorted(
+                _results(final_report, expanded),
+                key=lambda item: item["trial_id"],
+            ),
+        )
+        stopped_path = self.root / "adaptive-plan-stopped.json"
+        stopped_path.write_text(json.dumps(stopped), encoding="utf-8")
+        stopped_publication = publish_adaptive_round(
+            self.helper.coordinator,
+            self.session_path,
+            expanded_path,
+            stopped_path,
+        )
+        self.assertEqual(
+            stopped_publication["state"],
+            "adaptive_search_stopped",
+        )
+        self.assertEqual(stopped_publication["published_jobs"], 0)
+        self.assertEqual(
+            stopped_publication["reason"],
+            "max_rounds_reached",
+        )
 
 
 if __name__ == "__main__":

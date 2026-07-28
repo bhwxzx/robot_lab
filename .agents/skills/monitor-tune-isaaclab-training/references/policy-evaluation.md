@@ -202,6 +202,12 @@ the plan. The RSL-RL evaluator verifies both hashes again before allocating a
 GPU, preventing a checkpoint or deployment artifact from being replaced after
 approval.
 
+For an approved Campaign Controller result, the separate
+`evaluation-handoff-controller.md` workflow may create this manifest and plan
+from the immutable training ranking and checkpoint inventory, then drive the
+same executor one cell at a time. It only locates already exported artifacts
+and still stops before visual review.
+
 7. Review every argv and runtime override before execution.
 8. Confirm the approved GPU is idle. Do not overlap evaluation with training or
    another GPU-heavy task unless the user creates a separate contract that

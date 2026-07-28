@@ -271,9 +271,9 @@ def _event_path(
 
 def _load_plan(path: str | Path, spec: dict[str, Any]) -> dict[str, Any]:
     plan = _load_json(path)
-    if not isinstance(plan, dict) or plan.get("version") not in {4, 5}:
+    if not isinstance(plan, dict) or plan.get("version") not in {4, 5, 6}:
         raise MailboxError(
-            "distributed publication requires a version-4 or version-5 staged plan"
+            "distributed publication requires a supported staged plan"
         )
     if plan.get("run_id") != spec["training"]["run_id"]:
         raise MailboxError("trial plan run_id does not match the session")
@@ -311,6 +311,20 @@ def _adaptive_round_path(spec: dict[str, Any], round_number: int) -> str:
         f"{_campaign_root(spec)}/adaptive-rounds/"
         f"round-{round_number:03d}.json"
     )
+
+
+def _multifidelity_decision_path(
+    spec: dict[str, Any],
+    decision: int,
+) -> str:
+    return (
+        f"{_campaign_root(spec)}/multi-fidelity/"
+        f"decision-{decision:03d}.json"
+    )
+
+
+def _plan_snapshot_path(spec: dict[str, Any], plan: dict[str, Any]) -> str:
+    return f"{_campaign_root(spec)}/plans/{_sha256(plan)}.json"
 
 
 def _assigned_worker(
@@ -481,6 +495,12 @@ def history_initialize(
         "worker_ids": list(history["worker_roots"]),
         "max_selected_runs": history["max_selected_runs"],
         "max_points_per_run": history["max_points_per_run"],
+        "history_index_schema_version": 2,
+        "source_policy": history["compatibility"]["source_policy"],
+        "expected_context_sha256": _sha256(
+            history["compatibility"]["expected_context"]
+        ),
+        "quality_gates_sha256": _sha256(history["quality_gates"]),
         "artifact_policy": "metadata_only",
     }
     path = f"{_campaign_root(spec)}/history/collection.json"
@@ -542,6 +562,7 @@ def history_collect(
     return {
         "state": "history_prior_collected",
         "selected_run_count": prior["selected_run_count"],
+        "guidance_eligible_count": prior["guidance_eligible_count"],
         "prior_sha256": prior["prior_sha256"],
         "output": str(output),
     }
@@ -574,6 +595,9 @@ def publish(repo_path: str | Path, session_path: str | Path, plan_path: str | Pa
         },
     }
     changed: list[str] = []
+    plan_path = _plan_snapshot_path(spec, plan)
+    if _write_immutable(repo, plan_path, plan):
+        changed.append(plan_path)
     manifest_path = f"{root}/campaign.json"
     if _write_immutable(repo, manifest_path, manifest):
         changed.append(manifest_path)
@@ -600,17 +624,41 @@ def publish_adaptive_round(
     spec = load_and_validate(session_path)
     previous = _load_plan(previous_plan_path, spec)
     expanded = _load_plan(expanded_plan_path, spec)
+    previous_decisions = previous.get("adaptive", {}).get("decisions")
+    expanded_decisions = expanded.get("adaptive", {}).get("decisions")
+    new_decision = (
+        expanded_decisions[-1]
+        if isinstance(expanded_decisions, list) and expanded_decisions
+        else None
+    )
+    stopped = (
+        isinstance(new_decision, dict)
+        and new_decision.get("action") == "stop"
+    )
+    expected_round_delta = 0 if stopped else 1
     if (
         previous.get("version") != 5
         or expanded.get("version") != 5
+        or not isinstance(previous_decisions, list)
+        or not isinstance(expanded_decisions, list)
+        or len(expanded_decisions) != len(previous_decisions) + 1
+        or expanded_decisions[: len(previous_decisions)]
+        != previous_decisions
         or len(expanded["adaptive"]["rounds"])
-        != len(previous["adaptive"]["rounds"]) + 1
+        != len(previous["adaptive"]["rounds"]) + expected_round_delta
         or expanded["trials"][: len(previous["trials"])]
         != previous["trials"]
         or expanded["runs"][: len(previous["runs"])] != previous["runs"]
+        or (
+            stopped
+            and (
+                expanded["trials"] != previous["trials"]
+                or expanded["runs"] != previous["runs"]
+            )
+        )
     ):
         raise MailboxError(
-            "adaptive publication requires one exact append-only round"
+            "adaptive publication requires one exact decision and optional round"
         )
     _verify_remote(repo, spec)
     _fetch(repo)
@@ -646,11 +694,10 @@ def publish_adaptive_round(
         observed_job_ids.add(job_id)
         accepted_results.append(result_value)
     accepted_results.sort(key=lambda item: item["trial_id"])
-    round_record = expanded["adaptive"]["rounds"][-1]
     if (
         collected["invalid_results"]
         or observed_job_ids != set(expected_runs)
-        or accepted_results != round_record.get("input_results")
+        or accepted_results != new_decision.get("input_results")
     ):
         raise MailboxError(
             "adaptive round inputs do not exactly match valid mailbox results"
@@ -666,17 +713,27 @@ def publish_adaptive_round(
     )
     manifest = {
         "schema_version": 1,
-        "event": "adaptive_round_published",
+        "event": (
+            "adaptive_search_stopped"
+            if stopped
+            else "adaptive_round_published"
+        ),
         "campaign_id": spec["distributed"]["campaign_id"],
         "session_sha256": _sha256(spec),
-        "round": round_record["round"],
+        "decision": new_decision["decision"],
+        "evaluated_round": new_decision["evaluated_round"],
         "previous_plan_sha256": _sha256(previous),
         "expanded_plan_sha256": _sha256(expanded),
-        "input_results_sha256": round_record["input_results_sha256"],
+        "input_results_sha256": new_decision["input_results_sha256"],
+        "action": new_decision["action"],
+        "reason": new_decision["reason"],
         "job_ids": [job["job_id"] for job in jobs],
     }
     changed: list[str] = []
-    manifest_path = _adaptive_round_path(spec, round_record["round"])
+    plan_path = _plan_snapshot_path(spec, expanded)
+    if _write_immutable(repo, plan_path, expanded):
+        changed.append(plan_path)
+    manifest_path = _adaptive_round_path(spec, new_decision["decision"])
     if _write_immutable(repo, manifest_path, manifest):
         changed.append(manifest_path)
     for job in jobs:
@@ -687,11 +744,222 @@ def publish_adaptive_round(
         repo,
         branch,
         changed,
-        f"mailbox: publish adaptive round {round_record['round']}",
+        (
+            f"mailbox: stop adaptive search {new_decision['decision']}"
+            if stopped
+            else f"mailbox: publish adaptive round {new_decision['decision'] + 1}"
+        ),
     )
     return {
-        "state": "adaptive_round_published",
-        "round": round_record["round"],
+        "state": (
+            "adaptive_search_stopped"
+            if stopped
+            else "adaptive_round_published"
+        ),
+        "decision": new_decision["decision"],
+        "reason": new_decision["reason"],
+        "published_jobs": len(jobs),
+        "expanded_plan_sha256": manifest["expanded_plan_sha256"],
+    }
+
+
+def publish_multifidelity_rung(
+    repo_path: str | Path,
+    session_path: str | Path,
+    previous_plan_path: str | Path,
+    expanded_plan_path: str | Path,
+) -> dict[str, Any]:
+    """Publish one hash-bound synchronized rung decision and its jobs."""
+    repo = _repo(repo_path)
+    spec = load_and_validate(session_path)
+    previous = _load_plan(previous_plan_path, spec)
+    expanded = _load_plan(expanded_plan_path, spec)
+    previous_fidelity = previous.get("multi_fidelity")
+    expanded_fidelity = expanded.get("multi_fidelity")
+    previous_decisions = (
+        previous_fidelity.get("decisions")
+        if isinstance(previous_fidelity, dict)
+        else None
+    )
+    expanded_decisions = (
+        expanded_fidelity.get("decisions")
+        if isinstance(expanded_fidelity, dict)
+        else None
+    )
+    new_decision = (
+        expanded_decisions[-1]
+        if isinstance(expanded_decisions, list) and expanded_decisions
+        else None
+    )
+    action = (
+        new_decision.get("action")
+        if isinstance(new_decision, dict)
+        else None
+    )
+    terminal = action in {"stop", "complete"}
+    if (
+        previous.get("version") != 6
+        or expanded.get("version") != 6
+        or not isinstance(previous_fidelity, dict)
+        or not isinstance(expanded_fidelity, dict)
+        or not isinstance(previous_decisions, list)
+        or not isinstance(expanded_decisions, list)
+        or len(expanded_decisions) != len(previous_decisions) + 1
+        or expanded_decisions[: len(previous_decisions)]
+        != previous_decisions
+        or action not in {"continue", "stop", "complete"}
+        or len(expanded_fidelity["rungs"])
+        != len(previous_fidelity["rungs"]) + (0 if terminal else 1)
+        or expanded["trials"] != previous["trials"]
+        or expanded["runs"][: len(previous["runs"])] != previous["runs"]
+        or (terminal and expanded["runs"] != previous["runs"])
+        or (
+            action == "continue"
+            and len(expanded["runs"]) <= len(previous["runs"])
+        )
+    ):
+        raise MailboxError(
+            "multi-fidelity publication requires one exact decision and "
+            "optional synchronized rung"
+        )
+    _verify_remote(repo, spec)
+    _fetch(repo)
+    collected = _collect_report(repo, spec)
+    evaluated_rung = new_decision["evaluated_rung"]
+    expected_runs = {
+        run["run_id"]: run
+        for run in previous["runs"]
+        if run.get("rung") == evaluated_rung
+    }
+    observed_job_ids: set[str] = set()
+    accepted_results: list[dict[str, Any]] = []
+    parent_workers: dict[str, str] = {}
+    for envelope in collected["accepted_results"]:
+        job_id = envelope.get("job_id")
+        if job_id not in expected_runs:
+            continue
+        job = _coordinator_job(
+            repo,
+            spec,
+            envelope["worker_id"],
+            job_id,
+        )
+        result_value = envelope.get("result")
+        expected_run = expected_runs[job_id]
+        artifacts = envelope.get("artifact_manifest", {}).get("artifacts")
+        checkpoint = (
+            result_value.get("checkpoint")
+            if isinstance(result_value, dict)
+            else None
+        )
+        checkpoint_artifacts = (
+            [
+                artifact
+                for artifact in artifacts
+                if isinstance(artifact, dict)
+                and artifact.get("kind") == "checkpoint"
+            ]
+            if isinstance(artifacts, list)
+            else []
+        )
+        if (
+            job.get("kind") != "trial"
+            or job.get("run") != expected_run
+            or not isinstance(result_value, dict)
+            or result_value.get("run_id") != job_id
+            or result_value.get("trial_id") != expected_run["trial_id"]
+            or result_value.get("seed") != expected_run["seed"]
+            or result_value.get("status") != "completed"
+            or result_value.get("rung") != evaluated_rung
+            or not isinstance(checkpoint, dict)
+            or len(checkpoint_artifacts) != 1
+            or checkpoint_artifacts[0].get("path") != checkpoint.get("path")
+            or checkpoint_artifacts[0].get("sha256")
+            != checkpoint.get("sha256")
+        ):
+            raise MailboxError(
+                "multi-fidelity result or checkpoint evidence is invalid"
+            )
+        observed_job_ids.add(job_id)
+        accepted_results.append(result_value)
+        parent_workers[job_id] = envelope["worker_id"]
+    accepted_results.sort(key=lambda item: item["run_id"])
+    if (
+        collected["invalid_results"]
+        or observed_job_ids != set(expected_runs)
+        or accepted_results != new_decision.get("input_results")
+    ):
+        raise MailboxError(
+            "multi-fidelity decision inputs do not exactly match valid mailbox "
+            "results"
+        )
+    new_runs = expanded["runs"][len(previous["runs"]):]
+    for run in new_runs:
+        resume = run.get("resume_from")
+        worker = _assigned_worker(spec, run)
+        if (
+            not isinstance(resume, dict)
+            or parent_workers.get(resume.get("parent_run_id"))
+            != worker["id"]
+        ):
+            raise MailboxError(
+                "multi-fidelity promotion must remain on the checkpoint's "
+                "original worker"
+            )
+    jobs = _build_jobs(
+        spec,
+        expanded,
+        runs=new_runs,
+        include_calibration=False,
+    )
+    branch = spec["distributed"]["coordinator_branch"]
+    _checkout_coordinator(repo, branch)
+    manifest = {
+        "schema_version": 1,
+        "event": {
+            "continue": "multi_fidelity_rung_published",
+            "complete": "multi_fidelity_completed",
+            "stop": "multi_fidelity_stopped",
+        }[action],
+        "campaign_id": spec["distributed"]["campaign_id"],
+        "session_sha256": _sha256(spec),
+        "decision": new_decision["decision"],
+        "evaluated_rung": evaluated_rung,
+        "previous_plan_sha256": _sha256(previous),
+        "expanded_plan_sha256": _sha256(expanded),
+        "input_results_sha256": new_decision["input_results_sha256"],
+        "action": action,
+        "reason": new_decision["reason"],
+        "promoted_trial_ids": new_decision["promoted_trial_ids"],
+        "job_ids": [job["job_id"] for job in jobs],
+    }
+    changed: list[str] = []
+    plan_path = _plan_snapshot_path(spec, expanded)
+    if _write_immutable(repo, plan_path, expanded):
+        changed.append(plan_path)
+    manifest_path = _multifidelity_decision_path(
+        spec,
+        new_decision["decision"],
+    )
+    if _write_immutable(repo, manifest_path, manifest):
+        changed.append(manifest_path)
+    for job in jobs:
+        path = _job_path(spec, job["worker_id"], job["job_id"])
+        if _write_immutable(repo, path, job):
+            changed.append(path)
+    _commit_and_push(
+        repo,
+        branch,
+        changed,
+        (
+            f"mailbox: publish multi-fidelity decision "
+            f"{new_decision['decision']}"
+        ),
+    )
+    return {
+        "state": manifest["event"],
+        "decision": new_decision["decision"],
+        "reason": new_decision["reason"],
         "published_jobs": len(jobs),
         "expanded_plan_sha256": manifest["expanded_plan_sha256"],
     }
@@ -1128,6 +1396,21 @@ def prepare_job(
     ):
         raise MailboxError("remote claim receipt is missing or fails identity binding")
     _inspect_source(worker, job["source_git_commit"])
+    coordinator_ref = f"origin/{spec['distributed']['coordinator_branch']}"
+    plan = _read_ref_json(
+        repo,
+        coordinator_ref,
+        f"{_campaign_root(spec)}/plans/{job['plan_sha256']}.json",
+    )
+    if plan is not None:
+        if not isinstance(plan, dict) or _sha256(plan) != job["plan_sha256"]:
+            raise MailboxError(
+                "published job plan snapshot fails hash binding"
+            )
+        try:
+            validate_trial_plan(spec, plan)
+        except SpecError as exc:
+            raise MailboxError("published job plan snapshot is invalid") from exc
     prepared = {
         "schema_version": 1,
         "job_sha256": _sha256(job),
@@ -1135,6 +1418,8 @@ def prepare_job(
         "job": job,
         "receipt": receipt,
     }
+    if plan is not None:
+        prepared["plan"] = plan
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(_canonical_bytes(prepared) + b"\n")
@@ -2128,6 +2413,13 @@ def main() -> int:
     adaptive_parser.add_argument("--previous-plan", required=True)
     adaptive_parser.add_argument("--expanded-plan", required=True)
 
+    multifidelity_parser = subparsers.add_parser(
+        "publish-multifidelity-rung"
+    )
+    common(multifidelity_parser)
+    multifidelity_parser.add_argument("--previous-plan", required=True)
+    multifidelity_parser.add_argument("--expanded-plan", required=True)
+
     confirmation_parser = subparsers.add_parser("publish-confirmation")
     common(confirmation_parser)
     confirmation_parser.add_argument("--plan", required=True)
@@ -2231,6 +2523,13 @@ def main() -> int:
             )
         elif args.command == "publish-adaptive-round":
             value = publish_adaptive_round(
+                args.repo,
+                args.session,
+                args.previous_plan,
+                args.expanded_plan,
+            )
+        elif args.command == "publish-multifidelity-rung":
+            value = publish_multifidelity_rung(
                 args.repo,
                 args.session,
                 args.previous_plan,

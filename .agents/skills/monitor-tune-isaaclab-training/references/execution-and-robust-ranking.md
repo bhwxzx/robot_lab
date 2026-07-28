@@ -9,6 +9,7 @@ retain their prior static-plan behavior and do not gain execution authority.
 - Execution contract
 - Child command outputs
 - Effective-config gate
+- Synchronous multi-fidelity execution
 - State transitions and recovery
 - Quality anomaly rules
 - Evidence-aware ranking
@@ -175,6 +176,26 @@ The gate rejects:
 - missing, non-JSON, linked, relative, or non-finite config input.
 
 Store the baseline/candidate hashes and exact diff in the run state.
+
+## Synchronous multi-fidelity execution
+
+When the approved fixed-single-seed session contains `multi_fidelity`, follow
+`multi-fidelity-training.md`. The initial version-6 plan contains only rung 1.
+After every current-rung result is valid, `build_multifidelity_rung.py`
+reconstructs the immutable plan, records one conservative promotion decision,
+and either appends the next rung or records a terminal zero-job decision.
+
+For single-host execution, pass the expanded plan to
+`execute_trial_plan.py --action adopt-plan`. The executor accepts only
+unchanged trials, prior runs and decisions plus one valid appended rung. After
+final completion, `finalize_multifidelity_results.py` extracts the final
+hash-bound result snapshot for `rank_trials.py`.
+
+When `campaign_controller` is approved, follow `campaign-controller.md`.
+`status` reports the next transition without creating controller state;
+`advance` reuses these executor functions and performs at most one bounded
+transition. The controller adds its own session/plan-bound hash-chain journal
+but does not replace the executor journal or process-identity checks.
 
 ## State transitions and recovery
 

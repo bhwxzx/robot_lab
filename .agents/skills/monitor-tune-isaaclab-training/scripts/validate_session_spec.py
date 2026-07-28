@@ -653,6 +653,7 @@ def _validate_execution_contract(
                 "runtime_config_paths",
                 "summary_last",
                 "require_checkpoint",
+                "multi_fidelity",
             },
             "execution.adapter",
         )
@@ -709,6 +710,81 @@ def _validate_execution_contract(
             adapter.get("require_checkpoint"),
             "execution.adapter.require_checkpoint",
         )
+        multi_fidelity_adapter = adapter.get("multi_fidelity")
+        if multi_fidelity_adapter is not None:
+            multi_fidelity_adapter = _expect_object(
+                multi_fidelity_adapter,
+                "execution.adapter.multi_fidelity",
+            )
+            _check_keys(
+                multi_fidelity_adapter,
+                {
+                    "budget_cli_path",
+                    "resume_cli_paths",
+                    "load_run_reference",
+                },
+                "execution.adapter.multi_fidelity",
+            )
+            budget_path = _expect_nonempty_string(
+                multi_fidelity_adapter.get("budget_cli_path"),
+                "execution.adapter.multi_fidelity.budget_cli_path",
+            )
+            if not PARAMETER_PATH_RE.fullmatch(budget_path):
+                raise SpecError(
+                    "multi-fidelity budget CLI path contains unsupported characters"
+                )
+            resume_paths = _expect_object(
+                multi_fidelity_adapter.get("resume_cli_paths"),
+                "execution.adapter.multi_fidelity.resume_cli_paths",
+            )
+            _check_keys(
+                resume_paths,
+                {"enabled", "load_run", "load_checkpoint"},
+                "execution.adapter.multi_fidelity.resume_cli_paths",
+            )
+            managed_paths = {budget_path}
+            for key in ("enabled", "load_run", "load_checkpoint"):
+                managed_path = _expect_nonempty_string(
+                    resume_paths.get(key),
+                    "execution.adapter.multi_fidelity."
+                    f"resume_cli_paths.{key}",
+                )
+                if not PARAMETER_PATH_RE.fullmatch(managed_path):
+                    raise SpecError(
+                        "multi-fidelity resume CLI path contains unsupported "
+                        "characters"
+                    )
+                managed_paths.add(managed_path)
+            if len(managed_paths) != 4:
+                raise SpecError(
+                    "multi-fidelity budget and resume CLI paths must be unique"
+                )
+            if managed_paths & (set(parameter_map.values()) | set(runtime_paths)):
+                raise SpecError(
+                    "multi-fidelity managed paths cannot overlap parameter or "
+                    "runtime config paths"
+                )
+            if multi_fidelity_adapter.get("load_run_reference") not in {
+                "basename",
+                "absolute",
+            }:
+                raise SpecError(
+                    "execution.adapter.multi_fidelity.load_run_reference must "
+                    "be basename or absolute"
+                )
+            if adapter.get("require_checkpoint") is not True:
+                raise SpecError(
+                    "multi-fidelity execution requires checkpoint evidence"
+                )
+            if any(
+                token.startswith(path + "=")
+                for token in training_command
+                for path in managed_paths
+            ):
+                raise SpecError(
+                    "adapter-managed multi-fidelity paths cannot appear in "
+                    "training.command"
+                )
         placeholders = {
             field
             for token in execution["run_command"]
@@ -1918,6 +1994,9 @@ def _validate_history_and_adaptive_search(
     mode: str,
     parameter_paths: list[str] | None,
     required_metrics: set[str] | None,
+    objective_metrics: set[str] | None,
+    algorithm: dict[str, Any] | None,
+    source_git_commit: str | None,
     distributed: dict[str, Any] | None,
     seed_strategy_mode: str | None,
     max_trials: int | None,
@@ -1944,6 +2023,8 @@ def _validate_history_and_adaptive_search(
             "config_path_map",
             "metric_key_map",
             "worker_roots",
+            "compatibility",
+            "quality_gates",
         },
         "history_prior",
     )
@@ -2057,6 +2138,144 @@ def _validate_history_and_adaptive_search(
         if not root.is_absolute():
             raise SpecError("history_prior worker roots must be absolute paths")
 
+    compatibility = _expect_object(
+        history.get("compatibility"),
+        "history_prior.compatibility",
+    )
+    _check_keys(
+        compatibility,
+        {
+            "source_policy",
+            "expected_context",
+            "context_path_map",
+        },
+        "history_prior.compatibility",
+    )
+    source_policy = compatibility.get("source_policy")
+    if source_policy not in {"exact", "compatible", "advisory"}:
+        raise SpecError(
+            "history_prior.compatibility.source_policy must be exact, "
+            "compatible, or advisory"
+        )
+    if source_policy == "exact" and (
+        not isinstance(source_git_commit, str)
+        or re.fullmatch(r"[0-9a-f]{40}", source_git_commit) is None
+    ):
+        raise SpecError(
+            "exact history source policy requires training.source_git_commit"
+        )
+    expected_context = _expect_object(
+        compatibility.get("expected_context"),
+        "history_prior.compatibility.expected_context",
+    )
+    required_context_keys = {
+        "task_id",
+        "profile_fingerprint",
+        "observation_contract_sha256",
+        "reward_config_sha256",
+    }
+    if set(expected_context) != required_context_keys:
+        raise SpecError(
+            "history_prior.compatibility.expected_context must contain exactly "
+            "task_id, profile_fingerprint, observation_contract_sha256, and "
+            "reward_config_sha256"
+        )
+    _expect_nonempty_string(
+        expected_context.get("task_id"),
+        "history_prior.compatibility.expected_context.task_id",
+    )
+    profile_value = _expect_nonempty_string(
+        expected_context.get("profile_fingerprint"),
+        "history_prior.compatibility.expected_context.profile_fingerprint",
+    )
+    if not isinstance(algorithm, dict) or profile_value != algorithm.get(
+        "profile_fingerprint"
+    ):
+        raise SpecError(
+            "history compatibility profile_fingerprint must match algorithm"
+        )
+    for key in ("observation_contract_sha256", "reward_config_sha256"):
+        value = _expect_nonempty_string(
+            expected_context.get(key),
+            f"history_prior.compatibility.expected_context.{key}",
+        )
+        if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+            raise SpecError(
+                f"history_prior.compatibility.expected_context.{key} must be "
+                "lowercase SHA-256"
+            )
+    context_map = _expect_object(
+        compatibility.get("context_path_map"),
+        "history_prior.compatibility.context_path_map",
+    )
+    if set(context_map) != required_context_keys:
+        raise SpecError(
+            "history_prior.compatibility.context_path_map must cover exactly "
+            "the required context fields"
+        )
+    for key, wandb_path in context_map.items():
+        _expect_nonempty_string(
+            wandb_path,
+            f"history_prior.compatibility.context_path_map[{key!r}]",
+        )
+
+    quality = _expect_object(
+        history.get("quality_gates"),
+        "history_prior.quality_gates",
+    )
+    _check_keys(
+        quality,
+        {
+            "progress_key",
+            "minimum_final_progress",
+            "minimum_points_per_metric",
+            "stability",
+        },
+        "history_prior.quality_gates",
+    )
+    _expect_nonempty_string(
+        quality.get("progress_key"),
+        "history_prior.quality_gates.progress_key",
+    )
+    _expect_int(
+        quality.get("minimum_final_progress"),
+        "history_prior.quality_gates.minimum_final_progress",
+        0,
+        1_000_000_000,
+    )
+    _expect_int(
+        quality.get("minimum_points_per_metric"),
+        "history_prior.quality_gates.minimum_points_per_metric",
+        1,
+        history["max_points_per_run"],
+    )
+    stability = _expect_object(
+        quality.get("stability"),
+        "history_prior.quality_gates.stability",
+    )
+    _check_keys(
+        stability,
+        {"metric", "max_standard_deviation", "max_abs_slope"},
+        "history_prior.quality_gates.stability",
+    )
+    stability_metric = _expect_nonempty_string(
+        stability.get("metric"),
+        "history_prior.quality_gates.stability.metric",
+    )
+    if stability_metric not in set(required_metrics or set()):
+        raise SpecError(
+            "history stability metric must be an objective or constraint metric"
+        )
+    for key in ("max_standard_deviation", "max_abs_slope"):
+        threshold = _expect_number(
+            stability.get(key),
+            f"history_prior.quality_gates.stability.{key}",
+        )
+        if threshold < 0:
+            raise SpecError(
+                f"history_prior.quality_gates.stability.{key} must be non-negative"
+            )
+
     adaptive = _expect_object(adaptive_value, "adaptive_search")
     _check_keys(
         adaptive,
@@ -2065,6 +2284,7 @@ def _validate_history_and_adaptive_search(
             "max_rounds",
             "trials_per_round",
             "exploration_fraction",
+            "stop_policy",
         },
         "adaptive_search",
     )
@@ -2102,6 +2322,482 @@ def _validate_history_and_adaptive_search(
         raise SpecError(
             "adaptive_search round budget cannot cover tuning.max_trials"
         )
+    stop_policy = _expect_object(
+        adaptive.get("stop_policy"),
+        "adaptive_search.stop_policy",
+    )
+    _check_keys(
+        stop_policy,
+        {
+            "enabled",
+            "metric",
+            "minimum_improvement",
+            "patience_rounds",
+            "minimum_feasible_trials",
+        },
+        "adaptive_search.stop_policy",
+    )
+    if not _expect_bool(
+        stop_policy.get("enabled"),
+        "adaptive_search.stop_policy.enabled",
+    ):
+        raise SpecError("adaptive_search.stop_policy.enabled must be true")
+    stop_metric = _expect_nonempty_string(
+        stop_policy.get("metric"),
+        "adaptive_search.stop_policy.metric",
+    )
+    if stop_metric not in set(objective_metrics or set()):
+        raise SpecError(
+            "adaptive_search.stop_policy.metric must be an objective metric"
+        )
+    if _expect_number(
+        stop_policy.get("minimum_improvement"),
+        "adaptive_search.stop_policy.minimum_improvement",
+    ) < 0:
+        raise SpecError(
+            "adaptive_search.stop_policy.minimum_improvement must be non-negative"
+        )
+    _expect_int(
+        stop_policy.get("patience_rounds"),
+        "adaptive_search.stop_policy.patience_rounds",
+        1,
+        max_rounds,
+    )
+    _expect_int(
+        stop_policy.get("minimum_feasible_trials"),
+        "adaptive_search.stop_policy.minimum_feasible_trials",
+        1,
+        max_trials,
+    )
+
+
+def _validate_multi_fidelity(
+    value: Any,
+    *,
+    version: int,
+    mode: str,
+    objective_metrics: set[str] | None,
+    seed_strategy_mode: str | None,
+    max_trials: int | None,
+    confirmation_top_k: int | None,
+    parameters: list[dict[str, Any]] | None,
+    execution: dict[str, Any] | None,
+    distributed: dict[str, Any] | None,
+    adaptive_search: Any,
+) -> dict[str, Any] | None:
+    adapter = execution.get("adapter") if isinstance(execution, dict) else None
+    adapter_declares_fidelity = (
+        isinstance(adapter, dict)
+        and isinstance(adapter.get("multi_fidelity"), dict)
+    )
+    if value is None:
+        if adapter_declares_fidelity:
+            raise SpecError(
+                "execution adapter multi_fidelity requires the root "
+                "multi_fidelity contract"
+            )
+        return None
+    if (
+        version < 6
+        or mode != "tune"
+        or seed_strategy_mode != "fixed_single_seed"
+        or max_trials is None
+        or confirmation_top_k is None
+        or parameters is None
+    ):
+        raise SpecError(
+            "multi_fidelity requires a version-6-or-7 fixed_single_seed tune "
+            "session"
+        )
+    if adaptive_search is not None:
+        raise SpecError(
+            "multi_fidelity and adaptive_search cannot be enabled in one session"
+        )
+    contract = _expect_object(value, "multi_fidelity")
+    _check_keys(
+        contract,
+        {
+            "enabled",
+            "metric",
+            "minimum_margin",
+            "minimum_rungs_before_performance_pruning",
+            "required_consecutive_underperformance",
+            "resume_same_worker",
+            "rungs",
+        },
+        "multi_fidelity",
+    )
+    if not _expect_bool(contract.get("enabled"), "multi_fidelity.enabled"):
+        raise SpecError("configured multi_fidelity must be enabled")
+    metric = _expect_nonempty_string(
+        contract.get("metric"),
+        "multi_fidelity.metric",
+    )
+    if metric not in set(objective_metrics or set()):
+        raise SpecError("multi_fidelity.metric must be an objective metric")
+    margin = _expect_number(
+        contract.get("minimum_margin"),
+        "multi_fidelity.minimum_margin",
+    )
+    if margin < 0:
+        raise SpecError("multi_fidelity.minimum_margin must be non-negative")
+    rungs = contract.get("rungs")
+    if not isinstance(rungs, list) or not 2 <= len(rungs) <= 8:
+        raise SpecError("multi_fidelity.rungs must contain between 2 and 8 rungs")
+    minimum_rungs = _expect_int(
+        contract.get("minimum_rungs_before_performance_pruning"),
+        "multi_fidelity.minimum_rungs_before_performance_pruning",
+        2,
+        len(rungs),
+    )
+    _expect_int(
+        contract.get("required_consecutive_underperformance"),
+        "multi_fidelity.required_consecutive_underperformance",
+        2,
+        minimum_rungs,
+    )
+    if not _expect_bool(
+        contract.get("resume_same_worker"),
+        "multi_fidelity.resume_same_worker",
+    ):
+        raise SpecError("multi_fidelity.resume_same_worker must be true")
+    candidate_count = max_trials - 1
+    previous_budget = 0
+    previous_target = candidate_count
+    for index, rung_value in enumerate(rungs):
+        path = f"multi_fidelity.rungs[{index}]"
+        rung = _expect_object(rung_value, path)
+        _check_keys(rung, {"budget", "target_promoted_candidates"}, path)
+        budget = _expect_int(
+            rung.get("budget"),
+            f"{path}.budget",
+            1,
+            1_000_000_000,
+        )
+        if budget <= previous_budget:
+            raise SpecError("multi_fidelity rung budgets must strictly increase")
+        target = _expect_int(
+            rung.get("target_promoted_candidates"),
+            f"{path}.target_promoted_candidates",
+            0,
+            candidate_count,
+        )
+        if index == len(rungs) - 1:
+            if target != 0:
+                raise SpecError(
+                    "the final multi_fidelity rung must promote zero candidates"
+                )
+        elif target < 1 or target > previous_target:
+            raise SpecError(
+                "multi_fidelity promoted-candidate targets must be positive "
+                "and non-increasing before the final rung"
+            )
+        if index + 1 < minimum_rungs and target != candidate_count:
+            raise SpecError(
+                "rungs before performance pruning is allowed must protect "
+                "every candidate"
+            )
+        previous_budget = budget
+        previous_target = target
+    if rungs[-2]["target_promoted_candidates"] < confirmation_top_k:
+        raise SpecError(
+            "the penultimate multi_fidelity rung must target at least "
+            "confirmation_top_k candidates"
+        )
+    if any("baseline" not in parameter for parameter in parameters):
+        raise SpecError(
+            "multi_fidelity requires a baseline for every approved parameter"
+        )
+    if not adapter_declares_fidelity:
+        raise SpecError(
+            "multi_fidelity requires an adapter-specific budget and resume contract"
+        )
+    if version == 7 and (
+        not isinstance(distributed, dict)
+        or distributed.get("assignment_mode") != "by_trial"
+    ):
+        raise SpecError(
+            "distributed multi_fidelity requires assignment_mode=by_trial"
+        )
+    return contract
+
+
+def _validate_campaign_controller(
+    value: Any,
+    *,
+    version: int,
+    mode: str,
+    execution: dict[str, Any] | None,
+    distributed: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if (
+        version < 6
+        or mode != "tune"
+        or not isinstance(execution, dict)
+        or not execution.get("enabled")
+    ):
+        raise SpecError(
+            "campaign_controller requires a version-6-or-7 automated tune "
+            "session"
+        )
+    contract = _expect_object(value, "campaign_controller")
+    _check_keys(
+        contract,
+        {
+            "enabled",
+            "mode",
+            "role",
+            "auto_launch_trials",
+            "auto_advance_plans",
+            "stop_before_evaluation",
+            "worker_mailbox_repos",
+        },
+        "campaign_controller",
+    )
+    if not _expect_bool(
+        contract.get("enabled"),
+        "campaign_controller.enabled",
+    ):
+        raise SpecError("configured campaign_controller must be enabled")
+    if contract.get("mode") not in {"shadow", "execute"}:
+        raise SpecError(
+            "campaign_controller.mode must be shadow or execute"
+        )
+    role = contract.get("role")
+    if role not in {"single_host", "distributed"}:
+        raise SpecError(
+            "campaign_controller.role must be single_host or distributed"
+        )
+    for field in (
+        "auto_launch_trials",
+        "auto_advance_plans",
+        "stop_before_evaluation",
+    ):
+        if not _expect_bool(
+            contract.get(field),
+            f"campaign_controller.{field}",
+        ):
+            raise SpecError(f"campaign_controller.{field} must be true")
+    mailbox_repos = _expect_object(
+        contract.get("worker_mailbox_repos"),
+        "campaign_controller.worker_mailbox_repos",
+    )
+    if version == 6:
+        if role != "single_host" or mailbox_repos:
+            raise SpecError(
+                "version-6 campaign_controller requires role=single_host "
+                "with empty worker_mailbox_repos"
+            )
+        return contract
+    if role != "distributed" or not isinstance(distributed, dict):
+        raise SpecError(
+            "version-7 campaign_controller requires role=distributed"
+        )
+    worker_ids = {item["id"] for item in distributed["workers"]}
+    if set(mailbox_repos) != worker_ids:
+        raise SpecError(
+            "campaign_controller.worker_mailbox_repos must exactly cover "
+            "distributed workers"
+        )
+    for worker_id, mailbox_path in mailbox_repos.items():
+        path = _expect_nonempty_string(
+            mailbox_path,
+            f"campaign_controller.worker_mailbox_repos.{worker_id}",
+        )
+        if not Path(path).is_absolute():
+            raise SpecError(
+                "campaign_controller worker mailbox paths must be absolute"
+            )
+    return contract
+
+
+def _validate_evaluation_handoff(
+    value: Any,
+    *,
+    version: int,
+    mode: str,
+    tuning: dict[str, Any] | None,
+    evaluation: dict[str, Any] | None,
+    execution: dict[str, Any] | None,
+    distributed: dict[str, Any] | None,
+    campaign_controller: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if (
+        version < 6
+        or mode != "tune"
+        or not isinstance(tuning, dict)
+        or not isinstance(execution, dict)
+        or not execution.get("enabled")
+        or not isinstance(evaluation, dict)
+        or not evaluation.get("enabled")
+        or not isinstance(evaluation.get("execution"), dict)
+        or not isinstance(campaign_controller, dict)
+        or not campaign_controller.get("enabled")
+    ):
+        raise SpecError(
+            "evaluation_handoff requires a version-6-or-7 automated tune "
+            "campaign with executable policy evaluation"
+        )
+    contract = _expect_object(value, "evaluation_handoff")
+    _check_keys(
+        contract,
+        {
+            "enabled",
+            "mode",
+            "top_k",
+            "require_pareto",
+            "checkpoint_seed",
+            "evaluation_worker_id",
+            "artifact_path_templates",
+            "auto_build_plan",
+            "auto_execute_evaluation",
+            "stop_before_visual_review",
+        },
+        "evaluation_handoff",
+    )
+    if not _expect_bool(contract.get("enabled"), "evaluation_handoff.enabled"):
+        raise SpecError("configured evaluation_handoff must be enabled")
+    if contract.get("mode") not in {"shadow", "execute"}:
+        raise SpecError("evaluation_handoff.mode must be shadow or execute")
+    top_k = _expect_int(
+        contract.get("top_k"),
+        "evaluation_handoff.top_k",
+        1,
+        64,
+    )
+    confirmation_top_k = tuning["seed_strategy"]["confirmation_top_k"]
+    if top_k > confirmation_top_k:
+        raise SpecError(
+            "evaluation_handoff.top_k cannot exceed confirmation_top_k"
+        )
+    if not _expect_bool(
+        contract.get("require_pareto"),
+        "evaluation_handoff.require_pareto",
+    ):
+        raise SpecError("evaluation_handoff.require_pareto must be true")
+    checkpoint_seed = _expect_int(
+        contract.get("checkpoint_seed"),
+        "evaluation_handoff.checkpoint_seed",
+        0,
+        2**31 - 1,
+    )
+    if checkpoint_seed not in tuning["seed_strategy"]["confirmation_seeds"]:
+        raise SpecError(
+            "evaluation_handoff.checkpoint_seed must be an approved "
+            "confirmation seed"
+        )
+    worker_id = contract.get("evaluation_worker_id")
+    if version == 6:
+        if worker_id is not None:
+            raise SpecError(
+                "version-6 evaluation_handoff.evaluation_worker_id must be null"
+            )
+    else:
+        if not isinstance(distributed, dict):
+            raise SpecError(
+                "version-7 evaluation_handoff requires distributed execution"
+            )
+        worker_id = _expect_nonempty_string(
+            worker_id,
+            "evaluation_handoff.evaluation_worker_id",
+        )
+        known_workers = {item["id"] for item in distributed["workers"]}
+        if worker_id not in known_workers:
+            raise SpecError(
+                "evaluation_handoff.evaluation_worker_id must name an "
+                "approved distributed worker"
+            )
+    templates = _expect_object(
+        contract.get("artifact_path_templates"),
+        "evaluation_handoff.artifact_path_templates",
+    )
+    selected_non_native = {
+        item["kind"] for item in evaluation["artifacts"]
+        if item["kind"] != "native"
+    }
+    if set(templates) != selected_non_native:
+        raise SpecError(
+            "evaluation_handoff.artifact_path_templates must exactly cover "
+            "selected non-native evaluation artifacts"
+        )
+    allowed_fields = {
+        "candidate_id",
+        "checkpoint_dir",
+        "checkpoint_path",
+        "rsl_rl_run_dir",
+        "seed",
+        "trial_id",
+    }
+    for kind, template_value in templates.items():
+        template = _expect_nonempty_string(
+            template_value,
+            f"evaluation_handoff.artifact_path_templates.{kind}",
+        )
+        try:
+            parsed_template = list(Formatter().parse(template))
+        except ValueError as exc:
+            raise SpecError(
+                "evaluation_handoff artifact path template is invalid"
+            ) from exc
+        if any(
+            field_name is not None and (format_spec or conversion is not None)
+            for _, field_name, format_spec, conversion in parsed_template
+        ):
+            raise SpecError(
+                "evaluation_handoff artifact path templates cannot use "
+                "conversion or format specifications"
+            )
+        fields = {
+            field_name
+            for _, field_name, _, _ in parsed_template
+            if field_name is not None
+        }
+        unsupported = sorted(fields - allowed_fields)
+        if unsupported:
+            raise SpecError(
+                "evaluation_handoff artifact path template contains "
+                f"unsupported field(s): {', '.join(unsupported)}"
+            )
+        try:
+            rendered = template.format_map(
+                {
+                    "candidate_id": "candidate",
+                    "checkpoint_dir": "/checkpoint",
+                    "checkpoint_path": "/checkpoint/model.pt",
+                    "rsl_rl_run_dir": "/run",
+                    "seed": checkpoint_seed,
+                    "trial_id": "trial",
+                }
+            )
+        except (KeyError, ValueError) as exc:
+            raise SpecError(
+                "evaluation_handoff artifact path template cannot be rendered"
+            ) from exc
+        if not Path(rendered).is_absolute():
+            raise SpecError(
+                "evaluation_handoff artifact path templates must render "
+                "absolute paths"
+            )
+    for field in (
+        "auto_build_plan",
+        "auto_execute_evaluation",
+        "stop_before_visual_review",
+    ):
+        if not _expect_bool(
+            contract.get(field),
+            f"evaluation_handoff.{field}",
+        ):
+            raise SpecError(f"evaluation_handoff.{field} must be true")
+    if not campaign_controller.get("stop_before_evaluation"):
+        raise SpecError(
+            "evaluation_handoff requires campaign_controller to stop before "
+            "evaluation"
+        )
+    return contract
 
 
 def validate_spec(
@@ -2127,6 +2823,9 @@ def validate_spec(
             "distributed",
             "history_prior",
             "adaptive_search",
+            "multi_fidelity",
+            "campaign_controller",
+            "evaluation_handoff",
             "cleanup",
         },
         "session",
@@ -2345,7 +3044,7 @@ def validate_spec(
             archive_contract,
             distributed_contract,
         )
-        _validate_execution_contract(
+        execution_contract = _validate_execution_contract(
             root.get("execution"),
             version,
             mode,
@@ -2360,9 +3059,42 @@ def validate_spec(
             mode=mode,
             parameter_paths=None,
             required_metrics=None,
+            objective_metrics=None,
+            algorithm=algorithm,
+            source_git_commit=training.get("source_git_commit"),
             distributed=distributed_contract,
             seed_strategy_mode=None,
             max_trials=None,
+        )
+        _validate_multi_fidelity(
+            root.get("multi_fidelity"),
+            version=version,
+            mode=mode,
+            objective_metrics=None,
+            seed_strategy_mode=None,
+            max_trials=None,
+            confirmation_top_k=None,
+            parameters=None,
+            execution=execution_contract,
+            distributed=distributed_contract,
+            adaptive_search=root.get("adaptive_search"),
+        )
+        campaign_controller = _validate_campaign_controller(
+            root.get("campaign_controller"),
+            version=version,
+            mode=mode,
+            execution=execution_contract,
+            distributed=distributed_contract,
+        )
+        _validate_evaluation_handoff(
+            root.get("evaluation_handoff"),
+            version=version,
+            mode=mode,
+            tuning=None,
+            evaluation=evaluation,
+            execution=execution_contract,
+            distributed=distributed_contract,
+            campaign_controller=campaign_controller,
         )
         return root
 
@@ -2427,6 +3159,7 @@ def validate_spec(
     _validate_objectives(tuning.get("objectives"), version)
     _validate_constraints(tuning.get("constraints", []), version)
     seed_strategy_mode: str | None = None
+    top_k: int | None = None
     if version >= 6:
         seed_strategy = _expect_object(
             tuning.get("seed_strategy"),
@@ -2564,7 +3297,10 @@ def validate_spec(
     } | {
         constraint["metric"] for constraint in tuning.get("constraints", [])
     }
-    _validate_execution_contract(
+    objective_metrics = {
+        objective["metric"] for objective in tuning["objectives"]
+    }
+    execution_contract = _validate_execution_contract(
         root.get("execution"),
         version,
         mode,
@@ -2594,9 +3330,42 @@ def validate_spec(
         mode=mode,
         parameter_paths=parameter_paths,
         required_metrics=required_metrics,
+        objective_metrics=objective_metrics,
+        algorithm=algorithm,
+        source_git_commit=training.get("source_git_commit"),
         distributed=distributed_contract,
         seed_strategy_mode=seed_strategy_mode,
         max_trials=tuning["max_trials"],
+    )
+    _validate_multi_fidelity(
+        root.get("multi_fidelity"),
+        version=version,
+        mode=mode,
+        objective_metrics=objective_metrics,
+        seed_strategy_mode=seed_strategy_mode,
+        max_trials=tuning["max_trials"],
+        confirmation_top_k=top_k,
+        parameters=validated_parameters,
+        execution=execution_contract,
+        distributed=distributed_contract,
+        adaptive_search=root.get("adaptive_search"),
+    )
+    campaign_controller = _validate_campaign_controller(
+        root.get("campaign_controller"),
+        version=version,
+        mode=mode,
+        execution=execution_contract,
+        distributed=distributed_contract,
+    )
+    _validate_evaluation_handoff(
+        root.get("evaluation_handoff"),
+        version=version,
+        mode=mode,
+        tuning=tuning,
+        evaluation=evaluation,
+        execution=execution_contract,
+        distributed=distributed_contract,
+        campaign_controller=campaign_controller,
     )
     if root.get("adaptive_search") is not None and any(
         "baseline" not in parameter for parameter in validated_parameters

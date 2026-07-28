@@ -110,18 +110,21 @@ def validate_effective_config(
     candidate = flatten_config(_load_object(candidate_path, "candidate config"))
     normalized_runtime: dict[str, dict[str, Any]] = {}
     for path, expected in (runtime_values or {}).items():
-        if path not in baseline or path not in candidate:
+        if path not in candidate:
             raise SpecError(f"runtime config path is missing: {path}")
         if not _same_scalar(candidate[path], expected):
             raise SpecError(
                 f"runtime config path {path} does not match this run identity"
             )
         normalized_runtime[path] = {
-            "baseline": baseline[path],
+            "baseline": baseline.get(path, {"__missing__": True}),
             "candidate": candidate[path],
             "expected": expected,
         }
-        candidate[path] = baseline[path]
+        if path in baseline:
+            candidate[path] = baseline[path]
+        else:
+            candidate.pop(path)
     changed: dict[str, dict[str, Any]] = {}
     for path in sorted(set(baseline) | set(candidate)):
         before = baseline.get(path, {"__missing__": True})

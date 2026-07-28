@@ -55,7 +55,7 @@ def _validate_index(
     worker_id = index.get("worker_id")
     history = spec["history_prior"]
     if (
-        index.get("schema_version") != 1
+        index.get("schema_version") != 2
         or index.get("event") != "local_wandb_history_indexed"
         or index.get("session_sha256") != _sha256(spec)
         or not isinstance(worker_id, str)
@@ -80,6 +80,9 @@ def _validate_index(
     seen_overrides: set[str] = set()
     expected_parameters = set(history["config_path_map"])
     expected_metrics = set(history["metric_key_map"])
+    compatibility = history["compatibility"]
+    expected_context = compatibility["expected_context"]
+    quality_gates = history["quality_gates"]
     for run in index["selected_runs"]:
         if not isinstance(run, dict):
             raise SpecError("worker history selected run must be an object")
@@ -87,6 +90,29 @@ def _validate_index(
         overrides = run.get("overrides")
         metrics = run.get("metrics")
         retained = run.get("retained_points")
+        observed_context = run.get("observed_context")
+        quality = run.get("quality")
+        metric_statistics = (
+            quality.get("metric_statistics")
+            if isinstance(quality, dict)
+            else None
+        )
+        context_match = (
+            isinstance(observed_context, dict)
+            and set(observed_context) == set(expected_context)
+            and all(
+                type(observed_context[key]) is type(expected_context[key])
+                and observed_context[key] == expected_context[key]
+                for key in expected_context
+            )
+        )
+        approved_source_commit = spec["training"].get("source_git_commit")
+        source_git_match = (
+            isinstance(approved_source_commit, str)
+            and run.get("source_git_commit") == approved_source_commit
+        )
+        guidance_eligible = source_git_match or context_match
+        source_policy = compatibility["source_policy"]
         if (
             not isinstance(run_id, str)
             or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", run_id) is None
@@ -98,6 +124,15 @@ def _validate_index(
                 and not history["include_failed_runs"]
             )
             or not isinstance(run.get("source_git_match"), bool)
+            or run.get("source_git_match") is not source_git_match
+            or run.get("source_policy") != source_policy
+            or not isinstance(observed_context, dict)
+            or set(observed_context) != set(expected_context)
+            or run.get("context_match") is not context_match
+            or not isinstance(run.get("guidance_eligible"), bool)
+            or run.get("guidance_eligible") is not guidance_eligible
+            or (source_policy == "exact" and not source_git_match)
+            or (source_policy == "compatible" and not guidance_eligible)
             or not isinstance(overrides, dict)
             or set(overrides) != expected_parameters
             or run.get("overrides_sha256") != _sha256(overrides)
@@ -118,8 +153,70 @@ def _validate_index(
                 or not 1 <= count <= history["max_points_per_run"]
                 for count in retained.values()
             )
+            or not isinstance(quality, dict)
+            or set(quality) != {
+                "passed",
+                "final_progress",
+                "metric_statistics",
+            }
+            or quality.get("passed") is not True
+            or isinstance(quality.get("final_progress"), bool)
+            or not isinstance(quality.get("final_progress"), (int, float))
+            or not math.isfinite(float(quality["final_progress"]))
+            or quality["final_progress"]
+            < quality_gates["minimum_final_progress"]
+            or not isinstance(metric_statistics, dict)
+            or set(metric_statistics) != expected_metrics
+            or any(
+                not isinstance(statistics, dict)
+                or set(statistics)
+                != {
+                    "count",
+                    "mean",
+                    "standard_deviation",
+                    "slope",
+                }
+                or statistics.get("count") != retained[metric]
+                or any(
+                    isinstance(statistics.get(field), bool)
+                    or not isinstance(
+                        statistics.get(field),
+                        (int, float),
+                    )
+                    or not math.isfinite(float(statistics[field]))
+                    for field in (
+                        "mean",
+                        "standard_deviation",
+                        "slope",
+                    )
+                )
+                or not math.isclose(
+                    float(statistics["mean"]),
+                    float(metrics[metric]),
+                    rel_tol=1e-12,
+                    abs_tol=1e-12,
+                )
+                for metric, statistics in (
+                    metric_statistics.items()
+                    if isinstance(metric_statistics, dict)
+                    else []
+                )
+            )
         ):
             raise SpecError("worker history selected run fails bounded schema")
+        stability = quality_gates["stability"]
+        stability_statistics = metric_statistics[stability["metric"]]
+        if (
+            stability_statistics["standard_deviation"]
+            > stability["max_standard_deviation"]
+            or abs(float(stability_statistics["slope"]))
+            > stability["max_abs_slope"]
+            or any(
+                count < quality_gates["minimum_points_per_metric"]
+                for count in retained.values()
+            )
+        ):
+            raise SpecError("worker history selected run fails quality gates")
         seen_runs.add(run_id)
         seen_overrides.add(run["overrides_sha256"])
     return index
@@ -147,30 +244,17 @@ def merge_history_indexes(
             candidates.append({**run, "worker_id": index["worker_id"]})
     candidates.sort(
         key=lambda run: (
-            not bool(run.get("source_git_match")),
-            str(run.get("observed_at", "")),
-            str(run.get("run_id", "")),
+            bool(run.get("guidance_eligible")),
+            bool(run.get("source_git_match")),
+            run["observed_at"],
+            run["run_id"],
         ),
-        reverse=False,
-    )
-    exact_source = [
-        run for run in candidates if bool(run.get("source_git_match"))
-    ]
-    older_source = [
-        run for run in candidates if not bool(run.get("source_git_match"))
-    ]
-    exact_source.sort(
-        key=lambda run: (run["observed_at"], run["run_id"]),
-        reverse=True,
-    )
-    older_source.sort(
-        key=lambda run: (run["observed_at"], run["run_id"]),
         reverse=True,
     )
     selected: list[dict[str, Any]] = []
     seen_runs: set[str] = set()
     seen_overrides: set[str] = set()
-    for run in [*exact_source, *older_source]:
+    for run in candidates:
         run_id = run.get("run_id")
         overrides_hash = run.get("overrides_sha256")
         if (
@@ -186,7 +270,7 @@ def merge_history_indexes(
         if len(selected) >= history["max_selected_runs"]:
             break
     base = {
-        "schema_version": 1,
+        "schema_version": 2,
         "event": "historical_prior_merged",
         "session_sha256": _sha256(spec),
         "wandb_project": history["wandb_project"],
@@ -199,6 +283,9 @@ def merge_history_indexes(
         "selected_run_count": len(selected),
         "source_git_mismatch_count": sum(
             not bool(run.get("source_git_match")) for run in selected
+        ),
+        "guidance_eligible_count": sum(
+            bool(run.get("guidance_eligible")) for run in selected
         ),
     }
     return {**base, "prior_sha256": _sha256(base)}

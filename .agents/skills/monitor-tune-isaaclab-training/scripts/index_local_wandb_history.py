@@ -70,7 +70,9 @@ def _decode_json(text: str) -> Any:
 def _scan_wandb_file(
     path: Path,
     config_path_map: dict[str, str],
+    context_path_map: dict[str, str],
     metric_key_map: dict[str, str],
+    progress_key: str,
     max_points: int,
 ) -> dict[str, Any]:
     try:
@@ -87,7 +89,7 @@ def _scan_wandb_file(
     except Exception as exc:
         raise SpecError(f"cannot open local W&B record: {exc}") from exc
     config: dict[str, Any] = {}
-    metric_points = {
+    metric_samples = {
         metric: deque(maxlen=max_points) for metric in metric_key_map
     }
     run_identity: dict[str, Any] | None = None
@@ -131,6 +133,13 @@ def _scan_wandb_file(
                     )
                     if path_key:
                         by_key[path_key] = _decode_json(item.value_json)
+                progress = by_key.get(progress_key)
+                if (
+                    isinstance(progress, bool)
+                    or not isinstance(progress, (int, float))
+                    or not math.isfinite(float(progress))
+                ):
+                    continue
                 for metric, wandb_key in metric_key_map.items():
                     value = by_key.get(wandb_key)
                     if (
@@ -138,7 +147,9 @@ def _scan_wandb_file(
                         and isinstance(value, (int, float))
                         and math.isfinite(float(value))
                     ):
-                        metric_points[metric].append(float(value))
+                        metric_samples[metric].append(
+                            (float(progress), float(value))
+                        )
             elif kind == "exit":
                 exit_code = int(record.exit.exit_code)
     except Exception as exc:
@@ -156,18 +167,58 @@ def _scan_wandb_file(
                 f"W&B config is missing approved path {wandb_path}"
             )
         overrides[parameter_path] = flattened[wandb_path]
-    metrics: dict[str, float] = {}
-    for metric, points in metric_points.items():
-        if not points:
+    observed_context: dict[str, Any] = {}
+    for context_key, wandb_path in context_path_map.items():
+        if wandb_path not in flattened:
+            raise SpecError(
+                f"W&B config is missing compatibility path {wandb_path}"
+            )
+        observed_context[context_key] = flattened[wandb_path]
+    metric_statistics: dict[str, dict[str, float | int]] = {}
+    for metric, samples in metric_samples.items():
+        if not samples:
             raise SpecError(f"W&B history is missing finite metric {metric}")
-        metrics[metric] = sum(points) / len(points)
+        x_values = [item[0] for item in samples]
+        y_values = [item[1] for item in samples]
+        mean = sum(y_values) / len(y_values)
+        variance = sum((value - mean) ** 2 for value in y_values) / len(
+            y_values
+        )
+        x_mean = sum(x_values) / len(x_values)
+        denominator = sum((value - x_mean) ** 2 for value in x_values)
+        slope = (
+            sum(
+                (x_value - x_mean) * (y_value - mean)
+                for x_value, y_value in samples
+            )
+            / denominator
+            if denominator > 0
+            else 0.0
+        )
+        metric_statistics[metric] = {
+            "count": len(samples),
+            "mean": mean,
+            "standard_deviation": math.sqrt(variance),
+            "slope": slope,
+        }
+    final_progress = min(
+        max(sample[0] for sample in samples)
+        for samples in metric_samples.values()
+    )
     return {
         "identity": run_identity,
         "exit_code": exit_code,
         "overrides": overrides,
-        "metrics": metrics,
+        "observed_context": observed_context,
+        "metrics": {
+            metric: float(statistics["mean"])
+            for metric, statistics in metric_statistics.items()
+        },
+        "metric_statistics": metric_statistics,
+        "final_progress": final_progress,
         "retained_points": {
-            metric: len(points) for metric, points in metric_points.items()
+            metric: len(samples)
+            for metric, samples in metric_samples.items()
         },
         "record_count": record_count,
     }
@@ -253,6 +304,8 @@ def build_history_index(
     observed_now = now or datetime.now().astimezone()
     root = Path(history["worker_roots"][worker_id]).resolve()
     allowed = _allowed_values(spec)
+    compatibility = history["compatibility"]
+    quality_gates = history["quality_gates"]
     selected: list[dict[str, Any]] = []
     excluded: list[dict[str, str]] = []
     seen_overrides: set[str] = set()
@@ -273,7 +326,9 @@ def build_history_index(
             scanned = _scan_wandb_file(
                 wandb_files[0],
                 history["config_path_map"],
+                compatibility["context_path_map"],
                 history["metric_key_map"],
+                quality_gates["progress_key"],
                 history["max_points_per_run"],
             )
             identity = scanned["identity"]
@@ -293,8 +348,71 @@ def build_history_index(
             overrides_sha = _sha256(scanned["overrides"])
             if overrides_sha in seen_overrides:
                 raise SpecError("duplicate approved parameter combination")
-            seen_overrides.add(overrides_sha)
+            approved_source_commit = spec["training"].get(
+                "source_git_commit"
+            )
+            source_git_match = (
+                isinstance(approved_source_commit, str)
+                and identity["source_git_commit"]
+                == approved_source_commit
+            )
+            expected_context = compatibility["expected_context"]
+            observed_context = scanned["observed_context"]
+            context_match = (
+                set(observed_context) == set(expected_context)
+                and all(
+                    _same_scalar(
+                        observed_context[key],
+                        expected_context[key],
+                    )
+                    for key in expected_context
+                )
+            )
+            source_policy = compatibility["source_policy"]
+            guidance_eligible = source_git_match or context_match
+            if source_policy == "exact" and not source_git_match:
+                raise SpecError(
+                    "W&B source commit does not match exact history policy"
+                )
+            if source_policy == "compatible" and not guidance_eligible:
+                raise SpecError(
+                    "W&B run matches neither source commit nor compatibility context"
+                )
+            retained = scanned["retained_points"]
+            if any(
+                count < quality_gates["minimum_points_per_metric"]
+                for count in retained.values()
+            ):
+                raise SpecError(
+                    "W&B run has insufficient retained metric points"
+                )
+            if (
+                scanned["final_progress"]
+                < quality_gates["minimum_final_progress"]
+            ):
+                raise SpecError(
+                    "W&B run did not reach the approved minimum progress"
+                )
+            stability = quality_gates["stability"]
+            stability_statistics = scanned["metric_statistics"][
+                stability["metric"]
+            ]
+            if (
+                stability_statistics["standard_deviation"]
+                > stability["max_standard_deviation"]
+            ):
+                raise SpecError(
+                    "W&B stability metric exceeds the approved standard deviation"
+                )
+            if (
+                abs(float(stability_statistics["slope"]))
+                > stability["max_abs_slope"]
+            ):
+                raise SpecError(
+                    "W&B stability metric exceeds the approved absolute slope"
+                )
             stat = wandb_files[0].stat()
+            seen_overrides.add(overrides_sha)
             selected.append(
                 {
                     "run_id": directory_run_id,
@@ -306,14 +424,22 @@ def build_history_index(
                     ),
                     "status": "completed" if completed else "failed",
                     "source_git_commit": identity["source_git_commit"],
-                    "source_git_match": (
-                        identity["source_git_commit"]
-                        == spec["training"].get("source_git_commit")
-                    ),
+                    "source_git_match": source_git_match,
+                    "source_policy": source_policy,
+                    "observed_context": observed_context,
+                    "context_match": context_match,
+                    "guidance_eligible": guidance_eligible,
                     "overrides": scanned["overrides"],
                     "overrides_sha256": overrides_sha,
                     "metrics": scanned["metrics"],
                     "retained_points": scanned["retained_points"],
+                    "quality": {
+                        "passed": True,
+                        "final_progress": scanned["final_progress"],
+                        "metric_statistics": scanned[
+                            "metric_statistics"
+                        ],
+                    },
                     "evidence": {
                         "wandb_path": str(wandb_files[0].resolve()),
                         "size_bytes": stat.st_size,
@@ -327,7 +453,7 @@ def build_history_index(
                 {"run_id": directory_run_id, "reason": str(exc)}
             )
     base = {
-        "schema_version": 1,
+        "schema_version": 2,
         "event": "local_wandb_history_indexed",
         "worker_id": worker_id,
         "session_sha256": _sha256(spec),
