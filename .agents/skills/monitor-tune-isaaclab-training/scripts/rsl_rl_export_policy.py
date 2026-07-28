@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -240,7 +241,12 @@ class StandardDeploymentWrapper(nn.Module):
 
 
 def _policy_tensor(observations: Any) -> torch.Tensor:
-    tensor = observations.get("policy") if isinstance(observations, dict) else observations
+    if isinstance(observations, Mapping):
+        if "policy" not in observations:
+            raise RuntimeError("observation mapping does not contain policy")
+        tensor = observations["policy"]
+    else:
+        tensor = observations
     if not isinstance(tensor, torch.Tensor):
         raise RuntimeError("policy observation is not a tensor")
     return tensor
