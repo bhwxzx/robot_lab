@@ -40,6 +40,18 @@ let history choose no more than half of first-round candidates. Exclude exact
 historical and already-tried combinations. Do not access cloud W&B or expand
 the authorized grid. Build each later round only from complete, constraint-
 checked results for every current trial and retain deterministic exploration.
+Require task/profile/observation/reward compatibility and progress/stability
+quality before a run can guide sampling. Stop deterministically when the
+approved raw improvement patience, feasibility, budget, grid, or round limit
+is reached; publish no speculative replacement job.
+
+For approved fixed-single-seed multi-fidelity execution, read
+`multi-fidelity-training.md`. Compare candidates only at the same completed
+rung. Apply hard constraints immediately, but require at least two rungs and
+the approved consecutive-underperformance streak before performance pruning.
+Keep the baseline in every nonterminal rung and resume each promoted trial
+from its exact hash-bound parent checkpoint. This workflow saves compute; it
+does not add independent seeds or strengthen the final hardware claim.
 
 Prefer one GPU-heavy trial at a time. Bind state to the exact approved session
 and deterministic plan, require an idle GPU and exclusive lock, and never reuse

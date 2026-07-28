@@ -48,6 +48,14 @@ ACTIVE_STATUSES = {
 _ACTIVE_CHILDREN: dict[int, subprocess.Popen[bytes]] = {}
 
 
+def _reap_exited_active_child(pid: int | None) -> None:
+    if not isinstance(pid, int):
+        return
+    process = _ACTIVE_CHILDREN.get(pid)
+    if process is not None and process.poll() is not None:
+        _ACTIVE_CHILDREN.pop(pid, None)
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -248,13 +256,13 @@ def recover_state_from_journal(
 def _load_plan(path: Path) -> dict[str, Any]:
     plan = _load_object(path, "trial plan")
     if (
-        plan.get("version") not in {4, 5}
+        plan.get("version") not in {4, 5, 6}
         or not isinstance(plan.get("runs"), list)
         or not isinstance(plan.get("trials"), list)
         or not isinstance(plan.get("stages"), dict)
     ):
         raise SpecError(
-            "version-6-or-newer execution requires a version-4 staged trial plan"
+            "version-6-or-newer execution requires a staged trial plan"
         )
     run_ids = [run.get("run_id") for run in plan["runs"]]
     if (
@@ -295,34 +303,89 @@ def adopt_expanded_plan(
         raise SpecError("existing execution plan binding is invalid")
     old_plan = _load_plan(old_plan_path)
     validate_trial_plan(spec, old_plan)
+    if old_plan.get("version") == 5 and new_plan.get("version") == 5:
+        old_contract = old_plan["adaptive"]
+        new_contract = new_plan["adaptive"]
+        label = "adaptive"
+        terminal_actions = {"stop"}
+        running_action = "continue"
+        expected_unit = "rounds"
+    elif old_plan.get("version") == 6 and new_plan.get("version") == 6:
+        old_contract = old_plan["multi_fidelity"]
+        new_contract = new_plan["multi_fidelity"]
+        label = "multi-fidelity"
+        terminal_actions = {"stop", "complete"}
+        running_action = "continue"
+        expected_unit = "rungs"
+    else:
+        raise SpecError(
+            "expanded plan adoption requires matching adaptive or "
+            "multi-fidelity plan versions"
+        )
+    new_decisions = new_contract.get("decisions")
+    old_decisions = old_contract.get("decisions")
+    new_decision = (
+        new_decisions[-1]
+        if isinstance(new_decisions, list) and new_decisions
+        else None
+    )
+    action = (
+        new_decision.get("action")
+        if isinstance(new_decision, dict)
+        else None
+    )
+    terminal = action in terminal_actions
+    expected_unit_delta = 0 if terminal else 1
     if (
-        old_plan.get("version") != 5
-        or new_plan.get("version") != 5
-        or len(new_plan["adaptive"]["rounds"])
-        != len(old_plan["adaptive"]["rounds"]) + 1
-        or new_plan["trials"][: len(old_plan["trials"])]
-        != old_plan["trials"]
+        not isinstance(old_decisions, list)
+        or not isinstance(new_decisions, list)
+        or len(new_decisions) != len(old_decisions) + 1
+        or new_decisions[: len(old_decisions)] != old_decisions
+        or action not in {*terminal_actions, running_action}
+        or len(new_contract[expected_unit])
+        != len(old_contract[expected_unit]) + expected_unit_delta
+        or (
+            label == "adaptive"
+            and new_plan["trials"][: len(old_plan["trials"])]
+            != old_plan["trials"]
+        )
+        or (
+            label == "multi-fidelity"
+            and new_plan["trials"] != old_plan["trials"]
+        )
         or new_plan["runs"][: len(old_plan["runs"])] != old_plan["runs"]
-        or len(new_plan["runs"]) <= len(old_plan["runs"])
+        or (terminal and new_plan["runs"] != old_plan["runs"])
+        or (
+            action == running_action
+            and len(new_plan["runs"]) <= len(old_plan["runs"])
+        )
     ):
         raise SpecError(
-            "adaptive plan adoption requires one exact append-only round"
+            f"{label} plan adoption requires one exact decision and optional "
+            "execution unit"
         )
     if any(
         run["status"] in ACTIVE_STATUSES or run["status"] != "completed"
         for run in state["runs"].values()
     ):
         raise SpecError(
-            "adaptive plan adoption requires every existing run to be completed"
+            f"{label} plan adoption requires every existing run to be completed"
         )
     new_runs = new_plan["runs"][len(old_plan["runs"]):]
     if any(run["run_id"] in state["runs"] for run in new_runs):
-        raise SpecError("adaptive plan expansion collides with executor state")
+        raise SpecError(f"{label} plan expansion collides with executor state")
     for run in new_runs:
         state["runs"][run["run_id"]] = _run_record(spec, run)
     state["plan_path"] = str(new_plan_path.resolve())
     state["plan_sha256"] = _sha256(new_plan_path)
-    state["stage"] = "screening"
+    if label == "adaptive":
+        state["stage"] = "adaptive_stopped" if terminal else "screening"
+    elif action == "complete":
+        state["stage"] = "multi_fidelity_completed"
+    elif action == "stop":
+        state["stage"] = "multi_fidelity_stopped"
+    else:
+        state["stage"] = new_runs[0]["stage"]
     state["screening_selection"] = []
     state["selection_failure_reason"] = None
     state["updated_at"] = time.time()
@@ -921,7 +984,7 @@ def _adapter_contract(
     required_metrics.update(
         item["metric"] for item in spec["tuning"]["constraints"]
     )
-    return {
+    contract = {
         "version": 1,
         "adapter_id": adapter["id"],
         "profile_id": spec["algorithm"]["profile_id"],
@@ -936,6 +999,19 @@ def _adapter_contract(
         "stage": run["stage"],
         "seed": run["seed"],
     }
+    if spec.get("multi_fidelity") is not None:
+        contract.update(
+            {
+                "version": 2,
+                "rung": run["rung"],
+                "target_budget": run["target_budget"],
+                "resume_from": run["resume_from"],
+                "multi_fidelity": copy.deepcopy(
+                    adapter["multi_fidelity"]
+                ),
+            }
+        )
+    return contract
 
 
 def _runtime_config_values(
@@ -949,10 +1025,28 @@ def _runtime_config_values(
         "seed": run["seed"],
         "run_id": run["run_id"],
     }
-    return {
+    runtime = {
         path: identities[identity]
         for path, identity in adapter["runtime_config_paths"].items()
     }
+    if spec.get("multi_fidelity") is None:
+        return runtime
+    fidelity = adapter["multi_fidelity"]
+    runtime[fidelity["budget_cli_path"]] = run["target_budget"]
+    resume = run["resume_from"]
+    if resume is not None:
+        resume_paths = fidelity["resume_cli_paths"]
+        rsl_run_dir = Path(resume["rsl_rl_run_dir"])
+        runtime[resume_paths["enabled"]] = True
+        runtime[resume_paths["load_run"]] = (
+            rsl_run_dir.name
+            if fidelity["load_run_reference"] == "basename"
+            else str(rsl_run_dir)
+        )
+        runtime[resume_paths["load_checkpoint"]] = Path(
+            resume["checkpoint_path"]
+        ).name
+    return runtime
 
 
 def _render_command(
@@ -1000,6 +1094,8 @@ def _append_confirmation_runs(
     plan: dict[str, Any],
     state: dict[str, Any],
 ) -> None:
+    if spec.get("multi_fidelity") is not None:
+        return
     if state.get("distributed_job") is not None:
         return
     screening_runs = [
@@ -1047,6 +1143,38 @@ def _load_valid_result(run: dict[str, Any]) -> dict[str, Any]:
             or not math.isfinite(float(value))
         ):
             raise SpecError("run result metrics must be finite numbers")
+    if "rung" in run:
+        checkpoint = result.get("checkpoint")
+        terminal = run.get("terminal_receipt")
+        expected_checkpoint = (
+            {
+                **terminal["checkpoint"],
+                "rsl_rl_run_dir": terminal["rsl_rl_run_dir"],
+            }
+            if isinstance(terminal, dict)
+            and isinstance(terminal.get("checkpoint"), dict)
+            else None
+        )
+        if (
+            set(result)
+            != {
+                "run_id",
+                "trial_id",
+                "seed",
+                "status",
+                "metrics",
+                "checkpoint",
+                "rung",
+                "target_budget",
+            }
+            or result.get("run_id") != run["run_id"]
+            or result.get("rung") != run["rung"]
+            or result.get("target_budget") != run["target_budget"]
+            or checkpoint != expected_checkpoint
+        ):
+            raise SpecError(
+                "multi-fidelity result checkpoint or rung identity is invalid"
+            )
     return result
 
 
@@ -1079,8 +1207,9 @@ def _load_valid_terminal(
     run: dict[str, Any],
 ) -> dict[str, Any]:
     terminal = _load_object(Path(run["terminal_path"]), "adapter terminal receipt")
+    expected_version = 2 if "rung" in run else 1
     if (
-        terminal.get("version") != 1
+        terminal.get("version") != expected_version
         or terminal.get("adapter_id") != spec["execution"]["adapter"]["id"]
         or terminal.get("run_id") != run["run_id"]
         or terminal.get("trial_id") != run["trial_id"]
@@ -1092,6 +1221,14 @@ def _load_valid_terminal(
         reason = terminal.get("failure_reason")
         suffix = f": {reason}" if isinstance(reason, str) and reason else ""
         raise SpecError(f"adapter terminal receipt is not successful{suffix}")
+    if expected_version == 2 and (
+        terminal.get("rung") != run["rung"]
+        or terminal.get("target_budget") != run["target_budget"]
+        or terminal.get("resume_from") != run["resume_from"]
+    ):
+        raise SpecError(
+            "multi-fidelity terminal receipt does not match rung identity"
+        )
     checkpoint = terminal.get("checkpoint")
     if (
         checkpoint is None
@@ -1103,7 +1240,9 @@ def _load_valid_terminal(
             not isinstance(checkpoint, dict)
             or not isinstance(checkpoint.get("path"), str)
             or not isinstance(checkpoint.get("sha256"), str)
-        ):
+            or isinstance(checkpoint.get("step"), bool)
+            or not isinstance(checkpoint.get("step"), int)
+            ):
             raise SpecError("adapter terminal checkpoint evidence is invalid")
         checkpoint_path = Path(checkpoint["path"])
         if (
@@ -1113,6 +1252,20 @@ def _load_valid_terminal(
             or _sha256(checkpoint_path) != checkpoint["sha256"]
         ):
             raise SpecError("adapter terminal checkpoint hash does not match")
+        resume = run.get("resume_from")
+        if isinstance(resume, dict):
+            parent_path = Path(resume["checkpoint_path"])
+            if (
+                not parent_path.is_absolute()
+                or not parent_path.is_file()
+                or parent_path.is_symlink()
+                or _sha256(parent_path) != resume["checkpoint_sha256"]
+                or checkpoint.get("step", -1) <= resume["checkpoint_step"]
+            ):
+                raise SpecError(
+                    "multi-fidelity parent or resumed checkpoint evidence is "
+                    "invalid"
+                )
     return terminal
 
 
@@ -1291,12 +1444,12 @@ def reconcile(
                     run["status"] = "stopping_forced"
             continue
         if previous_status != "running":
-            _ACTIVE_CHILDREN.pop(run["pid"], None)
+            _reap_exited_active_child(run["pid"])
             run["status"] = "failed"
             run["finished_at"] = time.time()
             continue
         config_path = Path(run["effective_config_path"])
-        _ACTIVE_CHILDREN.pop(run["pid"], None)
+        _reap_exited_active_child(run["pid"])
         quality = _refresh_quality_report(spec, run)
         if quality is not None and quality["stop_trial"]:
             run["status"] = "failed"
@@ -1353,7 +1506,12 @@ def reconcile(
                 run["status"] = "failed"
                 run["finished_at"] = time.time()
                 run["failure_reason"] = "approved_campaign_timeout"
-    if state["stage"] != "blocked":
+    if state["stage"] not in {
+        "blocked",
+        "adaptive_stopped",
+        "multi_fidelity_completed",
+        "multi_fidelity_stopped",
+    }:
         if state["runs"] and all(
             run["status"] == "completed" for run in state["runs"].values()
         ):

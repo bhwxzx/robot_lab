@@ -1,6 +1,6 @@
 ---
 name: monitor-tune-isaaclab-training
-description: Configure, supervise, diagnose, recover, distribute, execute, rank, closed-loop evaluate, safely archive, and improve IsaacLab policies from supervised physical-deployment feedback across RSL-RL and other backends through versioned algorithm profiles and explicit authorization. Use for first-run machine, Conda, GPU, path, policy-storage, or HTTPS Git-mailbox setup; training watchdogs; safe checkpoint resume; bounded local-W&B history priors and adaptive fixed-seed rounds; bounded fixed-single-seed or multi-seed tuning on one or multiple Git-connected computers; effective-config gates; learning-quality anomaly detection; Play and Native/JIT/ONNX deployment-artifact tests; video-based motion review; bounded real-robot qualification; final-policy promotion; qualified policy storage; real-robot feedback retuning; new-algorithm discovery; or approval-gated profile upgrades.
+description: Configure, supervise, diagnose, recover, distribute, execute, orchestrate, rank, closed-loop evaluate, safely archive, and improve IsaacLab policies from supervised physical-deployment feedback across RSL-RL and other backends through versioned algorithm profiles and explicit authorization. Use for first-run machine, Conda, GPU, path, policy-storage, or HTTPS Git-mailbox setup; training watchdogs; safe checkpoint resume; shadow or executable campaign control; bounded local-W&B history priors, adaptive fixed-seed rounds, or synchronous multi-fidelity training; bounded fixed-single-seed or multi-seed tuning on one or multiple Git-connected computers; effective-config gates; learning-quality anomaly detection; Play and Native/JIT/ONNX deployment-artifact tests; video-based motion review; bounded real-robot qualification; final-policy promotion; qualified policy storage; real-robot feedback retuning; new-algorithm discovery; or approval-gated profile upgrades.
 ---
 
 # Monitor and Tune IsaacLab Training
@@ -77,7 +77,13 @@ evaluating, archiving, or preparing a feedback-driven tuning draft. Require:
   baseline, and learning-quality stop rules.
 - for history-informed adaptive search, the exact local W&B roots and project,
   parameter/metric mappings, time/run/point limits, first-round influence cap,
-  round count, trials per round, and exploration fraction.
+  source/context compatibility policy, progress/stability gates, round count,
+  trials per round, exploration fraction, and early-stop thresholds.
+- for synchronous multi-fidelity training, exact increasing rung budgets,
+  promotion targets, objective margin, conservative pruning delays, and
+  adapter-reviewed budget/resume/checkpoint mappings.
+- for campaign control, shadow or execute mode, single-host or distributed
+  role, all worker mailbox paths, and a mandatory stop before evaluation.
 - in version-7 `tune` mode, a dedicated HTTPS coordination repository,
   coordinator/worker branches, `by_seed` or fixed-seed `by_trial` assignment,
   clean source commit, per-worker paths/GPU, an explicit host-calibration
@@ -183,7 +189,29 @@ pass the hash-bound prior with `--history-prior`. Never widen parameter domains,
 reuse an exact historical combination, or let history supply more than the
 approved half of first-round candidates. Add a later round only after every
 existing trial has one valid completed result; the plan must be an append-only
-deterministic expansion.
+deterministic expansion. Preserve the hash-bound stop decision when progress,
+feasibility, improvement patience, budget, grid, or round limits say not to
+publish more work.
+
+When the approved fixed-seed session enables `multi_fidelity`, read
+[references/multi-fidelity-training.md](references/multi-fidelity-training.md).
+Wait for every active run at the same rung, eliminate hard-constraint failures
+immediately, and performance-prune only after the approved minimum rungs and
+consecutive underperformance. Preserve the baseline, exact parent checkpoint
+hash/step, and same-worker affinity. Expand the plan only through
+`build_multifidelity_rung.py`; terminal decisions create no new run.
+
+When the session enables `campaign_controller`, read
+[references/campaign-controller.md](references/campaign-controller.md).
+Use `status` for a read-only next-action report. Use `advance` only with
+approved `mode=execute`; it may perform one exact transition and must stop
+after training ranking with `evaluation_required`.
+
+When the session separately enables `evaluation_handoff`, read
+[references/evaluation-handoff-controller.md](references/evaluation-handoff-controller.md).
+Use the Campaign Controller's immutable ranking and checkpoint inventory,
+advance only on the designated evaluation worker, and stop at
+`awaiting_visual_review`.
 
 For version 6 or 7, initialize the hash-bound state and launch no more than one
 authorized child at a time:

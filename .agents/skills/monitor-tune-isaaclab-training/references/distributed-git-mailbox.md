@@ -12,6 +12,8 @@ same private Git remote over HTTPS.
   credentials, query strings, and fragments in `distributed.remote_url`.
 - Store only finite JSON metadata. Never commit checkpoints, ONNX/JIT files,
   videos, full logs, credentials, or environment secrets to the mailbox.
+- Publish each complete trial-plan JSON under its content hash so a worker can
+  validate the exact plan named by its job without copying it out of band.
 - Treat the coordinator branch as an immutable job/control inbox. Give each
   worker its own result branch; never let two workers push the same branch.
 - Bind every job to the approved session hash, trial-plan hash, source commit,
@@ -108,12 +110,39 @@ authorized local root and runs `history-publish`; the coordinator requires all
 worker indexes and runs `history-collect`. The merged run cap remains global
 across both computers. The mailbox carries only finite, hash-bound summary
 metadata and never copies W&B files or contacts W&B cloud services.
+Each index exposes its compatibility and quality evidence. Only guidance-
+eligible runs can steer candidate selection across hosts.
 
 After every current trial has a valid terminal result, build one deterministic
 append-only plan expansion. `publish-adaptive-round` verifies the previous
 plan, immutable collected results, embedded result hash, budget, unique run
 IDs, and exact newly appended jobs before publication. Workers never invent a
-new round or change earlier jobs.
+new round or change earlier jobs. A deterministic stop decision publishes one
+immutable stop manifest with zero jobs.
+
+## Synchronous multi-fidelity rungs
+
+When the approved session contains `multi_fidelity`, follow
+`multi-fidelity-training.md`. Publish rung 1 normally. Every result must bind
+its current checkpoint path and SHA-256, and its artifact manifest must contain
+the same checkpoint entry. Git transports this evidence, not the model file.
+
+After all current-rung results are valid, build one deterministic plan
+expansion and publish it:
+
+```bash
+python scripts/git_mailbox.py publish-multifidelity-rung \
+  --repo /absolute/path/to/coordinator-mailbox \
+  --session SESSION_V7.json \
+  --previous-plan PREVIOUS_PLAN.json \
+  --expanded-plan EXPANDED_PLAN.json
+```
+
+The publisher verifies the rung barrier, immutable result snapshot, decision,
+checkpoint manifest, and append-only jobs. Every promoted trial remains on the
+worker that produced its parent checkpoint. A terminal `complete` or `stop`
+decision creates zero jobs. Never reassign a missing parent checkpoint or
+commit it to the mailbox.
 
 ## Coordinator workflow
 
@@ -128,7 +157,14 @@ python scripts/git_mailbox.py publish \
 
 Publication creates immutable campaign and job JSON files on the approved
 coordinator branch. Repeating an identical publication is idempotent. A
-different document at an existing path is a hard collision.
+different document at an existing path is a hard collision. The same
+publication also stores the complete JSON plan snapshot at a content-addressed
+metadata path; `prepare-job` returns that plan after validating its hash.
+
+When the approved session enables `campaign_controller`, read
+`campaign-controller.md`. All hosts keep one identical controller contract
+containing the complete worker-to-mailbox-path mapping, then choose their local
+identity with `--worker-id`. Git still carries no model artifact.
 
 After workers publish outputs:
 

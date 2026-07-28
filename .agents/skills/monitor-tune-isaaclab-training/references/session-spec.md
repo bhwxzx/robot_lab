@@ -213,10 +213,106 @@ candidates. `config_path_map` and `metric_key_map` must exactly cover the
 already approved parameter and ranking contracts. This feature does not grant
 new tuning paths or values.
 
+The history contract also requires an explicit source policy and exact task,
+profile, observation-contract, and reward-config context; a W&B progress key;
+minimum final progress and retained points; and one stability metric with
+approved tail deviation and slope gates. The adaptive contract requires one
+objective metric, raw minimum improvement, patience, and minimum feasible
+trial count for deterministic stopping.
+
 The first plan requires a merged hash-bound prior. Each later plan appends one
 deterministic round only after all existing fixed-seed trials have completed.
 Existing trials and runs are immutable, historical combinations remain
-excluded, and the complete campaign remains bounded by `tuning.max_trials`.
+excluded only when compatible for guidance, and the complete campaign remains
+bounded by `tuning.max_trials`. A terminal adaptive decision appends no runs.
+
+## Synchronous multi-fidelity training
+
+Versions 6 and 7 may instead add `multi_fidelity` with
+`fixed_single_seed`. It is mutually exclusive with `adaptive_search`:
+
+```json
+{
+  "enabled": true,
+  "metric": "mean_reward",
+  "minimum_margin": 5.0,
+  "minimum_rungs_before_performance_pruning": 2,
+  "required_consecutive_underperformance": 2,
+  "resume_same_worker": true,
+  "rungs": [
+    {"budget": 1000, "target_promoted_candidates": 5},
+    {"budget": 3000, "target_promoted_candidates": 2},
+    {"budget": 10000, "target_promoted_candidates": 0}
+  ]
+}
+```
+
+The metric must be an approved objective. Budgets strictly increase, the final
+target is zero, and every pre-pruning rung protects all configured candidates.
+The penultimate target must cover `confirmation_top_k`. Every allowed
+parameter requires an explicit baseline. Version 7 requires `by_trial`
+assignment, and every promoted trial resumes on its parent worker. Read
+`multi-fidelity-training.md` for commands, decision rules, and limitations.
+
+## Campaign controller
+
+Versions 6 and 7 may add:
+
+```json
+{
+  "campaign_controller": {
+    "enabled": true,
+    "mode": "shadow",
+    "role": "single_host",
+    "auto_launch_trials": true,
+    "auto_advance_plans": true,
+    "stop_before_evaluation": true,
+    "worker_mailbox_repos": {}
+  }
+}
+```
+
+Version 6 requires `single_host` and an empty mapping. Version 7 requires
+`role=distributed` and a mapping that exactly covers every approved worker ID
+with its absolute local mailbox-clone path. Keep the same complete mapping on
+all hosts so the session hash is identical; select the local identity at
+runtime with `--worker-id`. `advance` requires approved `mode=execute`.
+The controller may automate training transitions only and must stop before
+evaluation. It also emits a session- and ranking-bound checkpoint inventory.
+Read `campaign-controller.md`.
+
+## Evaluation handoff controller
+
+Versions 6 and 7 may separately authorize:
+
+```json
+{
+  "evaluation_handoff": {
+    "enabled": true,
+    "mode": "shadow",
+    "top_k": 1,
+    "require_pareto": true,
+    "checkpoint_seed": 42,
+    "evaluation_worker_id": null,
+    "artifact_path_templates": {
+      "jit": "{rsl_rl_run_dir}/exported/policy.pt",
+      "onnx": "{rsl_rl_run_dir}/exported/policy.onnx"
+    },
+    "auto_build_plan": true,
+    "auto_execute_evaluation": true,
+    "stop_before_visual_review": true
+  }
+}
+```
+
+This requires an executable Campaign Controller and executable policy
+evaluation in the same tune session. Version 7 requires one exact worker ID;
+version 6 requires null. Template keys must exactly cover every selected
+non-Native evaluation artifact and resolve to already exported absolute files.
+The controller selects only the approved Pareto Top-K at the exact checkpoint
+seed, builds the candidate manifest and evaluation matrix, advances one cell at
+a time, and stops at `awaiting_visual_review`. Read
+`evaluation-handoff-controller.md`.
 
 ## Distributed Git mailbox
 
@@ -304,7 +400,16 @@ Version-6 tune sessions require a root-level `execution` object:
       "env.seed": "seed"
     },
     "summary_last": 100,
-    "require_checkpoint": true
+    "require_checkpoint": true,
+    "multi_fidelity": {
+      "budget_cli_path": "agent.max_iterations",
+      "resume_cli_paths": {
+        "enabled": "agent.resume",
+        "load_run": "agent.load_run",
+        "load_checkpoint": "agent.load_checkpoint"
+      },
+      "load_run_reference": "basename"
+    }
   },
   "resource_limits": {
     "campaign_timeout_minutes": 1440,
@@ -348,6 +453,11 @@ bounded from zero through three. The optional one-time baseline bootstrap is
 valid only for the unchanged baseline. Adapter sessions must also approve the
 campaign timeout, minimum free disk, maximum GPU temperature, and SIGTERM grace
 period.
+
+Omit `execution.adapter.multi_fidelity` when the root contract is absent. When
+present, its four managed Hydra paths must be unique, must not overlap an
+allowed tuning or runtime path, and must not already appear in
+`training.command`. `load_run_reference` is `basename` or `absolute`.
 
 `reproducibility` is optional for backward compatibility. When enabled, package
 names must be explicit and every input path must be an absolute file path.

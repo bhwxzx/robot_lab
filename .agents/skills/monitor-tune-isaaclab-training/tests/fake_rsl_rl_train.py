@@ -11,6 +11,17 @@ from pathlib import Path
 import yaml
 
 
+def _set_nested(root: dict[str, object], path: str, value: object) -> None:
+    parts = path.split(".")
+    current = root
+    for part in parts[:-1]:
+        nested = current.setdefault(part, {})
+        if not isinstance(nested, dict):
+            raise ValueError(f"cannot assign nested override {path}")
+        current = nested
+    current[parts[-1]] = value
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fake-log-root", required=True)
@@ -40,21 +51,28 @@ def main() -> int:
     run_dir = log_root / f"{stamp}_{args.run_name}"
     params_dir = run_dir / "params"
     params_dir.mkdir(parents=True)
+    effective: dict[str, object] = {
+        "env": {"seed": args.seed, "terrain": {"difficulty": 1}},
+        "agent": {
+            "algorithm": {"learning_rate": learning_rate},
+            "run_name": args.run_name,
+            "seed": args.seed,
+        },
+    }
+    for path, value in parsed_overrides.items():
+        _set_nested(effective, path, value)
     (params_dir / "env.yaml").write_text(
-        yaml.safe_dump({"seed": args.seed, "terrain": {"difficulty": 1}}),
+        yaml.safe_dump(effective["env"]),
         encoding="utf-8",
     )
     (params_dir / "agent.yaml").write_text(
-        yaml.safe_dump(
-            {
-                "algorithm": {"learning_rate": learning_rate},
-                "run_name": args.run_name,
-                "seed": args.seed,
-            }
-        ),
+        yaml.safe_dump(effective["agent"]),
         encoding="utf-8",
     )
-    (run_dir / "model_2.pt").write_bytes(b"fake-checkpoint")
+    target_budget = int(parsed_overrides.get("agent.max_iterations", 2))
+    (run_dir / f"model_{target_budget}.pt").write_bytes(
+        f"fake-checkpoint-{target_budget}".encode()
+    )
     (run_dir / "received.json").write_text(
         json.dumps(
             {

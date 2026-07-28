@@ -154,6 +154,46 @@ def build_child_argv(
         if not isinstance(cli_path, str) or not cli_path:
             raise SpecError(f"adapter CLI mapping is invalid for {path}")
         argv.append(f"{cli_path}={_hydra_value(overrides[path])}")
+    if contract["version"] == 2:
+        fidelity = contract["multi_fidelity"]
+        budget_path = fidelity["budget_cli_path"]
+        argv.append(
+            f"{budget_path}={_hydra_value(contract['target_budget'])}"
+        )
+        resume = contract["resume_from"]
+        if resume is not None:
+            checkpoint_path = Path(resume["checkpoint_path"])
+            rsl_run_dir = Path(resume["rsl_rl_run_dir"])
+            if (
+                not checkpoint_path.is_absolute()
+                or not checkpoint_path.is_file()
+                or checkpoint_path.is_symlink()
+                or not rsl_run_dir.is_absolute()
+                or not rsl_run_dir.is_dir()
+                or rsl_run_dir.is_symlink()
+                or checkpoint_path.parent.resolve() != rsl_run_dir.resolve()
+                or _sha256(checkpoint_path) != resume["checkpoint_sha256"]
+            ):
+                raise SpecError(
+                    "multi-fidelity parent checkpoint is missing, linked, "
+                    "moved, or hash-mismatched"
+                )
+            resume_paths = fidelity["resume_cli_paths"]
+            run_reference = (
+                rsl_run_dir.name
+                if fidelity["load_run_reference"] == "basename"
+                else str(rsl_run_dir)
+            )
+            argv.extend(
+                [
+                    f"{resume_paths['enabled']}=true",
+                    f"{resume_paths['load_run']}={_hydra_value(run_reference)}",
+                    (
+                        f"{resume_paths['load_checkpoint']}="
+                        f"{_hydra_value(checkpoint_path.name)}"
+                    ),
+                ]
+            )
     return argv
 
 
@@ -203,11 +243,20 @@ def _validate_contract(contract: dict[str, Any]) -> None:
         "stage",
         "seed",
     }
+    if contract.get("version") == 2:
+        required.update(
+            {
+                "rung",
+                "target_budget",
+                "resume_from",
+                "multi_fidelity",
+            }
+        )
     if set(contract) != required:
         raise SpecError(
             f"adapter contract fields do not match schema: {sorted(set(contract) ^ required)}"
         )
-    if contract["version"] != 1 or contract["adapter_id"] != "rsl-rl":
+    if contract["version"] not in {1, 2} or contract["adapter_id"] != "rsl-rl":
         raise SpecError("unsupported adapter contract")
     if not Path(contract["training_cwd"]).is_absolute():
         raise SpecError("adapter training_cwd must be absolute")
@@ -224,6 +273,58 @@ def _validate_contract(contract: dict[str, Any]) -> None:
         )
     ):
         raise SpecError("adapter contract scalar fields are invalid")
+    if contract["version"] == 2:
+        fidelity = contract["multi_fidelity"]
+        resume = contract["resume_from"]
+        if (
+            isinstance(contract["rung"], bool)
+            or not isinstance(contract["rung"], int)
+            or contract["rung"] < 1
+            or isinstance(contract["target_budget"], bool)
+            or not isinstance(contract["target_budget"], int)
+            or contract["target_budget"] < 1
+            or not isinstance(fidelity, dict)
+            or set(fidelity)
+            != {
+                "budget_cli_path",
+                "resume_cli_paths",
+                "load_run_reference",
+            }
+            or not isinstance(fidelity.get("budget_cli_path"), str)
+            or not isinstance(fidelity.get("resume_cli_paths"), dict)
+            or set(fidelity["resume_cli_paths"])
+            != {"enabled", "load_run", "load_checkpoint"}
+            or not all(
+                isinstance(path, str) and path
+                for path in fidelity["resume_cli_paths"].values()
+            )
+            or fidelity.get("load_run_reference")
+            not in {"basename", "absolute"}
+        ):
+            raise SpecError("multi-fidelity adapter contract is invalid")
+        if resume is not None and (
+            not isinstance(resume, dict)
+            or set(resume)
+            != {
+                "parent_run_id",
+                "checkpoint_path",
+                "checkpoint_sha256",
+                "checkpoint_step",
+                "rsl_rl_run_dir",
+            }
+            or not isinstance(resume.get("parent_run_id"), str)
+            or not isinstance(resume.get("checkpoint_path"), str)
+            or not re.fullmatch(
+                r"[0-9a-f]{64}",
+                str(resume.get("checkpoint_sha256")),
+            )
+            or isinstance(resume.get("checkpoint_step"), bool)
+            or not isinstance(resume.get("checkpoint_step"), int)
+            or not isinstance(resume.get("rsl_rl_run_dir"), str)
+        ):
+            raise SpecError(
+                "multi-fidelity resume checkpoint contract is invalid"
+            )
 
 
 def run_trial(
@@ -244,7 +345,7 @@ def run_trial(
         raise SpecError("executor run ID does not match adapter contract")
     child_argv: list[str] = []
     terminal: dict[str, Any] = {
-        "version": 1,
+        "version": contract["version"],
         "adapter_id": "rsl-rl",
         "run_id": contract["run_id"],
         "trial_id": contract["trial_id"],
@@ -260,6 +361,10 @@ def run_trial(
         "summary_updates": 0,
         "failure_reason": None,
     }
+    if contract["version"] == 2:
+        terminal["rung"] = contract["rung"]
+        terminal["target_budget"] = contract["target_budget"]
+        terminal["resume_from"] = contract["resume_from"]
     try:
         child_argv = build_child_argv(contract, overrides)
         terminal["child_argv"] = child_argv
@@ -360,15 +465,30 @@ def run_trial(
             rsl_run_dir,
             contract["require_checkpoint"],
         )
-        _atomic_write(
-            result_path,
-            {
-                "trial_id": contract["trial_id"],
-                "seed": contract["seed"],
-                "status": "completed",
-                "metrics": metrics,
-            },
-        )
+        result = {
+            "trial_id": contract["trial_id"],
+            "seed": contract["seed"],
+            "status": "completed",
+            "metrics": metrics,
+        }
+        if contract["version"] == 2:
+            checkpoint = terminal["checkpoint"]
+            if not isinstance(checkpoint, dict):
+                raise SpecError(
+                    "multi-fidelity trial requires a completed checkpoint"
+                )
+            result.update(
+                {
+                    "run_id": contract["run_id"],
+                    "checkpoint": {
+                        **checkpoint,
+                        "rsl_rl_run_dir": str(rsl_run_dir),
+                    },
+                    "rung": contract["rung"],
+                    "target_budget": contract["target_budget"],
+                }
+            )
+        _atomic_write(result_path, result)
         terminal["status"] = "completed"
         return 0
     except (OSError, SpecError, subprocess.SubprocessError) as exc:
