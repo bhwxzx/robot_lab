@@ -32,6 +32,7 @@ from detect_training_anomalies import detect_anomalies  # noqa: E402
 from execute_trial_plan import (  # noqa: E402
     _ACTIVE_CHILDREN,
     _append_confirmation_runs,
+    _argv_matches_expected,
     _collect_completed_results,
     _persist_state,
     _process_start_ticks,
@@ -664,6 +665,30 @@ class ExecutionRoundOneTests(unittest.TestCase):
         self.assertEqual(run["status"], "completed")
         self.assertIsInstance(run["pid"], int)
         self.assertIsInstance(run["process_start_ticks"], int)
+
+    def test_process_argv_accepts_only_verified_shebang_prefix(self) -> None:
+        command = self.root / "script-command"
+        command.write_text(
+            f"#!{sys.executable}\n",
+            encoding="utf-8",
+        )
+        command.chmod(0o755)
+        expected = [str(command), "run", "--token=approved"]
+        actual = [sys.executable, *expected]
+        self.assertTrue(_argv_matches_expected(expected, expected))
+        self.assertTrue(_argv_matches_expected(actual, expected))
+        self.assertFalse(
+            _argv_matches_expected(
+                [sys.executable, str(command), "run", "--token=changed"],
+                expected,
+            )
+        )
+        self.assertFalse(
+            _argv_matches_expected(
+                ["/bin/sh", *expected],
+                expected,
+            )
+        )
 
     def test_trial_timeout_escalates_exact_process_to_sigkill(self) -> None:
         spec = validate_spec(self._session())

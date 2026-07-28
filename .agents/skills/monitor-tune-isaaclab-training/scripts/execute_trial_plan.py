@@ -648,6 +648,47 @@ def _process_argv(pid: int) -> list[str] | None:
     ]
 
 
+def _argv_matches_expected(
+    actual: list[str] | None,
+    expected: list[str],
+) -> bool:
+    if actual == expected:
+        return True
+    if actual is None or len(actual) != len(expected) + 1:
+        return False
+    resolved_command = shutil.which(expected[0])
+    if resolved_command is None:
+        return False
+    command_path = Path(resolved_command)
+    actual_command = Path(actual[1])
+    try:
+        if (
+            command_path.resolve(strict=True)
+            != actual_command.resolve(strict=True)
+            or actual[2:] != expected[1:]
+        ):
+            return False
+        with actual_command.open("rb") as stream:
+            shebang = stream.readline(4096)
+    except (FileNotFoundError, OSError):
+        return False
+    if not shebang.startswith(b"#!"):
+        return False
+    interpreter_tokens = shebang[2:].strip().split()
+    if len(interpreter_tokens) != 1:
+        return False
+    interpreter = Path(os.fsdecode(interpreter_tokens[0]))
+    if not interpreter.is_absolute():
+        return False
+    try:
+        return (
+            interpreter.resolve(strict=True)
+            == Path(actual[0]).resolve(strict=True)
+        )
+    except (FileNotFoundError, OSError):
+        return False
+
+
 def _process_is_exact(run: dict[str, Any]) -> bool:
     pid = run.get("pid")
     start = run.get("process_start_ticks")
@@ -660,7 +701,10 @@ def _process_is_exact(run: dict[str, Any]) -> bool:
         or run.get("process_group") != pid
     ):
         return False
-    return _process_start_ticks(pid) == start and _process_argv(pid) == argv
+    return (
+        _process_start_ticks(pid) == start
+        and _argv_matches_expected(_process_argv(pid), argv)
+    )
 
 
 def _load_launch_receipt(run: dict[str, Any]) -> dict[str, Any]:
