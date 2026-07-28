@@ -167,6 +167,8 @@ and cite timestamps in notes.
    `evaluation` and, when requested,
    the separate `archive` contract.
 4. Export required artifacts and verify that paths are isolated by candidate.
+   When `policy_export` is approved, require its transactional Native/JIT/ONNX
+   parity manifest before building the evaluation plan.
 5. Create a candidate manifest:
 
 ```json

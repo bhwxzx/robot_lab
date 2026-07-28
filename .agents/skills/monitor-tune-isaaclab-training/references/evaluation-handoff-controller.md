@@ -2,13 +2,14 @@
 
 Use this controller only after the Campaign Controller has produced immutable
 training ranking and checkpoint-inventory files. It automates the bounded
-transition from training evidence to the existing closed-loop policy-evaluation
-executor. It does not visually approve motion, archive a policy, or start a
-physical test.
+transition from training evidence through an optional authorized export/parity
+gate to the existing closed-loop policy-evaluation executor. It does not
+visually approve motion, archive a policy, or start a physical test.
 
 ## Contents
 
 - [Session permission](#session-permission)
+- [Optional export gate](#optional-export-gate)
 - [Inputs and commands](#inputs-and-commands)
 - [Distributed boundary](#distributed-boundary)
 - [Stopping boundary](#stopping-boundary)
@@ -42,11 +43,27 @@ be an approved confirmation seed. Version 6 requires
 `evaluation_worker_id=null`. Version 7 requires one exact distributed worker
 ID; pass that same identity at runtime.
 
-The artifact-template keys must exactly cover selected non-Native evaluation
+Without `policy_export`, artifact-template keys must exactly cover selected
+non-Native evaluation
 artifacts. Supported fields are `candidate_id`, `trial_id`, `seed`,
 `checkpoint_path`, `checkpoint_dir`, and `rsl_rl_run_dir`. Templates locate
 already exported artifacts. The controller never runs an exporter or guesses a
 path. A missing, linked, moved, or changed artifact blocks plan creation.
+
+## Optional export gate
+
+When `policy_export` is enabled, set `artifact_path_templates` to `{}`. The
+controller first builds an immutable export plan from the same ranking,
+checkpoint inventory, Pareto Top-K, checkpoint seed, and worker. It advances
+the transactional exporter one child at a time. The exporter must produce both
+JIT and ONNX, prove finite Native/JIT/ONNX action parity on the same observation
+batch, and publish a hash-bound manifest.
+
+Advancing this path requires both `evaluation_handoff.mode=execute` and
+`policy_export.mode=execute`. Keeping either contract in `shadow` prevents
+launch. A missing artifact, changed checkpoint, wrong tensor contract,
+non-finite action, or action error above the approved limit blocks evaluation.
+See `policy-export.md`.
 
 ## Inputs and commands
 
@@ -76,7 +93,7 @@ conda run -n isaacsim-5.1 python \
   --action advance
 ```
 
-The transition sequence is:
+Without automatic export, the transition sequence is:
 
 1. initialize the hash-bound handoff state;
 2. select the approved Pareto Top-K and exact checkpoint seed;
@@ -90,6 +107,11 @@ The handoff state and hash-chained journal live under
 `evaluation.output_dir/.handoff`. Evaluation execution continues to use
 `evaluation.execution.state_dir` and the shared training/evaluation GPU lock.
 Repeated terminal invocations are idempotent.
+
+With automatic export, steps 2–4 are preceded by export-plan creation,
+transactional JIT/ONNX export, parity validation, and export-manifest
+validation. The derived candidate manifest contains only artifact paths whose
+hashes were accepted by that gate.
 
 ## Distributed boundary
 

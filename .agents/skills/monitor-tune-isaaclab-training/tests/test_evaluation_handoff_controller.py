@@ -20,10 +20,14 @@ sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(TESTS))
 
 import execute_evaluation_plan as evaluation_executor  # noqa: E402
+import execute_policy_export_plan as export_executor  # noqa: E402
 from evaluation_handoff_controller import inspect_or_advance  # noqa: E402
 from rank_trials import rank  # noqa: E402
 import test_fixed_single_seed as fixed_tests  # noqa: E402
 from validate_session_spec import SpecError, validate_spec  # noqa: E402
+
+
+FAKE_EXPORTER = TESTS / "fake_policy_exporter.py"
 
 
 def _sha256(path: Path) -> str:
@@ -53,6 +57,15 @@ class EvaluationHandoffControllerTests(unittest.TestCase):
                     process.kill()
                     process.wait(timeout=3)
         evaluation_executor._ACTIVE_CHILDREN.clear()
+        for process in list(export_executor._ACTIVE_CHILDREN.values()):
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=3)
+                except Exception:
+                    process.kill()
+                    process.wait(timeout=3)
+        export_executor._ACTIVE_CHILDREN.clear()
         self.helper.tearDown()
 
     def _session(self, handoff_mode: str) -> dict[str, object]:
@@ -142,6 +155,84 @@ class EvaluationHandoffControllerTests(unittest.TestCase):
         )
         return session_path, ranking_path, inventory_path
 
+    def _session_with_export(
+        self,
+        *,
+        export_mode: str = "execute",
+        fake_mode: str = "healthy",
+    ) -> dict[str, object]:
+        session = self._session("execute")
+        artifacts = session["evaluation"]["artifacts"]
+        onnx = next(item for item in artifacts if item["kind"] == "onnx")
+        jit = copy.deepcopy(onnx)
+        jit["kind"] = "jit"
+        artifacts.append(jit)
+        session["evaluation_handoff"]["artifact_path_templates"] = {}
+        session["policy_export"] = {
+            "enabled": True,
+            "mode": export_mode,
+            "adapter_id": "rsl-rl",
+            "worker_id": None,
+            "command": [
+                sys.executable,
+                str(FAKE_EXPORTER),
+                "--candidate-id",
+                "{candidate_id}",
+                "--trial-id",
+                "{trial_id}",
+                "--checkpoint-path",
+                "{checkpoint_path}",
+                "--checkpoint-sha256",
+                "{checkpoint_sha256}",
+                "--export-run-id",
+                "{export_run_id}",
+                "--jit-path",
+                "{jit_path}",
+                "--onnx-path",
+                "{onnx_path}",
+                "--result-path",
+                "{result_path}",
+                "--gpu-index",
+                "{gpu_index}",
+                "--seed",
+                "{seed}",
+                "--history-contract",
+                "{history_contract}",
+                "--normalization-contract",
+                "{normalization_contract}",
+                "--minimum-parity-samples",
+                "{minimum_parity_samples}",
+                "--max-abs-action-error",
+                "{max_abs_action_error}",
+                "{require_idle_gpu_flag}",
+                "--fake-mode",
+                fake_mode,
+            ],
+            "artifact_filenames": {
+                "jit": "policy.pt",
+                "onnx": "policy.onnx",
+            },
+            "output_dir": str(self.root / "evaluation" / "policy-export"),
+            "gpu_index": 0,
+            "require_idle_gpu": True,
+            "run_timeout_minutes": 1,
+            "execution": {
+                "max_retries_per_run": 0,
+                "stop_grace_seconds": 1,
+                "min_free_disk_gb": 0.001,
+                "max_gpu_temperature_c": 100,
+                "minimum_artifact_bytes": 1,
+            },
+            "parity": {
+                "minimum_samples": 4,
+                "max_abs_action_error": 1.0e-5,
+                "require_finite": True,
+                "history_contract": "current_observation",
+                "normalization_contract": "backend_export_helper",
+            },
+        }
+        return session
+
     def test_shadow_is_read_only_and_execute_requires_permission(self) -> None:
         session_path, ranking_path, inventory_path = self._sources("shadow")
         output = self.root / "evaluation" / ".handoff"
@@ -214,6 +305,90 @@ class EvaluationHandoffControllerTests(unittest.TestCase):
         self.assertEqual(repeated["action_taken"], "none")
         self.assertEqual(state_path.read_bytes(), state_before)
         self.assertFalse((self.root / "policy-storage").exists())
+
+    def test_exports_with_parity_gate_before_evaluation(self) -> None:
+        session = self._session_with_export()
+        session_path, ranking_path, inventory_path = self._sources(
+            "execute",
+            session=session,
+        )
+        actions: list[str] = []
+        with (
+            mock.patch.object(
+                export_executor,
+                "_resource_preflight",
+                return_value={"synthetic": True},
+            ),
+            mock.patch.object(export_executor, "_gpu_idle", return_value=True),
+            mock.patch.object(
+                evaluation_executor,
+                "_resource_preflight",
+                return_value={"synthetic": True},
+            ),
+            mock.patch.object(
+                evaluation_executor,
+                "_gpu_idle",
+                return_value=True,
+            ),
+        ):
+            report: dict[str, object] = {}
+            for _ in range(160):
+                report = inspect_or_advance(
+                    session_path,
+                    ranking_path,
+                    inventory_path,
+                    execute=True,
+                )
+                action = str(report.get("action_taken"))
+                actions.append(action)
+                if action == "launch_policy_export":
+                    for process in list(export_executor._ACTIVE_CHILDREN.values()):
+                        process.wait(timeout=5)
+                if action == "launch_next":
+                    for process in list(
+                        evaluation_executor._ACTIVE_CHILDREN.values()
+                    ):
+                        process.wait(timeout=5)
+                if report.get("next_action") == "awaiting_visual_review":
+                    break
+                time.sleep(0.02)
+        self.assertEqual(report["next_action"], "awaiting_visual_review")
+        self.assertIn("prepare_policy_export", actions)
+        self.assertIn("initialize_policy_export", actions)
+        self.assertIn("launch_policy_export", actions)
+        self.assertIn("prepare_evaluation", actions)
+        manifest_path = (
+            self.root
+            / "evaluation"
+            / "policy-export"
+            / "export_manifest.json"
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            set(manifest["candidates"][0]["artifacts"]),
+            {"jit", "onnx"},
+        )
+        self.assertEqual(
+            manifest["receipts"]["trial-002"]["parity"]["sample_count"],
+            4,
+        )
+
+    def test_export_permission_is_separate_from_handoff_permission(self) -> None:
+        session_path, ranking_path, inventory_path = self._sources(
+            "execute",
+            session=self._session_with_export(export_mode="shadow"),
+        )
+        with self.assertRaisesRegex(
+            SpecError,
+            "policy_export.mode=execute",
+        ):
+            inspect_or_advance(
+                session_path,
+                ranking_path,
+                inventory_path,
+                execute=True,
+            )
+        self.assertFalse((self.root / "evaluation" / ".handoff").exists())
 
     def test_missing_or_changed_artifact_blocks_plan_creation(self) -> None:
         session = self._session("execute")

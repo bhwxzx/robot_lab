@@ -2613,6 +2613,291 @@ def _validate_campaign_controller(
     return contract
 
 
+def _validate_policy_export(
+    value: Any,
+    *,
+    version: int,
+    mode: str,
+    algorithm: dict[str, Any],
+    profile: dict[str, Any],
+    tuning: dict[str, Any] | None,
+    evaluation: dict[str, Any] | None,
+    distributed: dict[str, Any] | None,
+    campaign_controller: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if (
+        version < 6
+        or mode != "tune"
+        or not isinstance(tuning, dict)
+        or not isinstance(evaluation, dict)
+        or not evaluation.get("enabled")
+        or not isinstance(campaign_controller, dict)
+        or not campaign_controller.get("enabled")
+        or profile["is_generic"]
+    ):
+        raise SpecError(
+            "policy_export requires a version-6-or-7 non-generic automated "
+            "tune campaign with policy evaluation"
+        )
+    contract = _expect_object(value, "policy_export")
+    _check_keys(
+        contract,
+        {
+            "enabled",
+            "mode",
+            "adapter_id",
+            "worker_id",
+            "command",
+            "artifact_filenames",
+            "output_dir",
+            "gpu_index",
+            "require_idle_gpu",
+            "run_timeout_minutes",
+            "execution",
+            "parity",
+        },
+        "policy_export",
+    )
+    if not _expect_bool(contract.get("enabled"), "policy_export.enabled"):
+        raise SpecError("configured policy_export must be enabled")
+    if contract.get("mode") not in {"shadow", "execute"}:
+        raise SpecError("policy_export.mode must be shadow or execute")
+    adapter_id = _expect_nonempty_string(
+        contract.get("adapter_id"),
+        "policy_export.adapter_id",
+    )
+    if algorithm["backend"] == "rsl_rl" and adapter_id != "rsl-rl":
+        raise SpecError("rsl_rl policy_export requires adapter_id=rsl-rl")
+    if not IDENTIFIER_RE.fullmatch(adapter_id):
+        raise SpecError("policy_export.adapter_id contains unsupported characters")
+    worker_id = contract.get("worker_id")
+    if version == 6:
+        if worker_id is not None:
+            raise SpecError("version-6 policy_export.worker_id must be null")
+    else:
+        if not isinstance(distributed, dict):
+            raise SpecError("version-7 policy_export requires distributed execution")
+        worker_id = _expect_nonempty_string(worker_id, "policy_export.worker_id")
+        if worker_id not in {item["id"] for item in distributed["workers"]}:
+            raise SpecError(
+                "policy_export.worker_id must name an approved worker"
+            )
+    command = _validate_argv(contract.get("command"), "policy_export.command")
+    required_placeholders = {
+        "candidate_id",
+        "checkpoint_path",
+        "checkpoint_sha256",
+        "export_run_id",
+        "gpu_index",
+        "history_contract",
+        "jit_path",
+        "max_abs_action_error",
+        "minimum_parity_samples",
+        "normalization_contract",
+        "onnx_path",
+        "require_idle_gpu_flag",
+        "result_path",
+        "seed",
+        "trial_id",
+    }
+    found: set[str] = set()
+    for index, token in enumerate(command):
+        placeholders = set(COMMAND_PLACEHOLDER_RE.findall(token))
+        unsupported = sorted(placeholders - required_placeholders)
+        if unsupported:
+            raise SpecError(
+                f"policy_export.command[{index}] contains unsupported "
+                f"placeholder(s): {', '.join(unsupported)}"
+            )
+        found.update(placeholders)
+    missing = sorted(required_placeholders - found)
+    if missing:
+        raise SpecError(
+            "policy_export.command is missing required placeholder(s): "
+            + ", ".join(missing)
+        )
+    if "{export_run_id}" not in command:
+        raise SpecError(
+            "policy_export.command must pass {export_run_id} as a standalone token"
+        )
+    filenames = _expect_object(
+        contract.get("artifact_filenames"),
+        "policy_export.artifact_filenames",
+    )
+    selected_non_native = {
+        item["kind"] for item in evaluation["artifacts"]
+        if item["kind"] != "native"
+    }
+    if selected_non_native != {"jit", "onnx"} or set(filenames) != {
+        "jit",
+        "onnx",
+    }:
+        raise SpecError(
+            "automated policy_export requires JIT and ONNX evaluation artifacts"
+        )
+    for kind, value_name in filenames.items():
+        filename = _expect_nonempty_string(
+            value_name,
+            f"policy_export.artifact_filenames.{kind}",
+        )
+        if Path(filename).name != filename:
+            raise SpecError("policy_export artifact filenames must be basenames")
+        expected_suffix = ".pt" if kind == "jit" else ".onnx"
+        if not filename.endswith(expected_suffix):
+            raise SpecError(
+                f"policy_export {kind} filename must end with {expected_suffix}"
+            )
+    output_dir = Path(
+        _expect_nonempty_string(
+            contract.get("output_dir"),
+            "policy_export.output_dir",
+        )
+    )
+    evaluation_root = Path(evaluation["output_dir"])
+    if not output_dir.is_absolute():
+        raise SpecError("policy_export.output_dir must be absolute")
+    try:
+        output_dir.relative_to(evaluation_root)
+    except ValueError as exc:
+        raise SpecError(
+            "policy_export.output_dir must be inside evaluation.output_dir"
+        ) from exc
+    gpu_index = _expect_int(
+        contract.get("gpu_index"),
+        "policy_export.gpu_index",
+        0,
+        1024,
+    )
+    if gpu_index != evaluation["gpu_index"]:
+        raise SpecError(
+            "policy_export.gpu_index must equal evaluation.gpu_index"
+        )
+    if not _expect_bool(
+        contract.get("require_idle_gpu"),
+        "policy_export.require_idle_gpu",
+    ):
+        raise SpecError("policy_export requires an idle GPU")
+    _expect_int(
+        contract.get("run_timeout_minutes"),
+        "policy_export.run_timeout_minutes",
+        1,
+        1440,
+    )
+    execution_contract = _expect_object(
+        contract.get("execution"),
+        "policy_export.execution",
+    )
+    _check_keys(
+        execution_contract,
+        {
+            "max_retries_per_run",
+            "stop_grace_seconds",
+            "min_free_disk_gb",
+            "max_gpu_temperature_c",
+            "minimum_artifact_bytes",
+        },
+        "policy_export.execution",
+    )
+    _expect_int(
+        execution_contract.get("max_retries_per_run"),
+        "policy_export.execution.max_retries_per_run",
+        0,
+        10,
+    )
+    _expect_int(
+        execution_contract.get("stop_grace_seconds"),
+        "policy_export.execution.stop_grace_seconds",
+        1,
+        300,
+    )
+    minimum_disk = _expect_number(
+        execution_contract.get("min_free_disk_gb"),
+        "policy_export.execution.min_free_disk_gb",
+    )
+    if minimum_disk <= 0:
+        raise SpecError("policy_export.execution.min_free_disk_gb must be positive")
+    _expect_int(
+        execution_contract.get("max_gpu_temperature_c"),
+        "policy_export.execution.max_gpu_temperature_c",
+        1,
+        120,
+    )
+    _expect_int(
+        execution_contract.get("minimum_artifact_bytes"),
+        "policy_export.execution.minimum_artifact_bytes",
+        1,
+        10_000_000_000,
+    )
+    parity = _expect_object(contract.get("parity"), "policy_export.parity")
+    _check_keys(
+        parity,
+        {
+            "minimum_samples",
+            "max_abs_action_error",
+            "require_finite",
+            "history_contract",
+            "normalization_contract",
+        },
+        "policy_export.parity",
+    )
+    _expect_int(
+        parity.get("minimum_samples"),
+        "policy_export.parity.minimum_samples",
+        1,
+        4096,
+    )
+    error_limit = _expect_number(
+        parity.get("max_abs_action_error"),
+        "policy_export.parity.max_abs_action_error",
+    )
+    if error_limit < 0:
+        raise SpecError(
+            "policy_export.parity.max_abs_action_error must be non-negative"
+        )
+    if not _expect_bool(
+        parity.get("require_finite"),
+        "policy_export.parity.require_finite",
+    ):
+        raise SpecError("policy_export.parity.require_finite must be true")
+    history_contract = parity.get("history_contract")
+    expected_history = profile["evaluation_capabilities"]["history_contract"]
+    if (
+        history_contract != expected_history
+        or history_contract in {"backend_defined", "review_required"}
+    ):
+        raise SpecError(
+            "policy_export requires the reviewed profile history contract"
+        )
+    normalization_contract = _expect_nonempty_string(
+        parity.get("normalization_contract"),
+        "policy_export.parity.normalization_contract",
+    )
+    if normalization_contract not in {
+        "backend_export_helper",
+        "combined_actor_input",
+        "current_frame_only",
+    }:
+        raise SpecError(
+            "policy_export.parity.normalization_contract is unsupported"
+        )
+    if adapter_id == "rsl-rl":
+        runner_class = algorithm["runner_class"]
+        if "ROA" in runner_class:
+            expected_normalization = "current_frame_only"
+        elif "Dwaq" in runner_class:
+            expected_normalization = "combined_actor_input"
+        else:
+            expected_normalization = "backend_export_helper"
+        if normalization_contract != expected_normalization:
+            raise SpecError(
+                "policy_export normalization contract differs from the "
+                "reviewed RSL-RL runner path"
+            )
+    return contract
+
+
 def _validate_evaluation_handoff(
     value: Any,
     *,
@@ -2623,6 +2908,7 @@ def _validate_evaluation_handoff(
     execution: dict[str, Any] | None,
     distributed: dict[str, Any] | None,
     campaign_controller: dict[str, Any] | None,
+    policy_export: dict[str, Any] | None,
 ) -> dict[str, Any] | None:
     if value is None:
         return None
@@ -2711,6 +2997,14 @@ def _validate_evaluation_handoff(
                 "evaluation_handoff.evaluation_worker_id must name an "
                 "approved distributed worker"
             )
+    if (
+        isinstance(policy_export, dict)
+        and policy_export.get("worker_id") != worker_id
+    ):
+        raise SpecError(
+            "policy_export.worker_id must equal "
+            "evaluation_handoff.evaluation_worker_id"
+        )
     templates = _expect_object(
         contract.get("artifact_path_templates"),
         "evaluation_handoff.artifact_path_templates",
@@ -2719,10 +3013,12 @@ def _validate_evaluation_handoff(
         item["kind"] for item in evaluation["artifacts"]
         if item["kind"] != "native"
     }
-    if set(templates) != selected_non_native:
+    expected_templates = set() if policy_export is not None else selected_non_native
+    if set(templates) != expected_templates:
         raise SpecError(
-            "evaluation_handoff.artifact_path_templates must exactly cover "
-            "selected non-native evaluation artifacts"
+            "evaluation_handoff.artifact_path_templates must be empty with "
+            "policy_export, otherwise exactly cover selected non-native "
+            "evaluation artifacts"
         )
     allowed_fields = {
         "candidate_id",
@@ -2825,6 +3121,7 @@ def validate_spec(
             "adaptive_search",
             "multi_fidelity",
             "campaign_controller",
+            "policy_export",
             "evaluation_handoff",
             "cleanup",
         },
@@ -3086,7 +3383,18 @@ def validate_spec(
             execution=execution_contract,
             distributed=distributed_contract,
         )
-        _validate_evaluation_handoff(
+        policy_export = _validate_policy_export(
+            root.get("policy_export"),
+            version=version,
+            mode=mode,
+            algorithm=algorithm,
+            profile=profile,
+            tuning=None,
+            evaluation=evaluation,
+            distributed=distributed_contract,
+            campaign_controller=campaign_controller,
+        )
+        handoff = _validate_evaluation_handoff(
             root.get("evaluation_handoff"),
             version=version,
             mode=mode,
@@ -3095,7 +3403,10 @@ def validate_spec(
             execution=execution_contract,
             distributed=distributed_contract,
             campaign_controller=campaign_controller,
+            policy_export=policy_export,
         )
+        if policy_export is not None and handoff is None:
+            raise SpecError("policy_export requires evaluation_handoff")
         return root
 
     tuning = _expect_object(root.get("tuning"), "tuning")
@@ -3357,7 +3668,18 @@ def validate_spec(
         execution=execution_contract,
         distributed=distributed_contract,
     )
-    _validate_evaluation_handoff(
+    policy_export = _validate_policy_export(
+        root.get("policy_export"),
+        version=version,
+        mode=mode,
+        algorithm=algorithm,
+        profile=profile,
+        tuning=tuning,
+        evaluation=evaluation,
+        distributed=distributed_contract,
+        campaign_controller=campaign_controller,
+    )
+    handoff = _validate_evaluation_handoff(
         root.get("evaluation_handoff"),
         version=version,
         mode=mode,
@@ -3366,7 +3688,10 @@ def validate_spec(
         execution=execution_contract,
         distributed=distributed_contract,
         campaign_controller=campaign_controller,
+        policy_export=policy_export,
     )
+    if policy_export is not None and handoff is None:
+        raise SpecError("policy_export requires evaluation_handoff")
     if root.get("adaptive_search") is not None and any(
         "baseline" not in parameter for parameter in validated_parameters
     ):
