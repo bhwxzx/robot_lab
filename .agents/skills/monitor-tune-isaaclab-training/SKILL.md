@@ -316,6 +316,15 @@ lock, exact process identity, timeout escalation, checkpoint/artifact
 revalidation, finalized-video size, canonical result/video hashes, and
 hash-chained state recovery. Never treat `awaiting_visual_review` as qualified.
 
+At `awaiting_visual_review`, run
+`scripts/build_visual_review_bundle.py` with the exact session, plan, and
+execution state. Require its hash-bound `REVIEW_INDEX.md`, manifest, pending
+review draft, and semantic candidate/artifact/scenario/seed video aliases.
+Aliases must be relative symlinks to canonical videos, never copied evidence.
+Use descriptive scenario IDs, inspect every required video, keep canonical
+paths in the completed review, and never infer acceptance from metrics or an
+unchanged `pending` draft.
+
 Use the training task for stress evaluation. Do not rely on a Play-only
 configuration that disables corruption, forces, pushes, or dynamics
 randomization. For RSL-RL, use
