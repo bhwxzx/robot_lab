@@ -159,6 +159,32 @@ When automated video inspection is available, use it as an additional reviewer,
 not as the sole physical-safety authority. Preserve videos for failed segments
 and cite timestamps in notes.
 
+After the executor reaches `awaiting_visual_review`, build a local review
+bundle:
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/build_visual_review_bundle.py \
+  SESSION.json EVALUATION_PLAN.json \
+  --execution-state /absolute/policy_evaluation/.executor/evaluation_state.json
+```
+
+The builder revalidates the session, plan, state, canonical result hashes, and
+canonical video hashes before creating
+`evaluation.output_dir/review/REVIEW_INDEX.md`,
+`review_manifest.json`, `visual_reviews.draft.json`, and readable relative
+symlinks under `review/required_videos/`. An alias includes its ordinal,
+candidate, artifact, scenario, and seed, for example
+`001__trial-001__native__nominal-command-sweep__seed-42.mp4`. It never copies,
+renames, or replaces the canonical `motion.mp4`.
+
+Use descriptive ASCII scenario IDs such as `nominal-command-sweep` or
+`rough-push-turn-reversal`; the review index also exposes the category, command
+schedule, overrides, metrics, and peak review windows. Fill the draft with
+`pass` or `fail`, reviewer identity, and concrete notes. Keep the canonical
+paths in `reviewed_video_paths`; aliases are navigation aids and do not replace
+hash-bound evaluation evidence.
+
 ## Execution workflow
 
 1. Resolve and validate the non-generic algorithm profile.
@@ -228,8 +254,11 @@ conda run -n isaacsim-5.1 python \
     timeout and resource gates, and promotes only hash-stable complete results
     and finalized videos. Recover a damaged state only with
     `--action recover-state`.
-11. Inspect the required videos and their `motion_evidence.review_windows`,
-    then create visual reviews.
+11. Require executor stage `awaiting_visual_review`, build the hash-bound review
+    bundle, inspect every readable video alias and its
+    `motion_evidence.review_windows`, then complete
+    `visual_reviews.draft.json`. A repeated bundle build must be idempotent and
+    must preserve an edited draft.
 12. Consolidate per-run results and bind them to the executor state:
 
 ```bash
