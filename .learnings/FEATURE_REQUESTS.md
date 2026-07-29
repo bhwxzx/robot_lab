@@ -37,6 +37,124 @@ complex
 - **Notes**: 已实现版本 6 契约、分阶段 seed 计划、可恢复单任务执行器、有效配置差异门禁、连续窗口异常检测、稳健排名、文档与合成测试；未增加 MuJoCo，也未启动真实训练或写入真实策略仓库。
 
 ---
+## [FEAT-20260728-003] idempotent_campaign_controller
+
+**Logged**: 2026-07-28T12:40:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: tuning
+
+### Requested Capability
+为自动调优 Skill 增加默认只读预演、显式授权后可执行的幂等 Campaign
+Controller，把单机执行器、多阶段晋级和双机 Git 邮箱的阶段边界自动串联。
+
+### User Context
+训练、续训、晋级和双机通信的底层原语已经具备，但仍需人工判断并依次调用
+多个命令。重复调用、进程中断、部分远端结果或计划文件不一致时容易产生操作
+错误，用户希望配置后由控制器持续推进，同时保持参数、归档和实物测试权限
+边界不变。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+新增会话级 `campaign_controller` 授权和独立控制器脚本。`shadow` 只输出下一
+动作；`execute` 每次最多启动一个 child 或提交一个不可变阶段决策。单机复用
+执行器哈希链；双机邮箱发布完整 JSON 计划快照并保持 worker/job/checkpoint
+绑定。训练排序后停止，不自动进入评估、归档或实物测试。
+
+### Resolution
+**Resolved**: 2026-07-28T13:24:03+08:00
+
+已实现版本 6/7 `campaign_controller` 授权、默认只读 shadow、显式 execute、
+单机和双机角色、原子状态与哈希链、一次一个状态转换、自动 child
+启动/reconcile、adaptive/multi-fidelity 计划晋级、Git 邮箱内容寻址计划
+快照、worker claim/prepare/result 和最终训练排序停止。旧无快照 campaign
+继续保留手动工作流。新增 6 项控制器测试，完整回归 86 项通过；未启动真实
+训练、未操作真实远端、未归档策略或进入实物测试。
+
+### Metadata
+- Frequency: recurring
+- Related Features: synchronous_multi_fidelity_training, distributed_git_mailbox
+
+---
+## [FEAT-20260728-002] synchronous_multi_fidelity_training
+
+**Logged**: 2026-07-28T12:08:28+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: tuning
+
+### Requested Capability
+为自动调优 Skill 增加同步多阶段训练预算：所有候选先以较小预算训练，只让
+满足安全约束且有竞争力的候选从精确 checkpoint 继续到后续预算，减少明显
+落后候选占用单机或双机算力。
+
+### User Context
+现有自适应搜索能决定下一轮是否继续，却仍会让同一轮的每个候选跑完整训练。
+用户采用固定单 seed，主要比较奖励权重和参数差异，适合在相同进度屏障上进行
+保守晋级，同时保持最终实物部署为权威。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+新增可选 `multi_fidelity` 会话契约、确定性 rung 计划和连续落后保护；每个
+rung 必须覆盖同期 baseline，先应用硬约束，再用批准目标和 margin 决定晋级。
+RSL-RL 适配器绑定预算 Hydra 路径、父 checkpoint 哈希和续训路径；单机执行器
+采用 append-only 计划，双机 Git 邮箱保持 trial 到 worker 的亲和性并只交换
+checkpoint 元数据。
+
+### Resolution
+**Resolved**: 2026-07-28T12:26:12+08:00
+
+已实现版本 6/7 固定单 seed 同步多阶段契约、确定性 rung 屏障、硬约束即时
+淘汰、至少两阶段且连续落后后才进行性能剪枝、baseline 全程保留，以及最终
+零任务决策。RSL-RL 适配器校验父 checkpoint 路径、哈希和 step 后续训；
+单机执行器支持 append-only `adopt-plan`，Git 邮箱保持同 worker 亲和并只
+交换 checkpoint 元数据。新增独立参考文档与 5 项端到端测试；完整 Skill
+回归共 80 项测试通过。
+
+### Metadata
+- Frequency: recurring
+- Related Features: history_quality_and_adaptive_early_stop, distributed_git_mailbox
+
+---
+## [FEAT-20260728-001] history_quality_and_adaptive_early_stop
+
+**Logged**: 2026-07-28T11:55:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: tuning
+
+### Requested Capability
+继续优化自动调优 Skill，使历史记录只有在任务、算法、观测和奖励配置可比且
+训练质量足够时才影响采样；同时在继续训练已无明显收益时自动停止后续轮次，
+并解释每个候选的来源。
+
+### User Context
+现有实现限制了历史 run 和点数，但旧源码或不同训练上下文仍可能误导首轮；
+固定最大轮数也可能在已无有效提升时继续消耗双机训练预算。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+为本地 W&B 索引加入源码策略、四项上下文指纹、最终进度、尾部统计和稳定性
+门；为计划加入利用/探索来源、anchor 距离与非重复证明。每轮用批准的原始
+目标指标、最小提升、patience 和可行候选数生成确定性 continue/stop 决策；
+单机执行器与 Git 邮箱对 stop 决策均不得创建新任务。
+
+### Metadata
+- Frequency: recurring
+- Related Features: bounded_local_history_adaptive_tuning, distributed_git_mailbox
+
+### Resolution
+- **Resolved**: 2026-07-28T12:00:12+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已实现来源提交与四项上下文指纹策略、进度/点数/稳定性质量门、可信先验 schema 2、候选来源和距离证据、确定性早停决策，以及单机执行器和双机 Git 邮箱的零新任务停止语义；技能校验、语法检查和 75 项单元测试全部通过，未启动真实训练或写入策略仓库。
+
+---
 
 ## [FEAT-20260726-006] transactional_policy_evaluation_execution
 
