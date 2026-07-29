@@ -1163,3 +1163,41 @@ viewer 配置，而粗糙地形中的环境零号和机器人不一定位于该�
 - Pattern-Key: harden.evaluation_camera_follow_smoke_before_matrix
 
 ---
+## [LRN-20260729-002] correction
+
+**Logged**: 2026-07-29T16:40:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+双机首次配置的共享机器表必须使用双方已经确认的精确路径，不能根据模板猜测
+目录命名风格。
+
+### Details
+PC B 首版答案把运行目录写成了 `robot-tuning-state`、
+`robot-evaluation` 和 `robot-hardware-feedback`，而 PC A 的批准机器表使用
+下划线目录。尽管 distributed 对象一致，machines 哈希因此不一致，旧计划
+不能批准。机器顺序、ID、路径、GPU 和 worker 分支都是共享合约的一部分。
+
+### Suggested Action
+生成任一双机首次配置计划前，先取得协调机的规范 machines JSON，逐字段复制
+并计算 machines、distributed 和 shared-contract 哈希；只允许
+`local_machine_id` 等明确的机器本地字段按配置流程变化。发现共享哈希不一致
+时修改答案文档并重新生成计划，禁止编辑已有哈希绑定计划。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `/home/server/.config/robot-lab/monitor-tune-isaaclab-training/first_run_answers_server5090.json`
+- Tags: first-run, git-mailbox, machine-table, canonical-json, path-contract
+- Pattern-Key: correct.first_run_machine_table_exact_match
+- Recurrence-Count: 1
+- First-Seen: 2026-07-29
+- Last-Seen: 2026-07-29
+
+### Resolution
+- **Resolved**: 2026-07-29T16:40:00+08:00
+- **Commit/PR**: N/A
+- **Notes**: PC B 答案文档已改为双方确认的下划线路径，并要求重新生成独立 v2 计划。
+
+---
