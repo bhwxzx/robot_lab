@@ -201,9 +201,9 @@ ValueError: Empty module name
 - Reproducible: yes
 - Related Files: `.agents/skills/monitor-tune-isaaclab-training/tests/test_first_run_configuration.py`
 - Pattern-Key: tests.unittest_hidden_path_invocation
-- Recurrence-Count: 2
+- Recurrence-Count: 3
 - First-Seen: 2026-07-27
-- Last-Seen: 2026-07-27
+- Last-Seen: 2026-07-28
 
 ### Resolution
 - **Resolved**: 2026-07-27T16:07:08+08:00

@@ -51,9 +51,9 @@ attempt 原始输出，只将通过身份、有限值、视频大小和策略哈
 - Related Files: `.agents/skills/monitor-tune-isaaclab-training/scripts/execution_safety.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/execute_evaluation_plan.py`, `.agents/skills/monitor-tune-isaaclab-training/scripts/collect_evaluation_results.py`
 - Tags: gpu-lock, evaluation, transaction, artifact-hash, video-integrity
 - Pattern-Key: harden.shared_gpu_lease_and_evaluation_evidence
-- Recurrence-Count: 1
+- Recurrence-Count: 2
 - First-Seen: 2026-07-26
-- Last-Seen: 2026-07-26
+- Last-Seen: 2026-07-28
 
 ### Resolution
 - **Resolved**: 2026-07-26T18:52:49+08:00
@@ -1128,5 +1128,38 @@ revoke。为新会话版本增加真实归档端到端测试，避免文档声�
 - **Resolved**: 2026-07-27T22:10:00+08:00
 - **Commit/PR**: N/A
 - **Notes**: 已把 run、时间、点数、首轮影响比例和历史组合排除设为验证器与计划构建器硬门槛。
+
+---
+## [LRN-20260729-001] best_practice
+
+**Logged**: 2026-07-29T10:50:12+08:00
+**Priority**: high
+**Status**: pending
+**Area**: tests
+
+### Summary
+策略评估录像必须让相机持续跟随机器人；相机修改与验证只能在没有训练占用
+GPU 时执行，并应先通过短视频入镜检查再运行完整评估矩阵。
+
+### Details
+AMP-ROA 的六段闭环评估视频虽然文件和指标均正常生成，但画面只包含地面，
+无法满足实际运动效果的人工视觉评估。原因是评估器沿用 world 原点的静态
+viewer 配置，而粗糙地形中的环境零号和机器人不一定位于该视野中心。曾拟用
+`asset_root` 跟随场景中的 `robot`，但测试时检测到同一 GPU 正在进行健康训练，
+因此按资源隔离门控放弃本次评估并撤销未验证补丁。
+
+### Suggested Action
+等待 GPU 无训练或其他 Isaac Sim 任务后，仅修改
+`scripts/reinforcement_learning/rsl_rl/evaluate_policy.py` 的 viewer 配置，
+使其以 env 0 的 `robot` 根节点为相机原点。先运行约 120 步 Native 诊断录像，
+抽帧并人工确认机器人在完整运动过程中持续入镜；只有短视频通过后，才重建并
+执行 Native/JIT/ONNX 的完整评估矩阵。相机变化不得改变物理、观测、动作或
+指标配置，也不得与训练共享 GPU。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `scripts/reinforcement_learning/rsl_rl/evaluate_policy.py`, `.agents/skills/monitor-tune-isaaclab-training/references/policy-evaluation.md`
+- Tags: camera-follow, video-review, play-evaluation, gpu-isolation
+- Pattern-Key: harden.evaluation_camera_follow_smoke_before_matrix
 
 ---
