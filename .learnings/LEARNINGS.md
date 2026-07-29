@@ -1201,3 +1201,36 @@ PC B 首版答案把运行目录写成了 `robot-tuning-state`、
 - **Notes**: PC B 答案文档已改为双方确认的下划线路径，并要求重新生成独立 v2 计划。
 
 ---
+## [LRN-20260729-003] best_practice
+
+**Logged**: 2026-07-29T17:00:05+08:00
+**Priority**: high
+**Status**: pending
+**Area**: infra
+
+### Summary
+双机 Git 邮箱仅完成首次配置，仍需在两台源码仓库同步到同一干净 commit 后，
+完成远端写入与完整元数据协议联调。
+
+### Details
+PC A 与 PC B 已分别应用哈希绑定的首次配置，GCM、非交互远端读取、共享
+machines 表和 distributed 对象均已验证一致。但双方 `robot_lab` 工作树仍有
+不同的本地修改，因此 `ready_for_training=false`。邮箱尚未测试远端 push，
+也没有实际验证 publish、status、claim、prepare-job、progress、result、
+collect 和重复调用幂等性。当前状态不能解释为双机训练已经可用。
+
+### Suggested Action
+等待 PC A 当前训练结束，不干扰运行进程。随后审查并保留双方需要的源码修改，
+通过正常 Git 流程让两台 `robot_lab` 都处于同一个精确远端 commit 且工作树
+干净；两边重新运行 first-run `verify`，要求
+`ready_for_training=true`。之后另行批准一次不启动训练的 metadata-only
+邮箱联调，覆盖远端写入、独立 worker 分支、任务 claim/prepare、进度与结果
+回传、协调机 collect 以及幂等重试。通过前不得发布真实训练任务。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `/home/young/.config/robot-lab/monitor-tune-isaaclab-training/configuration.json`, `/home/server/.config/robot-lab/monitor-tune-isaaclab-training/configuration.json`
+- Tags: distributed-tuning, git-mailbox, first-run, pending-validation
+- Pattern-Key: harden.git_mailbox_requires_live_protocol_validation
+
+---
