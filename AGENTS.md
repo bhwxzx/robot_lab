@@ -18,6 +18,18 @@ When asked to monitor a long-running training process (like IsaacLab RL) for sil
 **CRITICAL RULE**: Clean up intermediate files after use.
 - Any temporary scripts, patch files, or intermediate data generated to accomplish a task MUST be deleted immediately after the task is completed or the files are no longer needed. Do not leave the workspace cluttered.
 
+## Session Handoff After Repeated Context Compaction
+When the same logical task has undergone at least three explicitly observed
+context compactions, use the `self-improvement` skill and follow
+`.agents/skills/self-improvement/references/session-handoff.md`.
+- Trigger earlier if the exact count is unavailable but continuing would require
+  guessing about approvals, protected files, completed work, or live state.
+- Never invent a compaction count. Finish only the current safe atomic step,
+  verify live state, and create the handoff under
+  `.learnings/session_handoffs/`.
+- Tell the user to continue in a new session and provide a copyable prompt.
+  Stop expanding the old session unless the user explicitly asks to continue.
+
 ## Environment Requirements
 - The required conda environment for running this project (IsaacLab/RSL-RL) is `isaacsim-5.1`. Do NOT use `isaaclab` or base environments as they may contain incorrect dependency versions.
 
