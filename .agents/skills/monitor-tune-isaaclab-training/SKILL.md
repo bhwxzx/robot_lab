@@ -1,501 +1,234 @@
 ---
 name: monitor-tune-isaaclab-training
-description: Configure, supervise, diagnose, recover, distribute, execute, orchestrate, rank, closed-loop evaluate, safely archive, and improve IsaacLab policies from supervised physical-deployment feedback across RSL-RL and other backends through versioned algorithm profiles and explicit authorization. Use for first-run machine, Conda, GPU, path, policy-storage, or HTTPS Git-mailbox setup; training watchdogs; safe checkpoint resume; shadow or executable campaign control; bounded local-W&B history priors, adaptive fixed-seed rounds, or synchronous multi-fidelity training; bounded fixed-single-seed or multi-seed tuning on one or multiple Git-connected computers; effective-config gates; learning-quality anomaly detection; Play and Native/JIT/ONNX deployment-artifact tests; video-based motion review; bounded real-robot qualification; final-policy promotion; qualified policy storage; real-robot feedback retuning; new-algorithm discovery; or approval-gated profile upgrades.
+description: Assist a human operator with IsaacLab parameter tuning by assessing live or completed training, running bounded low-overhead Play checks, collecting robot metrics and telemetry, recommending continue or stop decisions, comparing checkpoints, exporting a user-selected policy, archiving it with a description, and turning Sim2Sim or Sim2Real feedback plus prior tuning records into the next parameter suggestions. Use when the user wants evidence and advice rather than an autonomous tuning campaign.
 ---
 
-# Monitor and Tune IsaacLab Training
+# IsaacLab Training Advisor
 
-Operate every training session under one explicit mode:
+Act as a human-in-the-loop training advisor. The user owns training commands,
+parameter edits, stop decisions, checkpoint selection, deployment, and the
+decision to archive. Collect evidence, explain tradeoffs, and recommend the next
+bounded action. Never turn a recommendation into an automatic training action.
 
-- `monitor`: supervise and recover only; never change training parameters.
-- `tune`: supervise and recover, then run bounded experiments using only parameters authorized for this session.
+Read [references/human-guided-training-advisor.md](references/human-guided-training-advisor.md)
+for the complete evidence, evaluation, archive, feedback, and experience-record
+schemas.
 
-Treat authorization as non-transferable. Never inherit mode, parameter choices, restart limits, algorithm identity, profile version, or cleanup permission from another run.
+## Scope
 
-## Complete first-run configuration
+This skill may:
 
-Before the first use on each computer, read
-[references/first-run-configuration.md](references/first-run-configuration.md).
-Run `configure_skill.py locate` to find the versioned machine-local
-`configuration.json` and `setup_receipt.json` outside the source worktree. If
-either is absent, changed, or stale, run `configure_skill.py plan`, present the
-exact operations, discovery path, and plan SHA-256, and pause for explicit
-approval. Run `apply` only with that approved hash, then run `verify`.
+- inspect a running or completed IsaacLab training run;
+- summarize short-, medium-, and long-window metric trends;
+- run a short Native Play evaluation while training when the user allows it;
+- collect bounded robot telemetry and motion-risk metrics;
+- recommend continue, recheck, consider stopping, or stop-invalid;
+- assess convergence after training;
+- shortlist and compare checkpoints from one run;
+- export the user-selected checkpoint to JIT and ONNX;
+- copy an approved artifact pair into `policy_storage` with a description;
+- analyze Sim2Sim or Sim2Real feedback and suggest the next parameter change;
+- record each run, decision, result, and lesson under `learnings/policy_tuning/`.
 
-Do not begin monitoring, training, evaluation, archival, physical feedback, or
-Git-mailbox publication unless first-run verification reports the required
-local source, `isaacsim-5.1` environment, GPU, output paths, and optional
-mailbox clone. For multi-host use, require the same private HTTPS remote,
-machine table, and unique branches on all computers. The setup tool may create
-approved local directories and clone an existing initialized remote; it never
-creates a provider repository, stores credentials, pushes, overwrites, resets,
-stashes, deletes, installs packages, or grants session authority.
+This skill does not autonomously:
 
-## Resolve the algorithm before approval
+- start, stop, resume, restart, or signal training;
+- edit training parameters, rewards, environments, algorithms, or deployment;
+- generate or execute trial campaigns;
+- run multi-seed training, adaptive search, multi-fidelity training, or remote
+  Git-mailbox coordination;
+- select a final checkpoint without showing the evidence to the user;
+- deploy to hardware, qualify hardware readiness, commit, or push any Git repo.
 
-Inspect repository instructions, the exact training entry point, task registry, dumped effective configuration, runner, algorithm class, log format, checkpoint layout, and available monitoring tools.
+The existing campaign, distributed, and multi-fidelity scripts are legacy
+utilities. Do not invoke them from this workflow unless the user separately
+requests that legacy behavior.
 
-Read [references/algorithm-profile-schema.md](references/algorithm-profile-schema.md). For a known algorithm, resolve the most specific entry from `references/algorithm-profiles.json`. For an unknown algorithm, create a draft session and run:
+## Establish the run identity
 
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/scan_algorithm_coverage.py
+Before interpreting a run, verify current state rather than reusing an old
+conversation summary:
 
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/discover_algorithm_profile.py \
-  DRAFT_SESSION.json --config EFFECTIVE_CONFIG --log TRAINING_LOG
-```
+- repository root, branch, HEAD, and dirty files;
+- exact task, backend, algorithm, runner, seed, command, run directory, log,
+  TensorBoard source, checkpoint directory, PID, and GPU;
+- effective parameter values and the changes from the previous run;
+- observation, history, normalization, Play, export, and deployment tensor
+  contracts for the selected algorithm.
 
-Use a generic profile for monitor-only work. Never tune or promote a final
-strategy through a generic profile. When discovery returns a candidate, inspect
-its progress semantics, metrics, checkpoint state, resume behavior, protected
-parameters, evaluation runner coverage, deployment tensor contract, and
-smoke-test needs before proposing a persistent profile upgrade.
+Resolve the most specific entry in `references/algorithm-profiles.json`.
+Generic profiles may parse progress, but any parameter or deployment advice
+must state the missing algorithm-specific evidence.
 
-## Establish the session contract
+Use `conda run -n isaacsim-5.1` for IsaacLab and RSL-RL commands.
 
-Create a version 7 session JSON document for approved multi-host Git-mailbox
-execution. Use version 6 for automated staged trial execution on one host.
-Versions 6 and 7 support either robust multi-seed ranking or explicit
-fixed-single-seed selection whose final authority is supervised hardware.
-They also support physical feedback.
-Version 5 remains valid for physical-feedback workflows without the new
-executor, version 4 remains valid for evaluation and archival without hardware
-feedback, and version 3 remains valid only for legacy sessions without policy
-archival.
-Use [references/session-spec.md](references/session-spec.md). Require the user
-to approve the session before starting, attaching, recovering, tuning,
-evaluating, archiving, or preparing a feedback-driven tuning draft. Require:
+## Assess a running training process
 
-- exact backend, algorithm, runner, profile ID, profile version, and fingerprint;
-- mode, commands, working directory, log, optional TensorBoard source, PID, and GPU;
-- check interval, stale threshold, restart limit, and cleanup permission;
-- in `tune` mode, every parameter path, domain, seed, trial budget, objective, and constraint.
-- in version-6-or-7 `tune` mode, the explicit seed-strategy mode,
-  screening/confirmation seeds, paired-baseline and Pareto rules, exact child
-  argv, state directory, GPU exclusivity, retry budget, effective-config
-  baseline, and learning-quality stop rules.
-- for history-informed adaptive search, the exact local W&B roots and project,
-  parameter/metric mappings, time/run/point limits, first-round influence cap,
-  source/context compatibility policy, progress/stability gates, round count,
-  trials per round, exploration fraction, and early-stop thresholds.
-- for synchronous multi-fidelity training, exact increasing rung budgets,
-  promotion targets, objective margin, conservative pruning delays, and
-  adapter-reviewed budget/resume/checkpoint mappings.
-- for campaign control, shadow or execute mode, single-host or distributed
-  role, all worker mailbox paths, and a mandatory stop before evaluation.
-- in version-7 `tune` mode, a dedicated HTTPS coordination repository,
-  coordinator/worker branches, `by_seed` or fixed-seed `by_trial` assignment,
-  clean source commit, per-worker paths/GPU, an explicit host-calibration
-  choice, poll/grace intervals, metadata-only artifact exchange, and, when
-  sharing policy storage, one coordinator-granted archive lease with exact
-  per-worker clones and a common storage remote/branch.
-- for final selection, exact Native/deployment artifacts, evaluation commands,
-  scenarios, seeds, runtime overrides, gates, videos, and retuning authority.
-- for archival, the exact storage root and collection, JIT and ONNX formats,
-  recorded training source Git state, description notes, clean-worktree
-  requirement, and no Git action.
-- for physical feedback, proposal-only or pending-draft mode, exact output
-  directory, archive-manifest and artifact-hash binding, safety-stop behavior,
-  and mandatory approval of a new session before any trial. When physical
-  evidence is final authority, also approve the repeated-test count, required
-  scenarios, telemetry channels, and bounded qualification label.
-
-Validate the profile registry and session:
+Collect process health and parse the latest bounded log window:
 
 ```bash
 conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_algorithm_profiles.py
+  .agents/skills/monitor-tune-isaaclab-training/scripts/collect_training_health.py \
+  --profile-id PROFILE_ID --log ABSOLUTE_LOG \
+  --tensorboard ABSOLUTE_EVENT_OR_RUN_DIRECTORY \
+  --stale-after-seconds 1200 --pid PID \
+  --expected-process-pattern TRAIN_ENTRYPOINT --gpu-index 0 \
+  > HEALTH.json
 
 conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_session_spec.py \
-  SESSION.json
+  .agents/skills/monitor-tune-isaaclab-training/scripts/summarize_training_log.py \
+  ABSOLUTE_LOG --profile-id PROFILE_ID --last 200 --output SUMMARY.json
+
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/assess_training_run.py \
+  SUMMARY.json --health HEALTH.json --criteria CRITERIA.json \
+  --output ASSESSMENT.json
 ```
 
-Stop on validation failure. Do not silently select a nearby profile or relax a rule.
-
-## Distribute trials only when authorized
-
-For version 7, read
-[references/distributed-git-mailbox.md](references/distributed-git-mailbox.md).
-Use a dedicated private coordination repository rather than the source
-repository. Publish immutable jobs on the coordinator branch and let each
-worker publish receipts, progress, and results only on its own branch.
-
-Require a successful remote claim before local execution. In `by_seed` mode,
-keep every seed's baseline and candidates on one worker. In
-`fixed_single_seed` mode, give every worker the same seed and distribute
-candidate trials deterministically with `by_trial`; publish each exact
-seed-and-overrides combination once across the campaign. Default host-effect
-calibration to disabled so reward-weight and parameter search does not repeat
-identical work. Record that host effects are uncontrolled by design and make
-no host-invariance claim. Only after explicit approval, enable a separate
-unchanged calibration baseline on every host to diagnose machine effects; do
-not include those jobs in candidate ranking. Refuse dirty or mismatched source
-worktrees, invalid assignments, changed immutable events, embedded
-credentials, large artifacts, duplicate run IDs, and result/hash mismatches.
-Treat stale Git progress after a claim as `remote_state_unknown`, not proof of
-a dead run; never reassign or stop it without independent local evidence.
-Materialize the remotely published claim with `git_mailbox.py prepare-job`,
-then pass it with the exact worker ID to `execute_trial_plan.py
---distributed-job`; never run the unfiltered full plan on a worker.
-
-## Start or attach to training
-
-Use `conda run -n isaacsim-5.1` for robot_lab IsaacLab commands. Start new training in the background with stdout and stderr redirected to the approved log. Record PID, process group, argv, run directory, checkpoint, and initial progress snapshot.
-
-Prefer a recurring scheduler or task-monitoring tool. If no persistent scheduler exists, say that autonomous recurring monitoring cannot be guaranteed; do not emulate it with a long blocking sleep.
-
-Do not assume wrapper scripts accept resume flags. Use only the exact approved backend-specific resume argv.
-
-## Supervise and recover
-
-Follow [references/monitoring-and-recovery.md](references/monitoring-and-recovery.md). On every check:
-
-1. Run `collect_training_health.py` with the resolved profile.
-2. Pass the previous log progress, TensorBoard step, and observation time.
-3. Parse metrics with `summarize_training_log.py`.
-4. Store the new progress snapshot for the next check.
-5. Recover only after independent evidence confirms an incomplete stalled run.
-
-Treat monotonic training progress or recent TensorBoard scalar time as primary evidence. Process existence, GPU utilization, checkpoint time, and `.wandb` transaction-file growth are auxiliary evidence only.
-
-Never kill a healthy, observing, suspect, or merely slow run. Before recovery, resolve the exact PID/process group and readable checkpoint. Use the approved resume command unchanged, honor cooldown and restart limits, and preserve prior logs and checkpoints.
-
-## Tune only when authorized
-
-Skip this section in `monitor` mode. Reject `tune` mode when the selected profile is generic.
-
-Read [references/tuning-policy.md](references/tuning-policy.md). For version-6-or-7
-execution also read
-[references/execution-and-robust-ranking.md](references/execution-and-robust-ranking.md).
-Resolve each requested parameter to its current source, effective value, type,
-override mechanism, and profile-specific risk. Let the user choose paths and
-domains. Suggestions do not grant permission.
-
-Generate a deterministic plan:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/build_trial_plan.py \
-  SESSION.json --output TRIAL_PLAN.json
-```
-
-When the approved fixed-seed session enables `history_prior` and
-`adaptive_search`, first read
-[references/history-informed-adaptive-search.md](references/history-informed-adaptive-search.md).
-Index only the bounded local W&B evidence, merge it without cloud access, and
-pass the hash-bound prior with `--history-prior`. Never widen parameter domains,
-reuse an exact historical combination, or let history supply more than the
-approved half of first-round candidates. Add a later round only after every
-existing trial has one valid completed result; the plan must be an append-only
-deterministic expansion. Preserve the hash-bound stop decision when progress,
-feasibility, improvement patience, budget, grid, or round limits say not to
-publish more work.
-
-When the approved fixed-seed session enables `multi_fidelity`, read
-[references/multi-fidelity-training.md](references/multi-fidelity-training.md).
-Wait for every active run at the same rung, eliminate hard-constraint failures
-immediately, and performance-prune only after the approved minimum rungs and
-consecutive underperformance. Preserve the baseline, exact parent checkpoint
-hash/step, and same-worker affinity. Expand the plan only through
-`build_multifidelity_rung.py`; terminal decisions create no new run.
-
-When the session enables `campaign_controller`, read
-[references/campaign-controller.md](references/campaign-controller.md).
-Use `status` for a read-only next-action report. Use `advance` only with
-approved `mode=execute`; it may perform one exact transition and must stop
-after training ranking with `evaluation_required`.
-
-When the session enables `policy_export` or `evaluation_handoff`, read
-[references/policy-export.md](references/policy-export.md) and
-[references/evaluation-handoff-controller.md](references/evaluation-handoff-controller.md).
-Require separate execute permission, exact Native/JIT/ONNX parity, the
-designated worker, and stop at `awaiting_visual_review`.
-
-For version 6 or 7, initialize the hash-bound state and launch no more than one
-authorized child at a time:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/execute_trial_plan.py \
-  SESSION.json TRIAL_PLAN.json --action initialize
-```
-
-Use `--action launch-next` only when reconcile reports no active child, and use
-`--action reconcile` on each scheduled check. Require exact session-plan
-matching, unique per-stage run IDs, an idle approved GPU, the inherited GPU
-lock, state-transition lock, disk and temperature preflight, total and
-per-trial time limits, exact Linux process identity, attempt-isolated outputs,
-finite structured results, and a passing effective-config diff. A quality or
-timeout stop may signal only that executor's exact recorded process group,
-using SIGTERM before the approved SIGKILL grace threshold. Recover a damaged
-state only from the verified hash-chained execution journal.
-
-For `rsl_rl`, use the included `rsl_rl_trial_adapter.py`. Bind every approved
-tuning path to its reviewed Hydra path, and bind dumped seed/run-name fields as
-runtime identity fields rather than tuning parameters. Require its terminal
-receipt and checkpoint hash. If approved, only the first unchanged baseline
-may bootstrap an absent effective-config baseline; never overwrite it.
-
-Require the adapter to stream an atomic rolling summary after each complete
-iteration and immediately on non-finite metrics. Use an approved
-`minimum_progress` for finite quality rules that must ignore warm-up. Record
-TensorBoard scalar progress as secondary evidence; never let GPU activity or a
-fresh event file override stalled monotonic training progress.
-
-Treat launch as a journaled two-phase transaction: reserve an isolated attempt,
-write its reproducibility evidence, start the exact child, then persist a
-hash-bound launch receipt. Consume failed starts without reusing their output
-directories. Recover receipt-backed exact processes after scheduler failure,
-but block and never signal an orphan with no valid receipt. Accept only a
-truncated final journal record during explicit state recovery.
-
-When reproducibility capture is enabled, bind each run to source Git state,
-exact argv, profile, runtime/package versions, GPU identity, and explicitly
-approved critical input hashes. Reject completion if that manifest changes.
-
-Run an unchanged baseline in the same seed stage as every candidate. Isolate
-trial and retry outputs. Use structured argv and verified configuration
-overrides. If a parameter requires editing tracked code or data, pause and use
-the repository modification workflow.
-
-Require an exact double unlock for every parameter matched by the resolved
-profile's protected patterns. Run every seed required by the applicable stage
-and stop on non-finite state, crashes, hard constraints, or budget exhaustion.
-
-In robust multi-seed mode, use the fixed screening seeds for all trials, then
-run the remaining confirmation seeds only for the baseline and approved top-k
-candidates. In `fixed_single_seed` mode, run that same exact seed for every
-baseline and candidate; after screening, record the top-k selection without
-creating confirmation-seed jobs. Do not describe this as robust multi-seed
-evidence.
-
-Rank results:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/rank_trials.py \
-  SESSION.json RESULTS.json
-```
-
-Do not choose from total reward alone. Require each-seed constraints, identical
-paired baseline seeds, minimum-improvement gates when declared, and Pareto
-membership before weighted ordering. Require dispersion and confidence
-evidence only in robust multi-seed mode. Label fixed-seed output
-`single_seed_selected`, keep `generalization_claim=false`, and treat simulation
-tuning as candidate selection, not real-robot readiness.
-
-## Evaluate motion before final selection
-
-Training curves can rank candidates but cannot produce a final policy. Read
-[references/policy-evaluation.md](references/policy-evaluation.md). Require a
-reviewed non-generic profile and inspect the current Play, export, observation,
-normalization, history, state-reset, and deployment-runtime paths.
-
-Build the approved candidate/artifact/scenario/seed matrix:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/build_evaluation_plan.py \
-  SESSION.json CANDIDATES.json --output EVALUATION_PLAN.json
-```
-
-When the approved session contains `evaluation.execution`, initialize and
-advance the matrix with:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/execute_evaluation_plan.py \
-  SESSION.json EVALUATION_PLAN.json --action initialize
-```
-
-Use `--action launch-next` for one cell and `--action reconcile` on each
-scheduled check. Require attempt isolation, a shared training/evaluation GPU
-lock, exact process identity, timeout escalation, checkpoint/artifact
-revalidation, finalized-video size, canonical result/video hashes, and
-hash-chained state recovery. Never treat `awaiting_visual_review` as qualified.
-
-At `awaiting_visual_review`, run
-`scripts/build_visual_review_bundle.py` with the exact session, plan, and
-execution state. Require its hash-bound `REVIEW_INDEX.md`, manifest, pending
-review draft, and semantic candidate/artifact/scenario/seed video aliases.
-Aliases must be relative symlinks to canonical videos, never copied evidence.
-Use descriptive scenario IDs, inspect every required video, keep canonical
-paths in the completed review, and never infer acceptance from metrics or an
-unchanged `pending` draft.
-
-Use the training task for stress evaluation. Do not rely on a Play-only
-configuration that disables corruption, forces, pushes, or dynamics
-randomization. For RSL-RL, use
-`scripts/reinforcement_learning/rsl_rl/evaluate_policy.py` to run the exact
-Native, JIT, or ONNX artifact in the closed simulation loop. Other backends
-must supply a reviewed evaluator command through their specific profile.
-Before launch, verify the authorized GPU is idle. Never overlap evaluation with
-an active training process unless a separate approved contract explicitly
-allows the resource interference.
-
-Require:
-
-1. one required nominal scenario and at least one required stress scenario;
-2. Native plus at least one supported deployment artifact;
-3. finite closed-loop metrics and every approved hard gate;
-4. deployment-artifact action parity against Native inference;
-5. approved closed-loop metric deltas against the matching Native
-   scenario/seed;
-6. recorded motion, peak-step review windows, and an actual visual review with
-   notes.
-
-Consolidate and validate:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/collect_evaluation_results.py \
-  EVALUATION_PLAN.json \
-  --execution-state EVALUATION_STATE.json \
-  --visual-reviews VISUAL_REVIEWS.json \
-  --output EVALUATION_RESULTS.json
-
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_policy_evaluation.py \
-  SESSION.json EVALUATION_PLAN.json EVALUATION_RESULTS.json
-```
-
-Pass policy-evaluation results to `rank_trials.py`. Without a complete passing
-evaluation, leave `final_selection` null. A passing simulation result is only
-`simulation_qualified_hardware_candidate`; never label it hardware-ready.
-Evaluation-triggered retuning requires tune mode, remaining budget,
-`allow_retune_on_failure=true`, and an already-authorized parameter.
-
-## Archive a qualified deployment candidate
-
-Read [references/policy-archive.md](references/policy-archive.md). Archive only
-when the approved version-4, version-5, version-6, or version-7 tune session enables
-`archive`, both
-JIT and ONNX are required evaluation artifacts, and final ranking reports
-`simulation_qualified_hardware_candidate`.
-
-Inspect the destination without changing it:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/inspect_policy_storage.py \
-  /absolute/policy_storage --hash-artifacts
-```
-
-Require the exact storage Git worktree to be clean. Refuse symlinked artifacts,
-changed hashes, duplicate artifact pairs, missing collections, collisions, or
-incomplete promotion evidence. Then run:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/archive_policy_candidate.py \
-  SESSION.json TRAINING_RESULTS.json EVALUATION_PLAN.json \
-  EVALUATION_RESULTS.json --output /absolute/ARCHIVE_RECEIPT.json
-```
-
-For a version-7 shared policy-storage repository, first build and publish the
-hash-bound archive request, let the coordinator grant the only active lease,
-and materialize that grant. Pass the exact worker ID and grant to the archiver.
-Read [references/policy-archive.md](references/policy-archive.md) for the
-commands and state machine. Never infer lease ownership from time, a local lock,
-or a stale remote observation. Only explicit coordinator release or approved
-revoke closes a lease.
-
-Create one timestamped directory atomically with `policy.pt`, `policy.onnx`,
-`策略说明.txt`, and `archive_manifest.json`. State that the policy passed
-simulation and is eligible only for supervised hardware testing. Never call it
-hardware-ready. Do not commit or push the policy-storage repository unless the
-user separately authorizes those Git actions. A shared-storage lease can be
-completed only after that separately approved commit is the exact remote branch
-head; release it only after the coordinator verifies the completion evidence.
-
-## Adjust tuning from supervised physical feedback
-
-Read
-[references/hardware-feedback-retuning.md](references/hardware-feedback-retuning.md).
-Accept only a version-1 feedback record under an approved version-5 or
-version-6 or version-7
-`hardware_feedback` contract. Bind it to the exact archive manifest, candidate,
-JIT/ONNX hashes, deployment configuration, robot, firmware, control rate,
-supervised test envelope, observation segments, safety outcomes, and available
-video or telemetry.
-
-Validate before interpretation:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_hardware_feedback.py \
-  SESSION.json HARDWARE_FEEDBACK.json \
-  --output /absolute/approved/output/HARDWARE_FEEDBACK_VALIDATION.json
-```
-
-When the session authorizes supervised hardware as final authority, validate
-each separately recorded test first, then aggregate the repeated-test matrix:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_hardware_qualification.py \
-  SESSION.json HARDWARE_QUALIFICATION_BUNDLE.json \
-  --output /absolute/approved/output/HARDWARE_QUALIFICATION.json
-```
-
-Accept only `hardware_validated_for_test_envelope`. It binds one exact
-artifact/deployment identity, unique test times and evidence files, required
-scenario coverage, high-confidence video/telemetry, all-pass assessments, and
-zero safety events. It deliberately keeps `hardware_ready=false` and
-`generalization_claim=false`; validity ends at the recorded physical envelope.
-
-On emergency stop, fall, limit violation, communication timeout, damage,
-critical observation, or an unsafe user assessment, stop physical testing and
-diagnose first. Also diagnose before tuning when the deployed configuration,
-observation contract, history initialization, emergency stop, artifact hashes,
-runtime timing, calibration, or mechanism is unverified.
-
-For a possible training or Sim-to-Real gap, reproduce the reported segment in
-closed-loop simulation and define measurable objectives and hard constraints.
-Then build a non-executable proposal:
-
-```bash
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/build_feedback_retune_proposal.py \
-  SESSION.json HARDWARE_FEEDBACK.json \
-  --output /absolute/approved/output/RETUNE_PROPOSAL.json
-```
-
-Subjective-only feedback may guide evidence collection but cannot authorize
-retuning. `proposal_only` never emits a parameter-choice draft.
-`prepare_authorized_draft` may list only relevant paths and domains already in
-the approved `tuning.allowed_parameters`; it leaves the final path selection
-empty. Require the user to choose paths, ranges, objectives, constraints,
-seeds, budget, and evaluation gates, then approve a new session. Never modify a
-running plan or launch a feedback-driven trial from the proposal.
-
-## Upgrade for a new algorithm
-
-Keep runtime adaptation separate from persistent self-modification:
-
-1. Detect that only a generic profile matches.
-2. Generate a candidate profile without editing the registry.
-3. Validate its identity and raw metric aliases.
-4. Inspect algorithm-specific checkpoint, resume, progress, Play, deployment
-   artifact, history/normalization, risk, and smoke-test contracts.
-5. Present an exact registry modification plan.
-6. Apply only after explicit approval.
-7. Validate the registry, parsers, session contract, representative logs, and smoke behavior.
-8. Forward-test the upgraded skill on a fresh task.
-
-Never let a new algorithm automatically rewrite `SKILL.md`, scripts, or the registry without an approved diff. Automatic candidate generation is allowed; persistent upgrade is approval-gated.
+Monotonic log or TensorBoard progress outranks process, GPU, checkpoint, and
+W&B file activity. Do not call a run healthy from GPU use or `.wandb` growth.
+
+The assessment status is advisory:
+
+- `continue`: evidence is healthy and meaningful metrics are improving;
+- `continue_and_recheck`: healthy but trend or Play evidence is incomplete;
+- `consider_stop_plateau`: improvement is below the approved plateau tolerance;
+- `recommend_stop_invalid`: non-finite metrics, confirmed stall, or an approved
+  hard constraint failed;
+- `insufficient_evidence`: the run or metric meaning cannot be resolved.
+
+Never signal the process from an assessment. If the user asks to terminate a
+run, re-resolve the exact process group and follow the repository's bounded
+process-removal rules.
+
+## Run a lightweight evaluation during training
+
+A short Native evaluation may overlap training when the user permits it. This
+is a resource-budgeted exception, not permission for a full Native/JIT/ONNX
+matrix.
+
+Before launch:
+
+1. confirm the exact training PID and that progress is currently advancing;
+2. select a regular checkpoint whose size and mtime are stable and record its
+   SHA-256;
+3. inspect GPU free memory and use the smallest useful budget;
+4. default to one environment, at most 2,000 steps, Native-only, and no video;
+5. record the pre-evaluation training step and throughput.
+
+Run `evaluate_policy.py` with the checkpoint as both the Native checkpoint and
+Native artifact. Pass `--allow_training_overlap`. Add `--no_video` for the
+lowest overhead and `--telemetry_path` when robot time-series data is needed.
+
+After evaluation, recheck training progress, throughput, process state, and GPU
+errors. If evaluation interferes, stop only the evaluation process and report
+the interference. Never stop or restart training automatically.
+
+The evaluator records reward, termination reasons, tracking RMSE, tilt, action
+rate, action magnitude, joint velocity, applied torque, action parity, and
+bounded env-0 telemetry. A video is evidence only after confirming the robot
+remains in frame.
+
+## Judge convergence
+
+Do not equate the highest reward, a long run, or normal termination with
+convergence. Compare at least two adjacent windows of the user-approved metrics
+and combine:
+
+- objective direction and relative improvement;
+- constraint failures and non-finite values;
+- episode length and termination composition;
+- task tracking errors and motion-risk metrics;
+- algorithm-specific losses and stability;
+- checkpoint Play metrics and visual evidence.
+
+For completed runs, report one of:
+
+- `converged`;
+- `plateaued_with_defects`;
+- `not_converged`;
+- `indeterminate`.
+
+`converged` requires a completed run, sufficient windows, no hard failure, and
+acceptable Play evidence. A plateau with unacceptable tracking, contacts,
+oscillation, or action/torque behavior is `plateaued_with_defects`.
+
+## Compare checkpoints
+
+Inventory `model_N.pt` files with
+`scripts/select_checkpoint_candidates.py`. Never assume the newest or the
+highest-reward checkpoint is best.
+
+Shortlist a small set representing the best available training metrics, the
+plateau region, and the final checkpoint. Evaluate all shortlisted checkpoints
+with the same task, command schedule, scenario, duration, seed, environment
+count, and metric criteria. Use multi-objective Pareto comparison and visual
+notes. Present the recommended checkpoint, alternatives, rejected candidates,
+and uncertainty. Export only after the user selects one.
+
+## Export and archive
+
+Before export, inspect training, Play, export, observation history,
+normalization, state reset, and deployment input ordering end to end. For ROA
+and AMP-ROA preserve flattened time-major history, normalization of the current
+frame only, and actor input `[current_obs, code_vel, hist_latent]`.
+
+Use `scripts/rsl_rl_export_policy.py` to create JIT and ONNX and require finite
+Native/JIT/ONNX action parity. Export is not deployment qualification.
+
+Archive only after a separate user confirmation. Inspect `policy_storage`
+read-only first, then use `scripts/archive_advised_policy.py` with an approved
+manifest. It creates one atomic directory containing:
+
+- `policy.pt`;
+- `policy.onnx`;
+- `策略说明.txt`;
+- `archive_manifest.json`.
+
+Never stage, commit, pull, push, clean, or resolve the storage repository unless
+the user separately asks. Every description must say:
+
+> 仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。
+
+## Learn from Sim2Sim and Sim2Real feedback
+
+Accept subjective observations, video, or telemetry. Bind the feedback to the
+exact checkpoint or archived artifact when possible. Classify the leading
+cause before suggesting a parameter:
+
+1. export, tensor, history, normalization, or reset mismatch;
+2. Sim2Sim runtime or deployment-configuration mismatch;
+3. real-robot timing, calibration, communication, actuator, or mechanism;
+4. insufficient evidence;
+5. training coverage, reward, or parameter candidate.
+
+Safety events stop further physical testing and trigger diagnosis. Subjective
+feedback remains useful but carries low confidence. Never turn one observation
+directly into an automatic reward edit.
+
+For a training candidate, show the exact current parameter, proposed change or
+range, expected effect, counter-metric, risk, supporting current evidence, and
+compatible historical evidence. The user chooses whether to edit and train.
+
+## Record tuning experience
+
+Use `scripts/record_tuning_experience.py` to append immutable events under
+`learnings/policy_tuning/<task>/<run-id>/`. Record:
+
+- run identity, command, source state, algorithm, seed, and effective params;
+- parameter hypothesis and expected effect;
+- assessment snapshots and continue/stop decisions;
+- checkpoint evaluations and final user selection;
+- export and archive hashes and paths;
+- Sim2Sim/Sim2Real feedback;
+- observed effect, lesson, next suggestion, and confidence.
+
+Reuse an earlier lesson only when task, algorithm, observation, reward, and
+deployment context are compatible. State incompatibilities and uncertainty.
 
 ## Preserve and report
 
-Do not install packages or delete pre-existing files, logs, checkpoints, or user changes. Create temporary artifacts outside the repository and remove only those covered by cleanup permission.
-
-Report run identity, profile, progress evidence, state, recovery count,
-authorized parameters, budget, constraint failures, training ranking,
-evaluation matrix coverage, parity, metric gates, video-review evidence,
-simulation-promotion state, archive receipt, storage Git state, uncertainty,
-artifact paths, feedback evidence confidence, root-cause classification,
-safety stop, proposed metrics, and pending authorization decisions. Report
-generic-profile limitations explicitly. Keep real-robot readiness separate and
-require supervised hardware telemetry and safety tests.
+Do not install packages or delete logs, checkpoints, policies, or user changes.
+Do not stage unrelated dirty files. Report evidence paths, exact metrics,
+window definitions, decision status, confidence, recommended next check or
+parameter, and which action still requires user approval.
