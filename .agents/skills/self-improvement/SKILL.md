@@ -1,6 +1,6 @@
 ---
 name: self-improvement
-description: "Captures learnings, errors, corrections, and feature requests to enable continuous improvement. Use when: (1) User corrects Claude ('No, that's wrong...', 'Actually...'), (2) User requests a capability that doesn't exist, (3) Claude realizes its knowledge is outdated or incorrect, (4) A better approach is discovered for a recurring task, (5) Receiving a Handoff block from self-healing (a recurring verified heal at Recurrence-Count >= 3) to distill into a memory file or new skill. For ACTIVE runtime failures where the agent needs to apply and verify a fix mid-task, use `self-healing` instead (it files HEAL- entries with proof; self-improvement promotes accumulated patterns). Also review learnings before major tasks. For CI-only/headless learning capture, use self-improvement-ci."
+description: "Captures learnings, errors, corrections, feature requests, and reliable new-session handoffs after repeated context compaction. Use when: (1) User corrects Claude ('No, that's wrong...', 'Actually...'), (2) User requests a capability that doesn't exist, (3) Claude realizes its knowledge is outdated or incorrect, (4) A better approach is discovered for a recurring task, (5) Receiving a Handoff block from self-healing (a recurring verified heal at Recurrence-Count of at least 3) to distill into a memory file or new skill, or (6) repeated compaction makes continued work in the current session unreliable. For ACTIVE runtime failures where the agent needs to apply and verify a fix mid-task, use `self-healing` instead (it files HEAL- entries with proof; self-improvement promotes accumulated patterns). Also review learnings before major tasks. For CI-only/headless learning capture, use self-improvement-ci."
 ---
 
 # Self-Improvement Skill
@@ -36,6 +36,7 @@ Log learnings and errors to markdown files for continuous improvement. Coding ag
 | Command/operation failed in the past (not actively healing) | Log to `.learnings/ERRORS.md` |
 | User corrects you | Log to `.learnings/LEARNINGS.md` with category `correction` |
 | User wants missing feature | Log to `.learnings/FEATURE_REQUESTS.md` |
+| Repeated context compaction reduces session reliability | Create a verified session handoff and new-session prompt |
 | API/external tool fails | Log to `.learnings/ERRORS.md` with integration details |
 | Self-healing Handoff block at Recurrence ≥ 3 | Promote the Distilled Rule to `CLAUDE.md` / `AGENTS.md` / new skill |
 | Knowledge was outdated | Log to `.learnings/LEARNINGS.md` with category `knowledge_gap` |
@@ -316,6 +317,17 @@ grep -l "Area\*\*: backend" .learnings/*.md
 - Promote applicable learnings
 - Link related entries
 - Escalate recurring issues
+
+## Repeated-Compaction Session Handoff
+
+When the same logical task has crossed the repeated-compaction threshold, or
+the exact count is unavailable but provenance, approvals, or current-state
+reconstruction is no longer reliable, read
+[`references/session-handoff.md`](references/session-handoff.md) completely and
+follow it. Do not invent a compaction count. Finish only the current safe atomic
+step, verify live workspace state, write the handoff, tell the user to continue
+in a new session, provide the copyable prompt, and stop expanding the old
+session unless the user explicitly asks to continue.
 
 ## Detection Triggers
 

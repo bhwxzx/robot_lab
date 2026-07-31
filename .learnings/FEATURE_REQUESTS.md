@@ -473,3 +473,40 @@ run 数和每 run 保留点数。历史只影响首轮一部分候选，其余�
 - **Notes**: 已实现本地历史索引、全局有界合并、首轮先验与探索混合、后续轮次扩展、单机计划接纳、双机元数据交换及防篡改测试。
 
 ---
+## [FEAT-20260731-001] repeated_compaction_session_handoff
+
+**Logged**: 2026-07-31T15:37:50+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Requested Capability
+当同一长任务经历过多次上下文压缩后，自动整理当前会话为持久交接文档，
+提示用户转入新会话，并提供可直接复制的新会话 Prompt。
+
+### User Context
+自动调优 Skill 的长期迭代包含大量审批、Git 提交、双机配置、训练安全边界和
+待验证事项。压缩次数过多后继续依赖会话摘要，容易遗漏用户决策、重复已完成
+工作，或误把历史状态当成当前状态。
+
+### Complexity Estimate
+medium
+
+### Suggested Implementation
+为 `self-improvement` 增加重复压缩触发规则和独立交接参考；默认在同一任务
+明确观察到三次压缩时触发，若计数不可得但上下文已不可靠则提前触发且不虚构
+次数。交接前只读核验 Git、进程和任务配置，文档固定保存到
+`.learnings/session_handoffs/`，区分现场事实、会话决策和未验证事项，并附
+带路径、目标、首个动作及保护边界的新会话 Prompt。将核心触发规则同步到
+`AGENTS.md`，保证后续会话持续执行。
+
+### Metadata
+- Frequency: recurring
+- Related Features: self-improvement, long_running_skill_development
+
+### Resolution
+- **Resolved**: 2026-07-31T15:37:50+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已增加 Skill 触发入口、详细交接规范、项目级规则，并用当前自动调优长会话生成首份交接文档；Skill 结构、交接章节、diff 和敏感信息检查均通过，Git 提交待用户指令。
+
+---
