@@ -1234,3 +1234,38 @@ collect 和重复调用幂等性。当前状态不能解释为双机训练已经
 - Pattern-Key: harden.git_mailbox_requires_live_protocol_validation
 
 ---
+## [LRN-20260731-001] correction
+
+**Logged**: 2026-07-31T20:42:28+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+IsaacLab 调参 Skill 应以人工决策和持续证据辅助为核心，而不是继续扩张为
+全自动训练控制平台。
+
+### Details
+用户明确指出，全自动参数搜索、双机编排、自动终止和全流程状态机过于困难且
+不可靠。真正需要的是随时分析当前训练、必要时用低开销 Play 收集机器人数据、
+建议继续或终止、训练结束判断收敛、比选 checkpoint、按确认导出归档，并把
+Sim2Sim/Sim2Real 反馈和每轮参数效果积累为后续建议。
+
+### Suggested Action
+将 `monitor-tune-isaaclab-training` 主入口改成人机协同训练顾问；建议与执行严格
+分离，训练启停、参数修改、checkpoint 最终选择和归档均保留人工确认。旧自动
+campaign、multi-fidelity 和 Git mailbox 工具保留为 legacy，不再由主流程调用。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/SKILL.md`, `.agents/skills/monitor-tune-isaaclab-training/references/human-guided-training-advisor.md`
+- Tags: isaaclab, human-in-the-loop, training-advisor, tuning
+
+### Resolution
+- **Resolved**: 2026-07-31T20:42:28+08:00
+- **Commit/PR**: 47ebd9a
+- **Notes**: 已按用户批准的方案开始降级 Skill，并实现训练评估、轻量 Play、
+  checkpoint 比选、经验记录和直接归档工具；122 项完整测试、11 个算法画像、
+  Skill validator、Python 编译和范围 diff 检查通过。
+
+---
