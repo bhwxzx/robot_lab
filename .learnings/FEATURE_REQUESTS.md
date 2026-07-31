@@ -37,6 +37,48 @@ complex
 - **Notes**: 已实现版本 6 契约、分阶段 seed 计划、可恢复单任务执行器、有效配置差异门禁、连续窗口异常检测、稳健排名、文档与合成测试；未增加 MuJoCo，也未启动真实训练或写入真实策略仓库。
 
 ---
+## [FEAT-20260731-002] human_guided_isaaclab_training_advisor
+
+**Logged**: 2026-07-31T20:42:28+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Requested Capability
+降低自动调优 Skill 的功能和自动化权限，使其只辅助人工调参：训练中或训练后
+随时分析效果、运行低开销 Play、采集机器人数据、建议继续或终止、判断收敛、
+比选并导出 checkpoint、写入 `policy_storage` 和策略说明，并根据 Sim2Sim 或
+Sim2Real 反馈及历史经验给出下一轮建议。
+
+### User Context
+全自动参数搜索、双机调度和复杂状态机难以在真实训练及部署条件下保持可靠。
+用户希望保留最终控制权，同时让 Skill 持续完成繁琐的证据采集、趋势分析、
+策略比选、经验记录和建议工作。
+
+### Complexity Estimate
+complex
+
+### Suggested Implementation
+重写 Skill 入口为 human-in-the-loop advisor；复用算法画像、训练日志解析、健康
+采集和安全导出底层工具，新增多窗口训练评估、训练重叠轻量 Native Play、env 0
+遥测、checkpoint shortlist/Pareto 比较、直接安全归档和 append-only 调参经验。
+所有结论保持 advisory-only，参数修改、训练终止、最终选择、归档及 Git 操作均
+由用户单独确认。
+
+### Metadata
+- Frequency: recurring
+- Related Features: monitor-tune-isaaclab-training, closed_loop_policy_evaluation, hardware_feedback_driven_retuning
+
+### Resolution
+- **Resolved**: 2026-07-31T20:46:00+08:00
+- **Commit/PR**: 47ebd9a
+- **Notes**: 已将 Skill 主入口降级为人工决策的训练顾问，新增多窗口训练与收敛
+  分析、训练重叠轻量 Native Play/env 0 遥测、checkpoint shortlist/Pareto
+  比较、直接安全归档和 append-only 调参经验记录。旧自动 campaign、双机、
+  multi-seed 和 multi-fidelity 工具保留为 legacy，主流程不再调用。122 项完整
+  测试与 11 个算法画像校验通过，未启动真实训练/Play 或写入 policy_storage。
+
+---
 ## [FEAT-20260728-003] idempotent_campaign_controller
 
 **Logged**: 2026-07-28T12:40:00+08:00
