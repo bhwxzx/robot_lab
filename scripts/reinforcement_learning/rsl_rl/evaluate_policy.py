@@ -40,7 +40,18 @@ parser.add_argument("--duration_steps", type=int, required=True)
 parser.add_argument("--executor_run_id")
 parser.add_argument("--result_path", required=True)
 parser.add_argument("--run_id", required=True)
-parser.add_argument("--video_path", required=True)
+parser.add_argument("--video_path")
+parser.add_argument("--no_video", action="store_true")
+parser.add_argument("--allow_training_overlap", action="store_true")
+parser.add_argument("--follow_robot_camera", action="store_true")
+parser.add_argument(
+    "--follow_camera_offset_json",
+    default="[3.0, 3.0, 2.0]",
+    help="World-frame camera eye offset from the selected robot",
+)
+parser.add_argument("--telemetry_path")
+parser.add_argument("--telemetry_env_index", type=int, default=0)
+parser.add_argument("--telemetry_stride", type=int, default=1)
 parser.add_argument("--num_envs", type=int, default=16)
 parser.add_argument("--seed", type=int, required=True)
 parser.add_argument("--require_idle_gpu", action="store_true")
@@ -50,7 +61,7 @@ if "-h" in ORIGINAL_ARGV or "--help" in ORIGINAL_ARGV:
     raise SystemExit(0)
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
-args_cli.enable_cameras = True
+args_cli.enable_cameras = not args_cli.no_video
 
 
 def _assert_gpu_idle(device: str | None) -> None:
@@ -116,9 +127,30 @@ def _assert_executor_identity() -> None:
         )
 
 
+def _assert_resource_mode() -> None:
+    if args_cli.require_idle_gpu and args_cli.allow_training_overlap:
+        raise RuntimeError(
+            "--require_idle_gpu and --allow_training_overlap are mutually exclusive"
+        )
+    if args_cli.allow_training_overlap:
+        if args_cli.num_envs > 4:
+            raise RuntimeError("training-overlap evaluation permits at most 4 environments")
+        if args_cli.duration_steps > 2000:
+            raise RuntimeError("training-overlap evaluation permits at most 2000 steps")
+    if args_cli.no_video and args_cli.video_path:
+        raise RuntimeError("--video_path must be omitted with --no_video")
+    if not args_cli.no_video and not args_cli.video_path:
+        raise RuntimeError("--video_path is required unless --no_video is used")
+    if args_cli.telemetry_stride <= 0:
+        raise RuntimeError("--telemetry_stride must be positive")
+    if not 0 <= args_cli.telemetry_env_index < args_cli.num_envs:
+        raise RuntimeError("--telemetry_env_index must select an existing environment")
+
+
 try:
     _assert_artifact_hashes()
     _assert_executor_identity()
+    _assert_resource_mode()
     _assert_gpu_idle(args_cli.device)
 except RuntimeError as exc:
     print(f"ERROR: {exc}", file=sys.stderr)
@@ -357,6 +389,39 @@ def _finalize_video(video_path: Path) -> str:
     return str(video_path)
 
 
+def _tensor_row(value: Any, env_index: int) -> list[float] | None:
+    if not isinstance(value, torch.Tensor) or value.ndim == 0:
+        return None
+    if env_index >= value.shape[0]:
+        return None
+    return [float(item) for item in value[env_index].detach().cpu().flatten().tolist()]
+
+
+def _parse_camera_offset(raw: str) -> list[float]:
+    try:
+        value = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError("--follow_camera_offset_json must be valid JSON") from exc
+    if (
+        not isinstance(value, list)
+        or len(value) != 3
+        or any(isinstance(item, bool) or not isinstance(item, (int, float)) for item in value)
+        or not all(np.isfinite(float(item)) for item in value)
+    ):
+        raise ValueError("camera offset must be three finite numbers")
+    return [float(item) for item in value]
+
+
+def _update_follow_camera(env: RslRlVecEnvWrapper, env_index: int, offset: list[float]) -> None:
+    robot = env.unwrapped.scene["robot"]
+    target = _tensor_row(robot.data.root_pos_w, env_index)
+    if target is None or len(target) < 3:
+        raise ValueError("robot root position is unavailable for camera follow")
+    target = target[:3]
+    eye = [target[index] + offset[index] for index in range(3)]
+    env.unwrapped.sim.set_camera_view(eye, target)
+
+
 def _review_windows(
     peak_steps: dict[str, int | None],
     termination_first_steps: dict[str, int],
@@ -425,31 +490,44 @@ def main(
     checkpoint_path = Path(args_cli.checkpoint or "")
     artifact_path = Path(args_cli.artifact_path)
     result_path = Path(args_cli.result_path)
-    video_path = Path(args_cli.video_path)
+    video_path = Path(args_cli.video_path) if args_cli.video_path else None
+    telemetry_path = Path(args_cli.telemetry_path) if args_cli.telemetry_path else None
     if not checkpoint_path.is_absolute():
         raise ValueError("--checkpoint must be an absolute native checkpoint path")
     if not artifact_path.is_absolute():
         raise ValueError("--artifact_path must be absolute")
-    if not result_path.is_absolute() or not video_path.is_absolute():
-        raise ValueError("--result_path and --video_path must be absolute")
+    if not result_path.is_absolute():
+        raise ValueError("--result_path must be absolute")
+    if video_path is not None and not video_path.is_absolute():
+        raise ValueError("--video_path must be absolute")
+    if telemetry_path is not None and not telemetry_path.is_absolute():
+        raise ValueError("--telemetry_path must be absolute")
     if not checkpoint_path.is_file():
         raise FileNotFoundError(f"checkpoint does not exist: {checkpoint_path}")
     if not artifact_path.is_file():
         raise FileNotFoundError(f"artifact does not exist: {artifact_path}")
     result_path.parent.mkdir(parents=True, exist_ok=True)
-    video_path.parent.mkdir(parents=True, exist_ok=True)
+    if video_path is not None:
+        video_path.parent.mkdir(parents=True, exist_ok=True)
+    if telemetry_path is not None:
+        telemetry_path.parent.mkdir(parents=True, exist_ok=True)
 
-    raw_env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array")
+    raw_env = gym.make(
+        args_cli.task,
+        cfg=env_cfg,
+        render_mode="rgb_array" if video_path is not None else None,
+    )
     if isinstance(raw_env.unwrapped, DirectMARLEnv):
         raw_env = multi_agent_to_single_agent(raw_env)
-    raw_env = gym.wrappers.RecordVideo(
-        raw_env,
-        video_folder=str(video_path.parent),
-        step_trigger=lambda step: step == 0,
-        video_length=args_cli.duration_steps,
-        name_prefix=video_path.stem,
-        disable_logger=True,
-    )
+    if video_path is not None:
+        raw_env = gym.wrappers.RecordVideo(
+            raw_env,
+            video_folder=str(video_path.parent),
+            step_trigger=lambda step: step == 0,
+            video_length=args_cli.duration_steps,
+            name_prefix=video_path.stem,
+            disable_logger=True,
+        )
     env = RslRlVecEnvWrapper(raw_env, clip_actions=agent_cfg.clip_actions)
 
     runner = _make_runner(env, agent_cfg)
@@ -476,7 +554,12 @@ def main(
                 "base_velocity command term does not support deterministic scheduling"
             )
     observations = env.get_observations()
+    camera_offset = _parse_camera_offset(args_cli.follow_camera_offset_json)
+    if args_cli.follow_robot_camera:
+        _update_follow_camera(env, args_cli.telemetry_env_index, camera_offset)
     previous_actions: torch.Tensor | None = None
+    telemetry_samples: list[dict[str, Any]] = []
+    telemetry_joint_names: list[str] = []
     reward_sum = 0.0
     sample_count = 0
     termination_count = 0
@@ -510,6 +593,8 @@ def main(
     start_time = time.monotonic()
 
     for step in range(args_cli.duration_steps):
+        if args_cli.follow_robot_camera:
+            _update_follow_camera(env, args_cli.telemetry_env_index, camera_offset)
         active_scheduled_command = _scheduled_command(command_schedule, step)
         if active_scheduled_command is not None:
             assert command_term is not None
@@ -614,6 +699,31 @@ def main(
             tracking_xy_sq_sum += float(torch.square(xy_error).sum().item())
             tracking_yaw_sq_sum += float(torch.square(yaw_error).sum().item())
             tracking_samples += int(command.shape[0])
+            if telemetry_path is not None and step % args_cli.telemetry_stride == 0:
+                if not telemetry_joint_names:
+                    telemetry_joint_names = [
+                        str(name) for name in getattr(robot, "joint_names", [])
+                    ]
+                env_index = args_cli.telemetry_env_index
+                telemetry_samples.append(
+                    {
+                        "step": step,
+                        "sim_time_seconds": step * float(env.unwrapped.step_dt),
+                        "command": _tensor_row(command, env_index),
+                        "reward": float(rewards_tensor[env_index].item()),
+                        "done": bool(dones_tensor[env_index].item()),
+                        "timeout": bool(timeouts[env_index].item()),
+                        "root_position_w": _tensor_row(robot.data.root_pos_w, env_index),
+                        "root_quaternion_w": _tensor_row(robot.data.root_quat_w, env_index),
+                        "root_linear_velocity_b": _tensor_row(robot.data.root_lin_vel_b, env_index),
+                        "root_angular_velocity_b": _tensor_row(robot.data.root_ang_vel_b, env_index),
+                        "projected_gravity_b": _tensor_row(robot.data.projected_gravity_b, env_index),
+                        "joint_position": _tensor_row(robot.data.joint_pos, env_index),
+                        "joint_velocity": _tensor_row(robot.data.joint_vel, env_index),
+                        "applied_torque": _tensor_row(robot.data.applied_torque, env_index),
+                        "action": _tensor_row(actions, env_index),
+                    }
+                )
         except (AttributeError, KeyError):
             pass
 
@@ -664,7 +774,29 @@ def main(
 
     step_dt = float(env.unwrapped.step_dt)
     env.close()
-    recorded_video = _finalize_video(video_path)
+    recorded_video = _finalize_video(video_path) if video_path is not None else ""
+    if telemetry_path is not None:
+        telemetry = {
+            "version": 1,
+            "run_id": args_cli.run_id,
+            "candidate_id": args_cli.candidate_id,
+            "environment_index": args_cli.telemetry_env_index,
+            "stride": args_cli.telemetry_stride,
+            "step_dt_seconds": step_dt,
+            "joint_names": telemetry_joint_names,
+            "samples": telemetry_samples,
+        }
+        telemetry_path.write_text(
+            json.dumps(
+                telemetry,
+                indent=2,
+                sort_keys=True,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     result = {
         "version": 1,
         "run_id": args_cli.run_id,
@@ -677,6 +809,8 @@ def main(
         "checkpoint_path": str(checkpoint_path),
         "artifact_path": str(artifact_path),
         "video_path": recorded_video,
+        "telemetry_path": str(telemetry_path) if telemetry_path is not None else "",
+        "training_overlap": bool(args_cli.allow_training_overlap),
         "metrics": metrics,
         "motion_evidence": {
             "step_dt_seconds": step_dt,
