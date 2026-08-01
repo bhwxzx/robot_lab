@@ -13,6 +13,8 @@ bounded action. Never turn a recommendation into an automatic training action.
 Read [references/human-guided-training-advisor.md](references/human-guided-training-advisor.md)
 for the complete evidence, evaluation, archive, feedback, and experience-record
 schemas.
+Read [references/assessment-criteria-contract.md](references/assessment-criteria-contract.md)
+before drafting, validating, approving, or applying assessment criteria.
 
 ## Scope
 
@@ -84,13 +86,32 @@ conda run -n isaacsim-5.1 python \
 
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/summarize_training_log.py \
-  ABSOLUTE_LOG --profile-id PROFILE_ID --last 200 --output SUMMARY.json
+  ABSOLUTE_LOG --profile-id PROFILE_ID --last 200 \
+  --output /ABSOLUTE/EVIDENCE/summary.json
+
+# Validate a criteria draft or approval receipt without changing it.
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_assessment_criteria.py \
+  /ABSOLUTE/EVIDENCE/criteria.json \
+  --task EXACT_TASK --run-id EXACT_RUN_ID --backend EXACT_BACKEND \
+  --profile-id PROFILE_ID --algorithm EXACT_ALGORITHM --runner EXACT_RUNNER
 
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/assess_training_run.py \
-  SUMMARY.json --health /ABSOLUTE/EVIDENCE/health-2.json --criteria CRITERIA.json \
-  --output ASSESSMENT.json
+  /ABSOLUTE/EVIDENCE/summary.json \
+  --health /ABSOLUTE/EVIDENCE/health-2.json \
+  --criteria /ABSOLUTE/EVIDENCE/criteria.json \
+  --task EXACT_TASK --run-id EXACT_RUN_ID --backend EXACT_BACKEND \
+  --profile-id PROFILE_ID --algorithm EXACT_ALGORITHM --runner EXACT_RUNNER \
+  --output /ABSOLUTE/EVIDENCE/assessment.json
 ```
+
+Start criteria from `assets/assessment-criteria-template.json`; it is an
+unapproved, numberless draft. Fill the exact run scope and task-specific
+contract, show the entire contract and its validator-reported SHA-256 to the
+user, and wait for explicit approval. Only then record the approval timestamp
+and approved contract hash. Never infer approval or refresh the hash after a
+contract edit.
 
 Require two identity-compatible observations before calling a run `healthy`.
 Only a monotonic log or TensorBoard step increase confirms healthy progress.
@@ -109,6 +130,12 @@ The assessment status is advisory:
   hard constraint failed;
 - `insufficient_evidence`: progress is `unknown` or `stopped`, or the run or
   metric meaning cannot be resolved.
+
+Missing, draft, hash-invalid, or scope-mismatched criteria force
+`insufficient_evidence` and `indeterminate`; they cannot produce a strong
+continue, stop, plateau, or convergence conclusion. Safety alerts remain
+visible for operator attention. The assessment records the absolute criteria
+path, full-file SHA-256, contract SHA-256, approval time, and exact scope.
 
 Never signal the process from an assessment. If the user asks to terminate a
 run, re-resolve the exact process group and follow the repository's bounded

@@ -10,9 +10,16 @@ from pathlib import Path
 from statistics import fmean
 from typing import Any, Callable
 
+from assessment_criteria import (
+    CriteriaError,
+    SCOPE_FIELDS,
+    inspect_criteria_document,
+    inspect_criteria_file,
+)
+
 
 class AssessmentError(ValueError):
-    """Raised when advisor evidence is malformed or insufficiently specified."""
+    """Raised when advisor evidence is malformed."""
 
 
 OPERATORS: dict[str, Callable[[float, float], bool]] = {
@@ -49,61 +56,6 @@ def _finite_values(records: list[dict[str, Any]], metric: str) -> list[float]:
     return values
 
 
-def _validate_criteria(criteria: dict[str, Any]) -> tuple[int, int, int, dict[str, Any]]:
-    if criteria.get("version") != 1:
-        raise AssessmentError("criteria.version must be 1")
-    window_size = criteria.get("window_size")
-    minimum_records = criteria.get("minimum_records")
-    plateau_required = criteria.get("plateau_required_metrics")
-    metrics = criteria.get("metrics")
-    if isinstance(window_size, bool) or not isinstance(window_size, int) or window_size < 2:
-        raise AssessmentError("criteria.window_size must be an integer >= 2")
-    if (
-        isinstance(minimum_records, bool)
-        or not isinstance(minimum_records, int)
-        or minimum_records < window_size * 2
-    ):
-        raise AssessmentError("criteria.minimum_records must be >= two windows")
-    if (
-        isinstance(plateau_required, bool)
-        or not isinstance(plateau_required, int)
-        or plateau_required < 1
-    ):
-        raise AssessmentError("plateau_required_metrics must be a positive integer")
-    if not isinstance(metrics, dict) or not metrics:
-        raise AssessmentError("criteria.metrics must be a non-empty object")
-    required_count = 0
-    for name, rule in metrics.items():
-        if not isinstance(name, str) or not name or not isinstance(rule, dict):
-            raise AssessmentError("each metric criterion must be a named object")
-        if rule.get("direction") not in {"maximize", "minimize"}:
-            raise AssessmentError(f"metric {name} has invalid direction")
-        tolerance = rule.get("plateau_relative_tolerance")
-        if (
-            isinstance(tolerance, bool)
-            or not isinstance(tolerance, (int, float))
-            or not math.isfinite(float(tolerance))
-            or float(tolerance) < 0
-        ):
-            raise AssessmentError(f"metric {name} has invalid plateau tolerance")
-        if rule.get("required", False):
-            required_count += 1
-        for limit_name in ("hard_min", "hard_max"):
-            if limit_name in rule:
-                limit = rule[limit_name]
-                if (
-                    isinstance(limit, bool)
-                    or not isinstance(limit, (int, float))
-                    or not math.isfinite(float(limit))
-                ):
-                    raise AssessmentError(f"metric {name} has invalid {limit_name}")
-    if required_count < plateau_required:
-        raise AssessmentError(
-            "plateau_required_metrics exceeds the number of required metrics"
-        )
-    return window_size, minimum_records, plateau_required, metrics
-
-
 def _metric_trend(
     name: str,
     rule: dict[str, Any],
@@ -115,7 +67,6 @@ def _metric_trend(
     if len(prior_values) != len(prior) or len(recent_values) != len(recent):
         return {
             "metric": name,
-            "required": bool(rule.get("required", False)),
             "status": "insufficient",
             "prior_samples": len(prior_values),
             "recent_samples": len(recent_values),
@@ -128,15 +79,9 @@ def _metric_trend(
         raw_change if rule["direction"] == "maximize" else -raw_change
     )
     tolerance = float(rule["plateau_relative_tolerance"])
-    hard_failures: list[str] = []
-    if "hard_min" in rule and recent_mean < float(rule["hard_min"]):
-        hard_failures.append("below_hard_min")
-    if "hard_max" in rule and recent_mean > float(rule["hard_max"]):
-        hard_failures.append("above_hard_max")
     return {
         "metric": name,
-        "required": bool(rule.get("required", False)),
-        "status": "hard_failure" if hard_failures else "available",
+        "status": "available",
         "direction": rule["direction"],
         "prior_mean": prior_mean,
         "recent_mean": recent_mean,
@@ -145,24 +90,111 @@ def _metric_trend(
         "plateaued": abs(relative_improvement) <= tolerance,
         "meaningfully_improving": relative_improvement > tolerance,
         "meaningfully_degrading": relative_improvement < -tolerance,
-        "hard_failures": hard_failures,
+    }
+
+
+def _observed_metric_trend(
+    name: str,
+    rule: dict[str, Any],
+    prior: list[dict[str, Any]],
+    recent: list[dict[str, Any]],
+) -> dict[str, Any]:
+    prior_values = _finite_values(prior, name)
+    recent_values = _finite_values(recent, name)
+    result: dict[str, Any] = {
+        "metric": name,
+        "decision_bearing": False,
+        "direction": rule.get("direction", "observe"),
+        "description": rule.get("description"),
+    }
+    if len(prior_values) != len(prior) or len(recent_values) != len(recent):
+        result.update(
+            status="insufficient",
+            prior_samples=len(prior_values),
+            recent_samples=len(recent_values),
+        )
+        return result
+    prior_mean = fmean(prior_values)
+    recent_mean = fmean(recent_values)
+    result.update(
+        status="available",
+        prior_mean=prior_mean,
+        recent_mean=recent_mean,
+        relative_change=(recent_mean - prior_mean) / max(abs(prior_mean), 1.0e-12),
+    )
+    return result
+
+
+def _gate_results(
+    values: dict[str, Any],
+    gates: dict[str, Any],
+    *,
+    source: str,
+) -> list[dict[str, Any]]:
+    checks: list[dict[str, Any]] = []
+    for metric, gate in gates.items():
+        actual = values.get(metric)
+        limit = gate["value"]
+        if (
+            isinstance(actual, bool)
+            or not isinstance(actual, (int, float))
+            or not math.isfinite(float(actual))
+        ):
+            checks.append(
+                {
+                    "source": source,
+                    "metric": metric,
+                    "status": "missing_or_nonfinite",
+                    "passed": None,
+                }
+            )
+            continue
+        passed = OPERATORS[gate["op"]](float(actual), float(limit))
+        checks.append(
+            {
+                "source": source,
+                "metric": metric,
+                "actual": float(actual),
+                "op": gate["op"],
+                "limit": float(limit),
+                "status": "passed" if passed else "failed",
+                "passed": passed,
+            }
+        )
+    return checks
+
+
+def _hard_metric_results(
+    records: list[dict[str, Any]],
+    window_size: int,
+    gates: dict[str, Any],
+) -> dict[str, Any]:
+    if not gates:
+        return {"complete": True, "failed": False, "checks": []}
+    recent = records[-window_size:] if len(records) >= window_size else records
+    means: dict[str, float] = {}
+    for metric in gates:
+        values = _finite_values(recent, metric)
+        if len(values) == len(recent) and values:
+            means[metric] = fmean(values)
+    checks = _gate_results(means, gates, source="latest_training_window")
+    return {
+        "complete": bool(checks) and all(item["passed"] is not None for item in checks),
+        "failed": any(item["passed"] is False for item in checks),
+        "checks": checks,
     }
 
 
 def _play_gate_results(
     play_results: list[dict[str, Any]],
-    criteria: dict[str, Any],
+    gates: dict[str, Any],
 ) -> dict[str, Any]:
-    gates = criteria.get("play_gates", {})
-    if not isinstance(gates, dict):
-        raise AssessmentError("criteria.play_gates must be an object")
     if not play_results:
-        return {"available": False, "passed": None, "checks": []}
-    if not gates:
         return {"available": False, "passed": None, "checks": []}
     checks: list[dict[str, Any]] = []
     for result_index, result in enumerate(play_results):
-        if result.get("status") != "completed" or not isinstance(result.get("metrics"), dict):
+        metrics = result.get("metrics")
+        if result.get("status") != "completed" or not isinstance(metrics, dict):
             checks.append(
                 {
                     "result_index": result_index,
@@ -171,77 +203,153 @@ def _play_gate_results(
                 }
             )
             continue
-        metrics = result["metrics"]
-        for metric, gate in gates.items():
-            if not isinstance(gate, dict) or gate.get("op") not in OPERATORS:
-                raise AssessmentError(f"invalid Play gate for {metric}")
-            limit = gate.get("value")
-            actual = metrics.get(metric)
-            if (
-                isinstance(limit, bool)
-                or not isinstance(limit, (int, float))
-                or isinstance(actual, bool)
-                or not isinstance(actual, (int, float))
-                or not math.isfinite(float(actual))
-            ):
-                checks.append(
-                    {
-                        "result_index": result_index,
-                        "metric": metric,
-                        "status": "missing_or_nonfinite",
-                        "passed": False,
-                    }
-                )
-                continue
-            passed = OPERATORS[gate["op"]](float(actual), float(limit))
-            checks.append(
-                {
-                    "result_index": result_index,
-                    "metric": metric,
-                    "actual": float(actual),
-                    "op": gate["op"],
-                    "limit": float(limit),
-                    "status": "passed" if passed else "failed",
-                    "passed": passed,
-                }
-            )
+        for check in _gate_results(metrics, gates, source="play"):
+            check["result_index"] = result_index
+            checks.append(check)
     return {
         "available": True,
-        "passed": all(check.get("passed") is True for check in checks),
+        "passed": bool(checks) and all(item.get("passed") is True for item in checks),
         "checks": checks,
+    }
+
+
+def _missing_criteria_report(expected_scope: dict[str, str] | None) -> dict[str, Any]:
+    return {
+        "version": 1,
+        "status": "missing",
+        "eligible": False,
+        "errors": ["no criteria file was supplied"],
+        "scope": {},
+        "scope_mismatches": [],
+        "contract_sha256": None,
+        "approval": {
+            "status": None,
+            "approved_at": None,
+            "approved_contract_sha256": None,
+            "hash_matches": None,
+        },
+        "criteria_path": None,
+        "criteria_file_sha256": None,
+        "expected_scope": expected_scope,
     }
 
 
 def assess_training(
     summary: dict[str, Any],
-    criteria: dict[str, Any],
+    criteria: dict[str, Any] | None,
     *,
+    expected_scope: dict[str, str] | None = None,
+    criteria_evidence: dict[str, Any] | None = None,
     health: dict[str, Any] | None = None,
     play_results: list[dict[str, Any]] | None = None,
     training_finished: bool = False,
 ) -> dict[str, Any]:
     """Assess evidence without mutating or signaling the training process."""
-    window_size, minimum_records, plateau_required, metric_rules = _validate_criteria(criteria)
     records = summary.get("records")
     if not isinstance(records, list) or any(not isinstance(item, dict) for item in records):
         raise AssessmentError("summary.records must be an array of objects")
     non_finite = summary.get("non_finite_metrics", [])
     if not isinstance(non_finite, list):
         raise AssessmentError("summary.non_finite_metrics must be an array")
+
+    if criteria is None:
+        criteria_report = _missing_criteria_report(expected_scope)
+    else:
+        evidence_path = (
+            criteria_evidence.get("criteria_path")
+            if isinstance(criteria_evidence, dict)
+            else None
+        )
+        evidence_file_hash = (
+            criteria_evidence.get("criteria_file_sha256")
+            if isinstance(criteria_evidence, dict)
+            else None
+        )
+        criteria_report = inspect_criteria_document(
+            criteria,
+            expected_scope=expected_scope,
+            criteria_path=Path(evidence_path) if isinstance(evidence_path, str) else None,
+            criteria_file_sha256=(
+                evidence_file_hash if isinstance(evidence_file_hash, str) else None
+            ),
+        )
+    criteria_report = dict(criteria_report)
+    criteria_report["expected_scope"] = expected_scope
+    if expected_scope is None or any(
+        not isinstance(expected_scope.get(field), str) or not expected_scope[field]
+        for field in SCOPE_FIELDS
+    ):
+        criteria_report["eligible"] = False
+        criteria_report["status"] = "scope_unresolved"
+        criteria_report.setdefault("errors", []).append("current run scope is incomplete")
+    elif summary.get("profile_id") != expected_scope["profile_id"]:
+        criteria_report["eligible"] = False
+        criteria_report["status"] = "scope_mismatch"
+        criteria_report.setdefault("scope_mismatches", []).append(
+            {
+                "field": "summary.profile_id",
+                "expected": expected_scope["profile_id"],
+                "actual": summary.get("profile_id"),
+            }
+        )
+
+    health_state = health.get("state") if isinstance(health, dict) else None
+    safety_alerts: list[dict[str, Any]] = []
+    if non_finite:
+        safety_alerts.append({"kind": "non_finite_metrics", "details": non_finite})
+    if health_state == "stalled":
+        safety_alerts.append({"kind": "confirmed_stall", "health_state": health_state})
+
+    if not criteria_report.get("eligible"):
+        return {
+            "version": 2,
+            "advisory_only": True,
+            "recommendation": "insufficient_evidence",
+            "reason": "criteria_not_approved_or_scope_mismatch",
+            "convergence": "indeterminate",
+            "training_finished": training_finished,
+            "profile_id": summary.get("profile_id"),
+            "record_count": len(records),
+            "window_size": None,
+            "health_state": health_state,
+            "non_finite_metrics": non_finite,
+            "trends": [],
+            "observed_trends": [],
+            "counts": {
+                "required_available": 0,
+                "plateaued": 0,
+                "improving": 0,
+                "degrading": 0,
+                "hard_failures": 0,
+            },
+            "hard_failures": {"complete": False, "failed": False, "checks": []},
+            "play": {"available": False, "passed": None, "checks": []},
+            "criteria": criteria_report,
+            "safety_alerts": safety_alerts,
+            "operator_attention_required": bool(safety_alerts),
+            "pending_user_decision": True,
+        }
+
+    contract = criteria["contract"]
+    windows = contract["windows"]
+    window_size = windows["window_size"]
+    minimum_records = windows["minimum_records"]
+    plateau_required = windows["plateau_required_metrics"]
     enough_records = len(records) >= minimum_records
     trends: list[dict[str, Any]] = []
+    observed_trends: list[dict[str, Any]] = []
     if len(records) >= window_size * 2:
         prior = records[-2 * window_size : -window_size]
         recent = records[-window_size:]
         trends = [
             _metric_trend(name, rule, prior, recent)
-            for name, rule in metric_rules.items()
+            for name, rule in contract["required_metrics"].items()
         ]
-    required_available = [
-        item
-        for item in trends
-        if item.get("required") and item.get("status") != "insufficient"
-    ]
+        observed_trends = [
+            _observed_metric_trend(name, rule, prior, recent)
+            for name, rule in contract["observed_metrics"].items()
+        ]
+    required_available = [item for item in trends if item["status"] == "available"]
     plateau_count = sum(item.get("plateaued") is True for item in required_available)
     improving_count = sum(
         item.get("meaningfully_improving") is True for item in required_available
@@ -249,18 +357,31 @@ def assess_training(
     degrading_count = sum(
         item.get("meaningfully_degrading") is True for item in required_available
     )
-    hard_metric_failures = [
-        item for item in trends if item.get("status") == "hard_failure"
-    ]
-    play = _play_gate_results(play_results or [], criteria)
-    health_state = health.get("state") if isinstance(health, dict) else None
-    invalid = bool(non_finite) or bool(hard_metric_failures) or play.get("passed") is False
-    if health_state == "stalled":
-        invalid = True
+
+    hard_config = contract["hard_failures"]
+    hard_metrics = _hard_metric_results(
+        records,
+        window_size,
+        hard_config["metric_limits"],
+    )
+    configured_non_finite = bool(non_finite) and hard_config["non_finite_metrics"]
+    configured_health_failure = health_state in hard_config["health_states"]
+    invalid = configured_non_finite or configured_health_failure or hard_metrics["failed"]
+    if hard_metrics["failed"]:
+        safety_alerts.append(
+            {"kind": "approved_hard_metric_failure", "checks": hard_metrics["checks"]}
+        )
+
+    play = _play_gate_results(
+        play_results or [],
+        contract["play_gates"]["metrics"],
+    )
+    trends_complete = enough_records and len(required_available) >= plateau_required
+    hard_evidence_complete = hard_metrics["complete"]
 
     if invalid:
         recommendation = "recommend_stop_invalid"
-        reason = "nonfinite_stall_or_hard_gate_failure"
+        reason = "approved_hard_failure"
     elif not training_finished:
         if health_state in {"observing", "suspect"}:
             recommendation = "continue_and_recheck"
@@ -268,9 +389,9 @@ def assess_training(
         elif health_state != "healthy":
             recommendation = "insufficient_evidence"
             reason = "running_process_health_not_confirmed"
-        elif not enough_records or len(required_available) < plateau_required:
+        elif not trends_complete or not hard_evidence_complete:
             recommendation = "continue_and_recheck"
-            reason = "insufficient_adjacent_metric_windows"
+            reason = "incomplete_approved_metric_evidence"
         elif plateau_count >= plateau_required and improving_count == 0:
             recommendation = "consider_stop_plateau"
             reason = "required_metrics_plateaued"
@@ -280,9 +401,9 @@ def assess_training(
         else:
             recommendation = "continue_and_recheck"
             reason = "mixed_metric_trends"
-    elif not enough_records or len(required_available) < plateau_required:
+    elif not trends_complete or not hard_evidence_complete:
         recommendation = "insufficient_evidence"
-        reason = "insufficient_adjacent_metric_windows"
+        reason = "incomplete_approved_metric_evidence"
     elif plateau_count >= plateau_required and improving_count == 0:
         recommendation = "consider_stop_plateau"
         reason = "required_metrics_plateaued"
@@ -294,7 +415,7 @@ def assess_training(
         convergence = "not_assessed_while_running"
     elif invalid:
         convergence = "not_converged"
-    elif not enough_records or len(required_available) < plateau_required or not play["available"]:
+    elif not trends_complete or not hard_evidence_complete or not play["available"]:
         convergence = "indeterminate"
     elif plateau_count >= plateau_required and play["passed"] is True:
         convergence = "converged"
@@ -304,7 +425,7 @@ def assess_training(
         convergence = "not_converged"
 
     return {
-        "version": 1,
+        "version": 2,
         "advisory_only": True,
         "recommendation": recommendation,
         "reason": reason,
@@ -316,14 +437,19 @@ def assess_training(
         "health_state": health_state,
         "non_finite_metrics": non_finite,
         "trends": trends,
+        "observed_trends": observed_trends,
         "counts": {
             "required_available": len(required_available),
             "plateaued": plateau_count,
             "improving": improving_count,
             "degrading": degrading_count,
-            "hard_failures": len(hard_metric_failures),
+            "hard_failures": int(invalid),
         },
+        "hard_failures": hard_metrics,
         "play": play,
+        "criteria": criteria_report,
+        "safety_alerts": safety_alerts,
+        "operator_attention_required": bool(safety_alerts),
         "pending_user_decision": True,
     }
 
@@ -331,23 +457,49 @@ def assess_training(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("summary")
-    parser.add_argument("--criteria", required=True)
+    parser.add_argument("--criteria")
+    parser.add_argument("--task", required=True)
+    parser.add_argument("--run-id", required=True)
+    parser.add_argument("--backend", required=True)
+    parser.add_argument("--profile-id", required=True)
+    parser.add_argument("--algorithm", required=True)
+    parser.add_argument("--runner", required=True)
     parser.add_argument("--health")
     parser.add_argument("--play-result", action="append", default=[])
     parser.add_argument("--training-finished", action="store_true")
     parser.add_argument("--output")
     args = parser.parse_args()
+    expected_scope = {
+        "task": args.task,
+        "run_id": args.run_id,
+        "backend": args.backend,
+        "profile_id": args.profile_id,
+        "algorithm": args.algorithm,
+        "runner": args.runner,
+    }
     try:
+        criteria = None
+        evidence = None
+        if args.criteria:
+            criteria_path = Path(args.criteria)
+            if not criteria_path.is_absolute():
+                parser.error("--criteria must be absolute")
+            criteria, evidence = inspect_criteria_file(
+                criteria_path,
+                expected_scope=expected_scope,
+            )
         result = assess_training(
             load_object(Path(args.summary), "summary"),
-            load_object(Path(args.criteria), "criteria"),
+            criteria,
+            expected_scope=expected_scope,
+            criteria_evidence=evidence,
             health=load_object(Path(args.health), "health") if args.health else None,
             play_results=[
                 load_object(Path(path), "Play result") for path in args.play_result
             ],
             training_finished=args.training_finished,
         )
-    except AssessmentError as exc:
+    except (AssessmentError, CriteriaError) as exc:
         parser.error(str(exc))
     encoded = json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
     if args.output:

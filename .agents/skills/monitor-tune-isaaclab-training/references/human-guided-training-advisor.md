@@ -47,49 +47,29 @@ provide the full profile, log, and PID identity validation of
 
 ## Assessment criteria
 
-`assess_training_run.py` consumes a bounded summary and this JSON shape:
+`assess_training_run.py` consumes version-2 criteria. Use the numberless draft
+at `assets/assessment-criteria-template.json` and follow
+[`assessment-criteria-contract.md`](assessment-criteria-contract.md). Never
+invent task thresholds or reuse an approval from another run.
 
-```json
-{
-  "version": 1,
-  "window_size": 20,
-  "minimum_records": 40,
-  "plateau_required_metrics": 2,
-  "metrics": {
-    "mean_reward": {
-      "direction": "maximize",
-      "plateau_relative_tolerance": 0.01,
-      "required": true
-    },
-    "error_vel_xy": {
-      "direction": "minimize",
-      "plateau_relative_tolerance": 0.02,
-      "hard_max": 0.8,
-      "required": true
-    },
-    "illegal_contact": {
-      "direction": "minimize",
-      "plateau_relative_tolerance": 0.02,
-      "hard_max": 0.1,
-      "required": false
-    }
-  },
-  "play_gates": {
-    "termination_rate": {"op": "<=", "value": 0.05},
-    "tracking_xy_rmse": {"op": "<=", "value": 0.6},
-    "max_tilt": {"op": "<=", "value": 0.7}
-  }
-}
-```
-
-Thresholds are task-specific. Examples are schema illustrations, not approved
-LW_Leg thresholds. The user must review them before they affect a stop or
-convergence recommendation.
+The decision-bearing `contract` binds task, run, backend, profile, algorithm,
+and runner; defines adjacent windows and required metrics; separates reporting-
+only observed metrics from hard failures; and makes Play gates mandatory for a
+convergence claim. The separate `approval` receipt records a timezone-aware
+approval time and the canonical SHA-256 of the exact contract the user
+approved. Editing the contract invalidates the receipt.
 
 For each metric, compare the preceding window with the latest window. Relative
 improvement is positive when movement follows the configured direction. A
 metric is plateaued when the absolute relative change does not exceed its
-tolerance. Hard limits and non-finite metrics dominate plateau logic.
+tolerance. Only required metrics affect trend decisions. Observed metrics are
+reported separately and cannot affect recommendations. Explicit approved hard
+failures dominate plateau logic.
+
+Missing criteria, a draft, malformed approval, contract hash mismatch, or any
+scope mismatch forces `insufficient_evidence` and `indeterminate`. Non-finite
+metrics and a confirmed stall remain visible as safety alerts, but cannot cause
+a strong stop recommendation without the matching approved contract.
 
 ## Decision meanings
 
@@ -100,12 +80,16 @@ tolerance. Hard limits and non-finite metrics dominate plateau logic.
   healthy but required trend or Play evidence is incomplete or mixed.
 - `consider_stop_plateau`: enough adjacent windows exist and the configured
   number of required metrics are plateaued without meaningful improvement.
-- `recommend_stop_invalid`: confirmed stall, non-finite metric, or approved hard
-  training/Play gate failure.
+- `recommend_stop_invalid`: an explicitly approved non-finite, health-state, or
+  training-metric hard failure.
 - `insufficient_evidence`: progress is `unknown` or `stopped`, or the profile,
-  metric direction, records, or process identity is unresolved.
+  metric direction, records, process identity, or criteria approval is
+  unresolved.
 
-The tool emits advice only. It never signals a process.
+Play gates qualify convergence rather than acting as an implicit stop rule. A
+completed plateau with failed Play gates is `plateaued_with_defects`; missing
+Play evidence is `indeterminate`. The tool emits advice only and never signals
+a process.
 
 ## Training-overlap Play budget
 
