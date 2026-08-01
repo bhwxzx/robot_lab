@@ -75,4 +75,4 @@ class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):
         vel_offset=41,
     )
     amp_reward_coef=2.0
-    amp_task_reward_lerp=0.7
+    amp_task_reward_lerp=0.3
