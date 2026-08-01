@@ -173,16 +173,16 @@ BLIND_ROUGH_TERRAINS_CFG = TerrainGeneratorCfg(
     use_cache=False,
     sub_terrains={
         "boxes": MeshRandomGridTerrainCfg(
-            proportion=0.15, grid_width=0.45, grid_height_range=(0.03, 0.10), platform_width=2.0
+            proportion=0.15, grid_width=0.45, grid_height_range=(0.00, 0.05), platform_width=2.0
         ),
         "random_rough": HfRandomUniformTerrainCfg(
-            proportion=0.15, noise_range=(-0.02, 0.04), noise_step=0.02, border_width=1.0
+            proportion=0.15, noise_range=(-0.02, 0.02), noise_step=0.01, border_width=1.0
         ),
         "hf_pyramid_slope": HfPyramidSlopedTerrainCfg(
-            proportion=0.15, slope_range=(0.1, 0.3), platform_width=2.0, border_width=1.0
+            proportion=0.15, slope_range=(0.1, 0.2), platform_width=2.0, border_width=1.0
         ),
         "hf_pyramid_slope_inv": HfInvertedPyramidSlopedTerrainCfg(
-            proportion=0.15, slope_range=(0.1, 0.3), platform_width=2.0, border_width=1.0
+            proportion=0.15, slope_range=(0.1, 0.2), platform_width=2.0, border_width=1.0
         ),
         "flat": MeshPlaneTerrainCfg(proportion=0.4),
     },
