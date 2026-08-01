@@ -169,6 +169,14 @@ rate, action magnitude, joint velocity, applied torque, action parity, and
 bounded env-0 telemetry. A video is evidence only after confirming the robot
 remains in frame.
 
+Read `telemetry_status`, `missing_required_signals`, every entry in
+`signal_status`, and `metric_availability` before interpreting Play metrics.
+Never replace a missing signal with zero. For `OnPolicyRunnerAmpROA`, require
+`telemetry_status: complete` before calling Play evidence complete, declaring
+convergence, or recommending one checkpoint from Pareto comparison. Partial or
+unavailable telemetry lowers evidence to incomplete; it does not itself prove
+policy failure. Simulation telemetry never establishes hardware readiness.
+
 ## Judge convergence
 
 Do not equate the highest reward, a long run, or normal termination with
@@ -203,8 +211,10 @@ Shortlist a small set representing the best available training metrics, the
 plateau region, and the final checkpoint. Evaluate all shortlisted checkpoints
 with the same task, command schedule, scenario, duration, seed, environment
 count, and metric criteria. Use multi-objective Pareto comparison and visual
-notes. Present the recommended checkpoint, alternatives, rejected candidates,
-and uncertainty. Export only after the user selects one.
+notes. Treat an AMP-ROA result with incomplete required telemetry as evaluation
+still required, not as a Pareto-eligible result. Present the recommended
+checkpoint, alternatives, rejected candidates, and uncertainty. Export only
+after the user selects one.
 
 ## Export and archive
 

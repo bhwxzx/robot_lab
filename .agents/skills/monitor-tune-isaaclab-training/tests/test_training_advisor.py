@@ -187,7 +187,14 @@ class TrainingAdvisorTests(unittest.TestCase):
         report = assess(
             [(10.0, 0.5), (10.0, 0.5), (10.0, 0.5), (10.0, 0.5)],
             health={"state": "completed"},
-            play_results=[{"status": "completed", "metrics": {"termination_rate": 0.0}}],
+            play_results=[
+                {
+                    "status": "completed",
+                    "telemetry_status": "complete",
+                    "missing_required_signals": [],
+                    "metrics": {"termination_rate": 0.0},
+                }
+            ],
             training_finished=True,
         )
         self.assertEqual(report["convergence"], "converged")
@@ -209,6 +216,53 @@ class TrainingAdvisorTests(unittest.TestCase):
         )
         self.assertEqual(report["recommendation"], "consider_stop_plateau")
         self.assertEqual(report["convergence"], "plateaued_with_defects")
+
+    def test_amp_roa_passing_play_with_partial_telemetry_is_indeterminate(self) -> None:
+        report = assess(
+            [(10.0, 0.5), (10.0, 0.5), (10.0, 0.5), (10.0, 0.5)],
+            health={"state": "completed"},
+            play_results=[
+                {
+                    "status": "completed",
+                    "telemetry_status": "partial",
+                    "missing_required_signals": ["joint_velocity"],
+                    "metrics": {"termination_rate": 0.0},
+                }
+            ],
+            training_finished=True,
+        )
+        self.assertEqual(report["convergence"], "indeterminate")
+        self.assertTrue(report["play"]["passed"])
+        self.assertFalse(report["play"]["eligible_for_convergence"])
+        self.assertEqual(
+            report["play"]["telemetry_checks"][0]["missing_required_signals"],
+            ["joint_velocity"],
+        )
+
+    def test_non_amp_runner_does_not_require_amp_telemetry(self) -> None:
+        document = criteria()
+        document["contract"]["scope"]["runner"] = "OnPolicyRunner"
+        document["approval"]["approved_contract_sha256"] = canonical_contract_sha256(
+            document["contract"]
+        )
+        expected_scope = dict(SCOPE)
+        expected_scope["runner"] = "OnPolicyRunner"
+        report = assess(
+            [(10.0, 0.5), (10.0, 0.5), (10.0, 0.5), (10.0, 0.5)],
+            criteria_document=document,
+            expected_scope=expected_scope,
+            health={"state": "completed"},
+            play_results=[
+                {
+                    "status": "completed",
+                    "telemetry_status": "not_requested",
+                    "metrics": {"termination_rate": 0.0},
+                }
+            ],
+            training_finished=True,
+        )
+        self.assertEqual(report["convergence"], "converged")
+        self.assertFalse(report["play"]["telemetry_required"])
 
     def test_missing_criteria_blocks_strong_advice_but_keeps_alert(self) -> None:
         report = MODULE.assess_training(
