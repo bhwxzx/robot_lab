@@ -76,11 +76,19 @@ complex
      信息检查均通过。
 
 2. **P0 — MTA-002: 建立用户批准的评估 criteria 契约**
+   - **Item Status**: resolved (`2026-08-01T17:11:23+08:00`)
    - 提供不臆造 LW_Leg 数值的 criteria 模板，明确必需指标、窗口、plateau
      容差、Play gates、硬失败和观察指标。
    - 没有绑定到当前 task/run 且经用户批准的 criteria 时，禁止宣称收敛，
      也禁止给出强停止建议。
    - 记录 criteria 文件路径、SHA-256、批准时间和适用任务/算法。
+   - **Resolution Evidence**: 已实现 version-2 contract 与独立 approval
+     receipt、无任务数值的 draft 模板、canonical contract SHA-256、整文件
+     SHA-256、六字段精确 scope 门禁和只读 validator；缺失、draft、哈希失效
+     或 scope 不匹配时仅输出 `insufficient_evidence`/`indeterminate` 并保留
+     safety alerts。观察指标与决策指标分离，硬失败和 Play 收敛 gates 显式
+     配置。完整保留测试 43 项通过，Skill validator、11 个算法画像、覆盖扫描、
+     14 个 CLI/模块加载、引用、空白及敏感信息检查均通过。
 
 3. **P0 — MTA-003: 让机器人遥测缺失显式可见**
    - 不再用单个 `except ...: pass` 吞掉整步遥测错误。
