@@ -1,13 +1,39 @@
 # Repeated-context-compaction session handoff
 
-Use this workflow when one logical task has undergone at least three explicitly
-observed context compactions. Trigger earlier when the exact count is not
-available but continuing would require guessing about user approvals, protected
-files, completed operations, external state, or the current objective.
+Use this workflow when the current session has undergone at least five verified
+context compactions. Trigger earlier when the exact count is unavailable or
+inconsistent but continuing would require guessing about user approvals,
+protected files, completed operations, external state, or the current
+objective.
 
 Do not claim an exact compaction count unless it is directly observable. A user
 statement that the session has been compressed too many times is sufficient to
 trigger the workflow.
+
+## Count current Codex compactions
+
+Before applying the threshold, read the `inspect-context-compactions` skill and
+run:
+
+```bash
+python3 \
+  .agents/skills/inspect-context-compactions/scripts/inspect_context_compactions.py
+```
+
+The inspector resolves the current rollout, waits through bounded transient
+tail changes, and returns content-free JSON. Treat the result as follows:
+
+- `available`: use `compaction_count` and `threshold_reached` directly;
+- `unavailable`: no unique current-session source could be resolved;
+- `inconsistent`: the JSONL, session identity, window sequence, or mirrored
+  event count did not validate.
+
+Never add `context_compacted` notification events to the top-level `compacted`
+record count. Never print or copy `replacement_history`, messages, tool output,
+or other rollout content into the handoff. Do not reimplement its counting
+rules in this workflow. When the inspector is not available on another agent
+runtime, record the exact count as unavailable and use the safety fallback
+above.
 
 ## Workflow
 
@@ -52,8 +78,10 @@ Use all of these headings:
 ```
 
 The metadata must include the creation timestamp, repository root, branch and
-HEAD when applicable, why the handoff was triggered, and whether the
-compaction count is exact or unavailable.
+HEAD when applicable, why the handoff was triggered, compaction query status,
+threshold, evidence time, and whether the count is exact or unavailable. When
+available, include the thread ID and verified count without including rollout
+content.
 
 The completed-work section must cite concrete commits, paths, validations, or
 receipts where available. Never represent a plan, approval, attempted command,

@@ -19,11 +19,14 @@ When asked to monitor a long-running training process (like IsaacLab RL) for sil
 - Any temporary scripts, patch files, or intermediate data generated to accomplish a task MUST be deleted immediately after the task is completed or the files are no longer needed. Do not leave the workspace cluttered.
 
 ## Session Handoff After Repeated Context Compaction
-When the same logical task has undergone at least three explicitly observed
-context compactions, use the `self-improvement` skill and follow
+Before deciding whether to hand off, run
+`.agents/skills/inspect-context-compactions/scripts/inspect_context_compactions.py`.
+When the current session has undergone at least five verified context
+compactions, use the `self-improvement` skill and follow
 `.agents/skills/self-improvement/references/session-handoff.md`.
-- Trigger earlier if the exact count is unavailable but continuing would require
-  guessing about approvals, protected files, completed work, or live state.
+- Trigger earlier if the count is unavailable or inconsistent and continuing
+  would require guessing about approvals, protected files, completed work, or
+  live state.
 - Never invent a compaction count. Finish only the current safe atomic step,
   verify live state, and create the handoff under
   `.learnings/session_handoffs/`.
