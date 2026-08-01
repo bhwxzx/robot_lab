@@ -91,11 +91,20 @@ complex
      14 个 CLI/模块加载、引用、空白及敏感信息检查均通过。
 
 3. **P0 — MTA-003: 让机器人遥测缺失显式可见**
+   - **Item Status**: resolved (`2026-08-01T17:32:57+08:00`)
    - 不再用单个 `except ...: pass` 吞掉整步遥测错误。
    - 为每类信号记录 `available`、`error` 和采样数，并输出
      `missing_required_signals` 与整体 `telemetry_status`。
    - AMP-ROA 必需信号缺失时降低置信度或阻止完整评估结论；保持真实机器人
      readiness 只能由受监督实物测试和遥测确认。
+   - **Resolution Evidence**: 已新增逐信号 availability ledger，将 telemetry
+     升级为 version 2，记录 required/available/complete、成功与预期采样数、
+     错误数和首个有界错误；缺失字段写 `null`，来源不完整的衍生指标不再输出
+     假 `0.0`。AMP-ROA 遥测不完整时阻止 `converged` 和唯一 Pareto checkpoint
+     推荐，并显式返回缺失信号；非 AMP runner 不套用 AMP-ROA 门禁，Sim2Sim
+     遥测不产生 hardware-ready 结论。完整保留测试 52 项、Skill validator、
+     11 个算法画像、覆盖扫描、14 个 Skill CLI、evaluator help、引用、空白及
+     敏感信息检查均通过；未运行真实 Play 或改动训练进程。
 
 4. **P1 — MTA-004: 统一可执行的证据目录和命令**
    - 将 health、summary、assessment、Play result、telemetry 和视频统一放入

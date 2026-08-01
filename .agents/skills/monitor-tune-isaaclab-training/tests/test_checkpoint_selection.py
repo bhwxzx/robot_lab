@@ -104,6 +104,31 @@ class CheckpointSelectionTests(unittest.TestCase):
         self.assertEqual(report["recommended_checkpoint"], "/tmp/model_20.pt")
         self.assertTrue(report["pending_user_selection"])
 
+    def test_amp_roa_incomplete_telemetry_blocks_checkpoint_recommendation(self) -> None:
+        shortlist = [{"path": "/tmp/model_10.pt"}]
+        results = [
+            {
+                "status": "completed",
+                "checkpoint_path": "/tmp/model_10.pt",
+                "runner": "OnPolicyRunnerAmpROA",
+                "telemetry_required_for_complete_assessment": True,
+                "telemetry_status": "partial",
+                "missing_required_signals": ["applied_torque"],
+                "metrics": {"reward": 10.0},
+            }
+        ]
+        report = MODULE.compare_evaluations(
+            shortlist, results, {"reward": "maximize"}
+        )
+        self.assertEqual(report["status"], "evaluation_required")
+        self.assertIsNone(report["recommended_checkpoint"])
+        self.assertEqual(
+            report["incomplete_telemetry"]["/tmp/model_10.pt"][
+                "missing_required_signals"
+            ],
+            ["applied_torque"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -164,10 +164,23 @@ def compare_evaluations(
     metric_directions: dict[str, str],
 ) -> dict[str, Any]:
     by_path: dict[str, dict[str, Any]] = {}
+    incomplete_telemetry: dict[str, dict[str, Any]] = {}
     for result in evaluation_results:
         checkpoint_path = result.get("checkpoint_path")
         metrics = result.get("metrics")
         if result.get("status") != "completed" or not isinstance(checkpoint_path, str) or not isinstance(metrics, dict):
+            continue
+        resolved_checkpoint = str(Path(checkpoint_path).resolve())
+        telemetry_required = (
+            result.get("telemetry_required_for_complete_assessment") is True
+            or result.get("runner") == "OnPolicyRunnerAmpROA"
+        )
+        if telemetry_required and result.get("telemetry_status") != "complete":
+            missing = result.get("missing_required_signals", [])
+            incomplete_telemetry[resolved_checkpoint] = {
+                "telemetry_status": result.get("telemetry_status"),
+                "missing_required_signals": missing if isinstance(missing, list) else [],
+            }
             continue
         values: dict[str, float] = {}
         for metric in metric_directions:
@@ -176,8 +189,8 @@ def compare_evaluations(
                 break
             values[metric] = float(value)
         if len(values) == len(metric_directions):
-            by_path[str(Path(checkpoint_path).resolve())] = {
-                "checkpoint_path": str(Path(checkpoint_path).resolve()),
+            by_path[resolved_checkpoint] = {
+                "checkpoint_path": resolved_checkpoint,
                 "metrics": values,
                 "result_path": result.get("result_path"),
             }
@@ -189,6 +202,7 @@ def compare_evaluations(
             "recommended_checkpoint": None,
             "pareto_front": [],
             "missing_evaluations": missing,
+            "incomplete_telemetry": incomplete_telemetry,
             "pending_user_selection": True,
         }
     pareto = [
@@ -206,6 +220,7 @@ def compare_evaluations(
         "recommended_checkpoint": recommended,
         "pareto_front": pareto,
         "missing_evaluations": [],
+        "incomplete_telemetry": {},
         "pending_user_selection": True,
     }
 
@@ -245,6 +260,7 @@ def main() -> int:
                 "recommended_checkpoint": None,
                 "pareto_front": [],
                 "missing_evaluations": [item["path"] for item in shortlist],
+                "incomplete_telemetry": {},
                 "pending_user_selection": True,
             }
         )

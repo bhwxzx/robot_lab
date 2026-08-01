@@ -28,6 +28,7 @@ OPERATORS: dict[str, Callable[[float, float], bool]] = {
     "<": lambda actual, limit: actual < limit,
     ">": lambda actual, limit: actual > limit,
 }
+RUNNERS_REQUIRING_COMPLETE_TELEMETRY = {"OnPolicyRunnerAmpROA"}
 
 
 def load_object(path: Path, label: str) -> dict[str, Any]:
@@ -188,10 +189,22 @@ def _hard_metric_results(
 def _play_gate_results(
     play_results: list[dict[str, Any]],
     gates: dict[str, Any],
+    *,
+    runner: str | None,
 ) -> dict[str, Any]:
     if not play_results:
-        return {"available": False, "passed": None, "checks": []}
+        return {
+            "available": False,
+            "passed": None,
+            "checks": [],
+            "telemetry_required": runner in RUNNERS_REQUIRING_COMPLETE_TELEMETRY,
+            "telemetry_complete": None,
+            "telemetry_checks": [],
+            "eligible_for_convergence": False,
+        }
     checks: list[dict[str, Any]] = []
+    telemetry_checks: list[dict[str, Any]] = []
+    telemetry_required = runner in RUNNERS_REQUIRING_COMPLETE_TELEMETRY
     for result_index, result in enumerate(play_results):
         metrics = result.get("metrics")
         if result.get("status") != "completed" or not isinstance(metrics, dict):
@@ -202,14 +215,46 @@ def _play_gate_results(
                     "passed": False,
                 }
             )
+            telemetry_checks.append(
+                {
+                    "result_index": result_index,
+                    "status": "invalid_result",
+                    "complete": False,
+                    "missing_required_signals": [],
+                }
+            )
             continue
         for check in _gate_results(metrics, gates, source="play"):
             check["result_index"] = result_index
             checks.append(check)
+        telemetry_status = result.get("telemetry_status")
+        missing_signals = result.get("missing_required_signals", [])
+        if not isinstance(missing_signals, list):
+            missing_signals = []
+        telemetry_complete = not telemetry_required or telemetry_status == "complete"
+        telemetry_checks.append(
+            {
+                "result_index": result_index,
+                "runner": runner,
+                "status": telemetry_status,
+                "complete": telemetry_complete,
+                "missing_required_signals": missing_signals,
+            }
+        )
+    metrics_passed = bool(checks) and all(
+        item.get("passed") is True for item in checks
+    )
+    telemetry_complete = bool(telemetry_checks) and all(
+        item["complete"] is True for item in telemetry_checks
+    )
     return {
         "available": True,
-        "passed": bool(checks) and all(item.get("passed") is True for item in checks),
+        "passed": metrics_passed,
         "checks": checks,
+        "telemetry_required": telemetry_required,
+        "telemetry_complete": telemetry_complete,
+        "telemetry_checks": telemetry_checks,
+        "eligible_for_convergence": metrics_passed and telemetry_complete,
     }
 
 
@@ -323,7 +368,15 @@ def assess_training(
                 "hard_failures": 0,
             },
             "hard_failures": {"complete": False, "failed": False, "checks": []},
-            "play": {"available": False, "passed": None, "checks": []},
+            "play": {
+                "available": False,
+                "passed": None,
+                "checks": [],
+                "telemetry_required": False,
+                "telemetry_complete": None,
+                "telemetry_checks": [],
+                "eligible_for_convergence": False,
+            },
             "criteria": criteria_report,
             "safety_alerts": safety_alerts,
             "operator_attention_required": bool(safety_alerts),
@@ -375,6 +428,7 @@ def assess_training(
     play = _play_gate_results(
         play_results or [],
         contract["play_gates"]["metrics"],
+        runner=expected_scope["runner"],
     )
     trends_complete = enough_records and len(required_available) >= plateau_required
     hard_evidence_complete = hard_metrics["complete"]
@@ -417,8 +471,14 @@ def assess_training(
         convergence = "not_converged"
     elif not trends_complete or not hard_evidence_complete or not play["available"]:
         convergence = "indeterminate"
-    elif plateau_count >= plateau_required and play["passed"] is True:
+    elif plateau_count >= plateau_required and play["eligible_for_convergence"]:
         convergence = "converged"
+    elif (
+        plateau_count >= plateau_required
+        and play["passed"] is True
+        and play["telemetry_complete"] is False
+    ):
+        convergence = "indeterminate"
     elif plateau_count >= plateau_required:
         convergence = "plateaued_with_defects"
     else:

@@ -124,8 +124,38 @@ conda run -n isaacsim-5.1 python \
 
 Telemetry contains the selected environment's command, reward, done/timeout,
 base linear and angular velocity, projected gravity, root position, joint
-position and velocity, applied torque, and action. Missing optional robot
-signals are recorded as unavailable rather than substituted with reward.
+position and velocity, applied torque, and action. Version 2 records, for every
+signal, `required`, `available`, `complete`, `sample_count`,
+`expected_sample_count`, `error_count`, and the first bounded `error`.
+Unavailable sample fields are `null`; no missing metric or signal may be
+substituted with zero, reward, or another signal.
+
+Overall `telemetry_status` is:
+
+- `complete`: every runner-required signal has every expected sample;
+- `partial`: at least one required signal has data but the required set is
+  incomplete;
+- `unavailable`: no required signal was captured;
+- `not_requested`: no telemetry output was requested.
+
+`missing_required_signals` lists every required signal that is incomplete, not
+only signals with zero samples. Optional failures remain visible in
+`signal_status` without changing the overall required-signal status.
+`metric_availability` separately reports the sources of derived tracking,
+tilt, joint-velocity, and torque metrics. A derived metric is omitted from
+`metrics` unless every source was complete.
+
+All runners require command, reward, done, timeout, and action for a complete
+telemetry sample. `OnPolicyRunnerAmpROA` additionally requires joint names,
+root linear and angular velocity, projected gravity, joint position and
+velocity, and applied torque. If any AMP-ROA required signal is incomplete,
+passing Play gates cannot produce `converged`; report `indeterminate` and the
+missing signals. The checkpoint comparator must return `evaluation_required`
+instead of a unique Pareto recommendation for such evidence.
+
+These statuses describe simulation evidence only. Even complete Sim2Sim
+telemetry cannot establish hardware readiness; only supervised physical tests
+with their own telemetry can support that decision.
 
 ## Checkpoint comparison
 
@@ -141,7 +171,9 @@ Run every shortlisted checkpoint under an identical evaluation contract. When
 evaluation results are supplied, compare configured metrics by Pareto
 dominance. A checkpoint dominates another only when it is no worse on every
 available metric and strictly better on at least one. Missing required metrics
-make a checkpoint ineligible.
+make a checkpoint ineligible. Results marked as requiring complete telemetry
+are also ineligible while `telemetry_status` is not `complete`; the comparison
+reports their status and missing signals under `incomplete_telemetry`.
 
 ## Archive manifest
 

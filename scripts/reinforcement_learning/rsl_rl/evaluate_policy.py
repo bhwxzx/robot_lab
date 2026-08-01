@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import subprocess
 import sys
@@ -13,6 +14,15 @@ import time
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
+
+from policy_evaluation_telemetry import (
+    TELEMETRY_SIGNALS,
+    SignalLedger,
+    metric_availability_report,
+    record_complete_metric,
+    required_signals_for_runner,
+    telemetry_report,
+)
 
 ORIGINAL_ARGV = tuple(sys.argv)
 
@@ -394,7 +404,41 @@ def _tensor_row(value: Any, env_index: int) -> list[float] | None:
         return None
     if env_index >= value.shape[0]:
         return None
-    return [float(item) for item in value[env_index].detach().cpu().flatten().tolist()]
+    row = [float(item) for item in value[env_index].detach().cpu().flatten().tolist()]
+    if not row or not all(math.isfinite(item) for item in row):
+        raise ValueError("tensor row is empty or non-finite")
+    return row
+
+
+def _required_tensor(
+    value: Any,
+    name: str,
+    *,
+    minimum_columns: int = 1,
+) -> torch.Tensor:
+    if not isinstance(value, torch.Tensor) or value.ndim < 2:
+        raise TypeError(f"{name} must be a batched tensor")
+    if value.shape[0] < 1 or value.shape[1] < minimum_columns:
+        raise ValueError(f"{name} has an incompatible shape")
+    if not torch.isfinite(value).all():
+        raise ValueError(f"{name} contains non-finite values")
+    return value
+
+
+def _finite_scalar(value: Any, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError(f"{name} must be numeric")
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        raise ValueError(f"{name} must be finite")
+    return numeric
+
+
+def _joint_names(robot: Any) -> list[str]:
+    names = [str(name) for name in getattr(robot, "joint_names", [])]
+    if not names:
+        raise ValueError("robot joint names are unavailable")
+    return names
 
 
 def _parse_camera_offset(raw: str) -> list[float]:
@@ -530,6 +574,7 @@ def main(
         )
     env = RslRlVecEnvWrapper(raw_env, clip_actions=agent_cfg.clip_actions)
 
+    runner_name = agent_cfg.class_name
     runner = _make_runner(env, agent_cfg)
     runner.load(str(checkpoint_path))
     native_policy = runner.get_inference_policy(device=env.unwrapped.device)
@@ -560,6 +605,32 @@ def main(
     previous_actions: torch.Tensor | None = None
     telemetry_samples: list[dict[str, Any]] = []
     telemetry_joint_names: list[str] = []
+    telemetry_joint_names_captured = False
+    telemetry_expected_samples = (
+        args_cli.duration_steps + args_cli.telemetry_stride - 1
+    ) // args_cli.telemetry_stride
+    telemetry_ledger = None
+    if telemetry_path is not None:
+        telemetry_expected_counts = {
+            name: telemetry_expected_samples for name in TELEMETRY_SIGNALS
+        }
+        telemetry_expected_counts["joint_names"] = 1
+        telemetry_ledger = SignalLedger(
+            telemetry_expected_counts,
+            required_signals=required_signals_for_runner(runner_name),
+        )
+    metric_input_names = (
+        "command",
+        "root_linear_velocity_b",
+        "root_angular_velocity_b",
+        "projected_gravity_b",
+        "joint_velocity",
+        "applied_torque",
+    )
+    metric_ledger = SignalLedger(
+        {name: args_cli.duration_steps for name in metric_input_names},
+        required_signals=metric_input_names,
+    )
     reward_sum = 0.0
     sample_count = 0
     termination_count = 0
@@ -575,6 +646,7 @@ def main(
     tracking_yaw_sq_sum = 0.0
     tracking_samples = 0
     tilt_sq_sum = 0.0
+    tilt_samples = 0
     max_tilt = 0.0
     action_rate_sq_sum = 0.0
     action_rate_samples = 0
@@ -654,11 +726,64 @@ def main(
             action_rate_samples += int(delta.numel())
         previous_actions = actions.detach().clone()
 
-        try:
-            robot = env.unwrapped.scene["robot"]
-            gravity_xy = robot.data.projected_gravity_b[:, :2]
+        command = metric_ledger.capture(
+            "command",
+            lambda: _required_tensor(
+                env.unwrapped.command_manager.get_command("base_velocity")
+                if active_scheduled_command is None
+                else torch.tensor(
+                    active_scheduled_command,
+                    device=actions.device,
+                    dtype=actions.dtype,
+                ).expand(actions.shape[0], -1),
+                "command",
+                minimum_columns=3,
+            ),
+        )
+        root_linear_velocity = metric_ledger.capture(
+            "root_linear_velocity_b",
+            lambda: _required_tensor(
+                env.unwrapped.scene["robot"].data.root_lin_vel_b,
+                "root_linear_velocity_b",
+                minimum_columns=2,
+            ),
+        )
+        root_angular_velocity = metric_ledger.capture(
+            "root_angular_velocity_b",
+            lambda: _required_tensor(
+                env.unwrapped.scene["robot"].data.root_ang_vel_b,
+                "root_angular_velocity_b",
+                minimum_columns=3,
+            ),
+        )
+        projected_gravity = metric_ledger.capture(
+            "projected_gravity_b",
+            lambda: _required_tensor(
+                env.unwrapped.scene["robot"].data.projected_gravity_b,
+                "projected_gravity_b",
+                minimum_columns=2,
+            ),
+        )
+        joint_velocity = metric_ledger.capture(
+            "joint_velocity",
+            lambda: _required_tensor(
+                env.unwrapped.scene["robot"].data.joint_vel,
+                "joint_velocity",
+            ),
+        )
+        applied_torque = metric_ledger.capture(
+            "applied_torque",
+            lambda: _required_tensor(
+                env.unwrapped.scene["robot"].data.applied_torque,
+                "applied_torque",
+            ),
+        )
+
+        if projected_gravity is not None:
+            gravity_xy = projected_gravity[:, :2]
             tilt = torch.linalg.vector_norm(gravity_xy, dim=1)
             tilt_sq_sum += float(torch.square(tilt).sum().item())
+            tilt_samples += int(tilt.numel())
             current_max_tilt = float(torch.max(tilt).item())
             if (
                 current_max_tilt > max_tilt
@@ -666,70 +791,133 @@ def main(
             ):
                 max_tilt = current_max_tilt
                 peak_steps["max_tilt"] = step
-            current_max_joint_velocity = float(
-                torch.max(torch.abs(robot.data.joint_vel)).item()
-            )
+        if joint_velocity is not None:
+            current_max_joint_velocity = float(torch.max(torch.abs(joint_velocity)).item())
             if (
                 current_max_joint_velocity > max_abs_joint_velocity
                 or peak_steps["max_abs_joint_velocity"] is None
             ):
                 max_abs_joint_velocity = current_max_joint_velocity
                 peak_steps["max_abs_joint_velocity"] = step
-            current_max_applied_torque = float(
-                torch.max(torch.abs(robot.data.applied_torque)).item()
-            )
+        if applied_torque is not None:
+            current_max_applied_torque = float(torch.max(torch.abs(applied_torque)).item())
             if (
                 current_max_applied_torque > max_abs_applied_torque
                 or peak_steps["max_abs_applied_torque"] is None
             ):
                 max_abs_applied_torque = current_max_applied_torque
                 peak_steps["max_abs_applied_torque"] = step
-            if active_scheduled_command is None:
-                command = env.unwrapped.command_manager.get_command(
-                    "base_velocity"
-                )
-            else:
-                command = torch.tensor(
-                    active_scheduled_command,
-                    device=robot.data.root_lin_vel_b.device,
-                    dtype=robot.data.root_lin_vel_b.dtype,
-                ).expand(robot.data.root_lin_vel_b.shape[0], -1)
-            xy_error = command[:, :2] - robot.data.root_lin_vel_b[:, :2]
-            yaw_error = command[:, 2] - robot.data.root_ang_vel_b[:, 2]
+
+        if (
+            command is not None
+            and root_linear_velocity is not None
+            and root_angular_velocity is not None
+        ):
+            xy_error = command[:, :2] - root_linear_velocity[:, :2]
+            yaw_error = command[:, 2] - root_angular_velocity[:, 2]
             tracking_xy_sq_sum += float(torch.square(xy_error).sum().item())
             tracking_yaw_sq_sum += float(torch.square(yaw_error).sum().item())
             tracking_samples += int(command.shape[0])
-            if telemetry_path is not None and step % args_cli.telemetry_stride == 0:
-                if not telemetry_joint_names:
-                    telemetry_joint_names = [
-                        str(name) for name in getattr(robot, "joint_names", [])
-                    ]
-                env_index = args_cli.telemetry_env_index
-                telemetry_samples.append(
-                    {
-                        "step": step,
-                        "sim_time_seconds": step * float(env.unwrapped.step_dt),
-                        "command": _tensor_row(command, env_index),
-                        "reward": float(rewards_tensor[env_index].item()),
-                        "done": bool(dones_tensor[env_index].item()),
-                        "timeout": bool(timeouts[env_index].item()),
-                        "root_position_w": _tensor_row(robot.data.root_pos_w, env_index),
-                        "root_quaternion_w": _tensor_row(robot.data.root_quat_w, env_index),
-                        "root_linear_velocity_b": _tensor_row(robot.data.root_lin_vel_b, env_index),
-                        "root_angular_velocity_b": _tensor_row(robot.data.root_ang_vel_b, env_index),
-                        "projected_gravity_b": _tensor_row(robot.data.projected_gravity_b, env_index),
-                        "joint_position": _tensor_row(robot.data.joint_pos, env_index),
-                        "joint_velocity": _tensor_row(robot.data.joint_vel, env_index),
-                        "applied_torque": _tensor_row(robot.data.applied_torque, env_index),
-                        "action": _tensor_row(actions, env_index),
-                    }
+
+        if telemetry_ledger is not None and step % args_cli.telemetry_stride == 0:
+            env_index = args_cli.telemetry_env_index
+            if not telemetry_joint_names_captured:
+                names = telemetry_ledger.capture(
+                    "joint_names",
+                    lambda: _joint_names(env.unwrapped.scene["robot"]),
                 )
-        except (AttributeError, KeyError):
-            pass
+                if names is not None:
+                    telemetry_joint_names = names
+                    telemetry_joint_names_captured = True
+            sample = {
+                "step": step,
+                "sim_time_seconds": step * float(env.unwrapped.step_dt),
+                "command": telemetry_ledger.capture(
+                    "command", lambda: _tensor_row(command, env_index)
+                ),
+                "reward": telemetry_ledger.capture(
+                    "reward",
+                    lambda: _finite_scalar(
+                        rewards_tensor[env_index].item(), "reward"
+                    ),
+                ),
+                "done": telemetry_ledger.capture(
+                    "done", lambda: bool(dones_tensor[env_index].item())
+                ),
+                "timeout": telemetry_ledger.capture(
+                    "timeout", lambda: bool(timeouts[env_index].item())
+                ),
+                "root_position_w": telemetry_ledger.capture(
+                    "root_position_w",
+                    lambda: _tensor_row(
+                        env.unwrapped.scene["robot"].data.root_pos_w, env_index
+                    ),
+                ),
+                "root_quaternion_w": telemetry_ledger.capture(
+                    "root_quaternion_w",
+                    lambda: _tensor_row(
+                        env.unwrapped.scene["robot"].data.root_quat_w, env_index
+                    ),
+                ),
+                "root_linear_velocity_b": telemetry_ledger.capture(
+                    "root_linear_velocity_b",
+                    lambda: _tensor_row(
+                        env.unwrapped.scene["robot"].data.root_lin_vel_b, env_index
+                    ),
+                ),
+                "root_angular_velocity_b": telemetry_ledger.capture(
+                    "root_angular_velocity_b",
+                    lambda: _tensor_row(
+                        env.unwrapped.scene["robot"].data.root_ang_vel_b, env_index
+                    ),
+                ),
+                "projected_gravity_b": telemetry_ledger.capture(
+                    "projected_gravity_b",
+                    lambda: _tensor_row(
+                        env.unwrapped.scene["robot"].data.projected_gravity_b,
+                        env_index,
+                    ),
+                ),
+                "joint_position": telemetry_ledger.capture(
+                    "joint_position",
+                    lambda: _tensor_row(
+                        env.unwrapped.scene["robot"].data.joint_pos, env_index
+                    ),
+                ),
+                "joint_velocity": telemetry_ledger.capture(
+                    "joint_velocity",
+                    lambda: _tensor_row(
+                        env.unwrapped.scene["robot"].data.joint_vel, env_index
+                    ),
+                ),
+                "applied_torque": telemetry_ledger.capture(
+                    "applied_torque",
+                    lambda: _tensor_row(
+                        env.unwrapped.scene["robot"].data.applied_torque, env_index
+                    ),
+                ),
+                "action": telemetry_ledger.capture(
+                    "action", lambda: _tensor_row(actions, env_index)
+                ),
+            }
+            telemetry_samples.append(sample)
 
     elapsed = max(time.monotonic() - start_time, 1e-12)
     simulated_seconds = (
         args_cli.duration_steps * float(env.unwrapped.step_dt)
+    )
+    metric_signal_report = metric_ledger.report()["signals"]
+
+    metric_availability = metric_availability_report(
+        metric_signal_report,
+        {
+            "tracking_xy_rmse": ("command", "root_linear_velocity_b"),
+            "tracking_yaw_rmse": ("command", "root_angular_velocity_b"),
+            "tilt_rms": ("projected_gravity_b",),
+            "max_tilt": ("projected_gravity_b",),
+            "max_abs_joint_velocity": ("joint_velocity",),
+            "max_abs_applied_torque": ("applied_torque",),
+        },
     )
     metrics: dict[str, float] = {
         "mean_reward": reward_sum / max(sample_count, 1),
@@ -740,29 +928,42 @@ def main(
             action_rate_sq_sum / max(action_rate_samples, 1)
         )
         ** 0.5,
-        "max_abs_joint_velocity": max_abs_joint_velocity,
-        "max_abs_applied_torque": max_abs_applied_torque,
         "max_abs_action_error": max_abs_action_error,
         "real_time_factor": simulated_seconds / elapsed,
     }
-    if tracking_samples:
-        metrics.update(
-            {
-                "tracking_xy_rmse": (
-                    tracking_xy_sq_sum / (tracking_samples * 2)
-                )
-                ** 0.5,
-                "tracking_yaw_rmse": (
-                    tracking_yaw_sq_sum / tracking_samples
-                )
-                ** 0.5,
-                "tilt_rms": (
-                    tilt_sq_sum / tracking_samples
-                )
-                ** 0.5,
-                "max_tilt": max_tilt,
-            }
-        )
+    record_complete_metric(
+        metrics,
+        metric_availability,
+        "tracking_xy_rmse",
+        lambda: (tracking_xy_sq_sum / (tracking_samples * 2)) ** 0.5,
+    )
+    record_complete_metric(
+        metrics,
+        metric_availability,
+        "tracking_yaw_rmse",
+        lambda: (tracking_yaw_sq_sum / tracking_samples) ** 0.5,
+    )
+    record_complete_metric(
+        metrics,
+        metric_availability,
+        "tilt_rms",
+        lambda: (tilt_sq_sum / tilt_samples) ** 0.5,
+    )
+    record_complete_metric(
+        metrics, metric_availability, "max_tilt", lambda: max_tilt
+    )
+    record_complete_metric(
+        metrics,
+        metric_availability,
+        "max_abs_joint_velocity",
+        lambda: max_abs_joint_velocity,
+    )
+    record_complete_metric(
+        metrics,
+        metric_availability,
+        "max_abs_applied_torque",
+        lambda: max_abs_applied_torque,
+    )
     for term_name, count in termination_term_counts.items():
         normalized_name = re.sub(r"[^a-z0-9]+", "_", term_name.lower()).strip(
             "_"
@@ -775,15 +976,22 @@ def main(
     step_dt = float(env.unwrapped.step_dt)
     env.close()
     recorded_video = _finalize_video(video_path) if video_path is not None else ""
+    telemetry_evidence = telemetry_report(
+        requested=telemetry_path is not None,
+        runner=runner_name,
+        ledger=telemetry_ledger,
+    )
     if telemetry_path is not None:
         telemetry = {
-            "version": 1,
+            "version": 2,
             "run_id": args_cli.run_id,
             "candidate_id": args_cli.candidate_id,
+            "runner": runner_name,
             "environment_index": args_cli.telemetry_env_index,
             "stride": args_cli.telemetry_stride,
             "step_dt_seconds": step_dt,
             "joint_names": telemetry_joint_names,
+            **telemetry_evidence,
             "samples": telemetry_samples,
         }
         telemetry_path.write_text(
@@ -802,6 +1010,7 @@ def main(
         "run_id": args_cli.run_id,
         "status": "completed",
         "candidate_id": args_cli.candidate_id,
+        "runner": runner_name,
         "artifact": args_cli.artifact_kind,
         "scenario_id": args_cli.scenario_id,
         "seed": args_cli.seed,
@@ -810,8 +1019,17 @@ def main(
         "artifact_path": str(artifact_path),
         "video_path": recorded_video,
         "telemetry_path": str(telemetry_path) if telemetry_path is not None else "",
+        "telemetry_status": telemetry_evidence["telemetry_status"],
+        "missing_required_signals": telemetry_evidence[
+            "missing_required_signals"
+        ],
+        "telemetry_required_for_complete_assessment": telemetry_evidence[
+            "telemetry_required_for_complete_assessment"
+        ],
+        "telemetry": telemetry_evidence,
         "training_overlap": bool(args_cli.allow_training_overlap),
         "metrics": metrics,
+        "metric_availability": metric_availability,
         "motion_evidence": {
             "step_dt_seconds": step_dt,
             "peak_steps": peak_steps,
