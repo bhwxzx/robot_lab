@@ -320,14 +320,30 @@ grep -l "Area\*\*: backend" .learnings/*.md
 
 ## Repeated-Compaction Session Handoff
 
-When the same logical task has crossed the repeated-compaction threshold, or
-the exact count is unavailable but provenance, approvals, or current-state
-reconstruction is no longer reliable, read
+Before deciding whether to hand off, use `inspect-context-compactions`. Read
+its `SKILL.md` completely, then run:
+
+```bash
+python3 \
+  .agents/skills/inspect-context-compactions/scripts/inspect_context_compactions.py
+```
+
+The standalone read-only inspector owns the counting, consistency, bounded
+retry, and privacy rules. Do not duplicate or reinterpret them here.
+
+Use a threshold of five verified compactions. If the report is `available` and
+`threshold_reached` is true, read
 [`references/session-handoff.md`](references/session-handoff.md) completely and
-follow it. Do not invent a compaction count. Finish only the current safe atomic
-step, verify live workspace state, write the handoff, tell the user to continue
-in a new session, provide the copyable prompt, and stop expanding the old
-session unless the user explicitly asks to continue.
+follow it. If the report is `unavailable` or `inconsistent`, do not infer a
+count from summaries, token usage, or event text. Trigger the handoff earlier
+only when provenance, approvals, protected files, completed work, or live-state
+reconstruction is no longer reliable. A user request to hand off remains
+sufficient.
+
+Finish only the current safe atomic step, verify live workspace state, write
+the handoff, tell the user to continue in a new session, provide the copyable
+prompt, and stop expanding the old session unless the user explicitly asks to
+continue.
 
 ## Detection Triggers
 
