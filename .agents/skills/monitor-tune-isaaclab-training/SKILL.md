@@ -40,10 +40,6 @@ This skill does not autonomously:
 - select a final checkpoint without showing the evidence to the user;
 - deploy to hardware, qualify hardware readiness, commit, or push any Git repo.
 
-The existing campaign, distributed, and multi-fidelity scripts are legacy
-utilities. Do not invoke them from this workflow unless the user separately
-requests that legacy behavior.
-
 ## Establish the run identity
 
 Before interpreting a run, verify current state rather than reusing an old
@@ -67,13 +63,24 @@ Use `conda run -n isaacsim-5.1` for IsaacLab and RSL-RL commands.
 Collect process health and parse the latest bounded log window:
 
 ```bash
+# First observation: record a baseline. It cannot prove healthy progress.
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/collect_training_health.py \
   --profile-id PROFILE_ID --log ABSOLUTE_LOG \
   --tensorboard ABSOLUTE_EVENT_OR_RUN_DIRECTORY \
   --stale-after-seconds 1200 --pid PID \
   --expected-process-pattern TRAIN_ENTRYPOINT --gpu-index 0 \
-  > HEALTH.json
+  > /ABSOLUTE/EVIDENCE/health-1.json
+
+# Later observation: compare the same run with the saved baseline.
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/collect_training_health.py \
+  --profile-id PROFILE_ID --log ABSOLUTE_LOG \
+  --tensorboard ABSOLUTE_EVENT_OR_RUN_DIRECTORY \
+  --stale-after-seconds 1200 --pid PID \
+  --expected-process-pattern TRAIN_ENTRYPOINT --gpu-index 0 \
+  --previous-health /ABSOLUTE/EVIDENCE/health-1.json \
+  > /ABSOLUTE/EVIDENCE/health-2.json
 
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/summarize_training_log.py \
@@ -81,21 +88,27 @@ conda run -n isaacsim-5.1 python \
 
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/assess_training_run.py \
-  SUMMARY.json --health HEALTH.json --criteria CRITERIA.json \
+  SUMMARY.json --health /ABSOLUTE/EVIDENCE/health-2.json --criteria CRITERIA.json \
   --output ASSESSMENT.json
 ```
 
-Monotonic log or TensorBoard progress outranks process, GPU, checkpoint, and
-W&B file activity. Do not call a run healthy from GPU use or `.wandb` growth.
+Require two identity-compatible observations before calling a run `healthy`.
+Only a monotonic log or TensorBoard step increase confirms healthy progress.
+The first valid observation is `observing`; an unchanged comparison is
+`suspect` until the stale duration and low-GPU evidence confirm `stalled`.
+Treat step regression or snapshot identity mismatch as `unknown`. Process, GPU,
+checkpoint, TensorBoard wall time, and W&B file activity are auxiliary only.
 
 The assessment status is advisory:
 
 - `continue`: evidence is healthy and meaningful metrics are improving;
-- `continue_and_recheck`: healthy but trend or Play evidence is incomplete;
+- `continue_and_recheck`: progress is still `observing` or `suspect`, or a
+  healthy run has incomplete or mixed trend evidence;
 - `consider_stop_plateau`: improvement is below the approved plateau tolerance;
 - `recommend_stop_invalid`: non-finite metrics, confirmed stall, or an approved
   hard constraint failed;
-- `insufficient_evidence`: the run or metric meaning cannot be resolved.
+- `insufficient_evidence`: progress is `unknown` or `stopped`, or the run or
+  metric meaning cannot be resolved.
 
 Never signal the process from an assessment. If the user asks to terminate a
 run, re-resolve the exact process group and follow the repository's bounded

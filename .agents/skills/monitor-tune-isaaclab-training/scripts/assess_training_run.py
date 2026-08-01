@@ -261,21 +261,34 @@ def assess_training(
     if invalid:
         recommendation = "recommend_stop_invalid"
         reason = "nonfinite_stall_or_hard_gate_failure"
-    elif not training_finished and health_state is None:
-        recommendation = "insufficient_evidence"
-        reason = "running_process_health_missing"
+    elif not training_finished:
+        if health_state in {"observing", "suspect"}:
+            recommendation = "continue_and_recheck"
+            reason = "training_progress_requires_another_snapshot"
+        elif health_state != "healthy":
+            recommendation = "insufficient_evidence"
+            reason = "running_process_health_not_confirmed"
+        elif not enough_records or len(required_available) < plateau_required:
+            recommendation = "continue_and_recheck"
+            reason = "insufficient_adjacent_metric_windows"
+        elif plateau_count >= plateau_required and improving_count == 0:
+            recommendation = "consider_stop_plateau"
+            reason = "required_metrics_plateaued"
+        elif improving_count > 0 and degrading_count == 0:
+            recommendation = "continue"
+            reason = "meaningful_improvement_without_hard_failure"
+        else:
+            recommendation = "continue_and_recheck"
+            reason = "mixed_metric_trends"
     elif not enough_records or len(required_available) < plateau_required:
-        recommendation = "continue_and_recheck" if health_state in {"healthy", "observing"} else "insufficient_evidence"
+        recommendation = "insufficient_evidence"
         reason = "insufficient_adjacent_metric_windows"
     elif plateau_count >= plateau_required and improving_count == 0:
         recommendation = "consider_stop_plateau"
         reason = "required_metrics_plateaued"
-    elif improving_count > 0 and degrading_count == 0 and health_state not in {"unknown", "stopped"}:
-        recommendation = "continue"
-        reason = "meaningful_improvement_without_hard_failure"
     else:
         recommendation = "continue_and_recheck"
-        reason = "mixed_metric_trends"
+        reason = "training_finished_no_continue_advice"
 
     if not training_finished:
         convergence = "not_assessed_while_running"

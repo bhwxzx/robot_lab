@@ -60,6 +60,30 @@ class TrainingAdvisorTests(unittest.TestCase):
         self.assertEqual(report["recommendation"], "continue")
         self.assertTrue(report["advisory_only"])
 
+    def test_suspect_health_requires_recheck_even_when_metrics_improve(self) -> None:
+        report = MODULE.assess_training(
+            summary([(10.0, 0.8), (11.0, 0.7), (14.0, 0.5), (15.0, 0.4)]),
+            criteria(),
+            health={"state": "suspect"},
+        )
+        self.assertEqual(report["recommendation"], "continue_and_recheck")
+
+    def test_unknown_health_is_insufficient_even_when_metrics_improve(self) -> None:
+        report = MODULE.assess_training(
+            summary([(10.0, 0.8), (11.0, 0.7), (14.0, 0.5), (15.0, 0.4)]),
+            criteria(),
+            health={"state": "unknown"},
+        )
+        self.assertEqual(report["recommendation"], "insufficient_evidence")
+
+    def test_observing_health_requires_recheck_even_when_metrics_plateau(self) -> None:
+        report = MODULE.assess_training(
+            summary([(10.0, 0.5), (10.0, 0.5), (10.0, 0.5), (10.0, 0.5)]),
+            criteria(),
+            health={"state": "observing"},
+        )
+        self.assertEqual(report["recommendation"], "continue_and_recheck")
+
     def test_plateau_is_advisory(self) -> None:
         report = MODULE.assess_training(
             summary([(10.0, 0.5), (10.0, 0.5), (10.0, 0.5), (10.0, 0.5)]),
@@ -77,6 +101,15 @@ class TrainingAdvisorTests(unittest.TestCase):
             ),
             criteria(),
             health={"state": "healthy"},
+        )
+        self.assertEqual(report["recommendation"], "recommend_stop_invalid")
+        self.assertNotIn("signal", report)
+
+    def test_stalled_health_recommends_stop_without_action(self) -> None:
+        report = MODULE.assess_training(
+            summary([(10.0, 0.8), (11.0, 0.7), (14.0, 0.5), (15.0, 0.4)]),
+            criteria(),
+            health={"state": "stalled"},
         )
         self.assertEqual(report["recommendation"], "recommend_stop_invalid")
         self.assertNotIn("signal", report)

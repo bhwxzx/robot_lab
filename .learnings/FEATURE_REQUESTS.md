@@ -37,6 +37,99 @@ complex
 - **Notes**: 已实现版本 6 契约、分阶段 seed 计划、可恢复单任务执行器、有效配置差异门禁、连续窗口异常检测、稳健排名、文档与合成测试；未增加 MuJoCo，也未启动真实训练或写入真实策略仓库。
 
 ---
+
+## [FEAT-20260731-003] human_guided_advisor_hardening_backlog
+
+**Logged**: 2026-07-31T21:31:53+08:00
+**Priority**: high
+**Status**: pending
+**Area**: config
+
+### Requested Capability
+按风险优先级逐项完善 `monitor-tune-isaaclab-training`，使它在不恢复自动
+campaign、Git mailbox、multi-seed、multi-fidelity 或自动训练控制的前提下，
+可靠完成训练健康判断、收敛评估、机器人遥测、历史经验复用和双机独立调参。
+
+### User Context
+用户保留训练启停、参数修改、checkpoint 最终选择、部署和归档决定权，并要求
+由用户引导逐项修改。当前 Skill 结构、算法画像和现有测试均通过，但删除旧自动
+流程后仍发现健康状态偏乐观、判定阈值未落地、遥测缺失静默吞错、证据路径示例
+不可直接执行、历史经验只能写不能可靠查询、双机来源信息不足及少量旧接口残留。
+
+### Complexity Estimate
+complex
+
+### Prioritized Backlog
+
+1. **P0 — MTA-001: 修正健康状态和继续建议门禁**
+   - **Item Status**: resolved (`2026-07-31T21:52:02+08:00`)
+   - 首次检查没有上一观察基线时只能返回 `observing`，不能仅凭近期
+     TensorBoard wall time 返回 `healthy`。
+   - 只有确认训练 step 单调推进的 `healthy` 状态才能输出 `continue`；
+     `observing`、`suspect` 和 `unknown` 只能要求复查或报告证据不足。
+   - 增加首次观察、step 前进、step 不变、PID 不匹配、低 GPU 利用率和
+     `suspect` 评估分支测试。
+   - **Resolution Evidence**: 已增加完整 previous-health 快照身份校验、
+     `comparison`/`baseline_for_next_check` 输出和严格 assessment 门控；新增
+     9 项健康状态测试并扩展评估测试，完整保留测试共 28 项通过，Skill
+     validator、11 个算法画像、覆盖扫描、11 个 CLI 加载、引用、空白及敏感
+     信息检查均通过。
+
+2. **P0 — MTA-002: 建立用户批准的评估 criteria 契约**
+   - 提供不臆造 LW_Leg 数值的 criteria 模板，明确必需指标、窗口、plateau
+     容差、Play gates、硬失败和观察指标。
+   - 没有绑定到当前 task/run 且经用户批准的 criteria 时，禁止宣称收敛，
+     也禁止给出强停止建议。
+   - 记录 criteria 文件路径、SHA-256、批准时间和适用任务/算法。
+
+3. **P0 — MTA-003: 让机器人遥测缺失显式可见**
+   - 不再用单个 `except ...: pass` 吞掉整步遥测错误。
+   - 为每类信号记录 `available`、`error` 和采样数，并输出
+     `missing_required_signals` 与整体 `telemetry_status`。
+   - AMP-ROA 必需信号缺失时降低置信度或阻止完整评估结论；保持真实机器人
+     readiness 只能由受监督实物测试和遥测确认。
+
+4. **P1 — MTA-004: 统一可执行的证据目录和命令**
+   - 将 health、summary、assessment、Play result、telemetry 和视频统一放入
+     `learnings/policy_tuning/<task>/<run-id>/evidence/` 下的绝对路径。
+   - 修正 `SKILL.md` 中会被 `assess_training_run.py` 拒绝的相对
+     `--output ASSESSMENT.json` 示例。
+   - 明确临时文件与不可变经验事件的边界，避免污染仓库根目录。
+
+5. **P1 — MTA-005: 补全双机独立运行和脏源码来源身份**
+   - 每台机器独立记录 `host_id`、branch、HEAD、训练命令、Hydra overrides、
+     相关配置文件 SHA-256 和评估场景指纹。
+   - 当 `source.dirty=true` 时记录 diff SHA-256 或受控 patch 证据，避免只有
+     `dirty=true` 而无法复现策略。
+   - Git 只用于用户控制的代码和经验同步，不引入跨机任务状态机。
+
+6. **P1 — MTA-006: 增加只读历史经验查询**
+   - 增加轻量只读查询工具，按 task、algorithm、host 和 observation/reward/
+     deployment fingerprints 筛选调参事件。
+   - 输出兼容经验、冲突经验、证据路径和置信度；未知或不匹配上下文不能直接
+     支持参数修改。
+   - 工具只汇总和建议，不生成实验、不选择参数、不启动训练。
+
+7. **P2 — MTA-007: 清理剩余旧接口语义**
+   - 将 `discover_algorithm_profile.py` 从已删除的 `draft_session` 契约改为当前
+     run identity 输入。
+   - 删除 `algorithm-profile-schema.md` 中旧 session/tune-mode 表述。
+   - 删除 `rsl_rl_export_policy.py` 中未使用的必需 `--trial_id`，统一使用
+     `run_id`、`checkpoint_id` 和 `export_run_id`。
+
+### Suggested Implementation
+严格按 MTA-001 到 MTA-007 的顺序推进。同一时间只允许一个项目为
+`in_progress`；每项修改前单独给出文件范围和验证计划并等待用户明确批准。
+每项必须增加针对性测试，运行完整 Skill validator、算法画像检查、保留测试、
+CLI 加载、引用检查、`git diff --check` 和敏感信息检查。完成并报告证据后更新
+本条目中的项目状态，再询问用户是否开始下一项；不得自动扩展范围。
+
+### Metadata
+- Frequency: recurring
+- Related Features: FEAT-20260731-002, monitor-tune-isaaclab-training,
+  closed_loop_policy_evaluation, hardware_feedback_driven_retuning
+
+---
 ## [FEAT-20260731-002] human_guided_isaaclab_training_advisor
 
 **Logged**: 2026-07-31T20:42:28+08:00
