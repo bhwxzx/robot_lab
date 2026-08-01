@@ -1,8 +1,7 @@
 # Human-guided IsaacLab training advisor
 
-This workflow replaces autonomous campaign control with bounded evidence and
-user decisions. Existing campaign and distributed utilities remain available
-only as legacy code and are not part of the advisor path.
+This workflow uses bounded evidence and user decisions. It does not depend on
+autonomous campaign control or distributed coordination.
 
 ## Evidence order
 
@@ -18,6 +17,33 @@ Use evidence in this order:
 
 Never allow a lower-ranked source to overrule stale or non-finite monotonic
 training evidence.
+
+## Two-snapshot health check
+
+The first valid log or TensorBoard observation records a baseline and returns
+`observing`; recent TensorBoard wall time does not make it `healthy`. On a later
+check, pass the absolute path of the prior complete health JSON with
+`--previous-health`. The collector verifies the same profile, log path, PID,
+an earlier observation time, and at least one comparable progress source.
+
+Classify the comparison as follows:
+
+- `healthy`: a comparable log or TensorBoard step increased monotonically;
+- `suspect`: comparable progress is unchanged but the stale interval is not
+  confirmed, or auxiliary activity cannot prove progress;
+- `stalled`: progress stayed unchanged for the configured stale duration while
+  the expected process remains alive and GPU utilization is low;
+- `unknown`: progress regressed, sources disagree, process identity mismatches,
+  or the previous snapshot is not identity-compatible;
+- `completed`: current profile progress reached its target;
+- `stopped`: the identified process ended without confirmed completion.
+
+The output includes `comparison` for the decision evidence and
+`baseline_for_next_check` for the values captured by the current snapshot.
+The explicit `--previous-log-progress`, `--previous-tensorboard-step`, and
+`--previous-observed-at` options remain available for compatibility, but do not
+provide the full profile, log, and PID identity validation of
+`--previous-health`.
 
 ## Assessment criteria
 
@@ -67,16 +93,17 @@ tolerance. Hard limits and non-finite metrics dominate plateau logic.
 
 ## Decision meanings
 
-- `continue`: process evidence is healthy and at least one required metric has
-  meaningful positive improvement without a hard failure.
-- `continue_and_recheck`: the run is healthy but required trend or Play
-  evidence is incomplete or mixed.
+- `continue`: process evidence is `healthy` and at least one required metric
+  has meaningful positive improvement without a hard failure. No other health
+  state may produce this recommendation.
+- `continue_and_recheck`: progress is `observing` or `suspect`, or the run is
+  healthy but required trend or Play evidence is incomplete or mixed.
 - `consider_stop_plateau`: enough adjacent windows exist and the configured
   number of required metrics are plateaued without meaningful improvement.
 - `recommend_stop_invalid`: confirmed stall, non-finite metric, or approved hard
   training/Play gate failure.
-- `insufficient_evidence`: profile, metric direction, records, or process
-  identity is unresolved.
+- `insufficient_evidence`: progress is `unknown` or `stopped`, or the profile,
+  metric direction, records, or process identity is unresolved.
 
 The tool emits advice only. It never signals a process.
 
