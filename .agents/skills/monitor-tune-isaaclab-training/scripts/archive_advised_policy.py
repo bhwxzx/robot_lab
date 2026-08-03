@@ -10,10 +10,19 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from policy_export_evidence import (  # noqa: E402
+    PolicyExportEvidenceError,
+    validate_export_bundle,
+)
 
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -71,9 +80,9 @@ def _validated_artifact(item: Any, kind: str) -> tuple[Path, str]:
     return path, expected
 
 
-def _validate_manifest(manifest: dict[str, Any]) -> None:
-    if manifest.get("version") != 1 or manifest.get("archive_authorized") is not True:
-        raise ArchiveError("version-1 manifest with archive_authorized=true is required")
+def _validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
+    if manifest.get("version") != 2 or manifest.get("archive_authorized") is not True:
+        raise ArchiveError("version-2 manifest with archive_authorized=true is required")
     for field in ("task", "algorithm", "runner", "description_notes"):
         if not isinstance(manifest.get(field), str):
             raise ArchiveError(f"{field} must be a string")
@@ -101,11 +110,54 @@ def _validate_manifest(manifest: dict[str, Any]) -> None:
     artifacts = manifest.get("artifacts")
     if not isinstance(artifacts, dict):
         raise ArchiveError("artifacts must be an object")
+    export_receipt = manifest.get("export_receipt")
+    if not isinstance(export_receipt, dict):
+        raise ArchiveError("export_receipt must be an object")
+    export_path = export_receipt.get("path")
+    export_sha256 = export_receipt.get("sha256")
+    if not isinstance(export_path, str) or not isinstance(export_sha256, str):
+        raise ArchiveError("export_receipt path and SHA-256 are required")
+    try:
+        export_validation = validate_export_bundle(Path(export_path))
+    except PolicyExportEvidenceError as exc:
+        raise ArchiveError(str(exc)) from exc
+    if export_validation["receipt"]["sha256"] != export_sha256:
+        raise ArchiveError("export receipt SHA-256 mismatch")
+    export_document = export_validation["document"]
+    selection_document = export_validation["selection_document"]
+    for field in ("task", "algorithm", "runner"):
+        if manifest[field] != selection_document[field]:
+            raise ArchiveError(f"manifest {field} differs from export receipt")
+    selected_checkpoint = selection_document["checkpoint"]
+    if any(
+        checkpoint.get(field) != selected_checkpoint.get(field)
+        for field in ("path", "sha256", "iteration")
+    ):
+        raise ArchiveError("selected checkpoint differs from export receipt")
+    output_values = export_document["outputs"]
+    for kind in ("jit", "onnx"):
+        expected_artifact = {
+            "path": output_values[kind]["path"],
+            "sha256": output_values[kind]["sha256"],
+        }
+        if artifacts.get(kind) != expected_artifact:
+            raise ArchiveError(f"{kind} artifact differs from export receipt")
     evaluation = manifest.get("evaluation")
-    if not isinstance(evaluation, dict) or not isinstance(evaluation.get("result_paths"), list):
-        raise ArchiveError("evaluation.result_paths must be an array")
-    if any(not isinstance(path, str) or not path for path in evaluation["result_paths"]):
-        raise ArchiveError("every evaluation result path must be a non-empty string")
+    if not isinstance(evaluation, dict) or not isinstance(evaluation.get("results"), list):
+        raise ArchiveError("evaluation.results must be an array of path/SHA-256 references")
+    expected_evaluations = [
+        {"path": item["path"], "sha256": item["sha256"]}
+        for item in selection_document["evaluation_results"]
+    ]
+    if evaluation["results"] != expected_evaluations:
+        raise ArchiveError("evaluation results differ from checkpoint selection")
+    identity_source = selection_document["run_identity"]["document"]["source"]
+    if source != {
+        "commit": identity_source["head"],
+        "dirty": identity_source["dirty"],
+    }:
+        raise ArchiveError("manifest source differs from run identity")
+    return export_validation
 
 
 def _existing_pairs(collection: Path) -> set[tuple[str, str]]:
@@ -121,7 +173,7 @@ def _existing_pairs(collection: Path) -> set[tuple[str, str]]:
 def _description(manifest: dict[str, Any], destination_name: str) -> str:
     checkpoint = manifest["selected_checkpoint"]
     artifacts = manifest["artifacts"]
-    result_paths = manifest["evaluation"]["result_paths"]
+    result_paths = [item["path"] for item in manifest["evaluation"]["results"]]
     lines = [
         "策略说明",
         "",
@@ -153,7 +205,7 @@ def _description(manifest: dict[str, Any], destination_name: str) -> str:
 
 
 def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) -> dict[str, Any]:
-    _validate_manifest(manifest)
+    export_validation = _validate_manifest(manifest)
     storage_root = Path(manifest.get("storage_root", ""))
     collection_value = manifest.get("collection")
     if not storage_root.is_absolute() or not storage_root.is_dir() or storage_root.is_symlink():
@@ -192,6 +244,7 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
         if _sha256(copied_jit) != jit_hash or _sha256(copied_onnx) != onnx_hash:
             raise ArchiveError("copied artifact verification failed")
         archive_manifest = dict(manifest)
+        archive_manifest["validated_export"] = export_validation["document"]
         archive_manifest["hardware_ready"] = False
         archive_manifest["archive_path"] = str(destination)
         archive_manifest["hardware_boundary"] = HARDWARE_NOTE
@@ -207,7 +260,7 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
         if temporary.exists():
             shutil.rmtree(temporary)
     return {
-        "version": 1,
+        "version": 2,
         "archive_path": str(destination),
         "files": {
             "jit": {"path": str(destination / "policy.pt"), "sha256": jit_hash},
@@ -218,6 +271,7 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
         "git_action": "none",
         "hardware_ready": False,
         "hardware_boundary": HARDWARE_NOTE,
+        "export_receipt": manifest["export_receipt"],
     }
 
 

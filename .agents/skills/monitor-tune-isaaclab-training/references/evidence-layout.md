@@ -13,10 +13,15 @@ learnings/policy_tuning/<task>/<run-id>/
 │   ├── source/source-<snapshot-id>.patch
 │   ├── training/summary-<snapshot-id>.json
 │   ├── training/assessment-<snapshot-id>.json
-│   └── play/<evaluation-id>/
-│       ├── result.json
-│       ├── telemetry.json
-│       └── video.mp4
+│   ├── checkpoint_selection/selection-<selection-id>.json
+│   ├── play/<evaluation-id>/
+│   │   ├── result.json
+│   │   ├── telemetry.json
+│   │   └── video.mp4
+│   └── export/<export-id>/
+│       ├── policy.pt
+│       ├── policy.onnx
+│       └── receipt.json
 └── <timestamp>__<event-id>.json
 ```
 
@@ -32,6 +37,7 @@ eval "$(
     .agents/skills/monitor-tune-isaaclab-training/scripts/prepare_evidence_layout.py \
     --task "$TASK" --run-id "$RUN_ID" \
     --snapshot-id "$SNAPSHOT_ID" --evaluation-id "$EVALUATION_ID" \
+    --selection-id "$SELECTION_ID" --export-id "$EXPORT_ID" \
     --format shell
 )"
 ```
@@ -39,18 +45,21 @@ eval "$(
 The assignments provide `RUN_ROOT`, `EVIDENCE_ROOT`, `CRITERIA_PATH`,
 `HEALTH_PATH`, `SOURCE_IDENTITY_PATH`, `EFFECTIVE_CONFIG_PATH`,
 `SOURCE_PATCH_PATH`, `SUMMARY_PATH`, `ASSESSMENT_PATH`, `PLAY_RESULT_PATH`,
-`TELEMETRY_PATH`, and `VIDEO_PATH`.
+`TELEMETRY_PATH`, `VIDEO_PATH`, `CHECKPOINT_SELECTION_PATH`, `EXPORT_JIT_PATH`,
+`EXPORT_ONNX_PATH`, and `EXPORT_RECEIPT_PATH`.
 Omit `--evaluation-id` when no Play
 artifacts are needed; shell output then explicitly unsets the three Play
 variables so values from an earlier evaluation cannot leak into the current
 snapshot. The default JSON format returns `null` for those paths and also
 reports the created directories.
+Omit `--selection-id` or `--export-id` when those artifacts are not needed;
+their shell variables are explicitly unset for the same reason.
 
 The helper accepts only bounded ASCII identifiers, rejects traversal and every
 existing symlink component, creates directories but not evidence files, and
 fails if any returned target already exists. It performs no Git operation.
 Do not bypass a failure by deleting or overwriting evidence; choose a new
-snapshot or evaluation ID.
+snapshot, evaluation, selection, or export ID.
 
 ## Write evidence once
 
@@ -92,6 +101,13 @@ published telemetry/video file by canonical absolute path and SHA-256.
 Telemetry version 3 repeats the same `evaluation` and `inputs` objects. Downstream
 consumers must revalidate the complete bundle rather than trusting path strings
 or the presence of a partial work file.
+
+Checkpoint selection receipts and export artifacts use their own immutable
+directories. Create a selection receipt only after explicit user choice. The
+exporter writes only below its private `.attempt/`, publishes JIT and ONNX with
+non-overwriting hard links, and publishes the version-3 `receipt.json` last.
+See [`policy-export.md`](policy-export.md) for the complete source, parity, and
+archive validation contract.
 
 ## Keep events immutable and separate
 

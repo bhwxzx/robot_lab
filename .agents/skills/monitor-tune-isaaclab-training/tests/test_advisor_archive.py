@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "archive_advised_policy.py"
@@ -46,13 +47,15 @@ class AdvisorArchiveTests(unittest.TestCase):
         self.checkpoint.write_bytes(b"checkpoint")
         self.jit.write_bytes(b"jit")
         self.onnx.write_bytes(b"onnx")
+        self.export_receipt = self.artifacts / "receipt.json"
+        self.export_receipt.write_text("{}\n", encoding="utf-8")
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
     def manifest(self) -> dict:
         return {
-            "version": 1,
+            "version": 2,
             "archive_authorized": True,
             "storage_root": str(self.storage),
             "collection": "LW/leg_loco",
@@ -68,22 +71,64 @@ class AdvisorArchiveTests(unittest.TestCase):
                 "jit": {"path": str(self.jit), "sha256": sha(self.jit)},
                 "onnx": {"path": str(self.onnx), "sha256": sha(self.onnx)},
             },
-            "source": {"commit": "abc123", "dirty": True},
+            "source": {"commit": "1" * 40, "dirty": False},
             "parameters": {"action_rate_l2": -0.15},
-            "evaluation": {"result_paths": ["/tmp/result.json"]},
+            "evaluation": {
+                "results": [{"path": "/tmp/result.json", "sha256": "3" * 64}]
+            },
+            "export_receipt": {
+                "path": str(self.export_receipt),
+                "sha256": sha(self.export_receipt),
+            },
             "description_notes": "supervised test candidate",
         }
 
+    def export_validation(self) -> dict:
+        manifest = self.manifest()
+        selection = {
+            "task": manifest["task"],
+            "algorithm": manifest["algorithm"],
+            "runner": manifest["runner"],
+            "checkpoint": manifest["selected_checkpoint"],
+            "evaluation_results": [
+                {**manifest["evaluation"]["results"][0], "evaluation_id": "eval-1"}
+            ],
+            "run_identity": {
+                "document": {
+                    "source": {"head": "1" * 40, "dirty": False}
+                }
+            },
+        }
+        document = {
+            "inputs": {"checkpoint_selection": {"path": "/tmp/selection.json"}},
+            "outputs": {
+                "jit": {"path": str(self.jit), "sha256": sha(self.jit)},
+                "onnx": {"path": str(self.onnx), "sha256": sha(self.onnx)},
+            },
+        }
+        return {
+            "receipt": {"sha256": sha(self.export_receipt)},
+            "selection_document": selection,
+            "document": document,
+        }
+
+    def archive(self, manifest: dict, timestamp: str) -> dict:
+        with patch.object(
+            MODULE,
+            "validate_export_bundle",
+            return_value=self.export_validation(),
+        ):
+            return MODULE.archive_policy(manifest, timestamp=timestamp)
+
     def test_archives_four_files_without_git_action(self) -> None:
-        receipt = MODULE.archive_policy(
-            self.manifest(), timestamp="2026-07-31-18-00-00"
-        )
+        receipt = self.archive(self.manifest(), "2026-07-31-18-00-00")
         destination = Path(receipt["archive_path"])
         self.assertEqual(
             {path.name for path in destination.iterdir()},
             {"policy.pt", "policy.onnx", "策略说明.txt", "archive_manifest.json"},
         )
         self.assertEqual(receipt["git_action"], "none")
+        self.assertEqual(receipt["version"], 2)
         self.assertFalse(receipt["hardware_ready"])
         archived_manifest = json.loads((destination / "archive_manifest.json").read_text(encoding="utf-8"))
         self.assertFalse(archived_manifest["hardware_ready"])
@@ -91,14 +136,20 @@ class AdvisorArchiveTests(unittest.TestCase):
     def test_refuses_dirty_storage(self) -> None:
         (self.storage / "dirty.txt").write_text("dirty", encoding="utf-8")
         with self.assertRaisesRegex(MODULE.ArchiveError, "must be clean"):
-            MODULE.archive_policy(self.manifest(), timestamp="2026-07-31-18-00-00")
+            self.archive(self.manifest(), "2026-07-31-18-00-00")
 
     def test_refuses_duplicate_pair(self) -> None:
-        MODULE.archive_policy(self.manifest(), timestamp="2026-07-31-18-00-00")
+        self.archive(self.manifest(), "2026-07-31-18-00-00")
         subprocess.run(["git", "-C", str(self.storage), "add", "."], check=True)
         subprocess.run(["git", "-C", str(self.storage), "commit", "-qm", "archive"], check=True)
         with self.assertRaisesRegex(MODULE.ArchiveError, "already exists"):
-            MODULE.archive_policy(self.manifest(), timestamp="2026-07-31-18-00-01")
+            self.archive(self.manifest(), "2026-07-31-18-00-01")
+
+    def test_rejects_manifest_artifact_that_differs_from_export(self) -> None:
+        manifest = self.manifest()
+        manifest["artifacts"]["jit"]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.ArchiveError, "differs from export"):
+            self.archive(manifest, "2026-07-31-18-00-00")
 
 
 if __name__ == "__main__":

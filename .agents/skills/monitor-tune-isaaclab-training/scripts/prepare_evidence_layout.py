@@ -51,6 +51,8 @@ def prepare_evidence_layout(
     run_id: str,
     snapshot_id: str,
     evaluation_id: str | None = None,
+    selection_id: str | None = None,
+    export_id: str | None = None,
 ) -> dict[str, Any]:
     """Create safe evidence directories and return new absolute artifact paths."""
     for name, value in (
@@ -61,6 +63,10 @@ def prepare_evidence_layout(
         _validate_identifier(name, value)
     if evaluation_id is not None:
         _validate_identifier("evaluation-id", evaluation_id)
+    if selection_id is not None:
+        _validate_identifier("selection-id", selection_id)
+    if export_id is not None:
+        _validate_identifier("export-id", export_id)
 
     if not tuning_root.is_absolute():
         raise EvidenceLayoutError("tuning root must be absolute")
@@ -75,7 +81,10 @@ def prepare_evidence_layout(
     source_dir = evidence_root / "source"
     training_dir = evidence_root / "training"
     play_dir = evidence_root / "play"
+    selection_dir = evidence_root / "checkpoint_selection"
+    export_root = evidence_root / "export"
     evaluation_dir = play_dir / evaluation_id if evaluation_id is not None else None
+    export_dir = export_root / export_id if export_id is not None else None
 
     paths: dict[str, Path | None] = {
         "criteria": criteria_dir / f"criteria-{snapshot_id}.json",
@@ -88,12 +97,30 @@ def prepare_evidence_layout(
         "play_result": evaluation_dir / "result.json" if evaluation_dir else None,
         "telemetry": evaluation_dir / "telemetry.json" if evaluation_dir else None,
         "video": evaluation_dir / "video.mp4" if evaluation_dir else None,
+        "checkpoint_selection": (
+            selection_dir / f"selection-{selection_id}.json"
+            if selection_id is not None
+            else None
+        ),
+        "export_jit": export_dir / "policy.pt" if export_dir else None,
+        "export_onnx": export_dir / "policy.onnx" if export_dir else None,
+        "export_receipt": export_dir / "receipt.json" if export_dir else None,
     }
     _require_new_targets([path for path in paths.values() if path is not None])
 
-    directories = [criteria_dir, health_dir, source_dir, training_dir, play_dir]
+    directories = [
+        criteria_dir,
+        health_dir,
+        source_dir,
+        training_dir,
+        play_dir,
+        selection_dir,
+        export_root,
+    ]
     if evaluation_dir is not None:
         directories.append(evaluation_dir)
+    if export_dir is not None:
+        directories.append(export_dir)
     try:
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
@@ -110,6 +137,8 @@ def prepare_evidence_layout(
         "run_id": run_id,
         "snapshot_id": snapshot_id,
         "evaluation_id": evaluation_id,
+        "selection_id": selection_id,
+        "export_id": export_id,
         "run_root": str(run_root),
         "evidence_root": str(evidence_root),
         "directories": {
@@ -118,7 +147,10 @@ def prepare_evidence_layout(
             "source": str(source_dir),
             "training": str(training_dir),
             "play": str(play_dir),
+            "checkpoint_selection": str(selection_dir),
+            "export": str(export_root),
             "evaluation": str(evaluation_dir) if evaluation_dir else None,
+            "export_attempt": str(export_dir) if export_dir else None,
         },
         "paths": {
             name: str(path) if path is not None else None
@@ -141,6 +173,10 @@ def _shell_assignments(layout: dict[str, Any]) -> str:
         "PLAY_RESULT_PATH": layout["paths"]["play_result"],
         "TELEMETRY_PATH": layout["paths"]["telemetry"],
         "VIDEO_PATH": layout["paths"]["video"],
+        "CHECKPOINT_SELECTION_PATH": layout["paths"]["checkpoint_selection"],
+        "EXPORT_JIT_PATH": layout["paths"]["export_jit"],
+        "EXPORT_ONNX_PATH": layout["paths"]["export_onnx"],
+        "EXPORT_RECEIPT_PATH": layout["paths"]["export_receipt"],
     }
     assignments = [
         f"{name}={shlex.quote(value)}"
@@ -159,6 +195,8 @@ def main() -> int:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--snapshot-id", required=True)
     parser.add_argument("--evaluation-id")
+    parser.add_argument("--selection-id")
+    parser.add_argument("--export-id")
     parser.add_argument("--format", choices=("json", "shell"), default="json")
     args = parser.parse_args()
     try:
@@ -168,6 +206,8 @@ def main() -> int:
             run_id=args.run_id,
             snapshot_id=args.snapshot_id,
             evaluation_id=args.evaluation_id,
+            selection_id=args.selection_id,
+            export_id=args.export_id,
         )
     except EvidenceLayoutError as exc:
         parser.error(str(exc))
