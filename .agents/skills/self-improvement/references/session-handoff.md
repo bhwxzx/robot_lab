@@ -48,9 +48,10 @@ above.
    - live facts verified during handoff;
    - conversation-derived decisions that may now be stale;
    - pending or explicitly unverified work.
-5. Create
+5. Ensure `.learnings/session_handoffs/` exists, then create the local-only
    `.learnings/session_handoffs/YYYYMMDD-HHMMSS-<task-slug>.md`. Use ASCII
-   lowercase letters, digits, and hyphens in `<task-slug>`.
+   lowercase letters, digits, and hyphens in `<task-slug>`. These handoff
+   documents are ignored by Git and must not be staged or committed.
 6. Scan the document for passwords, PATs, API keys, private tokens, cookies,
    credential-helper payloads, and unnecessary personal data. Record remote
    names or repository URLs only when required for continuity.
