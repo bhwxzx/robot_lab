@@ -1,0 +1,258 @@
+{
+  "artifact": "native",
+  "artifact_path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_rough_amp_roa/2026-08-01_16-31-56/model_100000.pt",
+  "artifact_sha256": "63297f55d4ae038f7394aa24ddc1da949d192fd4356b06f6a15ce70f9da4fb87",
+  "candidate_id": "model-100000",
+  "checkpoint_path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_rough_amp_roa/2026-08-01_16-31-56/model_100000.pt",
+  "checkpoint_sha256": "63297f55d4ae038f7394aa24ddc1da949d192fd4356b06f6a15ce70f9da4fb87",
+  "duration_steps": 120,
+  "evaluation": {
+    "candidate_id": "model-100000",
+    "evaluation_id": "aeo-005-camera-001",
+    "run_id": "2026-08-01_16-31-56",
+    "runner": "OnPolicyRunnerAmpROA",
+    "task": "RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0"
+  },
+  "inputs": {
+    "artifact": {
+      "kind": "native",
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_rough_amp_roa/2026-08-01_16-31-56/model_100000.pt",
+      "sha256": "63297f55d4ae038f7394aa24ddc1da949d192fd4356b06f6a15ce70f9da4fb87"
+    },
+    "checkpoint": {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_rough_amp_roa/2026-08-01_16-31-56/model_100000.pt",
+      "sha256": "63297f55d4ae038f7394aa24ddc1da949d192fd4356b06f6a15ce70f9da4fb87"
+    },
+    "resource_mode": {
+      "device": "cuda:0",
+      "follow_robot_camera": true,
+      "idle_gpu_required": true,
+      "num_envs": 1,
+      "telemetry_env_index": 0,
+      "telemetry_requested": false,
+      "telemetry_stride": 1,
+      "training_overlap": false,
+      "video_requested": true
+    },
+    "run_identity": {
+      "file_sha256": "8ecfd2138bd044dec5f033ca22b3045020c196a0ce53b7ceeec31035938d3853",
+      "identity_sha256": "69d6f5517cd6d248455788ef31d7c7344ca2d7ba0fe81156207ad9009453e05f",
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0/2026-08-01_16-31-56/evidence/source/identity-aeo-005.json"
+    },
+    "scenario": {
+      "contract": {
+        "command_schedule": [
+          {
+            "command": [
+              0.5,
+              0.0,
+              0.0
+            ],
+            "end_step": 119,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 120,
+        "num_envs": 1,
+        "scenario_id": "aeo-005-camera-follow",
+        "scenario_overrides": {},
+        "seed": 42
+      },
+      "sha256": "a047b17cbe0264e3a8f6cd0b0d5eca940c37ffdc5030835c88d15e93ee058492"
+    }
+  },
+  "metric_availability": {
+    "max_abs_applied_torque": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "applied_torque"
+      ]
+    },
+    "max_abs_joint_velocity": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "joint_velocity"
+      ]
+    },
+    "max_tilt": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "projected_gravity_b"
+      ]
+    },
+    "tilt_rms": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "projected_gravity_b"
+      ]
+    },
+    "tracking_xy_rmse": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "command",
+        "root_linear_velocity_b"
+      ]
+    },
+    "tracking_yaw_rmse": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "command",
+        "root_angular_velocity_b"
+      ]
+    }
+  },
+  "metrics": {
+    "action_rate_rms": 0.35547711027626544,
+    "illegal_contact_rate": 0.0,
+    "max_abs_action": 4.005465984344482,
+    "max_abs_action_error": 0.0,
+    "max_abs_applied_torque": 83.95518493652344,
+    "max_abs_joint_velocity": 12.191176414489746,
+    "max_tilt": 0.22751565277576447,
+    "mean_reward": 0.10147841408227881,
+    "real_time_factor": 0.40110966715244173,
+    "termination_rate": 0.0,
+    "termination_term_illegal_contact_rate": 0.0,
+    "termination_term_terrain_out_of_bounds_rate": 0.0,
+    "termination_term_time_out_rate": 0.0,
+    "tilt_rms": 0.10309601118140037,
+    "timeout_rate": 0.0,
+    "tracking_xy_rmse": 0.3288162543186702,
+    "tracking_yaw_rmse": 0.35776097535327106
+  },
+  "missing_required_signals": [
+    "action",
+    "applied_torque",
+    "command",
+    "done",
+    "joint_names",
+    "joint_position",
+    "joint_velocity",
+    "projected_gravity_b",
+    "reward",
+    "root_angular_velocity_b",
+    "root_linear_velocity_b",
+    "timeout"
+  ],
+  "motion_evidence": {
+    "peak_steps": {
+      "max_abs_action": 9,
+      "max_abs_action_error": null,
+      "max_abs_applied_torque": 12,
+      "max_abs_joint_velocity": 111,
+      "max_tilt": 15
+    },
+    "review_windows": [
+      {
+        "end_seconds": 0.8,
+        "end_step": 39,
+        "evidence": [
+          "max_abs_action"
+        ],
+        "start_seconds": 0.0,
+        "start_step": 0
+      },
+      {
+        "end_seconds": 0.86,
+        "end_step": 42,
+        "evidence": [
+          "max_abs_applied_torque"
+        ],
+        "start_seconds": 0.0,
+        "start_step": 0
+      },
+      {
+        "end_seconds": 0.92,
+        "end_step": 45,
+        "evidence": [
+          "max_tilt"
+        ],
+        "start_seconds": 0.0,
+        "start_step": 0
+      },
+      {
+        "end_seconds": 2.4,
+        "end_step": 119,
+        "evidence": [
+          "max_abs_joint_velocity"
+        ],
+        "start_seconds": 1.62,
+        "start_step": 81
+      }
+    ],
+    "step_dt_seconds": 0.02,
+    "termination_first_steps": {}
+  },
+  "outputs": {
+    "telemetry": null,
+    "video": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0/2026-08-01_16-31-56/evidence/play/aeo-005-camera-001/video.mp4",
+      "sha256": "b8975b737dbbb50690bc9ba90c5b6b0841064a1669dee0a87a2d4f268ffd79e9"
+    }
+  },
+  "result_path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0/2026-08-01_16-31-56/evidence/play/aeo-005-camera-001/result.json",
+  "run_id": "2026-08-01_16-31-56",
+  "run_identity_sha256": "69d6f5517cd6d248455788ef31d7c7344ca2d7ba0fe81156207ad9009453e05f",
+  "runner": "OnPolicyRunnerAmpROA",
+  "scenario_id": "aeo-005-camera-follow",
+  "scenario_sha256": "a047b17cbe0264e3a8f6cd0b0d5eca940c37ffdc5030835c88d15e93ee058492",
+  "seed": 42,
+  "status": "completed",
+  "telemetry": {
+    "missing_required_signals": [
+      "action",
+      "applied_torque",
+      "command",
+      "done",
+      "joint_names",
+      "joint_position",
+      "joint_velocity",
+      "projected_gravity_b",
+      "reward",
+      "root_angular_velocity_b",
+      "root_linear_velocity_b",
+      "timeout"
+    ],
+    "required_signals": [
+      "action",
+      "applied_torque",
+      "command",
+      "done",
+      "joint_names",
+      "joint_position",
+      "joint_velocity",
+      "projected_gravity_b",
+      "reward",
+      "root_angular_velocity_b",
+      "root_linear_velocity_b",
+      "timeout"
+    ],
+    "signal_status": {},
+    "telemetry_required_for_complete_assessment": true,
+    "telemetry_status": "not_requested"
+  },
+  "telemetry_path": "",
+  "telemetry_required_for_complete_assessment": true,
+  "telemetry_status": "not_requested",
+  "training_overlap": false,
+  "version": 2,
+  "video_path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0/2026-08-01_16-31-56/evidence/play/aeo-005-camera-001/video.mp4"
+}
