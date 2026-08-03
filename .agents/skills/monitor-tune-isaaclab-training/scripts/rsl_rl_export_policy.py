@@ -27,8 +27,8 @@ import cli_args  # isort: skip  # noqa: E402
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--task", required=True)
 parser.add_argument("--agent", default="rsl_rl_cfg_entry_point")
-parser.add_argument("--candidate_id", required=True)
-parser.add_argument("--trial_id", required=True)
+parser.add_argument("--run_id", required=True)
+parser.add_argument("--checkpoint_id", required=True)
 parser.add_argument("--checkpoint_sha256", required=True)
 parser.add_argument("--export_run_id", required=True)
 parser.add_argument("--jit_path", required=True)
@@ -447,9 +447,10 @@ def main(
                 "max_abs_action_error": error,
             }
         result = {
-            "version": 1,
+            "version": 2,
+            "run_id": args_cli.run_id,
+            "checkpoint_id": args_cli.checkpoint_id,
             "export_run_id": args_cli.export_run_id,
-            "candidate_id": args_cli.candidate_id,
             "checkpoint_path": str(checkpoint_path),
             "checkpoint_sha256": args_cli.checkpoint_sha256,
             "status": "completed",

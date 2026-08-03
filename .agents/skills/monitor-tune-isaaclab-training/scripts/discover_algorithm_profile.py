@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -18,6 +20,7 @@ from algorithm_profiles import (
     normalize_metric_name,
     profile_fingerprint,
 )
+from capture_run_identity import RunIdentityError, validate_run_identity
 
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
@@ -26,87 +29,211 @@ NUMERIC_LABEL_RE = re.compile(
     re.IGNORECASE,
 )
 CLASS_NAME_RE = re.compile(r"^\s*class_name\s*:\s*['\"]?([A-Za-z0-9_]+)", re.MULTILINE)
+PROFILE_BACKENDS = {"rsl_rl", "skrl", "cusrl", "custom"}
 
 
-def _load_draft(path: Path) -> dict[str, Any]:
+def _validate_identity(data: Any) -> dict[str, Any]:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise ProfileError(f"draft session does not exist: {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise ProfileError(f"invalid draft JSON at line {exc.lineno}: {exc.msg}") from exc
-    if not isinstance(data, dict) or not isinstance(data.get("training"), dict):
-        raise ProfileError("draft session must contain a training object")
+        validate_run_identity(data)
+    except RunIdentityError as exc:
+        raise ProfileError(str(exc)) from exc
+    assert isinstance(data, dict)
+    for field in ("backend", "algorithm", "runner"):
+        if data[field].casefold() == "auto":
+            raise ProfileError(f"run_identity.{field} cannot use legacy auto semantics")
     return data
 
 
-def _infer_backend(command: list[Any]) -> str:
-    joined = " ".join(str(item) for item in command).lower()
-    if "rsl_rl" in joined:
-        return "rsl_rl"
-    if "skrl" in joined:
-        return "skrl"
-    if "cusrl" in joined:
-        return "cusrl"
-    return "custom"
-
-
-def _config_class_names(path: Path | None) -> list[str]:
-    if path is None:
-        return []
+def _load_run_identity(path: Path) -> dict[str, Any]:
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise ProfileError(f"run identity does not exist: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise ProfileError(
+            f"invalid run identity JSON at line {exc.lineno}: {exc.msg}"
+        ) from exc
+    return _validate_identity(data)
+
+
+def _resolve_profile_backend(command: list[str], declared_backend: str) -> tuple[str, str]:
+    joined = " ".join(str(item) for item in command).lower()
+    normalized_declared = declared_backend.casefold()
+    detected = [
+        backend
+        for backend in ("rsl_rl", "skrl", "cusrl")
+        if backend in joined
+    ]
+    if len(detected) > 1:
+        raise ProfileError(
+            "training command contains multiple algorithm backend markers: "
+            + ", ".join(detected)
+        )
+    if detected:
+        backend = detected[0]
+        if normalized_declared in PROFILE_BACKENDS and normalized_declared != backend:
+            raise ProfileError(
+                "run identity backend conflicts with the training command backend"
+            )
+        return backend, "training_command"
+    if normalized_declared in PROFILE_BACKENDS:
+        return normalized_declared, "run_identity"
+    return "custom", "training_command_fallback"
+
+
+def _validated_config(
+    run_identity: dict[str, Any],
+    path: Path | None,
+) -> tuple[list[str], dict[str, str] | None]:
+    if path is None:
+        return [], None
+    try:
+        resolved_path = path.resolve(strict=True)
+        content = resolved_path.read_bytes()
     except FileNotFoundError as exc:
         raise ProfileError(f"config file does not exist: {path}") from exc
-    return CLASS_NAME_RE.findall(text)
+    repository_root = Path(run_identity["source"]["repository_root"]).resolve()
+    try:
+        relative_path = resolved_path.relative_to(repository_root).as_posix()
+    except ValueError as exc:
+        raise ProfileError(
+            "dumped config is outside the run identity repository root"
+        ) from exc
+    recorded = {
+        entry["path"]: entry["sha256"]
+        for entry in run_identity["config_files"]
+    }
+    if relative_path not in recorded:
+        raise ProfileError(
+            "dumped config is not listed in run_identity.config_files"
+        )
+    actual_sha256 = hashlib.sha256(content).hexdigest()
+    if actual_sha256 != recorded[relative_path]:
+        raise ProfileError(
+            "dumped config sha256 does not match run_identity.config_files"
+        )
+    text = content.decode("utf-8", errors="replace")
+    return CLASS_NAME_RE.findall(text), {
+        "path": relative_path,
+        "sha256": actual_sha256,
+    }
 
 
-def _infer_identity(draft: dict[str, Any], config_path: Path | None) -> dict[str, str]:
-    training = draft["training"]
-    command = training.get("command")
-    if not isinstance(command, list) or not command:
-        raise ProfileError("draft training.command must be a non-empty argv array")
-    algorithm_obj = draft.get("algorithm")
-    if not isinstance(algorithm_obj, dict):
-        algorithm_obj = {}
-    backend = algorithm_obj.get("backend")
-    if not isinstance(backend, str) or backend in {"", "auto"}:
-        backend = _infer_backend(command)
-    algorithm = algorithm_obj.get("name")
-    runner = algorithm_obj.get("runner_class")
+def _single_config_candidate(label: str, candidates: list[str]) -> str | None:
+    unique = sorted(set(candidates))
+    if len(unique) > 1:
+        raise ProfileError(
+            f"dumped config contains ambiguous {label} class names: "
+            + ", ".join(unique)
+        )
+    return unique[0] if unique else None
 
-    class_names = _config_class_names(config_path)
-    if not isinstance(runner, str) or runner in {"", "auto"}:
-        runner_candidates = [name for name in class_names if "Runner" in name]
-        runner = runner_candidates[0] if runner_candidates else "unknown"
-    if not isinstance(algorithm, str) or algorithm in {"", "auto"}:
-        algorithm_candidates = [
+
+def _resolve_identity(
+    run_identity: dict[str, Any],
+    config_path: Path | None,
+) -> tuple[dict[str, str], dict[str, Any]]:
+    backend, backend_source = _resolve_profile_backend(
+        run_identity["training"]["command"],
+        run_identity["backend"],
+    )
+    declared_algorithm = run_identity["algorithm"]
+    declared_runner = run_identity["runner"]
+    class_names, config_file = _validated_config(run_identity, config_path)
+    config_runner = _single_config_candidate(
+        "runner",
+        [name for name in class_names if "Runner" in name],
+    )
+    config_algorithm = _single_config_candidate(
+        "algorithm",
+        [
             name
             for name in class_names
-            if name != runner and ("PPO" in name or name == "Distillation")
-        ]
-        algorithm = algorithm_candidates[0] if algorithm_candidates else "unknown"
-    return {"backend": backend, "name": algorithm, "runner_class": runner}
+            if name != config_runner and ("PPO" in name or name == "Distillation")
+        ],
+    )
+
+    runner = declared_runner
+    runner_source = "run_identity"
+    if config_runner is not None:
+        if declared_runner.casefold() != "unknown" and config_runner != declared_runner:
+            raise ProfileError(
+                "run identity runner conflicts with the dumped config runner"
+            )
+        runner = config_runner
+        runner_source = "run_identity_and_config" if declared_runner == config_runner else "config"
+
+    algorithm = declared_algorithm
+    algorithm_source = "run_identity"
+    if config_algorithm is not None:
+        declared_is_class_name = (
+            "PPO" in declared_algorithm or declared_algorithm == "Distillation"
+        )
+        if declared_is_class_name and config_algorithm != declared_algorithm:
+            raise ProfileError(
+                "run identity algorithm class conflicts with the dumped config"
+            )
+        algorithm = config_algorithm
+        algorithm_source = (
+            "run_identity_and_config"
+            if declared_algorithm == config_algorithm
+            else "config"
+        )
+
+    return (
+        {"backend": backend, "name": algorithm, "runner_class": runner},
+        {
+            "declared_backend": run_identity["backend"],
+            "declared_algorithm": declared_algorithm,
+            "declared_runner": declared_runner,
+            "backend_source": backend_source,
+            "algorithm_source": algorithm_source,
+            "runner_source": runner_source,
+            "config_file": config_file,
+            "config_class_names": class_names,
+        },
+    )
 
 
-def _discover_metric_aliases(log_path: Path | None) -> dict[str, str]:
+def _discover_metric_aliases(
+    log_path: Path | None,
+) -> tuple[dict[str, str], dict[str, Any] | None]:
     if log_path is None:
-        return {}
+        return {}, None
     try:
-        stream = log_path.open("r", encoding="utf-8", errors="replace")
+        resolved_path = log_path.resolve(strict=True)
+        stream = resolved_path.open("rb")
     except FileNotFoundError as exc:
         raise ProfileError(f"log file does not exist: {log_path}") from exc
     aliases: dict[str, str] = {}
+    digest = hashlib.sha256()
+    byte_count = 0
     with stream:
+        before = os.fstat(stream.fileno())
         for raw_line in stream:
-            line = ANSI_RE.sub("", raw_line.rstrip("\n"))
-            match = NUMERIC_LABEL_RE.match(line)
-            if match:
-                label = match.group(1).strip()
-                aliases[label] = normalize_metric_name(label)
-            if len(aliases) >= 512:
-                break
-    return dict(sorted(aliases.items()))
+            digest.update(raw_line)
+            byte_count += len(raw_line)
+            if len(aliases) < 512:
+                line = ANSI_RE.sub(
+                    "",
+                    raw_line.decode("utf-8", errors="replace").rstrip("\n"),
+                )
+                match = NUMERIC_LABEL_RE.match(line)
+                if match:
+                    label = match.group(1).strip()
+                    aliases[label] = normalize_metric_name(label)
+        after = os.fstat(stream.fileno())
+    stable_fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns")
+    if (
+        any(getattr(before, field) != getattr(after, field) for field in stable_fields)
+        or byte_count != after.st_size
+    ):
+        raise ProfileError("log file changed while metric aliases were discovered")
+    return dict(sorted(aliases.items())), {
+        "path": str(resolved_path),
+        "sha256": digest.hexdigest(),
+        "size_bytes": byte_count,
+    }
 
 
 def _safe_id(value: str) -> str:
@@ -115,13 +242,14 @@ def _safe_id(value: str) -> str:
 
 
 def discover(
-    draft: dict[str, Any],
+    run_identity: dict[str, Any],
     registry: dict[str, Any],
     log_path: Path | None,
     config_path: Path | None,
 ) -> dict[str, Any]:
     """Return a matched profile or a candidate specific profile."""
-    identity = _infer_identity(draft, config_path)
+    run_identity = _validate_identity(run_identity)
+    identity, identity_resolution = _resolve_identity(run_identity, config_path)
     matched = match_profile(
         registry,
         identity["backend"],
@@ -129,8 +257,15 @@ def discover(
         identity["runner_class"],
     )
     result: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "run_identity": {
+            "task": run_identity["task"],
+            "run_id": run_identity["run_id"],
+            "host_id": run_identity["host_id"],
+            "identity_sha256": run_identity["identity_sha256"],
+        },
         "identity": identity,
+        "identity_resolution": identity_resolution,
         "matched_profile": {
             "id": matched["id"],
             "profile_version": matched["profile_version"],
@@ -143,6 +278,7 @@ def discover(
         return result
 
     parent_id = matched["id"]
+    metric_aliases, metric_source = _discover_metric_aliases(log_path)
     candidate_id = (
         f"{_safe_id(identity['backend'])}-"
         f"{_safe_id(identity['name'])}-"
@@ -159,7 +295,8 @@ def discover(
             "algorithm_names": [identity["name"]],
             "runner_classes": [identity["runner_class"]],
         },
-        "metric_aliases": _discover_metric_aliases(log_path),
+        "metric_aliases": metric_aliases,
+        "metric_source": metric_source,
         "protected_parameter_patterns": [],
         "evaluation_capabilities": {
             "play_entrypoint": matched["evaluation_capabilities"].get(
@@ -175,7 +312,7 @@ def discover(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("draft_session", help="Draft session JSON; auto identities are allowed")
+    parser.add_argument("run_identity", help="Validated host-local run identity JSON")
     parser.add_argument("--config", help="Optional dumped trainer configuration")
     parser.add_argument("--log", help="Optional console log for metric discovery")
     parser.add_argument("--registry", default=str(DEFAULT_REGISTRY_PATH))
@@ -183,7 +320,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         result = discover(
-            _load_draft(Path(args.draft_session)),
+            _load_run_identity(Path(args.run_identity)),
             load_registry(args.registry),
             Path(args.log) if args.log else None,
             Path(args.config) if args.config else None,
