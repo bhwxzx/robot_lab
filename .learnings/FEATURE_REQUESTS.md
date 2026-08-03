@@ -141,11 +141,22 @@ complex
      未引入跨机状态机，未运行 Play、未改动训练进程，未安装、删除、提交或推送内容。
 
 6. **P1 — MTA-006: 增加只读历史经验查询**
+   - **Item Status**: resolved (`2026-08-03T11:40:41+08:00`)
    - 增加轻量只读查询工具，按 task、algorithm、host 和 observation/reward/
      deployment fingerprints 筛选调参事件。
    - 输出兼容经验、冲突经验、证据路径和置信度；未知或不匹配上下文不能直接
      支持参数修改。
    - 工具只汇总和建议，不生成实验、不选择参数、不启动训练。
+   - **Resolution Evidence**: 已新增确定性只读历史查询，只扫描 task 下 run
+     根目录的不可变事件 JSON，并按 algorithm、host 和三类 context fingerprint
+     分类为 compatible、conflicting、unknown 或 invalid。version 1、显式 unknown、
+     路径/scope 不一致、无效 JSON、符号链接、超限或读取中变化均不能成为兼容
+     证据；任何 invalid 事件使整体历史状态 fail-closed。输出保留事件与证据路径、
+     SHA-256、置信度和冲突原因，但 `direct_parameter_change_supported` 恒为 false，
+     且 CLI 只写 stdout。完整保留测试 103 项、Skill validator、11 个算法画像、
+     覆盖扫描、17 个 Skill CLI、evaluator help、9 个本地引用、diff、空白和敏感
+     信息检查均通过，独立前向测试无阻断项；未读取真实事件，未生成实验、选择
+     参数、运行 Play、改动训练进程、安装、删除、提交或推送内容。
 
 7. **P2 — MTA-007: 清理剩余旧接口语义**
    - 将 `discover_algorithm_profile.py` 从已删除的 `draft_session` 契约改为当前

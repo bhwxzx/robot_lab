@@ -19,6 +19,8 @@ Read [references/evidence-layout.md](references/evidence-layout.md) before
 creating criteria, health, summary, assessment, or Play evidence files.
 Read [references/run-identity.md](references/run-identity.md) before recording
 host, Git source, training-command, configuration, or scenario identity.
+Read [references/experience-query.md](references/experience-query.md) before
+using prior tuning records to support a parameter suggestion.
 
 ## Scope
 
@@ -288,6 +290,15 @@ directly into an automatic reward edit.
 For a training candidate, show the exact current parameter, proposed change or
 range, expected effect, counter-metric, risk, supporting current evidence, and
 compatible historical evidence. The user chooses whether to edit and train.
+
+Before calling history compatible, run
+`scripts/query_tuning_experience.py` with the exact task, algorithm, host ID,
+and observation, reward, and deployment fingerprints. Treat version-1,
+explicitly unknown, conflicting, invalid, or incomplete-query results as
+unable to support a parameter change. A compatible event is candidate evidence
+only; verify its referenced artifacts and combine it with current run evidence.
+Never use the query to select a parameter, generate an experiment, start
+training, or coordinate hosts.
 
 ## Record tuning experience
 

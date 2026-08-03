@@ -239,6 +239,28 @@ Record feedback as an immutable `feedback` event with `source` set to
 deployment configuration, scenario, observations, safety events, evidence
 paths, user assessment, root-cause classification, and next suggestion.
 
+Before using an earlier lesson, run the read-only history query with the exact
+current context:
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/query_tuning_experience.py \
+  --root "$ABSOLUTE_POLICY_TUNING_ROOT" \
+  --task "$TASK" --algorithm "$ALGORITHM" --host-id "$HOST_ID" \
+  --observation-fingerprint "$OBSERVATION_FINGERPRINT" \
+  --reward-fingerprint "$REWARD_FINGERPRINT" \
+  --deployment-fingerprint "$DEPLOYMENT_FINGERPRINT"
+```
+
+Read `historical_support.status`, every classification reason, each event's
+confidence, and every evidence path and hash. Only `compatible_events` may be
+candidate historical support. Conflicting, unknown, invalid, or incomplete
+history cannot directly support a parameter change. Even compatible history is
+insufficient by itself: verify referenced evidence, combine it with current
+run evidence, state uncertainty, and leave the parameter decision to the user.
+See [experience-query.md](experience-query.md) for the complete query and
+classification contract.
+
 Every new experience event uses version 2 and embeds the complete identity:
 
 ```json
