@@ -70,13 +70,26 @@ complex
      归档，未控制训练，未暂存、提交或推送。
 
 4. **P1 — AEO-004: 区分经验上下文兼容与结果证据充分**
-   - **Item Status**: pending
+   - **Item Status**: resolved (`2026-08-03T20:42:44+08:00`)
    - 为 assessment、checkpoint evaluation/selection、export、archive 和 feedback
      定义事件类型专属的必需证据、路径、哈希和作用域绑定。
    - 查询分别报告 `context_compatible` 与 `outcome_evidence_complete`；只有包含基线、
      参数变化、结果窗口和观察效果的完整事件才可成为调参候选证据。
    - recommendation 不得冒充实验结果，所有历史仍只提供建议证据，
      `direct_parameter_change_supported` 保持 `false`。
+   - **Resolution Evidence**: 新增 experience version 4，在保留 version 1–3
+     可读性的同时，将 event-type evidence、context compatibility 与 outcome
+     completeness 分开。assessment、checkpoint evaluation/selection、export、archive
+     和 feedback 均使用 available/unavailable 类型证据并在同主机兼容上下文中重验
+     路径、SHA-256、scope 和原生 bundle；完整 outcome 还必须绑定 baseline identity/
+     effective config、确定性参数 diff、有界结果窗口和观察效果。查询逐事件输出
+     `context_compatible`、`event_evidence_complete`、
+     `outcome_evidence_complete` 和 `tuning_candidate_evidence`，仅两项核心条件均满足
+     时进入 `candidate_events`；version 3 固定为 outcome-incomplete，recommendation
+     永不成为结果，生命周期事件不冒充训练效果，
+     `direct_parameter_change_supported` 恒为 false。完整 Skill 测试 167 项、6 项独立
+     新进程前向测试、Skill validator、两个 CLI help、AST、diff/空白检查均通过。
+     未读取或写入真实经验，未启动训练、Isaac Sim 或 Play，未暂存、提交或推送。
 
 5. **P2 — AEO-005: 完成相机跟随入镜验证**
    - **Item Status**: pending

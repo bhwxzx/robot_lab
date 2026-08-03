@@ -77,9 +77,10 @@ Capture run identity independently on each host with
 and ordered Hydra overrides, every relevant config file, and the exact
 evaluation scenario contract. For dirty relevant source, require a tracked
 diff SHA-256 or controlled patch evidence. Treat version-1 and version-2
-experience events as legacy for parameter history; use version 3 with a
-complete `run_identity` and verified effective-config reference for every new
-event.
+experience events as unknown history; version 3 may prove context compatibility
+but not outcome completeness. Use version 4 with a complete `run_identity`,
+verified effective-config reference, and explicit evidence availability for
+every new event.
 Never turn identity capture into Git synchronization or a cross-host state
 machine.
 
@@ -338,10 +339,10 @@ whole-file SHA-256, plus the exact observation and deployment fingerprints.
 Let the tool derive task, algorithm, host, and reward fingerprint from those
 validated artifacts. Treat version-1, version-2, explicitly unknown,
 conflicting, invalid, or incomplete-query results as unable to support a
-parameter change. A compatible version-3 event is candidate evidence only;
-combine its verified parameter diff with current run evidence. Never use the
-query to select a parameter, generate an experiment, start training, or
-coordinate hosts.
+parameter change. Read `context_compatible` and
+`outcome_evidence_complete` separately. Only `candidate_events` has both, and
+even those events remain advisory. Never use the query to select a parameter,
+generate an experiment, start training, or coordinate hosts.
 
 ## Record tuning experience
 
@@ -356,13 +357,15 @@ Use `scripts/record_tuning_experience.py` to append immutable events under
 - Sim2Sim/Sim2Real feedback;
 - observed effect, lesson, next suggestion, and confidence.
 
-For every new event, use version 3, embed the complete host-local
+For every new event, use version 4, embed the complete host-local
 `run_identity`, and reference the matching effective-config artifact by
 absolute path, whole-file SHA-256, effective-config fingerprint, and reward
 fingerprint. Require the event task, run ID, algorithm, host, identity hash,
-and `context.reward_fingerprint` to match the recomputed artifact. Version-1
-and version-2 events remain readable but cannot become compatible parameter
-history.
+and `context.reward_fingerprint` to match the recomputed artifact. Declare
+type-specific event evidence and an available or explicitly unavailable
+outcome as documented in `references/experience-query.md`. A recommendation is
+never an observed result; selection, export, and archive are lifecycle evidence
+only. Keep `direct_parameter_change_supported` false.
 
 Keep raw artifacts under the run's `evidence/` directory. Store immutable
 timestamped event JSON at the run root, reference evidence by absolute path and

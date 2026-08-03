@@ -26,6 +26,7 @@ from record_tuning_experience import (
     SLUG_RE,
     validate_effective_config_binding,
     validate_event,
+    validate_event_evidence,
 )
 
 
@@ -296,7 +297,7 @@ def _configuration_comparison_eligible(
     observation_fingerprint: str,
     deployment_fingerprint: str,
 ) -> bool:
-    if event["version"] != 3:
+    if event["version"] not in {3, 4}:
         return False
     event_values = (
         event["algorithm"],
@@ -433,10 +434,31 @@ def query_tuning_experience(
                     ],
                     "reward_fingerprint": historical_config["fingerprints"]["reward"],
                 }
+                evidence_status = validate_event_evidence(
+                    root,
+                    event,
+                    current_config=historical_config,
+                    max_diff_entries=max_diff_entries,
+                )
             elif event["version"] < 3:
                 config_verification = {"status": "legacy_event_not_verifiable"}
+                evidence_status = {
+                    "event_evidence_complete": False,
+                    "outcome_evidence_complete": False,
+                    "reasons": ["legacy_event_contract"],
+                }
             else:
                 config_verification = {"status": "not_checked_context_mismatch"}
+                evidence_status = {
+                    "event_evidence_complete": None,
+                    "outcome_evidence_complete": None,
+                    "reasons": ["event_evidence_not_checked_context_mismatch"],
+                }
+            context_compatible = classification == "compatible"
+            candidate = (
+                context_compatible
+                and evidence_status["outcome_evidence_complete"] is True
+            )
             buckets[classification].append(
                 {
                     "event_path": str(path),
@@ -454,6 +476,15 @@ def query_tuning_experience(
                     "evidence_refs": _extract_evidence_refs(event["evidence"]),
                     "effective_config_verification": config_verification,
                     "parameter_diff": parameter_diff,
+                    "context_compatible": context_compatible,
+                    "event_evidence_complete": evidence_status[
+                        "event_evidence_complete"
+                    ],
+                    "outcome_evidence_complete": evidence_status[
+                        "outcome_evidence_complete"
+                    ],
+                    "tuning_candidate_evidence": candidate,
+                    "evidence_completeness_reasons": evidence_status["reasons"],
                     "analysis": {
                         "summary": event["analysis"].get("summary"),
                         "confidence": event["analysis"]["confidence"],
@@ -491,20 +522,27 @@ def query_tuning_experience(
             deployment_fingerprint,
         )
     )
+    candidate_events = [
+        item
+        for item in buckets["compatible"]
+        if item["tuning_candidate_evidence"] is True
+    ]
     if not query_context_complete:
         support_status = "query_context_incomplete"
     elif invalid_events:
         support_status = "history_invalid"
+    elif candidate_events:
+        support_status = "candidate_outcome_history_available"
     elif buckets["compatible"]:
-        support_status = "compatible_history_available"
+        support_status = "context_compatible_outcome_incomplete"
     else:
-        support_status = "no_compatible_history"
+        support_status = "no_context_compatible_history"
     confidence_counts = {"low": 0, "medium": 0, "high": 0}
     for item in buckets["compatible"]:
         confidence_counts[item["analysis"]["confidence"]] += 1
 
     return {
-        "version": 1,
+        "version": 2,
         "read_only": True,
         "query": {
             "root": str(root),
@@ -534,6 +572,18 @@ def query_tuning_experience(
         },
         "summary": {
             "compatible": len(buckets["compatible"]),
+            "context_compatible": len(buckets["compatible"]),
+            "event_evidence_complete": sum(
+                item["event_evidence_complete"] is True
+                for events in buckets.values()
+                for item in events
+            ),
+            "outcome_evidence_complete": sum(
+                item["outcome_evidence_complete"] is True
+                for events in buckets.values()
+                for item in events
+            ),
+            "tuning_candidate_evidence": len(candidate_events),
             "conflicting": len(buckets["conflicting"]),
             "unknown": len(buckets["unknown"]),
             "invalid": len(invalid_events),
@@ -542,9 +592,11 @@ def query_tuning_experience(
         "historical_support": {
             "status": support_status,
             "query_context_complete": query_context_complete,
-            "compatible_history_is_candidate_evidence_only": True,
+            "context_compatibility_is_not_outcome_evidence": True,
+            "only_complete_outcomes_are_candidate_evidence": True,
             "direct_parameter_change_supported": False,
         },
+        "candidate_events": candidate_events,
         "compatible_events": buckets["compatible"],
         "conflicting_events": buckets["conflicting"],
         "unknown_events": buckets["unknown"],
