@@ -159,11 +159,24 @@ complex
      参数、运行 Play、改动训练进程、安装、删除、提交或推送内容。
 
 7. **P2 — MTA-007: 清理剩余旧接口语义**
+   - **Item Status**: resolved (`2026-08-03T12:03:12+08:00`)
    - 将 `discover_algorithm_profile.py` 从已删除的 `draft_session` 契约改为当前
      run identity 输入。
    - 删除 `algorithm-profile-schema.md` 中旧 session/tune-mode 表述。
    - 删除 `rsl_rl_export_policy.py` 中未使用的必需 `--trial_id`，统一使用
      `run_id`、`checkpoint_id` 和 `export_run_id`。
+   - **Resolution Evidence**: discovery 现只接受并完整校验 host-local run
+     identity，输出绑定 task、run、host 和 identity SHA-256；画像 backend 从训练
+     命令解析，runner/algorithm 由 identity 与已绑定配置交叉确认，冲突、歧义、
+     未登记配置或配置哈希漂移均 fail closed。配置来源记录仓库相对路径和 SHA-256；
+     generic candidate 的日志来源记录解析后绝对路径、全文件 SHA-256 和字节数，
+     读取中变化即拒绝。discovery 输出升级为 schema version 2。exporter 结果升级为
+     version 2，必需并回写 `run_id`、`checkpoint_id` 和 `export_run_id`，旧 trial/
+     candidate 标识已移除，原 checkpoint、GPU-idle 与 parity 门禁保持不变。完整
+     保留测试 116 项、Skill validator、11 个算法画像、覆盖扫描、17 个 Skill CLI、
+     evaluator help、9 个本地引用、diff、空白和敏感信息检查均通过，独立前向测试
+     无批准范围内阻断项；未运行真实 export 或 Play，未启动、停止或干扰训练，
+     未安装、删除、暂存、提交或推送内容。
 
 ### Suggested Implementation
 严格按 MTA-001 到 MTA-007 的顺序推进。同一时间只允许一个项目为
