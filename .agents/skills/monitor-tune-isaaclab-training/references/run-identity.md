@@ -22,6 +22,11 @@ Record:
 The evaluation scenario contains exactly `scenario_id`, `scenario_overrides`,
 `command_schedule`, `duration_steps`, `num_envs`, and `seed`. Use the same
 contract fields passed to `evaluate_policy.py`; do not hash an informal label.
+Every evaluator invocation must pass the exact identity path plus its full-file
+SHA-256. The evaluator recomputes the identity's internal SHA-256, requires the
+task, run ID, seed, repository root, and full scenario contract to match, and
+records both hashes in the immutable version-2 result. A matching scenario
+label alone is insufficient.
 
 List every configuration file that affects the run. Clean code outside those
 files is represented by HEAD. If additional modified source affects the run,

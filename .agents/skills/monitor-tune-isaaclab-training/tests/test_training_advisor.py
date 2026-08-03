@@ -167,13 +167,16 @@ class TrainingAdvisorTests(unittest.TestCase):
         self.assertEqual(report["recommendation"], "recommend_stop_invalid")
         self.assertNotIn("signal", report)
 
-    def test_approved_stalled_health_recommends_stop_without_action(self) -> None:
+    def test_approved_busy_wait_stall_recommends_stop_without_action(self) -> None:
         report = assess(
             [(10.0, 0.8), (11.0, 0.7), (14.0, 0.5), (15.0, 0.4)],
-            health={"state": "stalled"},
+            health={"state": "stalled", "activity_without_progress": True},
         )
         self.assertEqual(report["recommendation"], "recommend_stop_invalid")
+        self.assertTrue(report["advisory_only"])
+        self.assertTrue(report["pending_user_decision"])
         self.assertNotIn("signal", report)
+        self.assertNotIn("action", report)
 
     def test_hard_metric_limit_is_separate_from_trend(self) -> None:
         report = assess(

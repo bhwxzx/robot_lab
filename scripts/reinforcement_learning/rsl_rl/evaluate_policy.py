@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
+import atexit
 import json
 import math
 import re
@@ -23,8 +23,15 @@ from policy_evaluation_telemetry import (
     required_signals_for_runner,
     telemetry_report,
 )
+from policy_evaluation_evidence import (
+    EvaluationEvidenceError,
+    EvaluationPublisher,
+    build_scenario_contract,
+    preflight_evaluation,
+)
 
 ORIGINAL_ARGV = tuple(sys.argv)
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 from isaaclab.app import AppLauncher
 
@@ -48,8 +55,11 @@ parser.add_argument("--scenario_overrides_json", default="{}")
 parser.add_argument("--command_schedule_json", default="[]")
 parser.add_argument("--duration_steps", type=int, required=True)
 parser.add_argument("--executor_run_id")
+parser.add_argument("--evaluation_id", required=True)
 parser.add_argument("--result_path", required=True)
 parser.add_argument("--run_id", required=True)
+parser.add_argument("--run_identity_path", required=True)
+parser.add_argument("--run_identity_file_sha256", required=True)
 parser.add_argument("--video_path")
 parser.add_argument("--no_video", action="store_true")
 parser.add_argument("--allow_training_overlap", action="store_true")
@@ -106,27 +116,6 @@ def _assert_gpu_idle(device: str | None) -> None:
         )
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _assert_artifact_hashes() -> None:
-    checkpoint_path = Path(args_cli.checkpoint or "")
-    artifact_path = Path(args_cli.artifact_path)
-    for label, path, expected in (
-        ("checkpoint", checkpoint_path, args_cli.checkpoint_sha256),
-        ("artifact", artifact_path, args_cli.artifact_sha256),
-    ):
-        if not path.is_absolute() or not path.is_file():
-            raise RuntimeError(f"{label} path is not an existing absolute file")
-        if _sha256(path) != expected:
-            raise RuntimeError(f"{label} SHA-256 does not match the approved plan")
-
-
 def _assert_executor_identity() -> None:
     if (
         args_cli.executor_run_id is not None
@@ -158,13 +147,40 @@ def _assert_resource_mode() -> None:
 
 
 try:
-    _assert_artifact_hashes()
     _assert_executor_identity()
     _assert_resource_mode()
+    scenario_contract = build_scenario_contract(
+        scenario_id=args_cli.scenario_id,
+        scenario_overrides_json=args_cli.scenario_overrides_json,
+        command_schedule_json=args_cli.command_schedule_json,
+        duration_steps=args_cli.duration_steps,
+        num_envs=args_cli.num_envs,
+        seed=args_cli.seed,
+    )
+    evaluation_plan = preflight_evaluation(
+        repo_root=REPO_ROOT,
+        task=args_cli.task,
+        run_id=args_cli.run_id,
+        evaluation_id=args_cli.evaluation_id,
+        result_path=Path(args_cli.result_path),
+        telemetry_path=Path(args_cli.telemetry_path) if args_cli.telemetry_path else None,
+        video_path=Path(args_cli.video_path) if args_cli.video_path else None,
+        checkpoint_path=Path(args_cli.checkpoint or ""),
+        checkpoint_sha256=args_cli.checkpoint_sha256,
+        artifact_kind=args_cli.artifact_kind,
+        artifact_path=Path(args_cli.artifact_path),
+        artifact_sha256=args_cli.artifact_sha256,
+        run_identity_path=Path(args_cli.run_identity_path),
+        run_identity_file_sha256=args_cli.run_identity_file_sha256,
+        scenario_contract=scenario_contract,
+    )
     _assert_gpu_idle(args_cli.device)
-except RuntimeError as exc:
+    evaluation_publisher = EvaluationPublisher(evaluation_plan)
+    evaluation_publisher.__enter__()
+except (RuntimeError, EvaluationEvidenceError) as exc:
     print(f"ERROR: {exc}", file=sys.stderr)
     raise SystemExit(2) from exc
+atexit.register(evaluation_publisher.close)
 
 sys.argv = [sys.argv[0]] + hydra_args
 app_launcher = AppLauncher(args_cli)
@@ -206,69 +222,6 @@ RUNNER_CLASSES = {
     "OnPolicyRunnerROA": OnPolicyRunnerROA,
     "OnPolicyRunnerAmpROA": OnPolicyRunnerAmpROA,
 }
-
-
-def _parse_overrides(raw: str) -> dict[str, Any]:
-    try:
-        overrides = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise ValueError(
-            f"invalid --scenario_overrides_json at column {exc.colno}: {exc.msg}"
-        ) from exc
-    if not isinstance(overrides, dict):
-        raise ValueError("--scenario_overrides_json must decode to an object")
-    return overrides
-
-
-def _parse_command_schedule(raw: str, duration_steps: int) -> list[dict[str, Any]]:
-    try:
-        schedule = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise ValueError(
-            f"invalid --command_schedule_json at column {exc.colno}: {exc.msg}"
-        ) from exc
-    if not isinstance(schedule, list):
-        raise ValueError("--command_schedule_json must decode to an array")
-    previous_end = -1
-    for index, segment in enumerate(schedule):
-        if not isinstance(segment, dict) or set(segment) != {
-            "start_step",
-            "end_step",
-            "command",
-        }:
-            raise ValueError(f"command schedule segment {index} is invalid")
-        start = segment["start_step"]
-        end = segment["end_step"]
-        command = segment["command"]
-        if (
-            isinstance(start, bool)
-            or not isinstance(start, int)
-            or isinstance(end, bool)
-            or not isinstance(end, int)
-            or start != previous_end + 1
-            or end < start
-            or end >= duration_steps
-        ):
-            raise ValueError(
-                "command schedule must be ordered, contiguous, and within duration"
-            )
-        if (
-            not isinstance(command, list)
-            or len(command) != 3
-            or any(
-                isinstance(value, bool) or not isinstance(value, (int, float))
-                for value in command
-            )
-        ):
-            raise ValueError(
-                "command schedule values must be finite [vx, vy, yaw_rate]"
-            )
-        if not all(np.isfinite(float(value)) for value in command):
-            raise ValueError("command schedule values must be finite")
-        previous_end = end
-    if schedule and previous_end != duration_steps - 1:
-        raise ValueError("command schedule must cover every evaluation step")
-    return schedule
 
 
 def _scheduled_command(
@@ -498,10 +451,10 @@ def _review_windows(
     return windows
 
 
-@hydra_task_config(args_cli.task, args_cli.agent)
-def main(
+def _evaluate(
     env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg,
     agent_cfg: RslRlBaseRunnerCfg,
+    publisher: EvaluationPublisher,
 ) -> None:
     """Run one authorized evaluation matrix cell and write bounded JSON."""
     if args_cli.duration_steps <= 0:
@@ -515,13 +468,10 @@ def main(
     env_cfg.sim.device = (
         args_cli.device if args_cli.device is not None else env_cfg.sim.device
     )
-    command_schedule = _parse_command_schedule(
-        args_cli.command_schedule_json,
-        args_cli.duration_steps,
-    )
-    for dotted_path, value in _parse_overrides(
-        args_cli.scenario_overrides_json
-    ).items():
+    command_schedule = evaluation_plan.scenario_contract["command_schedule"]
+    for dotted_path, value in evaluation_plan.scenario_contract[
+        "scenario_overrides"
+    ].items():
         _set_dotted(env_cfg, dotted_path, value)
     if command_schedule:
         command_cfg = env_cfg.commands.base_velocity
@@ -531,30 +481,13 @@ def main(
         if hasattr(command_cfg, "rel_standing_envs"):
             command_cfg.rel_standing_envs = 0.0
 
-    checkpoint_path = Path(args_cli.checkpoint or "")
-    artifact_path = Path(args_cli.artifact_path)
-    result_path = Path(args_cli.result_path)
-    video_path = Path(args_cli.video_path) if args_cli.video_path else None
-    telemetry_path = Path(args_cli.telemetry_path) if args_cli.telemetry_path else None
-    if not checkpoint_path.is_absolute():
-        raise ValueError("--checkpoint must be an absolute native checkpoint path")
-    if not artifact_path.is_absolute():
-        raise ValueError("--artifact_path must be absolute")
-    if not result_path.is_absolute():
-        raise ValueError("--result_path must be absolute")
-    if video_path is not None and not video_path.is_absolute():
-        raise ValueError("--video_path must be absolute")
-    if telemetry_path is not None and not telemetry_path.is_absolute():
-        raise ValueError("--telemetry_path must be absolute")
-    if not checkpoint_path.is_file():
-        raise FileNotFoundError(f"checkpoint does not exist: {checkpoint_path}")
-    if not artifact_path.is_file():
-        raise FileNotFoundError(f"artifact does not exist: {artifact_path}")
-    result_path.parent.mkdir(parents=True, exist_ok=True)
-    if video_path is not None:
-        video_path.parent.mkdir(parents=True, exist_ok=True)
-    if telemetry_path is not None:
-        telemetry_path.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = Path(evaluation_plan.checkpoint["path"])
+    artifact_path = Path(evaluation_plan.artifact["path"])
+    result_path = evaluation_plan.result_path
+    video_path = (
+        publisher.video_work_path if evaluation_plan.video_path is not None else None
+    )
+    telemetry_path = evaluation_plan.telemetry_path
 
     raw_env = gym.make(
         args_cli.task,
@@ -981,12 +914,43 @@ def main(
         runner=runner_name,
         ledger=telemetry_ledger,
     )
+    evaluation_binding = {
+        "task": evaluation_plan.task,
+        "run_id": evaluation_plan.run_id,
+        "evaluation_id": evaluation_plan.evaluation_id,
+        "candidate_id": args_cli.candidate_id,
+        "runner": runner_name,
+    }
+    resource_mode = {
+        "training_overlap": bool(args_cli.allow_training_overlap),
+        "idle_gpu_required": bool(args_cli.require_idle_gpu),
+        "device": str(env_cfg.sim.device),
+        "num_envs": args_cli.num_envs,
+        "video_requested": evaluation_plan.video_path is not None,
+        "telemetry_requested": telemetry_path is not None,
+        "telemetry_env_index": args_cli.telemetry_env_index,
+        "telemetry_stride": args_cli.telemetry_stride,
+        "follow_robot_camera": bool(args_cli.follow_robot_camera),
+    }
+    inputs = {
+        "checkpoint": evaluation_plan.checkpoint,
+        "artifact": {
+            "kind": evaluation_plan.artifact_kind,
+            **evaluation_plan.artifact,
+        },
+        "run_identity": evaluation_plan.run_identity,
+        "scenario": {
+            "contract": evaluation_plan.scenario_contract,
+            "sha256": evaluation_plan.scenario_sha256,
+        },
+        "resource_mode": resource_mode,
+    }
+    telemetry = None
     if telemetry_path is not None:
         telemetry = {
-            "version": 2,
-            "run_id": args_cli.run_id,
-            "candidate_id": args_cli.candidate_id,
-            "runner": runner_name,
+            "version": 3,
+            "evaluation": evaluation_binding,
+            "inputs": inputs,
             "environment_index": args_cli.telemetry_env_index,
             "stride": args_cli.telemetry_stride,
             "step_dt_seconds": step_dt,
@@ -994,21 +958,12 @@ def main(
             **telemetry_evidence,
             "samples": telemetry_samples,
         }
-        telemetry_path.write_text(
-            json.dumps(
-                telemetry,
-                indent=2,
-                sort_keys=True,
-                ensure_ascii=False,
-                allow_nan=False,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
     result = {
-        "version": 1,
+        "version": 2,
         "run_id": args_cli.run_id,
         "status": "completed",
+        "evaluation": evaluation_binding,
+        "inputs": inputs,
         "candidate_id": args_cli.candidate_id,
         "runner": runner_name,
         "artifact": args_cli.artifact_kind,
@@ -1016,8 +971,16 @@ def main(
         "seed": args_cli.seed,
         "duration_steps": args_cli.duration_steps,
         "checkpoint_path": str(checkpoint_path),
+        "checkpoint_sha256": evaluation_plan.checkpoint["sha256"],
         "artifact_path": str(artifact_path),
-        "video_path": recorded_video,
+        "artifact_sha256": evaluation_plan.artifact["sha256"],
+        "run_identity_sha256": evaluation_plan.run_identity["identity_sha256"],
+        "scenario_sha256": evaluation_plan.scenario_sha256,
+        "video_path": (
+            str(evaluation_plan.video_path)
+            if evaluation_plan.video_path is not None
+            else ""
+        ),
         "telemetry_path": str(telemetry_path) if telemetry_path is not None else "",
         "telemetry_status": telemetry_evidence["telemetry_status"],
         "missing_required_signals": telemetry_evidence[
@@ -1042,18 +1005,21 @@ def main(
             ),
         },
     }
-    result_path.write_text(
-        json.dumps(
-            result,
-            indent=2,
-            sort_keys=True,
-            ensure_ascii=False,
-            allow_nan=False,
-        )
-        + "\n",
-        encoding="utf-8",
+    publisher.publish(
+        result,
+        telemetry=telemetry,
+        video_source=Path(recorded_video) if recorded_video else None,
     )
     print(f"[INFO] Evaluation result: {result_path}")
+
+
+@hydra_task_config(args_cli.task, args_cli.agent)
+def main(
+    env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg,
+    agent_cfg: RslRlBaseRunnerCfg,
+) -> None:
+    """Run one authorized evaluation matrix cell and publish bound evidence."""
+    _evaluate(env_cfg, agent_cfg, evaluation_publisher)
 
 
 if __name__ == "__main__":
@@ -1061,3 +1027,4 @@ if __name__ == "__main__":
         main()
     finally:
         simulation_app.close()
+        evaluation_publisher.close()
