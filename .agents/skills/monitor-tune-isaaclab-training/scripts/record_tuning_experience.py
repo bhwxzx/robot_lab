@@ -8,8 +8,11 @@ import hashlib
 import json
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any
+
+from capture_run_identity import RunIdentityError, validate_run_identity
 
 
 EVENT_TYPES = {
@@ -31,6 +34,33 @@ class ExperienceError(ValueError):
     """Raised when an experience event is unsafe or malformed."""
 
 
+def _reject_symlink_components(path: Path, *, label: str) -> None:
+    if not path.is_absolute():
+        raise ExperienceError(f"{label} must be absolute")
+    current = Path(path.anchor)
+    for component in path.parts[1:]:
+        current /= component
+        if current.is_symlink():
+            raise ExperienceError(
+                f"{label} contains a symlinked path component: {current}"
+            )
+
+
+def _write_new_output(path: Path, encoded: str) -> None:
+    if not path.is_absolute():
+        raise ExperienceError("--output must be a new absolute path")
+    _reject_symlink_components(path.parent, label="--output")
+    if not path.parent.is_dir():
+        raise ExperienceError("--output parent directory does not exist")
+    if path.exists() or path.is_symlink():
+        raise ExperienceError("--output must be a new absolute path")
+    try:
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(encoded)
+    except FileExistsError as exc:
+        raise ExperienceError("--output must be a new absolute path") from exc
+
+
 def _load(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -44,8 +74,9 @@ def _load(path: Path) -> dict[str, Any]:
 
 
 def validate_event(event: dict[str, Any]) -> None:
-    if event.get("version") != 1:
-        raise ExperienceError("event.version must be 1")
+    version = event.get("version")
+    if version not in {1, 2}:
+        raise ExperienceError("event.version must be 1 or 2")
     for field in ("event_id", "task", "run_id", "algorithm"):
         value = event.get(field)
         if not isinstance(value, str) or not SLUG_RE.fullmatch(value):
@@ -74,26 +105,45 @@ def validate_event(event: dict[str, Any]) -> None:
         raise ExperienceError("next_suggestion must be a string")
     if event["event_type"] == "feedback" and event["evidence"].get("source") not in {"sim2sim", "sim2real"}:
         raise ExperienceError("feedback evidence.source must be sim2sim or sim2real")
+    if version == 2:
+        try:
+            validate_run_identity(event.get("run_identity"))
+        except RunIdentityError as exc:
+            raise ExperienceError(str(exc)) from exc
+        run_identity = event["run_identity"]
+        for field in ("task", "run_id", "algorithm"):
+            if event[field] != run_identity[field]:
+                raise ExperienceError(
+                    f"event.{field} must match run_identity.{field}"
+                )
 
 
 def write_event(root: Path, event: dict[str, Any]) -> dict[str, Any]:
     validate_event(event)
     if not root.is_absolute():
         raise ExperienceError("experience root must be absolute")
+    _reject_symlink_components(root, label="experience root")
+    if not root.is_dir():
+        raise ExperienceError("experience root must be an existing directory")
     run_dir = root / event["task"] / event["run_id"]
+    _reject_symlink_components(run_dir, label="experience run directory")
     run_dir.mkdir(parents=True, exist_ok=True)
+    _reject_symlink_components(run_dir, label="experience run directory")
     timestamp_slug = re.sub(r"[^0-9A-Za-z]+", "-", event["recorded_at"]).strip("-")
     destination = run_dir / f"{timestamp_slug}__{event['event_id']}.json"
-    if destination.exists():
+    if destination.exists() or destination.is_symlink():
         raise ExperienceError(f"event already exists: {destination}")
     encoded = json.dumps(event, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
-    temporary = run_dir / f".{destination.name}.tmp-{os.getpid()}"
+    temporary = run_dir / f".{destination.name}.tmp-{os.getpid()}-{time.time_ns()}"
     try:
         with temporary.open("x", encoding="utf-8") as stream:
             stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
-        temporary.replace(destination)
+        try:
+            os.link(temporary, destination, follow_symlinks=False)
+        except FileExistsError as exc:
+            raise ExperienceError(f"event already exists: {destination}") from exc
     finally:
         if temporary.exists():
             temporary.unlink()
@@ -116,14 +166,14 @@ def main() -> int:
     args = parser.parse_args()
     try:
         receipt = write_event(Path(args.root).resolve(), _load(Path(args.event)))
-    except ExperienceError as exc:
+    except (OSError, ExperienceError) as exc:
         parser.error(str(exc))
     encoded = json.dumps(receipt, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     if args.output:
-        output = Path(args.output)
-        if not output.is_absolute() or output.exists():
-            parser.error("--output must be a new absolute path")
-        output.write_text(encoded, encoding="utf-8")
+        try:
+            _write_new_output(Path(args.output), encoded)
+        except ExperienceError as exc:
+            parser.error(str(exc))
     else:
         print(encoded, end="")
     return 0

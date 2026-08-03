@@ -18,6 +18,29 @@ Use evidence in this order:
 Never allow a lower-ranked source to overrule stale or non-finite monotonic
 training evidence.
 
+## Evidence paths and immutability
+
+Prepare every output with `prepare_evidence_layout.py` and follow
+[`evidence-layout.md`](evidence-layout.md). It creates the deterministic
+`learnings/policy_tuning/<task>/<run-id>/evidence/` directories and returns new
+absolute criteria, health, summary, assessment, Play result, telemetry, and
+video paths. Use a new snapshot ID for each observation and a new evaluation
+ID for each Play attempt. Never overwrite referenced raw evidence.
+
+Keep timestamped experience events at the run root, outside `evidence/`.
+Events reference evidence with absolute paths and SHA-256 values; later facts
+belong in new evidence and a newly appended event.
+
+## Host-local source identity
+
+Follow [`run-identity.md`](run-identity.md) and run
+`capture_run_identity.py` independently on each host. Record a user-controlled
+host ID, local branch and full HEAD, exact training argv, ordered Hydra
+overrides, relevant configuration hashes, and a canonical evaluator scenario
+fingerprint. A dirty relevant source requires exactly one tracked diff hash or
+controlled patch evidence. These records provide provenance only; they never
+authorize remote Git writes or coordinate work between hosts.
+
 ## Two-snapshot health check
 
 The first valid log or TensorBoard observation records a baseline and returns
@@ -118,8 +141,8 @@ conda run -n isaacsim-5.1 python \
   --candidate_id model-N --scenario_id quick-native \
   --duration_steps 500 --num_envs 1 --seed 42 \
   --allow_training_overlap --no_video \
-  --run_id RUN_ID --result_path /absolute/result.json \
-  --telemetry_path /absolute/telemetry.json
+  --run_id "$RUN_ID" --result_path "$PLAY_RESULT_PATH" \
+  --telemetry_path "$TELEMETRY_PATH"
 ```
 
 Telemetry contains the selected environment's command, reward, done/timeout,
@@ -216,11 +239,11 @@ Record feedback as an immutable `feedback` event with `source` set to
 deployment configuration, scenario, observations, safety events, evidence
 paths, user assessment, root-cause classification, and next suggestion.
 
-Each experience event uses:
+Every new experience event uses version 2 and embeds the complete identity:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "event_id": "unique-ascii-id",
   "event_type": "run_snapshot",
   "recorded_at": "2026-07-31T18:00:00+08:00",
@@ -235,7 +258,45 @@ Each experience event uses:
   "parameters": {},
   "evidence": {},
   "analysis": {"summary": "", "confidence": "low"},
-  "next_suggestion": ""
+  "next_suggestion": "",
+  "run_identity": {
+    "version": 1,
+    "task": "exact-task",
+    "run_id": "training-run-id",
+    "host_id": "operator-chosen-host-id",
+    "backend": "isaaclab",
+    "algorithm": "AMP-ROA",
+    "runner": "OnPolicyRunnerAmpROA",
+    "seed": 42,
+    "source": {
+      "repository_root": "/absolute/robot_lab",
+      "branch": "main",
+      "head": "40 lowercase hex characters",
+      "dirty": false,
+      "dirty_paths": [],
+      "diff_sha256": null,
+      "patch_evidence": null
+    },
+    "training": {
+      "command": ["python", "train.py", "--task=exact-task"],
+      "hydra_overrides": []
+    },
+    "config_files": [
+      {"path": "relative/config.py", "sha256": "64 lowercase hex characters"}
+    ],
+    "evaluation_scenario": {
+      "contract": {
+        "scenario_id": "quick-native",
+        "scenario_overrides": {},
+        "command_schedule": [],
+        "duration_steps": 500,
+        "num_envs": 1,
+        "seed": 42
+      },
+      "sha256": "64 lowercase hex characters"
+    },
+    "identity_sha256": "64 lowercase hex characters"
+  }
 }
 ```
 
@@ -243,4 +304,5 @@ Allowed event types are `run_snapshot`, `assessment`, `decision`,
 `checkpoint_evaluation`, `checkpoint_selection`, `export`, `archive`,
 `feedback`, and `recommendation`. Records are append-only. Reuse prior advice
 only when task, algorithm, and all three context fingerprints match; otherwise
-state the mismatch.
+state the mismatch. Version-1 events remain readable but cannot satisfy the
+host/source identity requirement.

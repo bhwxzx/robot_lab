@@ -15,6 +15,10 @@ for the complete evidence, evaluation, archive, feedback, and experience-record
 schemas.
 Read [references/assessment-criteria-contract.md](references/assessment-criteria-contract.md)
 before drafting, validating, approving, or applying assessment criteria.
+Read [references/evidence-layout.md](references/evidence-layout.md) before
+creating criteria, health, summary, assessment, or Play evidence files.
+Read [references/run-identity.md](references/run-identity.md) before recording
+host, Git source, training-command, configuration, or scenario identity.
 
 ## Scope
 
@@ -60,50 +64,75 @@ must state the missing algorithm-specific evidence.
 
 Use `conda run -n isaacsim-5.1` for IsaacLab and RSL-RL commands.
 
+Capture run identity independently on each host with
+`scripts/capture_run_identity.py`. Require a user-chosen `host_id`, exact argv
+and ordered Hydra overrides, every relevant config file, and the exact
+evaluation scenario contract. For dirty relevant source, require a tracked
+diff SHA-256 or controlled patch evidence. Treat version-1 experience events as
+legacy; use version 2 with a complete `run_identity` for all new evidence.
+Never turn identity capture into Git synchronization or a cross-host state
+machine.
+
 ## Assess a running training process
 
 Collect process health and parse the latest bounded log window:
 
 ```bash
+# Prepare the first observation. The helper creates directories, not evidence.
+eval "$(
+  python3 \
+    .agents/skills/monitor-tune-isaaclab-training/scripts/prepare_evidence_layout.py \
+    --task "$TASK" --run-id "$RUN_ID" --snapshot-id snapshot-001 \
+    --format shell
+)"
+first_health_path="$HEALTH_PATH"
+
 # First observation: record a baseline. It cannot prove healthy progress.
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/collect_training_health.py \
-  --profile-id PROFILE_ID --log ABSOLUTE_LOG \
-  --tensorboard ABSOLUTE_EVENT_OR_RUN_DIRECTORY \
-  --stale-after-seconds 1200 --pid PID \
-  --expected-process-pattern TRAIN_ENTRYPOINT --gpu-index 0 \
-  > /ABSOLUTE/EVIDENCE/health-1.json
+  --profile-id "$PROFILE_ID" --log "$ABSOLUTE_LOG" \
+  --tensorboard "$ABSOLUTE_EVENT_OR_RUN_DIRECTORY" \
+  --stale-after-seconds 1200 --pid "$PID" \
+  --expected-process-pattern "$TRAIN_ENTRYPOINT" --gpu-index 0 \
+  --output "$first_health_path"
+
+# Prepare a distinct later observation without touching the first snapshot.
+eval "$(
+  python3 \
+    .agents/skills/monitor-tune-isaaclab-training/scripts/prepare_evidence_layout.py \
+    --task "$TASK" --run-id "$RUN_ID" --snapshot-id snapshot-002 \
+    --evaluation-id eval-001 --format shell
+)"
 
 # Later observation: compare the same run with the saved baseline.
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/collect_training_health.py \
-  --profile-id PROFILE_ID --log ABSOLUTE_LOG \
-  --tensorboard ABSOLUTE_EVENT_OR_RUN_DIRECTORY \
-  --stale-after-seconds 1200 --pid PID \
-  --expected-process-pattern TRAIN_ENTRYPOINT --gpu-index 0 \
-  --previous-health /ABSOLUTE/EVIDENCE/health-1.json \
-  > /ABSOLUTE/EVIDENCE/health-2.json
+  --profile-id "$PROFILE_ID" --log "$ABSOLUTE_LOG" \
+  --tensorboard "$ABSOLUTE_EVENT_OR_RUN_DIRECTORY" \
+  --stale-after-seconds 1200 --pid "$PID" \
+  --expected-process-pattern "$TRAIN_ENTRYPOINT" --gpu-index 0 \
+  --previous-health "$first_health_path" --output "$HEALTH_PATH"
 
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/summarize_training_log.py \
-  ABSOLUTE_LOG --profile-id PROFILE_ID --last 200 \
-  --output /ABSOLUTE/EVIDENCE/summary.json
+  "$ABSOLUTE_LOG" --profile-id "$PROFILE_ID" --last 200 \
+  --output "$SUMMARY_PATH"
 
-# Validate a criteria draft or approval receipt without changing it.
+# Create a new criteria draft at "$CRITERIA_PATH" before this command.
+# Validate once to obtain the contract hash; after user approval, add the
+# approval receipt and run the same validator again before assessment.
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/validate_assessment_criteria.py \
-  /ABSOLUTE/EVIDENCE/criteria.json \
-  --task EXACT_TASK --run-id EXACT_RUN_ID --backend EXACT_BACKEND \
-  --profile-id PROFILE_ID --algorithm EXACT_ALGORITHM --runner EXACT_RUNNER
+  "$CRITERIA_PATH" \
+  --task "$TASK" --run-id "$RUN_ID" --backend "$BACKEND" \
+  --profile-id "$PROFILE_ID" --algorithm "$ALGORITHM" --runner "$RUNNER"
 
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/assess_training_run.py \
-  /ABSOLUTE/EVIDENCE/summary.json \
-  --health /ABSOLUTE/EVIDENCE/health-2.json \
-  --criteria /ABSOLUTE/EVIDENCE/criteria.json \
-  --task EXACT_TASK --run-id EXACT_RUN_ID --backend EXACT_BACKEND \
-  --profile-id PROFILE_ID --algorithm EXACT_ALGORITHM --runner EXACT_RUNNER \
-  --output /ABSOLUTE/EVIDENCE/assessment.json
+  "$SUMMARY_PATH" --health "$HEALTH_PATH" --criteria "$CRITERIA_PATH" \
+  --task "$TASK" --run-id "$RUN_ID" --backend "$BACKEND" \
+  --profile-id "$PROFILE_ID" --algorithm "$ALGORITHM" --runner "$RUNNER" \
+  --output "$ASSESSMENT_PATH"
 ```
 
 Start criteria from `assets/assessment-criteria-template.json`; it is an
@@ -272,6 +301,16 @@ Use `scripts/record_tuning_experience.py` to append immutable events under
 - export and archive hashes and paths;
 - Sim2Sim/Sim2Real feedback;
 - observed effect, lesson, next suggestion, and confidence.
+
+For every new event, use version 2 and embed the complete host-local
+`run_identity`. Require the event task, run ID, and algorithm to match it.
+Version-1 events remain legacy-readable but do not establish reproducible
+dual-host provenance.
+
+Keep raw artifacts under the run's `evidence/` directory. Store immutable
+timestamped event JSON at the run root, reference evidence by absolute path and
+SHA-256, and never overwrite referenced evidence. Use a new snapshot or
+evaluation ID for every later observation.
 
 Reuse an earlier lesson only when task, algorithm, observation, reward, and
 deployment context are compatible. State incompatibilities and uncertainty.
