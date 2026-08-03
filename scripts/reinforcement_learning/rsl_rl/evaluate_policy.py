@@ -419,6 +419,18 @@ def _update_follow_camera(env: RslRlVecEnvWrapper, env_index: int, offset: list[
     env.unwrapped.sim.set_camera_view(eye, target)
 
 
+def _prime_video_renderer(env: RslRlVecEnvWrapper) -> None:
+    """Initialize the lazy RGB annotator before RecordVideo captures frame zero."""
+    frame = env.unwrapped.render()
+    if (
+        not isinstance(frame, np.ndarray)
+        or frame.ndim != 3
+        or frame.shape[2] < 3
+        or frame.size == 0
+    ):
+        raise ValueError("video renderer warmup did not return an RGB frame")
+
+
 def _review_windows(
     peak_steps: dict[str, int | None],
     termination_first_steps: dict[str, int],
@@ -535,6 +547,8 @@ def _evaluate(
     camera_offset = _parse_camera_offset(args_cli.follow_camera_offset_json)
     if args_cli.follow_robot_camera:
         _update_follow_camera(env, args_cli.telemetry_env_index, camera_offset)
+    if video_path is not None:
+        _prime_video_renderer(env)
     previous_actions: torch.Tensor | None = None
     telemetry_samples: list[dict[str, Any]] = []
     telemetry_joint_names: list[str] = []

@@ -92,11 +92,21 @@ complex
      未读取或写入真实经验，未启动训练、Isaac Sim 或 Play，未暂存、提交或推送。
 
 5. **P2 — AEO-005: 完成相机跟随入镜验证**
-   - **Item Status**: pending
+   - **Item Status**: resolved (`2026-08-03T21:25:30+08:00`)
    - 仅在 GPU 无训练或其他 Isaac Sim 任务时，运行约 120 步 Native 诊断录像，确认
      env 0 机器人在完整运动过程中持续入镜。
    - 验证成功时只记录证据并关闭本项；只有验证失败才另行提出精确代码修改范围，
      不预先改变相机、物理、观测、动作或指标行为。
+   - **Resolution Evidence**: 首次不可变评估 `aeo-005-camera-001` 暴露首帧为全黑，
+     只读根因审计确认 IsaacLab RGB annotator 延迟初始化。evaluator 现于初始相机定位
+     后、策略循环前执行一次只读 render 预热并丢弃返回帧，严格验证 RGB 结构且不增加
+     物理或策略 step。GPU 空闲条件下使用相同 checkpoint、seed、命令和 120 步场景完成
+     `aeo-005-camera-002`：证据 bundle 复验为 valid，视频为 120 帧、50 FPS、
+     1280x720，逐帧亮度检查无近黑帧，六张覆盖 0–119 帧的接触表人工复核均见完整
+     env 0 机器人且相机持续跟随。新增 4 项相机/预热回归测试；既有证据测试 12 项、
+     run identity 测试 20 项、完整 Skill 测试 171 项、evaluator help、AST、静态编译
+     和 diff/空白检查均通过。未启动 Play，未控制或干扰训练，未改变物理、观测、
+     动作或指标行为，未暂存、提交或推送。
 
 ### Suggested Implementation
 严格按 AEO-001 到 AEO-005 的顺序推进，同一时间只允许一个项目为
