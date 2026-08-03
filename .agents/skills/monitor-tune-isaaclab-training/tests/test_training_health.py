@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -13,6 +15,7 @@ from unittest.mock import patch
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 SCRIPT = SCRIPT_DIR / "collect_training_health.py"
+SUMMARY_SCRIPT = SCRIPT_DIR / "summarize_training_log.py"
 SPEC = importlib.util.spec_from_file_location("collect_training_health", SCRIPT)
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -217,6 +220,80 @@ class TrainingHealthTests(unittest.TestCase):
     def test_target_progress_is_completed(self) -> None:
         report = self.collect(99, target=100)
         self.assertEqual(report["state"], "completed")
+
+    def run_health_cli(self, *extra: str) -> subprocess.CompletedProcess[str]:
+        self.log_path.write_text("Learning iteration 1/10\n", encoding="utf-8")
+        return subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--log",
+                str(self.log_path),
+                "--stale-after-seconds",
+                "60",
+                *extra,
+            ],
+            cwd=self.temporary_directory.name,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def run_summary_cli(self, *extra: str) -> subprocess.CompletedProcess[str]:
+        self.log_path.write_text("Learning iteration 1/10\n", encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, str(SUMMARY_SCRIPT), str(self.log_path), *extra],
+            cwd=self.temporary_directory.name,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_health_cli_preserves_stdout_when_output_is_omitted(self) -> None:
+        result = self.run_health_cli()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["state"], "observing")
+
+    def test_health_cli_writes_new_absolute_output(self) -> None:
+        output = Path(self.temporary_directory.name).resolve() / "health.json"
+        result = self.run_health_cli("--output", str(output))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(json.loads(output.read_text(encoding="utf-8"))["state"], "observing")
+
+    def test_health_cli_rejects_relative_and_existing_output(self) -> None:
+        relative = self.run_health_cli("--output", "health.json")
+        self.assertNotEqual(relative.returncode, 0)
+        self.assertIn("new absolute path", relative.stderr)
+        output = Path(self.temporary_directory.name).resolve() / "existing-health.json"
+        output.write_text("keep\n", encoding="utf-8")
+        existing = self.run_health_cli("--output", str(output))
+        self.assertNotEqual(existing.returncode, 0)
+        self.assertIn("already exists", existing.stderr)
+        self.assertEqual(output.read_text(encoding="utf-8"), "keep\n")
+
+    def test_summary_cli_requires_output(self) -> None:
+        result = self.run_summary_cli()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--output", result.stderr)
+
+    def test_summary_cli_rejects_relative_and_existing_output(self) -> None:
+        relative = self.run_summary_cli("--output", "summary.json")
+        self.assertNotEqual(relative.returncode, 0)
+        self.assertIn("new absolute path", relative.stderr)
+        output = Path(self.temporary_directory.name).resolve() / "existing-summary.json"
+        output.write_text("keep\n", encoding="utf-8")
+        existing = self.run_summary_cli("--output", str(output))
+        self.assertNotEqual(existing.returncode, 0)
+        self.assertIn("already exists", existing.stderr)
+        self.assertEqual(output.read_text(encoding="utf-8"), "keep\n")
+
+    def test_summary_cli_writes_new_absolute_output(self) -> None:
+        output = Path(self.temporary_directory.name).resolve() / "summary.json"
+        result = self.run_summary_cli("--output", str(output))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(json.loads(output.read_text(encoding="utf-8"))["window_size"], 1)
 
 
 if __name__ == "__main__":

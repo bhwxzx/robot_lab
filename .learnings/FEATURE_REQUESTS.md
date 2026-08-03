@@ -107,18 +107,38 @@ complex
      敏感信息检查均通过；未运行真实 Play 或改动训练进程。
 
 4. **P1 — MTA-004: 统一可执行的证据目录和命令**
+   - **Item Status**: resolved (`2026-08-01T17:57:53+08:00`)
    - 将 health、summary、assessment、Play result、telemetry 和视频统一放入
      `learnings/policy_tuning/<task>/<run-id>/evidence/` 下的绝对路径。
    - 修正 `SKILL.md` 中会被 `assess_training_run.py` 拒绝的相对
      `--output ASSESSMENT.json` 示例。
    - 明确临时文件与不可变经验事件的边界，避免污染仓库根目录。
+   - **Resolution Evidence**: 已新增确定性的证据布局 helper，将 criteria、
+     health、summary、assessment 及每次 Play 的 result、telemetry、video 映射到
+     仓库内绝对路径；拒绝不安全标识、路径穿越、符号链接组件和已有目标。
+     health 保留 stdout 并支持新的绝对 `--output`，summary 强制新的绝对输出，
+     两者均使用排他创建；原始证据与 run 根目录下的不可变经验事件明确分离。
+     完整保留测试 65 项、Skill validator、11 个算法画像、覆盖扫描、15 个 Skill
+     CLI、evaluator help、引用、diff、空白和敏感信息检查均通过；未运行 Play、
+     未改动训练进程，未安装、删除、提交或推送内容。
 
 5. **P1 — MTA-005: 补全双机独立运行和脏源码来源身份**
+   - **Item Status**: resolved (`2026-08-01T18:27:00+08:00`)
    - 每台机器独立记录 `host_id`、branch、HEAD、训练命令、Hydra overrides、
      相关配置文件 SHA-256 和评估场景指纹。
    - 当 `source.dirty=true` 时记录 diff SHA-256 或受控 patch 证据，避免只有
      `dirty=true` 而无法复现策略。
    - Git 只用于用户控制的代码和经验同步，不引入跨机任务状态机。
+   - **Resolution Evidence**: 已新增 host-local run identity helper，确定性记录
+     主机、runner、seed、完整本地 Git 来源、按序训练参数、配置 SHA-256 和规范化
+     评估场景；脏 tracked 配置绑定 binary diff SHA-256，untracked/ignored 配置要求
+     本 run `evidence/source/` 下覆盖全部 dirty path 的 patch。捕获前后复核 branch、
+     HEAD、dirty/untracked 集、配置、diff 和 patch，Git 查询禁用 optional locks、
+     fsmonitor、external diff 及 textconv。新增 version 2 不可变经验事件以嵌入并校验
+     run identity，保留 version 1 兼容；并发同名事件只允许一个原子发布。完整保留
+     测试 92 项、Skill validator、11 个算法画像、覆盖扫描、16 个 Skill CLI、
+     evaluator help、引用、diff、空白和敏感信息检查均通过，独立前向复核无阻断项；
+     未引入跨机状态机，未运行 Play、未改动训练进程，未安装、删除、提交或推送内容。
 
 6. **P1 — MTA-006: 增加只读历史经验查询**
    - 增加轻量只读查询工具，按 task、algorithm、host 和 observation/reward/

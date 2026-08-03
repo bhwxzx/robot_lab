@@ -33,6 +33,32 @@ VALUE_RE = re.compile(
 )
 
 
+class SummaryOutputError(ValueError):
+    """Raised when a summary output path is unsafe."""
+
+
+def write_new_absolute_output(path: Path, encoded: str) -> None:
+    """Write a summary without following symlinks or overwriting a file."""
+    if not path.is_absolute():
+        raise SummaryOutputError("--output must be a new absolute path")
+    current = Path(path.anchor)
+    for component in path.parts[1:-1]:
+        current /= component
+        if current.is_symlink():
+            raise SummaryOutputError(
+                f"--output contains a symlinked path component: {current}"
+            )
+    if not path.parent.is_dir():
+        raise SummaryOutputError("--output parent directory does not exist")
+    if path.exists() or path.is_symlink():
+        raise SummaryOutputError("--output already exists")
+    try:
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(encoded)
+    except FileExistsError as exc:
+        raise SummaryOutputError("--output already exists") from exc
+
+
 def _progress_match(
     line: str,
     patterns: list[dict[str, Any]],
@@ -198,7 +224,7 @@ def main() -> int:
     parser.add_argument("--last", type=int, default=100)
     parser.add_argument("--profile-id", default="generic")
     parser.add_argument("--registry", default=str(DEFAULT_REGISTRY_PATH))
-    parser.add_argument("--output")
+    parser.add_argument("--output", required=True)
     args = parser.parse_args()
     if not 1 <= args.last <= 10000:
         parser.error("--last must be between 1 and 10000")
@@ -214,10 +240,10 @@ def main() -> int:
         ensure_ascii=False,
         allow_nan=False,
     )
-    if args.output:
-        Path(args.output).write_text(encoded + "\n", encoding="utf-8")
-    else:
-        print(encoded)
+    try:
+        write_new_absolute_output(Path(args.output), encoded + "\n")
+    except SummaryOutputError as exc:
+        parser.error(str(exc))
     return 0
 
 

@@ -28,6 +28,28 @@ class HealthEvidenceError(ValueError):
     """Raised when a previous health snapshot cannot be loaded."""
 
 
+def write_new_absolute_output(path: Path, encoded: str) -> None:
+    """Write a health snapshot without following symlinks or overwriting a file."""
+    if not path.is_absolute():
+        raise HealthEvidenceError("--output must be a new absolute path")
+    current = Path(path.anchor)
+    for component in path.parts[1:-1]:
+        current /= component
+        if current.is_symlink():
+            raise HealthEvidenceError(
+                f"--output contains a symlinked path component: {current}"
+            )
+    if not path.parent.is_dir():
+        raise HealthEvidenceError("--output parent directory does not exist")
+    if path.exists() or path.is_symlink():
+        raise HealthEvidenceError("--output already exists")
+    try:
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(encoded)
+    except FileExistsError as exc:
+        raise HealthEvidenceError("--output already exists") from exc
+
+
 def _read_tail(path: Path, byte_count: int = 1024 * 1024) -> str:
     with path.open("rb") as stream:
         stream.seek(0, os.SEEK_END)
@@ -545,6 +567,7 @@ def main() -> int:
     parser.add_argument("--previous-tensorboard-step", type=int)
     parser.add_argument("--previous-observed-at", type=float)
     parser.add_argument("--now", type=float)
+    parser.add_argument("--output")
     args = parser.parse_args()
     if args.previous_health and any(
         value is not None
@@ -588,7 +611,14 @@ def main() -> int:
         now=args.now,
         previous_health=previous_health,
     )
-    print(json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False))
+    encoded = json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    if args.output:
+        try:
+            write_new_absolute_output(Path(args.output), encoded)
+        except HealthEvidenceError as exc:
+            parser.error(str(exc))
+    else:
+        print(encoded, end="")
     return 0
 
 
