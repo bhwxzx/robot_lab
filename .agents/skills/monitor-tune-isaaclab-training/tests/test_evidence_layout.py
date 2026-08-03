@@ -24,12 +24,87 @@ def load_script(name: str):
 
 
 LAYOUT = load_script("prepare_evidence_layout")
+IDENTITY = load_script("capture_run_identity")
+CONFIG = load_script("capture_effective_training_config")
 EXPERIENCE = load_script("record_tuning_experience")
 
 
-def experience_event() -> dict:
-    return {
+ENV_YAML = """\
+seed: 42
+scene:
+  num_envs: 1
+rewards:
+  progress:
+    func: example.rewards:progress
+    weight: 1.0
+"""
+
+AGENT_YAML = """\
+seed: 42
+experiment_name: effective-config-test
+class_name: OnPolicyRunnerAmpROA
+algorithm:
+  class_name: AMPROAPPO
+"""
+
+
+def experience_event(repository_root: Path, effective_path: Path) -> dict:
+    scenario = {
+        "scenario_id": "quick-native",
+        "scenario_overrides": {},
+        "command_schedule": [],
+        "duration_steps": 500,
+        "num_envs": 1,
+        "seed": 42,
+    }
+    identity = {
         "version": 1,
+        "task": "task-a",
+        "run_id": "run-001",
+        "host_id": "younghit",
+        "backend": "isaaclab",
+        "algorithm": "AMP-ROA",
+        "runner": "OnPolicyRunnerAmpROA",
+        "seed": 42,
+        "source": {
+            "repository_root": str(repository_root),
+            "branch": "main",
+            "head": "1" * 40,
+            "dirty": False,
+            "dirty_paths": [],
+            "diff_sha256": None,
+            "patch_evidence": None,
+        },
+        "training": {
+            "command": ["python", "train.py", "--task=task-a"],
+            "hydra_overrides": [],
+        },
+        "config_files": [{"path": "config.py", "sha256": "2" * 64}],
+        "evaluation_scenario": {
+            "contract": scenario,
+            "sha256": IDENTITY._sha256_bytes(
+                IDENTITY._canonical_json(scenario).encode("utf-8")
+            ),
+        },
+    }
+    identity["identity_sha256"] = IDENTITY._sha256_bytes(
+        IDENTITY._canonical_json(identity).encode("utf-8")
+    )
+    log_directory = (
+        repository_root
+        / "logs"
+        / "rsl_rl"
+        / "effective-config-test"
+        / identity["run_id"]
+    )
+    params = log_directory / "params"
+    params.mkdir(parents=True)
+    (params / "env.yaml").write_text(ENV_YAML, encoding="utf-8")
+    (params / "agent.yaml").write_text(AGENT_YAML, encoding="utf-8")
+    config = CONFIG.capture_effective_config(identity, log_directory)
+    receipt = CONFIG.write_new_evidence(effective_path, config)
+    return {
+        "version": 3,
         "event_id": "snapshot-001",
         "event_type": "run_snapshot",
         "recorded_at": "2026-08-01T18:00:00+08:00",
@@ -38,13 +113,23 @@ def experience_event() -> dict:
         "algorithm": "AMP-ROA",
         "context": {
             "observation_fingerprint": "unknown",
-            "reward_fingerprint": "unknown",
+            "reward_fingerprint": config["fingerprints"]["reward"],
             "deployment_fingerprint": "unknown",
         },
         "parameters": {},
-        "evidence": {},
+        "evidence": {
+            "effective_config": {
+                "path": str(effective_path),
+                "sha256": receipt["sha256"],
+                "effective_config_fingerprint": config["fingerprints"][
+                    "effective_config"
+                ],
+                "reward_fingerprint": config["fingerprints"]["reward"],
+            }
+        },
         "analysis": {"summary": "", "confidence": "low"},
         "next_suggestion": "",
+        "run_identity": identity,
     }
 
 
@@ -52,7 +137,10 @@ class EvidenceLayoutTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary_directory.cleanup)
-        self.root = Path(self.temporary_directory.name).resolve() / "policy_tuning"
+        self.repository_root = (
+            Path(self.temporary_directory.name).resolve() / "robot_lab"
+        )
+        self.root = self.repository_root / "learnings" / "policy_tuning"
 
     def prepare(self, snapshot: str = "snapshot-001", evaluation: str | None = "eval-001") -> dict:
         return LAYOUT.prepare_evidence_layout(
@@ -132,7 +220,13 @@ class EvidenceLayoutTests(unittest.TestCase):
 
     def test_raw_evidence_and_immutable_events_have_separate_roots(self) -> None:
         layout = self.prepare()
-        receipt = EXPERIENCE.write_event(self.root, experience_event())
+        receipt = EXPERIENCE.write_event(
+            self.root,
+            experience_event(
+                self.repository_root,
+                Path(layout["paths"]["effective_config"]),
+            ),
+        )
         event_path = Path(receipt["event_path"])
         run_root = Path(layout["run_root"])
         evidence_root = Path(layout["evidence_root"])

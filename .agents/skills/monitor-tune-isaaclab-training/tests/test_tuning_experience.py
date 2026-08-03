@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import copy
 import sys
 import tempfile
 import unittest
@@ -21,6 +22,33 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 import capture_run_identity as IDENTITY  # noqa: E402
+import capture_effective_training_config as CONFIG  # noqa: E402
+
+
+ENV_YAML = """\
+seed: 42
+scene:
+  num_envs: 4096
+rewards:
+  action_rate:
+    func: example.rewards:action_rate
+    weight: -0.3
+  disabled_term: null
+"""
+
+AGENT_YAML = """\
+seed: 42
+device: cuda:0
+num_steps_per_env: 24
+max_iterations: 100000
+experiment_name: effective-config-test
+run_name: ''
+logger: wandb
+resume: false
+class_name: OnPolicyRunnerAmpROA
+algorithm:
+  class_name: AMPROAPPO
+"""
 
 
 def event(event_type: str = "assessment") -> dict:
@@ -47,7 +75,7 @@ def event(event_type: str = "assessment") -> dict:
     return value
 
 
-def version_two_event() -> dict:
+def version_two_event(repository_root: Path | None = None) -> dict:
     value = event()
     value["version"] = 2
     scenario = {
@@ -68,7 +96,7 @@ def version_two_event() -> dict:
         "runner": "OnPolicyRunnerAmpROA",
         "seed": 42,
         "source": {
-            "repository_root": "/absolute/robot_lab",
+            "repository_root": str(repository_root or Path("/absolute/robot_lab")),
             "branch": "main",
             "head": "1" * 40,
             "dirty": False,
@@ -77,8 +105,8 @@ def version_two_event() -> dict:
             "patch_evidence": None,
         },
         "training": {
-            "command": ["python", "train.py", "env.scene.num_envs=4096"],
-            "hydra_overrides": ["env.scene.num_envs=4096"],
+            "command": ["python", "train.py", "--task=lw-leg-rough"],
+            "hydra_overrides": [],
         },
         "config_files": [{"path": "config.yaml", "sha256": "2" * 64}],
         "evaluation_scenario": {
@@ -95,24 +123,72 @@ def version_two_event() -> dict:
     return value
 
 
+def history_root(directory: str) -> Path:
+    root = Path(directory).resolve() / "robot_lab" / "learnings" / "policy_tuning"
+    root.mkdir(parents=True)
+    return root
+
+
+def version_three_event(root: Path, event_type: str = "assessment") -> dict:
+    repository_root = root.parents[1]
+    value = version_two_event(repository_root)
+    value["version"] = 3
+    value["event_type"] = event_type
+    if event_type == "feedback":
+        value["evidence"] = {"source": "sim2real"}
+    log_directory = (
+        repository_root
+        / "logs"
+        / "rsl_rl"
+        / "effective-config-test"
+        / value["run_id"]
+    )
+    params = log_directory / "params"
+    params.mkdir(parents=True)
+    (params / "env.yaml").write_text(ENV_YAML, encoding="utf-8")
+    (params / "agent.yaml").write_text(AGENT_YAML, encoding="utf-8")
+    config = CONFIG.capture_effective_config(value["run_identity"], log_directory)
+    config_path = (
+        root
+        / value["task"]
+        / value["run_id"]
+        / "evidence"
+        / "source"
+        / "effective-config-snapshot-001.json"
+    )
+    config_path.parent.mkdir(parents=True)
+    receipt = CONFIG.write_new_evidence(config_path, config)
+    value["context"]["reward_fingerprint"] = config["fingerprints"]["reward"]
+    value["evidence"]["effective_config"] = {
+        "path": str(config_path),
+        "sha256": receipt["sha256"],
+        "effective_config_fingerprint": config["fingerprints"]["effective_config"],
+        "reward_fingerprint": config["fingerprints"]["reward"],
+    }
+    return value
+
+
 class TuningExperienceTests(unittest.TestCase):
     def test_writes_immutable_event(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            receipt = MODULE.write_event(Path(directory).resolve(), event())
+            root = history_root(directory)
+            value = version_three_event(root)
+            receipt = MODULE.write_event(root, value)
             self.assertTrue(Path(receipt["event_path"]).is_file())
             self.assertTrue(receipt["immutable"])
             with self.assertRaises(MODULE.ExperienceError):
-                MODULE.write_event(Path(directory).resolve(), event())
+                MODULE.write_event(root, value)
 
     def test_concurrent_writers_publish_exactly_one_event(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory).resolve()
+            root = history_root(directory)
+            value = version_three_event(root)
             barrier = Barrier(2)
 
             def write_once() -> str:
                 barrier.wait()
                 try:
-                    MODULE.write_event(root, event())
+                    MODULE.write_event(root, value)
                 except MODULE.ExperienceError:
                     return "rejected"
                 return "published"
@@ -120,7 +196,8 @@ class TuningExperienceTests(unittest.TestCase):
             with ThreadPoolExecutor(max_workers=2) as executor:
                 outcomes = sorted(executor.map(lambda _: write_once(), range(2)))
             self.assertEqual(outcomes, ["published", "rejected"])
-            self.assertEqual(len(list(root.rglob("*.json"))), 1)
+            run_root = root / value["task"] / value["run_id"]
+            self.assertEqual(len(list(run_root.glob("*.json"))), 1)
             self.assertEqual(len(list(root.rglob("*.tmp-*"))), 0)
 
     def test_feedback_requires_source(self) -> None:
@@ -152,25 +229,65 @@ class TuningExperienceTests(unittest.TestCase):
         value = event()
         MODULE.validate_event(value)
 
+    def test_new_writes_require_version_three_and_verified_config(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = history_root(directory)
+            with self.assertRaisesRegex(MODULE.ExperienceError, "version 3"):
+                MODULE.write_event(root, version_two_event(root.parents[1]))
+
+            value = version_three_event(root)
+            MODULE.validate_event(value)
+            MODULE.validate_effective_config_binding(root, value)
+            value["evidence"]["effective_config"]["sha256"] = "0" * 64
+            with self.assertRaisesRegex(MODULE.ExperienceError, "SHA-256 mismatch"):
+                MODULE.write_event(root, value)
+
+    def test_version_three_reward_and_scope_binding_are_enforced(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = history_root(directory)
+            value = version_three_event(root)
+            reward_mismatch = copy.deepcopy(value)
+            reward_mismatch["context"]["reward_fingerprint"] = "0" * 64
+            with self.assertRaisesRegex(MODULE.ExperienceError, "reward_fingerprint"):
+                MODULE.validate_event(reward_mismatch)
+
+            reference = value["evidence"]["effective_config"]
+            reference["path"] = str(
+                root / value["task"] / "another-run" / "evidence" / "source" / "effective-config-x.json"
+            )
+            with self.assertRaisesRegex(MODULE.ExperienceError, "direct source artifact"):
+                MODULE.write_event(root, value)
+
     def test_rejects_symlinked_experience_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             parent = Path(directory).resolve()
-            real_root = parent / "real-root"
-            real_root.mkdir()
+            real_root = history_root(directory)
+            value = version_three_event(real_root)
             linked_root = parent / "linked-root"
             linked_root.symlink_to(real_root, target_is_directory=True)
             with self.assertRaisesRegex(MODULE.ExperienceError, "symlinked"):
-                MODULE.write_event(linked_root, event())
+                MODULE.write_event(linked_root, value)
 
     def test_rejects_symlinked_run_component_before_creation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve() / "events"
             root.mkdir()
+            safe_root = Path(directory).resolve() / "safe" / "learnings" / "policy_tuning"
+            safe_root.mkdir(parents=True)
+            value = version_three_event(safe_root)
             external = Path(directory).resolve() / "external"
             external.mkdir()
             (root / "lw-leg-rough").symlink_to(external, target_is_directory=True)
+            value["evidence"]["effective_config"]["path"] = str(
+                root
+                / value["task"]
+                / value["run_id"]
+                / "evidence"
+                / "source"
+                / "effective-config-snapshot-001.json"
+            )
             with self.assertRaisesRegex(MODULE.ExperienceError, "symlinked"):
-                MODULE.write_event(root, event())
+                MODULE.write_event(root, value)
             self.assertFalse((external / "run-001").exists())
 
     def test_receipt_output_is_exclusive(self) -> None:

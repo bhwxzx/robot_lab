@@ -13,7 +13,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from record_tuning_experience import ExperienceError, SLUG_RE, validate_event
+from capture_effective_training_config import (
+    DEFAULT_MAX_DIFF_ENTRIES,
+    EffectiveConfigError,
+    compare_effective_configs,
+    load_and_validate_effective_config,
+    load_run_identity,
+)
+from capture_run_identity import RunIdentityError, validate_run_identity
+from record_tuning_experience import (
+    ExperienceError,
+    SLUG_RE,
+    validate_effective_config_binding,
+    validate_event,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -59,6 +72,7 @@ def _validate_query_inputs(
     deployment_fingerprint: str,
     max_events: int,
     max_event_bytes: int,
+    max_diff_entries: int,
 ) -> None:
     for name, value in (("task", task), ("algorithm", algorithm), ("host-id", host_id)):
         if not isinstance(value, str) or not SLUG_RE.fullmatch(value):
@@ -77,6 +91,12 @@ def _validate_query_inputs(
         or max_event_bytes <= 0
     ):
         raise ExperienceQueryError("max-event-bytes must be a positive integer")
+    if (
+        isinstance(max_diff_entries, bool)
+        or not isinstance(max_diff_entries, int)
+        or max_diff_entries <= 0
+    ):
+        raise ExperienceQueryError("max-diff-entries must be a positive integer")
 
 
 def _is_unknown(value: Any) -> bool:
@@ -232,7 +252,7 @@ def _classify_event(
     deployment_fingerprint: str,
 ) -> tuple[str, list[str]]:
     event_host = (
-        event["run_identity"]["host_id"] if event["version"] == 2 else None
+        event["run_identity"]["host_id"] if event["version"] >= 2 else None
     )
     query_values = {
         "algorithm": algorithm,
@@ -248,6 +268,8 @@ def _classify_event(
     }
     conflicts: list[str] = []
     unknowns: list[str] = []
+    if event["version"] < 3:
+        unknowns.append("event_effective_config_unknown")
     for field in query_values:
         query_value = query_values[field]
         event_value = event_values[field]
@@ -257,11 +279,40 @@ def _classify_event(
             unknowns.append(f"event_{field}_unknown")
         elif query_value != event_value:
             conflicts.append(f"{field}_mismatch")
+    if event["version"] < 3:
+        return "unknown", conflicts + unknowns
     if conflicts:
         return "conflicting", conflicts + unknowns
     if unknowns:
         return "unknown", unknowns
     return "compatible", []
+
+
+def _configuration_comparison_eligible(
+    event: dict[str, Any],
+    *,
+    algorithm: str,
+    host_id: str,
+    observation_fingerprint: str,
+    deployment_fingerprint: str,
+) -> bool:
+    if event["version"] != 3:
+        return False
+    event_values = (
+        event["algorithm"],
+        event["run_identity"]["host_id"],
+        event["context"].get("observation_fingerprint"),
+        event["context"].get("deployment_fingerprint"),
+    )
+    query_values = (
+        algorithm,
+        host_id,
+        observation_fingerprint,
+        deployment_fingerprint,
+    )
+    return not any(_is_unknown(value) for value in (*event_values, *query_values)) and (
+        event_values == query_values
+    )
 
 
 def _event_sort_key(item: dict[str, Any]) -> tuple[float, str, str]:
@@ -276,16 +327,45 @@ def _event_sort_key(item: dict[str, Any]) -> tuple[float, str, str]:
 def query_tuning_experience(
     root: Path,
     *,
-    task: str,
-    algorithm: str,
-    host_id: str,
+    run_identity: dict[str, Any],
+    effective_config_path: Path,
+    effective_config_sha256: str,
     observation_fingerprint: str,
-    reward_fingerprint: str,
     deployment_fingerprint: str,
     max_events: int = DEFAULT_MAX_EVENTS,
     max_event_bytes: int = DEFAULT_MAX_EVENT_BYTES,
+    max_diff_entries: int = DEFAULT_MAX_DIFF_ENTRIES,
 ) -> dict[str, Any]:
     """Return deterministic history classifications without changing state."""
+    try:
+        validate_run_identity(run_identity)
+    except RunIdentityError as exc:
+        raise ExperienceQueryError(str(exc)) from exc
+    task = run_identity["task"]
+    algorithm = run_identity["algorithm"]
+    host_id = run_identity["host_id"]
+    _reject_symlink_components(root, label="history root")
+    if not root.is_dir():
+        raise ExperienceQueryError("history root must be an existing directory")
+    expected_current_parent = (
+        root / task / run_identity["run_id"] / "evidence" / "source"
+    )
+    if effective_config_path.parent != expected_current_parent or not re.fullmatch(
+        r"effective-config-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
+        effective_config_path.name,
+    ):
+        raise ExperienceQueryError(
+            "current effective config must be a direct source artifact for this run"
+        )
+    try:
+        current_config, current_config_source = load_and_validate_effective_config(
+            effective_config_path,
+            expected_sha256=effective_config_sha256,
+            run_identity=run_identity,
+        )
+    except EffectiveConfigError as exc:
+        raise ExperienceQueryError(str(exc)) from exc
+    reward_fingerprint = current_config["fingerprints"]["reward"]
     _validate_query_inputs(
         task=task,
         algorithm=algorithm,
@@ -295,11 +375,8 @@ def query_tuning_experience(
         deployment_fingerprint=deployment_fingerprint,
         max_events=max_events,
         max_event_bytes=max_event_bytes,
+        max_diff_entries=max_diff_entries,
     )
-    _reject_symlink_components(root, label="history root")
-    if not root.is_dir():
-        raise ExperienceQueryError("history root must be an existing directory")
-
     event_paths = _event_paths(root, task, max_events)
     buckets: dict[str, list[dict[str, Any]]] = {
         "compatible": [],
@@ -331,9 +408,35 @@ def query_tuning_experience(
             )
             event_host = (
                 event["run_identity"]["host_id"]
-                if event["version"] == 2
+                if event["version"] >= 2
                 else None
             )
+            comparison_eligible = _configuration_comparison_eligible(
+                event,
+                algorithm=algorithm,
+                host_id=host_id,
+                observation_fingerprint=observation_fingerprint,
+                deployment_fingerprint=deployment_fingerprint,
+            )
+            parameter_diff = None
+            if comparison_eligible:
+                historical_config = validate_effective_config_binding(root, event)
+                parameter_diff = compare_effective_configs(
+                    historical_config,
+                    current_config,
+                    max_diff_entries=max_diff_entries,
+                )
+                config_verification = {
+                    "status": "verified",
+                    "effective_config_fingerprint": historical_config["fingerprints"][
+                        "effective_config"
+                    ],
+                    "reward_fingerprint": historical_config["fingerprints"]["reward"],
+                }
+            elif event["version"] < 3:
+                config_verification = {"status": "legacy_event_not_verifiable"}
+            else:
+                config_verification = {"status": "not_checked_context_mismatch"}
             buckets[classification].append(
                 {
                     "event_path": str(path),
@@ -349,6 +452,8 @@ def query_tuning_experience(
                     "context": event["context"],
                     "parameters": event["parameters"],
                     "evidence_refs": _extract_evidence_refs(event["evidence"]),
+                    "effective_config_verification": config_verification,
+                    "parameter_diff": parameter_diff,
                     "analysis": {
                         "summary": event["analysis"].get("summary"),
                         "confidence": event["analysis"]["confidence"],
@@ -357,7 +462,14 @@ def query_tuning_experience(
                     "classification_reasons": reasons,
                 }
             )
-        except (ExperienceQueryError, OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        except (
+            EffectiveConfigError,
+            ExperienceError,
+            ExperienceQueryError,
+            OSError,
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+        ) as exc:
             invalid_events.append(
                 {
                     "event_path": str(path),
@@ -396,6 +508,7 @@ def query_tuning_experience(
         "read_only": True,
         "query": {
             "root": str(root),
+            "run_id": run_identity["run_id"],
             "task": task,
             "algorithm": algorithm,
             "host_id": host_id,
@@ -404,6 +517,14 @@ def query_tuning_experience(
             "deployment_fingerprint": deployment_fingerprint,
             "max_events": max_events,
             "max_event_bytes": max_event_bytes,
+            "max_diff_entries": max_diff_entries,
+            "current_effective_config": {
+                "path": str(effective_config_path),
+                "sha256": current_config_source["sha256"],
+                "effective_config_fingerprint": current_config["fingerprints"][
+                    "effective_config"
+                ],
+            },
         },
         "scan": {
             "event_files": len(event_paths),
@@ -434,11 +555,10 @@ def query_tuning_experience(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=str(DEFAULT_ROOT))
-    parser.add_argument("--task", required=True)
-    parser.add_argument("--algorithm", required=True)
-    parser.add_argument("--host-id", required=True)
+    parser.add_argument("--run-identity", required=True)
+    parser.add_argument("--effective-config", required=True)
+    parser.add_argument("--effective-config-sha256", required=True)
     parser.add_argument("--observation-fingerprint", required=True)
-    parser.add_argument("--reward-fingerprint", required=True)
     parser.add_argument("--deployment-fingerprint", required=True)
     parser.add_argument("--max-events", type=int, default=DEFAULT_MAX_EVENTS)
     parser.add_argument(
@@ -446,20 +566,25 @@ def main() -> int:
         type=int,
         default=DEFAULT_MAX_EVENT_BYTES,
     )
+    parser.add_argument(
+        "--max-diff-entries",
+        type=int,
+        default=DEFAULT_MAX_DIFF_ENTRIES,
+    )
     args = parser.parse_args()
     try:
         result = query_tuning_experience(
             Path(args.root),
-            task=args.task,
-            algorithm=args.algorithm,
-            host_id=args.host_id,
+            run_identity=load_run_identity(Path(args.run_identity)),
+            effective_config_path=Path(args.effective_config),
+            effective_config_sha256=args.effective_config_sha256,
             observation_fingerprint=args.observation_fingerprint,
-            reward_fingerprint=args.reward_fingerprint,
             deployment_fingerprint=args.deployment_fingerprint,
             max_events=args.max_events,
             max_event_bytes=args.max_event_bytes,
+            max_diff_entries=args.max_diff_entries,
         )
-    except (ExperienceQueryError, OSError) as exc:
+    except (EffectiveConfigError, ExperienceQueryError, OSError) as exc:
         parser.error(str(exc))
     print(
         json.dumps(

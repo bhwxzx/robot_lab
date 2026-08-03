@@ -43,7 +43,22 @@ match proves identical captured configuration bytes or semantic YAML content,
 not that the live process used an uncaptured file. Keep the run identity's
 repository source hashes and command evidence alongside this artifact.
 
-ETP-001 establishes capture. Until ETP-002 is separately approved and
-implemented, tuning-experience events and historical queries do not enforce
-the presence of this artifact; verify it manually before using parameter
-history.
+## Revalidation and comparison
+
+Before recording or querying version-3 experience, re-read the artifact as a
+regular non-symlinked file, verify its whole-file SHA-256, and recompute the
+embedded env/agent source hashes, reward inventory, selected training values,
+resolved identity, and all four semantic fingerprints. Bind the artifact to
+the complete run identity; a matching filename or copied JSON is insufficient.
+
+Parameter comparison reparses both embedded YAML documents and emits a stable,
+complete JSON-Pointer-ordered semantic diff. It separately indexes reward
+weight and selected training-parameter changes. Exceeding the configured diff
+entry bound is an error, not a truncated comparison. A difference describes
+what changed between captured configurations; it does not show which change
+caused an observed training outcome.
+
+Every new experience event uses version 3 and references this artifact by its
+absolute path, whole-file SHA-256, effective-config fingerprint, and reward
+fingerprint. Version-1 and version-2 events remain readable but cannot provide
+verified effective-configuration history.

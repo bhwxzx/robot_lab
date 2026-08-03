@@ -4,7 +4,7 @@
 
 **Logged**: 2026-08-03T15:23:10+08:00
 **Priority**: high
-**Status**: pending
+**Status**: resolved
 **Area**: config
 
 ### Requested Capability
@@ -41,10 +41,25 @@ complex
      推送内容。
 
 2. **P1 — ETP-002: 将有效配置绑定到经验事件和历史查询**
-   - **Item Status**: pending
+   - **Item Status**: resolved (`2026-08-03T16:24:58+08:00`)
    - 新事件必须引用匹配的有效配置证据和 reward fingerprint；旧事件保持可读但
      不能直接支持参数修改。
    - 提供两次训练之间的确定性参数差异，并让只读历史查询验证证据路径和哈希。
+   - **Resolution Evidence**: 新经验事件现强制使用 version 3，将完整 run identity
+     与位于本 run `evidence/source/` 下的有效配置绝对路径、整文件 SHA-256、有效配置
+     fingerprint 和 reward fingerprint 绑定；发布和查询均重新计算内嵌 env/agent
+     来源哈希、身份字段、奖励、训练参数及全部 fingerprint。Version 1/2 保持可读但
+     始终归为 unknown，不能支持参数修改；同 host、算法、观测及部署上下文中的奖励
+     fingerprint 差异仍归为 conflicting，但携带完整、确定性的 JSON-Pointer 参数
+     diff，其他 host 或上下文不匹配的本地路径不会被解引用，超出 diff 上限则 fail
+     closed。针对性测试 9、12、13、8 项及完整测试 130 项、Skill validator、11 个
+     算法画像、覆盖扫描、18 个 Skill CLI、evaluator help、10 个本地引用、编译、
+     diff、空白和敏感信息检查均通过。独立前向测试比较
+     `2026-07-29_20-16-03` → `2026-08-01_16-31-56`，验证 agent 配置和 8 个选定
+     训练参数均不变，4 个奖励权重变化，完整语义 diff 共 5 项（另含 run log 路径
+     变化）；version-3 历史事件因 reward fingerprint 不同正确归为 conflicting，
+     错误 artifact SHA 和错误路径均被拒绝。未启动 Play，未修改或干扰训练，未安装、
+     删除、暂存、提交、推送或触碰受保护配置。
 
 ### Suggested Implementation
 先完成并独立批准 ETP-001；验证通过后再单独提出 ETP-002 文件范围。不得恢复
