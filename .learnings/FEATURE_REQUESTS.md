@@ -1,5 +1,62 @@
 # Feature Requests
 
+## [FEAT-20260803-001] effective_training_parameter_evidence
+
+**Logged**: 2026-08-03T15:23:10+08:00
+**Priority**: high
+**Status**: pending
+**Area**: config
+
+### Requested Capability
+每次训练都应可靠记录完整奖励权重、环境配置、runner、算法和训练参数，不能只
+依赖 logs、TensorBoard 或 W&B 指标反推。
+
+### User Context
+训练比较和后续调参需要知道每个 run 实际生效的参数。当前训练入口已经写出
+`params/env.yaml` 和 `params/agent.yaml`，但 advisor 尚未将其作为不可变、身份
+绑定且可查询的证据。
+
+### Complexity Estimate
+complex
+
+### Prioritized Backlog
+
+1. **P0 — ETP-001: 捕获有效训练配置证据**
+   - **Item Status**: resolved (`2026-08-03T15:32:47+08:00`)
+   - 绑定 run identity 与准确 run log 目录，稳定读取并嵌入完整 env/agent YAML。
+   - 提取全部奖励项和常用训练参数，生成 reward、environment、agent 和 combined
+     fingerprints；拒绝身份冲突、符号链接、非有限值、读取漂移和覆盖。
+   - 将证据纳入统一 evidence layout，并在 advisor 解释参数前强制要求该证据。
+   - **Resolution Evidence**: 已新增不可变有效配置捕获，将完整原始 env/agent
+     YAML、全部奖励项（包括 disabled/null）、8 个常用训练参数及来源路径、大小和
+     SHA-256 绑定到 run identity，并生成 agent、environment、reward 和 combined
+     fingerprints；task、seed、runner、experiment、路径范围、符号链接、重复键、
+     非有限值、读取漂移或已有输出不满足约束时均 fail closed。证据布局和 advisor
+     工作流已纳入该产物。针对性测试 7 项与布局测试 8 项、完整保留测试 124 项、
+     Skill validator、11 个算法画像、覆盖扫描、18 个 Skill CLI、evaluator help、
+     11 个本地引用、diff、空白和敏感信息检查均通过。独立前向测试对已有 run
+     验证了 59 个奖励项（38 enabled、21 disabled）、8 个训练参数、原始字节和哈希、
+     四类 fingerprint 及重复捕获确定性；seed 冲突被拒绝且没有产出文件。未修改
+     train.py 或受保护配置，未运行 Play、改动训练进程、安装、删除、暂存、提交或
+     推送内容。
+
+2. **P1 — ETP-002: 将有效配置绑定到经验事件和历史查询**
+   - **Item Status**: pending
+   - 新事件必须引用匹配的有效配置证据和 reward fingerprint；旧事件保持可读但
+     不能直接支持参数修改。
+   - 提供两次训练之间的确定性参数差异，并让只读历史查询验证证据路径和哈希。
+
+### Suggested Implementation
+先完成并独立批准 ETP-001；验证通过后再单独提出 ETP-002 文件范围。不得恢复
+自动 campaign、自动参数修改、训练控制或远端协调。
+
+### Metadata
+- Frequency: recurring
+- Related Features: FEAT-20260731-003, monitor-tune-isaaclab-training,
+  bounded_local_history_adaptive_tuning
+
+---
+
 ## [FEAT-20260726-003] staged_multiseed_tuning_execution
 
 **Logged**: 2026-07-26T15:05:43+08:00

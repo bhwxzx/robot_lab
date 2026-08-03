@@ -19,6 +19,9 @@ Read [references/evidence-layout.md](references/evidence-layout.md) before
 creating criteria, health, summary, assessment, or Play evidence files.
 Read [references/run-identity.md](references/run-identity.md) before recording
 host, Git source, training-command, configuration, or scenario identity.
+Read [references/effective-training-config.md](references/effective-training-config.md)
+before capturing or interpreting the effective reward, environment, or agent
+configuration dumped for one training run.
 Read [references/experience-query.md](references/experience-query.md) before
 using prior tuning records to support a parameter suggestion.
 
@@ -74,6 +77,16 @@ diff SHA-256 or controlled patch evidence. Treat version-1 experience events as
 legacy; use version 2 with a complete `run_identity` for all new evidence.
 Never turn identity capture into Git synchronization or a cross-host state
 machine.
+
+For every RSL-RL run handled by this advisor, capture the effective
+`params/env.yaml` and `params/agent.yaml` after the training entry point writes
+them and before interpreting parameters or proposing a change. Use
+`scripts/capture_effective_training_config.py` with the validated run identity,
+the exact absolute run log directory, and the new `EFFECTIVE_CONFIG_PATH` from
+the evidence layout. Treat its reward, environment, agent, and combined
+fingerprints as configuration provenance. Logs, TensorBoard, and W&B remain
+metric or activity evidence; never use them to replace missing effective
+configuration evidence.
 
 ## Assess a running training process
 

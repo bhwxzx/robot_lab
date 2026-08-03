@@ -9,6 +9,7 @@ learnings/policy_tuning/<task>/<run-id>/
 │   ├── criteria/criteria-<snapshot-id>.json
 │   ├── health/health-<snapshot-id>.json
 │   ├── source/identity-<snapshot-id>.json
+│   ├── source/effective-config-<snapshot-id>.json
 │   ├── source/source-<snapshot-id>.patch
 │   ├── training/summary-<snapshot-id>.json
 │   ├── training/assessment-<snapshot-id>.json
@@ -36,8 +37,9 @@ eval "$(
 ```
 
 The assignments provide `RUN_ROOT`, `EVIDENCE_ROOT`, `CRITERIA_PATH`,
-`HEALTH_PATH`, `SOURCE_IDENTITY_PATH`, `SOURCE_PATCH_PATH`, `SUMMARY_PATH`,
-`ASSESSMENT_PATH`, `PLAY_RESULT_PATH`, `TELEMETRY_PATH`, and `VIDEO_PATH`.
+`HEALTH_PATH`, `SOURCE_IDENTITY_PATH`, `EFFECTIVE_CONFIG_PATH`,
+`SOURCE_PATCH_PATH`, `SUMMARY_PATH`, `ASSESSMENT_PATH`, `PLAY_RESULT_PATH`,
+`TELEMETRY_PATH`, and `VIDEO_PATH`.
 Omit `--evaluation-id` when no Play
 artifacts are needed; shell output then explicitly unsets the three Play
 variables so values from an earlier evaluation cannot leak into the current
@@ -62,6 +64,11 @@ user approves its exact contract and hash, do not edit that file. Use the
 matching `HEALTH_PATH`, `SUMMARY_PATH`, and `ASSESSMENT_PATH` for the same
 snapshot. A later observation gets a new snapshot ID and a fresh set of paths.
 
+After writing `SOURCE_IDENTITY_PATH`, pass it and the exact absolute RSL-RL run
+directory to `capture_effective_training_config.py`; write only to the matching
+new `EFFECTIVE_CONFIG_PATH`. The artifact embeds both effective YAML dumps and
+their fingerprints. Do not substitute console, TensorBoard, or W&B metadata.
+
 The evaluator already accepts `PLAY_RESULT_PATH`, `TELEMETRY_PATH`, and
 `VIDEO_PATH` as absolute destinations. Use `--no_video` and omit `VIDEO_PATH`
 from the evaluator command when video was not authorized or needed.
@@ -69,10 +76,10 @@ from the evaluator command when video was not authorized or needed.
 ## Keep events immutable and separate
 
 Raw criteria, health, summary, assessment, result, telemetry, and video files
-stay below `evidence/`; source identity and optional controlled patch evidence
-stay below `evidence/source/`. `record_tuning_experience.py` writes timestamped,
-append-only event JSON directly below `RUN_ROOT`; never place those event files
-inside `evidence/`.
+stay below `evidence/`; source identity, effective configuration, and optional
+controlled patch evidence stay below `evidence/source/`.
+`record_tuning_experience.py` writes timestamped, append-only event JSON
+directly below `RUN_ROOT`; never place those event files inside `evidence/`.
 
 An event may reference raw evidence only by its absolute path plus a SHA-256.
 Once referenced, the evidence file is immutable. Record later observations
