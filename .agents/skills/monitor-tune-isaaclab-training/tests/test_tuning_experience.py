@@ -10,6 +10,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
+from unittest.mock import patch
 
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
@@ -144,7 +145,7 @@ def version_three_event(root: Path, event_type: str = "assessment") -> dict:
         / value["run_id"]
     )
     params = log_directory / "params"
-    params.mkdir(parents=True)
+    params.mkdir(parents=True, exist_ok=True)
     (params / "env.yaml").write_text(ENV_YAML, encoding="utf-8")
     (params / "agent.yaml").write_text(AGENT_YAML, encoding="utf-8")
     config = CONFIG.capture_effective_config(value["run_identity"], log_directory)
@@ -156,8 +157,14 @@ def version_three_event(root: Path, event_type: str = "assessment") -> dict:
         / "source"
         / "effective-config-snapshot-001.json"
     )
-    config_path.parent.mkdir(parents=True)
-    receipt = CONFIG.write_new_evidence(config_path, config)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt = (
+        {
+            "sha256": MODULE.hashlib.sha256(config_path.read_bytes()).hexdigest(),
+        }
+        if config_path.exists()
+        else CONFIG.write_new_evidence(config_path, config)
+    )
     value["context"]["reward_fingerprint"] = config["fingerprints"]["reward"]
     value["evidence"]["effective_config"] = {
         "path": str(config_path),
@@ -168,11 +175,31 @@ def version_three_event(root: Path, event_type: str = "assessment") -> dict:
     return value
 
 
+def version_four_event(root: Path, event_type: str = "assessment") -> dict:
+    value = version_three_event(root, event_type)
+    value["version"] = 4
+    if event_type in MODULE.EVIDENCE_EVENT_TYPES:
+        value["evidence"]["event"] = {
+            "status": "unavailable",
+            "reason": "raw event evidence not captured",
+        }
+    if event_type == "feedback":
+        value["evidence"]["policy_binding"] = {
+            "status": "unavailable",
+            "reason": "policy identity not available",
+        }
+    value["evidence"]["outcome"] = {
+        "status": "unavailable",
+        "reason": "no baseline comparison was recorded",
+    }
+    return value
+
+
 class TuningExperienceTests(unittest.TestCase):
     def test_writes_immutable_event(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = history_root(directory)
-            value = version_three_event(root)
+            value = version_four_event(root)
             receipt = MODULE.write_event(root, value)
             self.assertTrue(Path(receipt["event_path"]).is_file())
             self.assertTrue(receipt["immutable"])
@@ -182,7 +209,7 @@ class TuningExperienceTests(unittest.TestCase):
     def test_concurrent_writers_publish_exactly_one_event(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = history_root(directory)
-            value = version_three_event(root)
+            value = version_four_event(root)
             barrier = Barrier(2)
 
             def write_once() -> str:
@@ -229,23 +256,23 @@ class TuningExperienceTests(unittest.TestCase):
         value = event()
         MODULE.validate_event(value)
 
-    def test_new_writes_require_version_three_and_verified_config(self) -> None:
+    def test_new_writes_require_version_four_and_verified_config(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = history_root(directory)
-            with self.assertRaisesRegex(MODULE.ExperienceError, "version 3"):
-                MODULE.write_event(root, version_two_event(root.parents[1]))
+            with self.assertRaisesRegex(MODULE.ExperienceError, "version 4"):
+                MODULE.write_event(root, version_three_event(root))
 
-            value = version_three_event(root)
+            value = version_four_event(root)
             MODULE.validate_event(value)
             MODULE.validate_effective_config_binding(root, value)
             value["evidence"]["effective_config"]["sha256"] = "0" * 64
             with self.assertRaisesRegex(MODULE.ExperienceError, "SHA-256 mismatch"):
                 MODULE.write_event(root, value)
 
-    def test_version_three_reward_and_scope_binding_are_enforced(self) -> None:
+    def test_version_four_reward_and_scope_binding_are_enforced(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = history_root(directory)
-            value = version_three_event(root)
+            value = version_four_event(root)
             reward_mismatch = copy.deepcopy(value)
             reward_mismatch["context"]["reward_fingerprint"] = "0" * 64
             with self.assertRaisesRegex(MODULE.ExperienceError, "reward_fingerprint"):
@@ -258,11 +285,80 @@ class TuningExperienceTests(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.ExperienceError, "direct source artifact"):
                 MODULE.write_event(root, value)
 
+    def test_version_four_requires_explicit_event_and_outcome_availability(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = history_root(directory)
+            value = version_four_event(root)
+            del value["evidence"]["event"]
+            with self.assertRaisesRegex(MODULE.ExperienceError, "declare"):
+                MODULE.validate_event(value)
+
+            value = version_four_event(root, "recommendation")
+            value["evidence"]["outcome"] = {
+                "status": "available",
+                "baseline": {},
+                "parameter_changes": {},
+                "result_window": {},
+                "observed_effect": {},
+            }
+            with self.assertRaisesRegex(MODULE.ExperienceError, "cannot declare"):
+                MODULE.validate_event(value)
+
+    def test_unavailable_version_four_evidence_is_recordable_but_incomplete(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = history_root(directory)
+            value = version_four_event(root)
+            current_config = MODULE.validate_effective_config_binding(root, value)
+            status = MODULE.validate_event_evidence(
+                root,
+                value,
+                current_config=current_config,
+            )
+            self.assertFalse(status["event_evidence_complete"])
+            self.assertFalse(status["outcome_evidence_complete"])
+            self.assertIn("event_evidence_unavailable", status["reasons"])
+            self.assertTrue(Path(MODULE.write_event(root, value)["event_path"]).is_file())
+
+    def test_type_specific_evidence_is_separate_from_outcome(self) -> None:
+        validators = {
+            "checkpoint_evaluation": "_validate_evaluation_reference",
+            "checkpoint_selection": "_validate_selection_reference",
+            "export": "_validate_export_reference",
+            "archive": "_validate_archive_reference",
+        }
+        for event_type, validator in validators.items():
+            with self.subTest(event_type=event_type), tempfile.TemporaryDirectory() as directory:
+                root = history_root(directory)
+                value = version_four_event(root, event_type)
+                value["evidence"]["event"] = {
+                    "status": "available",
+                    "path": str(root / "placeholder.json"),
+                    "sha256": "a" * 64,
+                }
+                current_config = MODULE.validate_effective_config_binding(root, value)
+                with patch.object(MODULE, validator) as validate_reference:
+                    status = MODULE.validate_event_evidence(
+                        root,
+                        value,
+                        current_config=current_config,
+                    )
+                validate_reference.assert_called_once()
+                self.assertTrue(status["event_evidence_complete"])
+                self.assertFalse(status["outcome_evidence_complete"])
+                self.assertIn(
+                    (
+                        "outcome_evidence_unavailable"
+                        if event_type == "checkpoint_evaluation"
+                        else "event_type_is_not_outcome_bearing"
+                    ),
+                    status["reasons"],
+                )
+
     def test_rejects_symlinked_experience_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             parent = Path(directory).resolve()
             real_root = history_root(directory)
-            value = version_three_event(real_root)
+            value = version_four_event(real_root)
             linked_root = parent / "linked-root"
             linked_root.symlink_to(real_root, target_is_directory=True)
             with self.assertRaisesRegex(MODULE.ExperienceError, "symlinked"):
@@ -274,7 +370,7 @@ class TuningExperienceTests(unittest.TestCase):
             root.mkdir()
             safe_root = Path(directory).resolve() / "safe" / "learnings" / "policy_tuning"
             safe_root.mkdir(parents=True)
-            value = version_three_event(safe_root)
+            value = version_four_event(safe_root)
             external = Path(directory).resolve() / "external"
             external.mkdir()
             (root / "lw-leg-rough").symlink_to(external, target_is_directory=True)

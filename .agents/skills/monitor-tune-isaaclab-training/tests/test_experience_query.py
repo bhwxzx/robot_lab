@@ -135,7 +135,7 @@ def capture_config(
         / "source"
         / f"effective-config-{snapshot_id}.json"
     )
-    path.parent.mkdir(parents=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     receipt = CONFIG.write_new_evidence(path, config)
     return config, path, receipt
 
@@ -143,13 +143,14 @@ def capture_config(
 def make_event(
     *,
     event_id: str = "assessment-001",
+    event_type: str = "assessment",
     recorded_at: str = "2026-08-01T18:00:00+08:00",
     run_id: str = "run-001",
     algorithm: str = "amp-roa",
     host_id: str = "younghit",
     observation: str = "obs-hash",
     deployment: str = "deploy-hash",
-    version: int = 3,
+    version: int = 4,
     evidence: dict | None = None,
     root: Path | None = None,
     reward_weight: float = -0.4,
@@ -157,7 +158,7 @@ def make_event(
     event = {
         "version": version,
         "event_id": event_id,
-        "event_type": "assessment",
+        "event_type": event_type,
         "recorded_at": recorded_at,
         "task": "lw-leg-rough",
         "run_id": run_id,
@@ -200,7 +201,120 @@ def make_event(
         "effective_config_fingerprint": config["fingerprints"]["effective_config"],
         "reward_fingerprint": config["fingerprints"]["reward"],
     }
+    if version == 4:
+        if event_type in RECORD.EVIDENCE_EVENT_TYPES:
+            event["evidence"]["event"] = {
+                "status": "unavailable",
+                "reason": "event artifact not captured",
+            }
+        if event_type == "feedback":
+            event["evidence"]["source"] = "sim2sim"
+            event["evidence"]["policy_binding"] = {
+                "status": "unavailable",
+                "reason": "policy binding not captured",
+            }
+        event["evidence"]["outcome"] = {
+            "status": "unavailable",
+            "reason": "baseline comparison not captured",
+        }
     return event
+
+
+def add_complete_assessment_outcome(root: Path, event: dict) -> None:
+    identity = event["run_identity"]
+    assessment = {
+        "version": 2,
+        "advisory_only": True,
+        "criteria": {
+            "expected_scope": {
+                field: identity[field]
+                for field in ("task", "run_id", "backend", "algorithm", "runner")
+            }
+        },
+    }
+    assessment_path = (
+        root
+        / event["task"]
+        / event["run_id"]
+        / "evidence"
+        / "assessment"
+        / f"assessment-{event['event_id']}.json"
+    )
+    assessment_path.parent.mkdir(parents=True)
+    assessment_path.write_text(
+        json.dumps(assessment, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    assessment_reference = {
+        "path": str(assessment_path),
+        "sha256": hashlib.sha256(assessment_path.read_bytes()).hexdigest(),
+    }
+    event["evidence"]["event"] = {
+        "status": "available",
+        **assessment_reference,
+    }
+
+    baseline_identity = make_identity(
+        root.parents[1],
+        run_id=f"baseline-{event['event_id']}",
+        algorithm=event["algorithm"],
+        host_id=identity["host_id"],
+    )
+    baseline_source = (
+        root
+        / baseline_identity["task"]
+        / baseline_identity["run_id"]
+        / "evidence"
+        / "source"
+    )
+    baseline_source.mkdir(parents=True)
+    identity_path = baseline_source / "identity-baseline.json"
+    identity_path.write_text(
+        json.dumps(baseline_identity, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    baseline_config, baseline_config_path, baseline_receipt = capture_config(
+        root,
+        baseline_identity,
+        reward_weight=-0.5,
+        snapshot_id="baseline",
+    )
+    current_reference = event["evidence"]["effective_config"]
+    current_config, _ = CONFIG.load_and_validate_effective_config(
+        Path(current_reference["path"]),
+        expected_sha256=current_reference["sha256"],
+        run_identity=identity,
+    )
+    event["evidence"]["outcome"] = {
+        "status": "available",
+        "baseline": {
+            "run_identity": {
+                "path": str(identity_path),
+                "sha256": hashlib.sha256(identity_path.read_bytes()).hexdigest(),
+            },
+            "effective_config": {
+                "path": str(baseline_config_path),
+                "sha256": baseline_receipt["sha256"],
+                "effective_config_fingerprint": baseline_config["fingerprints"][
+                    "effective_config"
+                ],
+                "reward_fingerprint": baseline_config["fingerprints"]["reward"],
+            },
+        },
+        "parameter_changes": CONFIG.compare_effective_configs(
+            baseline_config,
+            current_config,
+        ),
+        "result_window": {
+            **assessment_reference,
+            "start_step": 100,
+            "end_step": 200,
+        },
+        "observed_effect": {
+            "summary": "tracking improved over the bounded result window",
+            "observations": ["mean tracking error decreased"],
+        },
+    }
 
 
 class ExperienceQueryTests(unittest.TestCase):
@@ -239,7 +353,7 @@ class ExperienceQueryTests(unittest.TestCase):
         return MODULE.query_tuning_experience(self.root, **arguments)
 
     def write(self, event: dict) -> Path:
-        if event["version"] == 3:
+        if event["version"] == 4:
             receipt = RECORD.write_event(self.root, event)
             return Path(receipt["event_path"])
         run_dir = self.root / event["task"] / event["run_id"]
@@ -252,7 +366,7 @@ class ExperienceQueryTests(unittest.TestCase):
         )
         return path
 
-    def test_exact_version_three_match_is_verified_and_compatible(self) -> None:
+    def test_exact_version_four_outcome_is_candidate_evidence(self) -> None:
         health_path = "/archive/run-001/evidence/health/health.json"
         value = make_event(
             root=self.root,
@@ -262,30 +376,40 @@ class ExperienceQueryTests(unittest.TestCase):
                 "video_sha256": "b" * 64,
             },
         )
+        add_complete_assessment_outcome(self.root, value)
         config_path = value["evidence"]["effective_config"]["path"]
         event_path = self.write(value)
         result = self.query()
         self.assertEqual(result["summary"]["compatible"], 1)
-        self.assertEqual(result["historical_support"]["status"], "compatible_history_available")
+        self.assertEqual(
+            result["historical_support"]["status"],
+            "candidate_outcome_history_available",
+        )
         self.assertFalse(result["historical_support"]["direct_parameter_change_supported"])
         item = result["compatible_events"][0]
         self.assertEqual(item["event_path"], str(event_path))
         self.assertEqual(
             item["event_sha256"], hashlib.sha256(event_path.read_bytes()).hexdigest()
         )
-        self.assertEqual(
-            {reference["path"] for reference in item["evidence_refs"]},
+        self.assertTrue(
             {
                 health_path,
                 "/archive/run-001/evidence/play/video.mp4",
                 config_path,
-            },
+            }.issubset(
+                {reference["path"] for reference in item["evidence_refs"]}
+            )
         )
         self.assertEqual(
             item["effective_config_verification"]["status"],
             "verified",
         )
         self.assertEqual(item["parameter_diff"]["summary"]["semantic_changes"], 0)
+        self.assertTrue(item["context_compatible"])
+        self.assertTrue(item["event_evidence_complete"])
+        self.assertTrue(item["outcome_evidence_complete"])
+        self.assertTrue(item["tuning_candidate_evidence"])
+        self.assertEqual(result["candidate_events"], [item])
 
     def test_known_mismatches_are_conflicting_with_explicit_reasons(self) -> None:
         cases = [
@@ -348,7 +472,10 @@ class ExperienceQueryTests(unittest.TestCase):
                 }
             ],
         )
-        self.assertEqual(result["historical_support"]["status"], "no_compatible_history")
+        self.assertEqual(
+            result["historical_support"]["status"],
+            "no_context_compatible_history",
+        )
 
     def test_legacy_and_explicit_unknown_events_never_become_compatible(self) -> None:
         self.write(make_event(version=1))
@@ -386,6 +513,39 @@ class ExperienceQueryTests(unittest.TestCase):
         )
         self.assertIn(["event_observation_fingerprint_unknown"], reasons)
 
+    def test_version_three_can_match_context_but_not_prove_outcome(self) -> None:
+        self.write(make_event(root=self.root, version=3))
+        result = self.query()
+        self.assertEqual(result["summary"]["context_compatible"], 1)
+        item = result["compatible_events"][0]
+        self.assertTrue(item["context_compatible"])
+        self.assertFalse(item["event_evidence_complete"])
+        self.assertFalse(item["outcome_evidence_complete"])
+        self.assertFalse(item["tuning_candidate_evidence"])
+        self.assertEqual(
+            result["historical_support"]["status"],
+            "context_compatible_outcome_incomplete",
+        )
+
+    def test_recommendation_never_becomes_outcome_evidence(self) -> None:
+        self.write(
+            make_event(
+                root=self.root,
+                event_id="recommendation-001",
+                event_type="recommendation",
+            )
+        )
+        result = self.query()
+        item = result["compatible_events"][0]
+        self.assertTrue(item["context_compatible"])
+        self.assertFalse(item["outcome_evidence_complete"])
+        self.assertFalse(item["tuning_candidate_evidence"])
+        self.assertIn(
+            "recommendation_is_advice_not_outcome",
+            item["evidence_completeness_reasons"],
+        )
+        self.assertFalse(result["historical_support"]["direct_parameter_change_supported"])
+
     def test_unknown_query_context_suppresses_historical_support(self) -> None:
         self.write(make_event(root=self.root))
         result = self.query(observation_fingerprint="unknown")
@@ -415,6 +575,17 @@ class ExperienceQueryTests(unittest.TestCase):
             config_path.read_text(encoding="utf-8") + " ",
             encoding="utf-8",
         )
+        result = self.query()
+        self.assertEqual(result["summary"]["invalid"], 1)
+        self.assertEqual(result["historical_support"]["status"], "history_invalid")
+        self.assertIn("SHA-256 mismatch", result["invalid_events"][0]["error"])
+
+    def test_matching_outcome_artifact_drift_is_invalid(self) -> None:
+        value = make_event(root=self.root)
+        add_complete_assessment_outcome(self.root, value)
+        self.write(value)
+        assessment_path = Path(value["evidence"]["event"]["path"])
+        assessment_path.write_text("{}\n", encoding="utf-8")
         result = self.query()
         self.assertEqual(result["summary"]["invalid"], 1)
         self.assertEqual(result["historical_support"]["status"], "history_invalid")

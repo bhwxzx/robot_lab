@@ -45,7 +45,7 @@ repository source hashes and command evidence alongside this artifact.
 
 ## Revalidation and comparison
 
-Before recording or querying version-3 experience, re-read the artifact as a
+Before recording or querying version-3/4 experience, re-read the artifact as a
 regular non-symlinked file, verify its whole-file SHA-256, and recompute the
 embedded env/agent source hashes, reward inventory, selected training values,
 resolved identity, and all four semantic fingerprints. Bind the artifact to
@@ -58,7 +58,8 @@ entry bound is an error, not a truncated comparison. A difference describes
 what changed between captured configurations; it does not show which change
 caused an observed training outcome.
 
-Every new experience event uses version 3 and references this artifact by its
+Every new experience event uses version 4 and references this artifact by its
 absolute path, whole-file SHA-256, effective-config fingerprint, and reward
-fingerprint. Version-1 and version-2 events remain readable but cannot provide
-verified effective-configuration history.
+fingerprint. Version 3 remains readable and may prove context compatibility,
+but it cannot prove version-4 outcome completeness. Versions 1 and 2 remain
+readable but cannot provide verified effective-configuration history.

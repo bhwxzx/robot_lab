@@ -104,7 +104,7 @@ def experience_event(repository_root: Path, effective_path: Path) -> dict:
     config = CONFIG.capture_effective_config(identity, log_directory)
     receipt = CONFIG.write_new_evidence(effective_path, config)
     return {
-        "version": 3,
+        "version": 4,
         "event_id": "snapshot-001",
         "event_type": "run_snapshot",
         "recorded_at": "2026-08-01T18:00:00+08:00",
@@ -125,7 +125,11 @@ def experience_event(repository_root: Path, effective_path: Path) -> dict:
                     "effective_config"
                 ],
                 "reward_fingerprint": config["fingerprints"]["reward"],
-            }
+            },
+            "outcome": {
+                "status": "unavailable",
+                "reason": "layout separation fixture has no outcome comparison",
+            },
         },
         "analysis": {"summary": "", "confidence": "low"},
         "next_suggestion": "",

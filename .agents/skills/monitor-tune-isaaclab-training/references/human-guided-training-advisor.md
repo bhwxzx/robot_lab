@@ -310,21 +310,22 @@ conda run -n isaacsim-5.1 python \
   --deployment-fingerprint "$DEPLOYMENT_FINGERPRINT"
 ```
 
-Read `historical_support.status`, every classification reason, each event's
-confidence, and every evidence path and hash. Only `compatible_events` may be
-candidate historical support. Conflicting, unknown, invalid, or incomplete
-history cannot directly support a parameter change. Even compatible history is
-insufficient by itself: verify referenced evidence, combine it with current
-run evidence, state uncertainty, and leave the parameter decision to the user.
+Read `historical_support.status`, every classification and completeness reason,
+each event's confidence, and every evidence path and hash. Only
+`candidate_events` has both compatible context and complete outcome evidence.
+Conflicting, unknown, invalid, lifecycle-only, recommendation, or incomplete
+history cannot become candidate outcome evidence. Even a candidate event is
+insufficient by itself: combine it with current run evidence, state uncertainty,
+and leave the parameter decision to the user.
 See [experience-query.md](experience-query.md) for the complete query and
 classification contract.
 
-Every new experience event uses version 3, embeds the complete identity, and
+Every new experience event uses version 4, embeds the complete identity, and
 references the revalidated effective configuration:
 
 ```json
 {
-  "version": 3,
+  "version": 4,
   "event_id": "unique-ascii-id",
   "event_type": "run_snapshot",
   "recorded_at": "2026-07-31T18:00:00+08:00",
@@ -343,6 +344,10 @@ references the revalidated effective configuration:
       "sha256": "64 lowercase hex characters",
       "effective_config_fingerprint": "64 lowercase hex characters",
       "reward_fingerprint": "64 lowercase hex characters"
+    },
+    "outcome": {
+      "status": "unavailable",
+      "reason": "run snapshot does not contain a baseline outcome comparison"
     }
   },
   "analysis": {"summary": "", "confidence": "low"},
@@ -390,9 +395,10 @@ references the revalidated effective configuration:
 
 Allowed event types are `run_snapshot`, `assessment`, `decision`,
 `checkpoint_evaluation`, `checkpoint_selection`, `export`, `archive`,
-`feedback`, and `recommendation`. Records are append-only. Reuse prior advice
-only when task, algorithm, and all three context fingerprints match; otherwise
-state the mismatch. A reward mismatch may produce a verified informational
-configuration diff, but remains conflicting evidence. Version-1 and version-2
-events remain readable but cannot satisfy the effective-configuration history
-requirement.
+`feedback`, and `recommendation`. Records are append-only. Follow the
+event-type and outcome contracts in [experience-query.md](experience-query.md).
+Reuse a result only when task, algorithm, and all three context fingerprints
+match and `outcome_evidence_complete` is true. A reward mismatch may produce a
+verified informational configuration diff, but remains conflicting evidence.
+Versions 1 and 2 remain unknown; version 3 may be context compatible but is
+always outcome-incomplete.
