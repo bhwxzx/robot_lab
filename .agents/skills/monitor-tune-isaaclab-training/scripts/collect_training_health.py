@@ -449,6 +449,25 @@ def collect_health(
         and comparison["elapsed_seconds"] is not None
         and comparison["elapsed_seconds"] >= stale_after_seconds
     )
+    gpu_utilization = gpu.get("utilization_percent")
+    gpu_utilization_available = (
+        gpu.get("available") is True and _finite_number(gpu_utilization)
+    )
+    gpu_utilization_low = (
+        gpu_utilization_available
+        and float(gpu_utilization) <= low_gpu_utilization_percent
+    )
+    confirmed_stall = (
+        progress_stale
+        and process["alive"] is True
+        and process["matches_expected"] is not False
+        and not completed
+    )
+    activity_without_progress = (
+        confirmed_stall
+        and gpu_utilization_available
+        and float(gpu_utilization) > low_gpu_utilization_percent
+    )
 
     evidence: list[str] = []
     if comparison["errors"]:
@@ -469,16 +488,15 @@ def collect_health(
     elif progress_advanced:
         state = "healthy"
         evidence.append("training_progress_advanced")
-    elif (
-        progress_stale
-        and process["alive"] is True
-        and gpu["available"] is True
-        and gpu["utilization_percent"] <= low_gpu_utilization_percent
-    ):
+    elif confirmed_stall:
         state = "stalled"
-        evidence.extend(
-            ["training_progress_stale", "gpu_utilization_low", "process_still_alive"]
-        )
+        evidence.extend(["training_progress_stale", "process_still_alive"])
+        if activity_without_progress:
+            evidence.append("activity_without_progress")
+        elif gpu_utilization_low:
+            evidence.append("gpu_utilization_low")
+        else:
+            evidence.append("gpu_activity_unavailable")
     elif (
         not comparison["baseline_available"]
         and (log_progress is not None or tensorboard["step"] is not None)
@@ -513,7 +531,8 @@ def collect_health(
         "timestamp_unix": timestamp,
         "profile_id": profile["id"],
         "state": state,
-        "auto_recovery_candidate": state == "stalled" and not completed,
+        "activity_without_progress": activity_without_progress,
+        "auto_recovery_candidate": state == "stalled" and gpu_utilization_low,
         "evidence": evidence,
         "progress": {
             "log": log_progress,

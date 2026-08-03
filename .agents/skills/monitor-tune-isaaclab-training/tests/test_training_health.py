@@ -161,6 +161,8 @@ class TrainingHealthTests(unittest.TestCase):
         report = self.collect(11, previous=previous)
         self.assertEqual(report["state"], "healthy")
         self.assertTrue(report["comparison"]["advanced"])
+        self.assertFalse(report["activity_without_progress"])
+        self.assertFalse(report["auto_recovery_candidate"])
         self.assertEqual(report["baseline_for_next_check"]["log_progress"]["current"], 11)
 
     def test_advanced_tensorboard_step_is_healthy(self) -> None:
@@ -183,6 +185,8 @@ class TrainingHealthTests(unittest.TestCase):
         self.assertEqual(report["state"], "suspect")
         self.assertTrue(report["comparison"]["unchanged"])
         self.assertFalse(report["progress"]["stale"])
+        self.assertFalse(report["activity_without_progress"])
+        self.assertFalse(report["auto_recovery_candidate"])
 
     def test_unchanged_progress_with_live_process_and_low_gpu_is_stalled(self) -> None:
         previous = previous_health(self.log_path, timestamp=100.0, log_step=10)
@@ -194,6 +198,42 @@ class TrainingHealthTests(unittest.TestCase):
         )
         self.assertEqual(report["state"], "stalled")
         self.assertTrue(report["progress"]["stale"])
+        self.assertFalse(report["activity_without_progress"])
+        self.assertTrue(report["auto_recovery_candidate"])
+        self.assertIn("gpu_utilization_low", report["evidence"])
+
+    def test_unchanged_progress_with_high_gpu_is_busy_wait_stalled(self) -> None:
+        previous = previous_health(self.log_path, timestamp=100.0, log_step=10)
+        report = self.collect(
+            10,
+            now=200.0,
+            previous=previous,
+            gpu_value=gpu(95.0),
+        )
+        self.assertEqual(report["state"], "stalled")
+        self.assertTrue(report["progress"]["stale"])
+        self.assertTrue(report["activity_without_progress"])
+        self.assertFalse(report["auto_recovery_candidate"])
+        self.assertIn("activity_without_progress", report["evidence"])
+
+    def test_unchanged_progress_without_gpu_evidence_is_stalled(self) -> None:
+        previous = previous_health(self.log_path, timestamp=100.0, log_step=10)
+        report = self.collect(
+            10,
+            now=200.0,
+            previous=previous,
+            gpu_value={
+                "index": 0,
+                "available": False,
+                "utilization_percent": None,
+                "memory_used_mb": None,
+                "error": "nvidia-smi unavailable",
+            },
+        )
+        self.assertEqual(report["state"], "stalled")
+        self.assertFalse(report["activity_without_progress"])
+        self.assertFalse(report["auto_recovery_candidate"])
+        self.assertIn("gpu_activity_unavailable", report["evidence"])
 
     def test_regressed_progress_is_unknown(self) -> None:
         previous = previous_health(self.log_path, log_step=11)
@@ -206,6 +246,21 @@ class TrainingHealthTests(unittest.TestCase):
         report = self.collect(11, previous=previous)
         self.assertEqual(report["state"], "unknown")
         self.assertIn("previous_pid_mismatch", report["comparison"]["errors"])
+        self.assertFalse(report["activity_without_progress"])
+        self.assertFalse(report["auto_recovery_candidate"])
+
+    def test_unexpected_live_process_is_unknown_without_activity_marker(self) -> None:
+        previous = previous_health(self.log_path, timestamp=100.0, log_step=10)
+        report = self.collect(
+            10,
+            now=200.0,
+            previous=previous,
+            process_value=process(matches=False),
+            gpu_value=gpu(95.0),
+        )
+        self.assertEqual(report["state"], "unknown")
+        self.assertFalse(report["activity_without_progress"])
+        self.assertFalse(report["auto_recovery_candidate"])
 
     def test_stopped_process_without_completion_is_stopped(self) -> None:
         previous = previous_health(self.log_path, log_step=10)
@@ -220,6 +275,8 @@ class TrainingHealthTests(unittest.TestCase):
     def test_target_progress_is_completed(self) -> None:
         report = self.collect(99, target=100)
         self.assertEqual(report["state"], "completed")
+        self.assertFalse(report["activity_without_progress"])
+        self.assertFalse(report["auto_recovery_candidate"])
 
     def run_health_cli(self, *extra: str) -> subprocess.CompletedProcess[str]:
         self.log_path.write_text("Learning iteration 1/10\n", encoding="utf-8")

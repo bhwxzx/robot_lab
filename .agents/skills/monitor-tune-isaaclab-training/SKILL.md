@@ -162,9 +162,13 @@ contract edit.
 Require two identity-compatible observations before calling a run `healthy`.
 Only a monotonic log or TensorBoard step increase confirms healthy progress.
 The first valid observation is `observing`; an unchanged comparison is
-`suspect` until the stale duration and low-GPU evidence confirm `stalled`.
-Treat step regression or snapshot identity mismatch as `unknown`. Process, GPU,
-checkpoint, TensorBoard wall time, and W&B file activity are auxiliary only.
+`suspect` until the stale duration is reached while the expected process remains
+alive, which confirms `stalled` regardless of GPU utilization. Record
+`activity_without_progress` when GPU activity remains high during that confirmed
+stall. Only a confirmed low-GPU stall is a recovery candidate, and that marker
+never authorizes a process action. Treat step regression or snapshot identity
+mismatch as `unknown`. Process, GPU, checkpoint, TensorBoard wall time, and W&B
+file activity are auxiliary only.
 
 The assessment status is advisory:
 
@@ -205,6 +209,15 @@ Before launch:
 Run `evaluate_policy.py` with the checkpoint as both the Native checkpoint and
 Native artifact. Pass `--allow_training_overlap`. Add `--no_video` for the
 lowest overhead and `--telemetry_path` when robot time-series data is needed.
+Use paths returned by `prepare_evidence_layout.py`, and bind the attempt with
+`--evaluation_id`, `--run_identity_path`, and the exact
+`--run_identity_file_sha256`. The evaluator rejects an existing target, a
+non-layout destination, a symlinked path component, an input hash mismatch, or
+a scenario that differs from the bound run identity before Isaac Sim starts.
+It claims the evaluation directory exclusively, writes only inside its private
+attempt directory, and publishes video and telemetry before `result.json`.
+Treat only a version-2 `result.json` that passes bundle revalidation as a
+completed evaluation; never reuse an evaluation ID after any attempt.
 
 After evaluation, recheck training progress, throughput, process state, and GPU
 errors. If evaluation interferes, stop only the evaluation process and report

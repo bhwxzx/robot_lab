@@ -1,5 +1,95 @@
 # Feature Requests
 
+## [FEAT-20260803-002] advisor_evaluation_export_experience_hardening
+
+**Logged**: 2026-08-03T16:53:35+08:00
+**Priority**: high
+**Status**: pending
+**Area**: config
+
+### Requested Capability
+按证据风险优先级继续完善 `monitor-tune-isaaclab-training` 的训练健康与评估、
+策略导出和参数经验质量，同时保持用户逐项批准和最终决策权。
+
+### User Context
+现有 Skill 已具备双快照健康检查、评估 criteria、AMP-ROA 遥测门禁、有效配置
+证据和 version-3 经验查询，但真实训练暴露了高 GPU 活动掩盖长期 step 停滞的
+漏判。只读审计还发现评估产物可被直接覆盖且来源字段不完整，策略导出缺少完整
+run/config/selection 绑定与事务发布，参数经验的上下文兼容也尚未等价于结果证据
+充分。用户要求记录这些问题并按优先级一次只处理一项。
+
+### Complexity Estimate
+complex
+
+### Prioritized Backlog
+
+1. **P0 — AEO-001: 修复忙等型静默卡死漏判**
+   - **Item Status**: resolved (`2026-08-03T17:18:57+08:00`)
+   - 两次身份兼容快照中的 log/TensorBoard step 在 stale 阈值内均未推进、目标未
+     完成且进程仍存活时，不能因 GPU 利用率高而阻止训练进度判为 `stalled`。
+   - GPU 活动高时显式记录 `activity_without_progress`；只有满足单独批准的低风险
+     条件才可标记恢复候选，Skill 不得自动终止或重启训练。
+   - 增加高 GPU 忙等、低 GPU 停滞、step 推进、完成、身份不兼容及评估建议回归
+     测试，并用已观测的长期 step 停滞模式做独立前向验证。
+
+2. **P0 — AEO-002: 评估证据不可变与来源绑定**
+   - **Item Status**: resolved (`2026-08-03T17:44:14+08:00`)
+   - Play result、telemetry 和 video 必须位于当前 run/evaluation 的 evidence layout，
+     使用排他发布并拒绝已有目标、错误目录、路径穿越和符号链接组件。
+   - 结果回写 checkpoint/artifact 路径与 SHA-256、run identity SHA-256、完整 scenario
+     contract/fingerprint 及资源模式，确保下游能够重新验证精确评估输入。
+   - 不改变物理、观测、动作、指标或遥测含义；增加覆盖、路径、哈希、场景冲突、
+     中途失败和并发发布测试。
+   - **Resolution Evidence**: evaluator 现于 Isaac Sim 启动前验证标准 evidence
+     layout、checkpoint/artifact 全文件哈希、run identity 文件与内部哈希以及完整
+     scenario contract；排他 claim 和 attempt 仅清理本进程拥有的临时对象，video、
+     telemetry 与最终 `result.json` 通过拒绝覆盖的硬链接发布，且 result 只在私有
+     bundle 复验通过后最后发布。version-2 result 与 version-3 telemetry 共同绑定
+     evaluation、精确输入、资源模式和输出哈希。新增 12 项事务/来源测试；完整 Skill
+     测试 145 项、3 项独立临时目录前向测试、Skill validator、evaluator help、AST、
+     diff/空白检查均通过。未启动 Isaac Sim/Play，未控制训练，未改动物理、观测、
+     动作、指标或遥测含义。
+
+3. **P1 — AEO-003: 事务化并完整绑定策略导出**
+   - **Item Status**: pending
+   - 将 checkpoint 与完整 run identity、有效配置证据和用户 checkpoint-selection
+     receipt 绑定，交叉验证 run、文件名/iteration、哈希和 tensor contract。
+   - 在专属 attempt 中生成 JIT、ONNX 和 receipt；所有验证与 parity 通过后再统一
+     发布，失败或竞争不得留下可误用的完成产物或覆盖已有证据。
+   - parity 覆盖有界多时刻及 history/reset 边界；归档前重新验证导出 receipt、
+     artifact 哈希和闭环评估证据，而不是只接受路径字符串。
+
+4. **P1 — AEO-004: 区分经验上下文兼容与结果证据充分**
+   - **Item Status**: pending
+   - 为 assessment、checkpoint evaluation/selection、export、archive 和 feedback
+     定义事件类型专属的必需证据、路径、哈希和作用域绑定。
+   - 查询分别报告 `context_compatible` 与 `outcome_evidence_complete`；只有包含基线、
+     参数变化、结果窗口和观察效果的完整事件才可成为调参候选证据。
+   - recommendation 不得冒充实验结果，所有历史仍只提供建议证据，
+     `direct_parameter_change_supported` 保持 `false`。
+
+5. **P2 — AEO-005: 完成相机跟随入镜验证**
+   - **Item Status**: pending
+   - 仅在 GPU 无训练或其他 Isaac Sim 任务时，运行约 120 步 Native 诊断录像，确认
+     env 0 机器人在完整运动过程中持续入镜。
+   - 验证成功时只记录证据并关闭本项；只有验证失败才另行提出精确代码修改范围，
+     不预先改变相机、物理、观测、动作或指标行为。
+
+### Suggested Implementation
+严格按 AEO-001 到 AEO-005 的顺序推进，同一时间只允许一个项目为
+`in_progress`。每项开始前单独给出精确文件范围、行为变化、验证计划和前向测试
+提示，等待用户明确批准；完成全部验证并报告证据后才更新为 `resolved`，再由用户
+决定是否进入下一项。不得恢复自动 campaign、自动训练启停或重启、自动参数修改、
+自动 checkpoint 选择、部署、归档或远端协调。
+
+### Metadata
+- Frequency: recurring
+- Related Features: FEAT-20260803-001, FEAT-20260731-003,
+  monitor-tune-isaaclab-training, closed_loop_policy_evaluation,
+  qualified_policy_storage_archive, bounded_local_history_adaptive_tuning
+
+---
+
 ## [FEAT-20260803-001] effective_training_parameter_evidence
 
 **Logged**: 2026-08-03T15:23:10+08:00

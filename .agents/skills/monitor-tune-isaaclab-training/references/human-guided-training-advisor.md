@@ -55,11 +55,17 @@ Classify the comparison as follows:
 - `suspect`: comparable progress is unchanged but the stale interval is not
   confirmed, or auxiliary activity cannot prove progress;
 - `stalled`: progress stayed unchanged for the configured stale duration while
-  the expected process remains alive and GPU utilization is low;
+  the expected process remains alive, regardless of GPU utilization;
 - `unknown`: progress regressed, sources disagree, process identity mismatches,
   or the previous snapshot is not identity-compatible;
 - `completed`: current profile progress reached its target;
 - `stopped`: the identified process ended without confirmed completion.
+
+A confirmed stall with GPU utilization above the configured low-utilization
+threshold records `activity_without_progress: true`; that activity is auxiliary
+and cannot override unchanged monotonic progress. Only a confirmed stall with
+available low-GPU evidence may set `auto_recovery_candidate: true`. The marker
+does not authorize or perform termination, signaling, restart, or resume.
 
 The output includes `comparison` for the decision evidence and
 `baseline_for_next_check` for the values captured by the current snapshot.
@@ -141,7 +147,10 @@ conda run -n isaacsim-5.1 python \
   --candidate_id model-N --scenario_id quick-native \
   --duration_steps 500 --num_envs 1 --seed 42 \
   --allow_training_overlap --no_video \
-  --run_id "$RUN_ID" --result_path "$PLAY_RESULT_PATH" \
+  --run_id "$RUN_ID" --evaluation_id "$EVALUATION_ID" \
+  --run_identity_path "$SOURCE_IDENTITY_PATH" \
+  --run_identity_file_sha256 "$SOURCE_IDENTITY_FILE_SHA256" \
+  --result_path "$PLAY_RESULT_PATH" \
   --telemetry_path "$TELEMETRY_PATH"
 ```
 
@@ -150,6 +159,9 @@ base linear and angular velocity, projected gravity, root position, joint
 position and velocity, applied torque, and action. Version 2 records, for every
 signal, `required`, `available`, `complete`, `sample_count`,
 `expected_sample_count`, `error_count`, and the first bounded `error`.
+The published telemetry document is version 3 because it also repeats the
+immutable evaluation/input binding; the individual signal-status contract is
+unchanged.
 Unavailable sample fields are `null`; no missing metric or signal may be
 substituted with zero, reward, or another signal.
 
@@ -197,6 +209,23 @@ available metric and strictly better on at least one. Missing required metrics
 make a checkpoint ineligible. Results marked as requiring complete telemetry
 are also ineligible while `telemetry_status` is not `complete`; the comparison
 reports their status and missing signals under `incomplete_telemetry`.
+
+For each matrix cell, allocate a fresh evaluation ID with the standard evidence
+layout and invoke `evaluate_policy.py` with the exact `PLAY_RESULT_PATH`, optional
+`TELEMETRY_PATH`/`VIDEO_PATH`, `SOURCE_IDENTITY_PATH`, and the source identity's
+full-file SHA-256. Keep `--scenario_id`, `--scenario_overrides_json`,
+`--command_schedule_json`, `--duration_steps`, `--num_envs`, and `--seed`
+identical to the identity's canonical scenario contract. The evaluator publishes
+the output bundle once and writes `result.json` last; an existing or partial
+evaluation directory is not permission to retry with the same ID.
+
+Before using a result for Pareto comparison, revalidate its version-2 binding:
+checkpoint and artifact path/SHA-256, source-identity file and internal hashes,
+scenario contract/fingerprint, resource mode, and telemetry/video output hashes.
+Telemetry is acceptable only when its repeated `evaluation` and `inputs`
+bindings exactly match the result. A missing completion marker, changed input,
+hash mismatch, or output mismatch makes the cell ineligible rather than a zero
+or failed metric.
 
 ## Archive manifest
 

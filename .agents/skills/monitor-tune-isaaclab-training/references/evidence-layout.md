@@ -69,9 +69,29 @@ directory to `capture_effective_training_config.py`; write only to the matching
 new `EFFECTIVE_CONFIG_PATH`. The artifact embeds both effective YAML dumps and
 their fingerprints. Do not substitute console, TensorBoard, or W&B metadata.
 
-The evaluator already accepts `PLAY_RESULT_PATH`, `TELEMETRY_PATH`, and
-`VIDEO_PATH` as absolute destinations. Use `--no_video` and omit `VIDEO_PATH`
-from the evaluator command when video was not authorized or needed.
+The evaluator requires `PLAY_RESULT_PATH` and accepts `TELEMETRY_PATH` and
+`VIDEO_PATH` only when they exactly match its `--task`, `--run_id`, and
+`--evaluation_id`. Also pass the matching immutable source identity through
+`--run_identity_path` and `--run_identity_file_sha256`. Use `--no_video` and
+omit `VIDEO_PATH` when video was not authorized or needed.
+
+Before Isaac Sim starts, the evaluator verifies the checkpoint, deployment
+artifact, run-identity file, complete scenario contract, all supplied hashes,
+and every canonical output path. It rejects traversal, symlinked components,
+existing final targets, and a scenario that conflicts with the identity. A
+`.publish-claim` and private `.attempt/` directory serialize writers. Work
+files stay in that attempt directory; final video and telemetry are published
+with non-overwriting hard links, and `result.json` is linked last as the sole
+completion marker. Normal failure removes only claim and attempt objects owned
+by that process. A publication collision rolls back only final links created
+by that process and never overwrites the competing file.
+
+Version-2 results bind the exact checkpoint, artifact, source identity,
+scenario fingerprint, and resource mode. Their `outputs` object binds every
+published telemetry/video file by canonical absolute path and SHA-256.
+Telemetry version 3 repeats the same `evaluation` and `inputs` objects. Downstream
+consumers must revalidate the complete bundle rather than trusting path strings
+or the presence of a partial work file.
 
 ## Keep events immutable and separate
 
