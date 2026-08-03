@@ -82,6 +82,7 @@ class EvidenceLayoutTests(unittest.TestCase):
             "criteria",
             "health",
             "source_identity",
+            "effective_config",
             "source_patch",
             "summary",
             "assessment",
@@ -138,6 +139,22 @@ class EvidenceLayoutTests(unittest.TestCase):
         self.assertEqual(event_path.parent, run_root)
         self.assertEqual(evidence_root.parent, run_root)
         self.assertNotIn(evidence_root, event_path.parents)
+
+    def test_effective_config_path_is_source_evidence(self) -> None:
+        layout = self.prepare()
+        self.assertEqual(
+            Path(layout["paths"]["effective_config"]),
+            self.root
+            / "task-a"
+            / "run-001"
+            / "evidence"
+            / "source"
+            / "effective-config-snapshot-001.json",
+        )
+        self.assertIn(
+            f"EFFECTIVE_CONFIG_PATH={layout['paths']['effective_config']}",
+            LAYOUT._shell_assignments(layout),
+        )
 
 
 if __name__ == "__main__":

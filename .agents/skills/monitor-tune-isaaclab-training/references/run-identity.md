@@ -86,3 +86,16 @@ that affected the run. The helper detects ignored, untracked, status-visible,
 and content-different listed files, but it cannot detect an influential file
 that the operator omitted. The identity and scenario hashes detect later
 mutation; they are fingerprints, not cryptographic signatures.
+
+## Effective configuration is separate evidence
+
+Repository configuration hashes describe the source inputs. They do not
+replace the effective `params/env.yaml` and `params/agent.yaml` written after
+Hydra and non-Hydra CLI overrides are applied. For every run handled by the
+advisor, follow [`effective-training-config.md`](effective-training-config.md)
+and bind those dumps to this identity in a separate immutable evidence file.
+
+Require the effective env and agent seeds plus runner class to match this
+identity. Preserve both layers: source identity explains which code and inputs
+were supplied, while effective configuration records the resolved reward and
+training values actually handed to the environment and runner.
