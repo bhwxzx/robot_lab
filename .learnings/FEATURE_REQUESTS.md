@@ -42,7 +42,7 @@ complex
 
 **Logged**: 2026-07-31T21:31:53+08:00
 **Priority**: high
-**Status**: pending
+**Status**: resolved
 **Area**: config
 
 ### Requested Capability
@@ -189,6 +189,15 @@ CLI 加载、引用检查、`git diff --check` 和敏感信息检查。完成并
 - Frequency: recurring
 - Related Features: FEAT-20260731-002, monitor-tune-isaaclab-training,
   closed_loop_policy_evaluation, hardware_feedback_driven_retuning
+
+### Resolution
+- **Resolved**: 2026-08-03T14:55:23+08:00
+- **Commit/PR**: MTA-007 completed in `f1aa765`; no remote PR or push.
+- **Notes**: MTA-001 through MTA-007 are resolved with per-item evidence. The
+  advisor remains human-guided: it does not autonomously control training,
+  change parameters, select a final checkpoint, deploy, archive, coordinate a
+  remote campaign, commit, or push. This closes the hardening backlog without
+  creating an MTA-008.
 
 ---
 ## [FEAT-20260731-002] human_guided_isaaclab_training_advisor
