@@ -24,6 +24,9 @@ before capturing or interpreting the effective reward, environment, or agent
 configuration dumped for one training run.
 Read [references/experience-query.md](references/experience-query.md) before
 using prior tuning records to support a parameter suggestion.
+Read [references/policy-export.md](references/policy-export.md) before recording
+a user checkpoint selection, exporting JIT/ONNX, validating an export receipt,
+or preparing an archive manifest.
 
 ## Scope
 
@@ -283,11 +286,21 @@ and AMP-ROA preserve flattened time-major history, normalization of the current
 frame only, and actor input `[current_obs, code_vel, hist_latent]`.
 
 Use `scripts/rsl_rl_export_policy.py` to create JIT and ONNX and require finite
-Native/JIT/ONNX action parity. Export is not deployment qualification.
+Native/JIT/ONNX action parity. First allocate fresh selection/export evidence
+paths and, only after the user chooses a checkpoint, create an immutable
+selection receipt with `scripts/policy_export_evidence.py record-selection`.
+Bind the exact run identity, effective config, selection report, closed-loop
+evaluation bundles, checkpoint filename/iteration/hash, and reviewed tensor
+contract. The exporter must publish exclusively from an owned attempt and write
+its validated version-3 receipt last. Require bounded multi-time parity with an
+explicit pre/post-reset boundary. Export is not deployment qualification.
 
 Archive only after a separate user confirmation. Inspect `policy_storage`
 read-only first, then use `scripts/archive_advised_policy.py` with an approved
-manifest. It creates one atomic directory containing:
+version-2 manifest. Revalidate the export receipt, JIT/ONNX hashes, selection,
+and all closed-loop evaluation bundles before any archive write. Legacy
+path-only manifests are ineligible. The archiver creates one atomic directory
+containing:
 
 - `policy.pt`;
 - `policy.onnx`;

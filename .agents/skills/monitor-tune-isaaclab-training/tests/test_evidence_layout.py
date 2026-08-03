@@ -142,13 +142,21 @@ class EvidenceLayoutTests(unittest.TestCase):
         )
         self.root = self.repository_root / "learnings" / "policy_tuning"
 
-    def prepare(self, snapshot: str = "snapshot-001", evaluation: str | None = "eval-001") -> dict:
+    def prepare(
+        self,
+        snapshot: str = "snapshot-001",
+        evaluation: str | None = "eval-001",
+        selection: str | None = "selection-001",
+        export: str | None = "export-001",
+    ) -> dict:
         return LAYOUT.prepare_evidence_layout(
             self.root,
             task="task-a",
             run_id="run-001",
             snapshot_id=snapshot,
             evaluation_id=evaluation,
+            selection_id=selection,
+            export_id=export,
         )
 
     def test_returns_deterministic_absolute_paths_and_creates_only_directories(self) -> None:
@@ -165,7 +173,12 @@ class EvidenceLayoutTests(unittest.TestCase):
 
     def test_snapshots_and_evaluations_do_not_conflict(self) -> None:
         first = self.prepare("snapshot-001", "eval-001")
-        second = self.prepare("snapshot-002", "eval-002")
+        second = self.prepare(
+            "snapshot-002",
+            "eval-002",
+            "selection-002",
+            "export-002",
+        )
         for name in (
             "criteria",
             "health",
@@ -177,6 +190,10 @@ class EvidenceLayoutTests(unittest.TestCase):
             "play_result",
             "telemetry",
             "video",
+            "checkpoint_selection",
+            "export_jit",
+            "export_onnx",
+            "export_receipt",
         ):
             self.assertNotEqual(first["paths"][name], second["paths"][name])
 
@@ -188,6 +205,33 @@ class EvidenceLayoutTests(unittest.TestCase):
         self.assertIn(
             "unset PLAY_RESULT_PATH TELEMETRY_PATH VIDEO_PATH",
             LAYOUT._shell_assignments(layout),
+        )
+
+    def test_optional_selection_and_export_unset_all_outputs(self) -> None:
+        layout = self.prepare(selection=None, export=None)
+        for name in (
+            "checkpoint_selection",
+            "export_jit",
+            "export_onnx",
+            "export_receipt",
+        ):
+            self.assertIsNone(layout["paths"][name])
+        self.assertIn(
+            "unset CHECKPOINT_SELECTION_PATH EXPORT_JIT_PATH EXPORT_ONNX_PATH "
+            "EXPORT_RECEIPT_PATH",
+            LAYOUT._shell_assignments(layout),
+        )
+
+    def test_selection_and_export_paths_are_canonical(self) -> None:
+        layout = self.prepare()
+        evidence = Path(layout["evidence_root"])
+        self.assertEqual(
+            Path(layout["paths"]["checkpoint_selection"]),
+            evidence / "checkpoint_selection" / "selection-selection-001.json",
+        )
+        self.assertEqual(
+            Path(layout["paths"]["export_receipt"]),
+            evidence / "export" / "export-001" / "receipt.json",
         )
 
     def test_rejects_unsafe_identifiers(self) -> None:

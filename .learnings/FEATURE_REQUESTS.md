@@ -51,13 +51,23 @@ complex
      动作、指标或遥测含义。
 
 3. **P1 — AEO-003: 事务化并完整绑定策略导出**
-   - **Item Status**: pending
+   - **Item Status**: resolved (`2026-08-03T20:06:43+08:00`)
    - 将 checkpoint 与完整 run identity、有效配置证据和用户 checkpoint-selection
      receipt 绑定，交叉验证 run、文件名/iteration、哈希和 tensor contract。
    - 在专属 attempt 中生成 JIT、ONNX 和 receipt；所有验证与 parity 通过后再统一
      发布，失败或竞争不得留下可误用的完成产物或覆盖已有证据。
    - parity 覆盖有界多时刻及 history/reset 边界；归档前重新验证导出 receipt、
      artifact 哈希和闭环评估证据，而不是只接受路径字符串。
+   - **Resolution Evidence**: 新增不可变 checkpoint-selection receipt，将用户选择与
+     完整 run identity、有效配置指纹、selection report、checkpoint 哈希、闭环评估
+     bundle 和 runner 专属 tensor contract 绑定。导出预检强制标准 evidence layout、
+     排他 claim/attempt、多时刻 reset 边界 parity 和 receipt-last 发布；失败、竞争、
+     输入漂移及已有目标均拒绝覆盖并回滚本次拥有的完成链接。archive version 2 在写入
+     临时 Git 存储前重验 export receipt、JIT/ONNX、selection、checkpoint、评估与
+     source identity。新增 12 项 selection/export 事务测试；完整 Skill 测试 161 项、
+     4 项独立新进程前向测试、Skill validator、三个 CLI help、静态编译与 diff/空白
+     检查均通过。未启动 Isaac Sim/Play，未执行真实策略导出或真实 policy_storage
+     归档，未控制训练，未暂存、提交或推送。
 
 4. **P1 — AEO-004: 区分经验上下文兼容与结果证据充分**
    - **Item Status**: pending

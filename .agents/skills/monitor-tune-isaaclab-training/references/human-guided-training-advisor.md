@@ -227,13 +227,30 @@ bindings exactly match the result. A missing completion marker, changed input,
 hash mismatch, or output mismatch makes the cell ineligible rather than a zero
 or failed metric.
 
+After presenting the comparison, wait for the user to choose one stable
+checkpoint. Allocate a fresh selection ID and export ID. Record the choice with
+`policy_export_evidence.py record-selection`; bind the immutable comparison
+report, checkpoint filename/iteration/hash, complete run identity, effective
+configuration, every supporting evaluation bundle, and the reviewed
+runner-specific tensor contract. Do not infer selection from a unique Pareto
+recommendation.
+
+Run `rsl_rl_export_policy.py` only under a separate export authorization. Pass
+the approved selection receipt and hash, matching source/checkpoint/tensor
+fields, canonical export paths, and a bounded temporal parity contract with an
+explicit reset step. Treat only a version-3 receipt that passes
+`policy_export_evidence.py validate-export` as complete. JIT/ONNX files without
+that receipt are partial attempt artifacts and are ineligible for use or
+archive. See [`policy-export.md`](policy-export.md) for the exact protocol.
+
 ## Archive manifest
 
-`archive_advised_policy.py` consumes a version-1 JSON object:
+`archive_advised_policy.py` consumes a version-2 JSON object after separate
+user archive authorization:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "archive_authorized": true,
   "storage_root": "/absolute/policy_storage",
   "collection": "LW/leg_loco",
@@ -251,15 +268,26 @@ or failed metric.
   },
   "source": {"commit": "full commit", "dirty": true},
   "parameters": {"reward.path": -0.15},
-  "evaluation": {"result_paths": ["/absolute/result.json"]},
+  "evaluation": {
+    "results": [
+      {"path": "/absolute/result.json", "sha256": "64 hex characters"}
+    ]
+  },
+  "export_receipt": {
+    "path": "/absolute/evidence/export/export-001/receipt.json",
+    "sha256": "64 hex characters"
+  },
   "description_notes": "User-approved notes"
 }
 ```
 
-The archiver verifies a clean storage Git worktree, existing non-symlinked
-collection, source hashes, extensions, duplicate artifact pairs, and
-destination collision. It creates one atomic directory and performs no Git
-action.
+The archiver first revalidates the export receipt, selection receipt, complete
+run identity, effective configuration, JIT/ONNX hashes, parity evidence, and
+every closed-loop evaluation bundle. It requires repeated manifest fields to
+match that evidence. It then verifies a clean storage Git worktree, existing
+non-symlinked collection, duplicate artifact pairs, and destination collision.
+It creates one atomic directory and performs no Git action. Legacy version-1
+path-only manifests cannot support an archive operation.
 
 ## Feedback and experience records
 
