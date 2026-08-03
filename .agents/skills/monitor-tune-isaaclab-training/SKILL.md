@@ -73,8 +73,10 @@ Capture run identity independently on each host with
 `scripts/capture_run_identity.py`. Require a user-chosen `host_id`, exact argv
 and ordered Hydra overrides, every relevant config file, and the exact
 evaluation scenario contract. For dirty relevant source, require a tracked
-diff SHA-256 or controlled patch evidence. Treat version-1 experience events as
-legacy; use version 2 with a complete `run_identity` for all new evidence.
+diff SHA-256 or controlled patch evidence. Treat version-1 and version-2
+experience events as legacy for parameter history; use version 3 with a
+complete `run_identity` and verified effective-config reference for every new
+event.
 Never turn identity capture into Git synchronization or a cross-host state
 machine.
 
@@ -304,14 +306,16 @@ For a training candidate, show the exact current parameter, proposed change or
 range, expected effect, counter-metric, risk, supporting current evidence, and
 compatible historical evidence. The user chooses whether to edit and train.
 
-Before calling history compatible, run
-`scripts/query_tuning_experience.py` with the exact task, algorithm, host ID,
-and observation, reward, and deployment fingerprints. Treat version-1,
-explicitly unknown, conflicting, invalid, or incomplete-query results as
-unable to support a parameter change. A compatible event is candidate evidence
-only; verify its referenced artifacts and combine it with current run evidence.
-Never use the query to select a parameter, generate an experiment, start
-training, or coordinate hosts.
+Before calling history compatible, run `scripts/query_tuning_experience.py`
+with the validated current run identity, effective-config artifact and
+whole-file SHA-256, plus the exact observation and deployment fingerprints.
+Let the tool derive task, algorithm, host, and reward fingerprint from those
+validated artifacts. Treat version-1, version-2, explicitly unknown,
+conflicting, invalid, or incomplete-query results as unable to support a
+parameter change. A compatible version-3 event is candidate evidence only;
+combine its verified parameter diff with current run evidence. Never use the
+query to select a parameter, generate an experiment, start training, or
+coordinate hosts.
 
 ## Record tuning experience
 
@@ -326,10 +330,13 @@ Use `scripts/record_tuning_experience.py` to append immutable events under
 - Sim2Sim/Sim2Real feedback;
 - observed effect, lesson, next suggestion, and confidence.
 
-For every new event, use version 2 and embed the complete host-local
-`run_identity`. Require the event task, run ID, and algorithm to match it.
-Version-1 events remain legacy-readable but do not establish reproducible
-dual-host provenance.
+For every new event, use version 3, embed the complete host-local
+`run_identity`, and reference the matching effective-config artifact by
+absolute path, whole-file SHA-256, effective-config fingerprint, and reward
+fingerprint. Require the event task, run ID, algorithm, host, identity hash,
+and `context.reward_fingerprint` to match the recomputed artifact. Version-1
+and version-2 events remain readable but cannot become compatible parameter
+history.
 
 Keep raw artifacts under the run's `evidence/` directory. Store immutable
 timestamped event JSON at the run root, reference evidence by absolute path and

@@ -246,9 +246,10 @@ current context:
 conda run -n isaacsim-5.1 python \
   .agents/skills/monitor-tune-isaaclab-training/scripts/query_tuning_experience.py \
   --root "$ABSOLUTE_POLICY_TUNING_ROOT" \
-  --task "$TASK" --algorithm "$ALGORITHM" --host-id "$HOST_ID" \
+  --run-identity "$SOURCE_IDENTITY_PATH" \
+  --effective-config "$EFFECTIVE_CONFIG_PATH" \
+  --effective-config-sha256 "$EFFECTIVE_CONFIG_SHA256" \
   --observation-fingerprint "$OBSERVATION_FINGERPRINT" \
-  --reward-fingerprint "$REWARD_FINGERPRINT" \
   --deployment-fingerprint "$DEPLOYMENT_FINGERPRINT"
 ```
 
@@ -261,11 +262,12 @@ run evidence, state uncertainty, and leave the parameter decision to the user.
 See [experience-query.md](experience-query.md) for the complete query and
 classification contract.
 
-Every new experience event uses version 2 and embeds the complete identity:
+Every new experience event uses version 3, embeds the complete identity, and
+references the revalidated effective configuration:
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "event_id": "unique-ascii-id",
   "event_type": "run_snapshot",
   "recorded_at": "2026-07-31T18:00:00+08:00",
@@ -278,7 +280,14 @@ Every new experience event uses version 2 and embeds the complete identity:
     "deployment_fingerprint": "sha256 or explicit unknown"
   },
   "parameters": {},
-  "evidence": {},
+  "evidence": {
+    "effective_config": {
+      "path": "/absolute/.../evidence/source/effective-config-snapshot.json",
+      "sha256": "64 lowercase hex characters",
+      "effective_config_fingerprint": "64 lowercase hex characters",
+      "reward_fingerprint": "64 lowercase hex characters"
+    }
+  },
   "analysis": {"summary": "", "confidence": "low"},
   "next_suggestion": "",
   "run_identity": {
@@ -326,5 +335,7 @@ Allowed event types are `run_snapshot`, `assessment`, `decision`,
 `checkpoint_evaluation`, `checkpoint_selection`, `export`, `archive`,
 `feedback`, and `recommendation`. Records are append-only. Reuse prior advice
 only when task, algorithm, and all three context fingerprints match; otherwise
-state the mismatch. Version-1 events remain readable but cannot satisfy the
-host/source identity requirement.
+state the mismatch. A reward mismatch may produce a verified informational
+configuration diff, but remains conflicting evidence. Version-1 and version-2
+events remain readable but cannot satisfy the effective-configuration history
+requirement.

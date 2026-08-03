@@ -187,6 +187,82 @@ class EffectiveTrainingConfigTests(unittest.TestCase):
             MODULE.write_new_evidence(output, evidence)
         self.assertEqual(list(output.parent.glob(".*.tmp-*")), [])
 
+    def test_reloads_and_recomputes_effective_config_evidence(self) -> None:
+        output = self.repository_root / "evidence" / "effective-config.json"
+        output.parent.mkdir()
+        evidence = MODULE.capture_effective_config(self.identity, self.log_directory)
+        receipt = MODULE.write_new_evidence(output, evidence)
+        loaded, metadata = MODULE.load_and_validate_effective_config(
+            output,
+            expected_sha256=receipt["sha256"],
+            run_identity=self.identity,
+        )
+        self.assertEqual(loaded, evidence)
+        self.assertEqual(metadata["sha256"], receipt["sha256"])
+
+        tampered = json.loads(output.read_text(encoding="utf-8"))
+        tampered["training_parameters"]["max_iterations"] = 7
+        tampered_path = output.parent / "tampered.json"
+        encoded = json.dumps(tampered, sort_keys=True).encode("utf-8")
+        tampered_path.write_bytes(encoded)
+        with self.assertRaisesRegex(MODULE.EffectiveConfigError, "training_parameters"):
+            MODULE.load_and_validate_effective_config(
+                tampered_path,
+                expected_sha256=hashlib.sha256(encoded).hexdigest(),
+                run_identity=self.identity,
+            )
+
+    def test_compares_complete_semantic_reward_and_training_changes(self) -> None:
+        baseline = MODULE.capture_effective_config(self.identity, self.log_directory)
+        self.env_path.write_text(
+            ENV_YAML.replace("weight: -0.3", "weight: -0.4"),
+            encoding="utf-8",
+        )
+        self.agent_path.write_text(
+            AGENT_YAML.replace("max_iterations: 100000", "max_iterations: 90000"),
+            encoding="utf-8",
+        )
+        current = MODULE.capture_effective_config(self.identity, self.log_directory)
+        first = MODULE.compare_effective_configs(baseline, current)
+        second = MODULE.compare_effective_configs(baseline, current)
+        self.assertEqual(first, second)
+        self.assertTrue(first["complete"])
+        self.assertEqual(
+            first["reward_weight_changes"],
+            [
+                {
+                    "path": "action_rate",
+                    "change": "changed",
+                    "before": -0.3,
+                    "after": -0.4,
+                }
+            ],
+        )
+        self.assertEqual(
+            first["training_parameter_changes"],
+            [
+                {
+                    "path": "max_iterations",
+                    "change": "changed",
+                    "before": 100000,
+                    "after": 90000,
+                }
+            ],
+        )
+        self.assertEqual(
+            {item["path"] for item in first["semantic_changes"]},
+            {
+                "/agent/max_iterations",
+                "/environment/rewards/action_rate/weight",
+            },
+        )
+        with self.assertRaisesRegex(MODULE.EffectiveConfigError, "max-diff-entries=1"):
+            MODULE.compare_effective_configs(
+                baseline,
+                current,
+                max_diff_entries=1,
+            )
+
     def test_rejects_seed_and_runner_identity_mismatch(self) -> None:
         with self.assertRaisesRegex(MODULE.EffectiveConfigError, "seed"):
             MODULE.capture_effective_config(

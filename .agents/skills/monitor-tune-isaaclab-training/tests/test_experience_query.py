@@ -24,42 +24,45 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 import capture_run_identity as IDENTITY  # noqa: E402
+import capture_effective_training_config as CONFIG  # noqa: E402
 import record_tuning_experience as RECORD  # noqa: E402
 
 
-def make_event(
+AGENT_YAML = """\
+seed: 42
+device: cuda:0
+num_steps_per_env: 24
+max_iterations: 100000
+experiment_name: effective-config-test
+run_name: ''
+logger: wandb
+resume: false
+class_name: OnPolicyRunnerAmpROA
+algorithm:
+  class_name: AMPROAPPO
+"""
+
+
+def env_yaml(weight: float) -> str:
+    return f"""\
+seed: 42
+scene:
+  num_envs: 4096
+rewards:
+  action_rate:
+    func: example.rewards:action_rate
+    weight: {weight}
+  disabled_term: null
+"""
+
+
+def make_identity(
+    repository_root: Path,
     *,
-    event_id: str = "assessment-001",
-    recorded_at: str = "2026-08-01T18:00:00+08:00",
-    run_id: str = "run-001",
+    run_id: str,
     algorithm: str = "amp-roa",
     host_id: str = "younghit",
-    observation: str = "obs-hash",
-    reward: str = "reward-hash",
-    deployment: str = "deploy-hash",
-    version: int = 2,
-    evidence: dict | None = None,
 ) -> dict:
-    event = {
-        "version": version,
-        "event_id": event_id,
-        "event_type": "assessment",
-        "recorded_at": recorded_at,
-        "task": "lw-leg-rough",
-        "run_id": run_id,
-        "algorithm": algorithm,
-        "context": {
-            "observation_fingerprint": observation,
-            "reward_fingerprint": reward,
-            "deployment_fingerprint": deployment,
-        },
-        "parameters": {"action_rate_l2": -0.15},
-        "evidence": evidence or {},
-        "analysis": {"summary": "healthy", "confidence": "medium"},
-        "next_suggestion": "recheck before changing parameters",
-    }
-    if version == 1:
-        return event
     scenario = {
         "scenario_id": "quick-native",
         "scenario_overrides": {},
@@ -70,15 +73,15 @@ def make_event(
     }
     identity = {
         "version": 1,
-        "task": event["task"],
-        "run_id": event["run_id"],
+        "task": "lw-leg-rough",
+        "run_id": run_id,
         "host_id": host_id,
         "backend": "isaaclab",
         "algorithm": algorithm,
         "runner": "OnPolicyRunnerAmpROA",
         "seed": 42,
         "source": {
-            "repository_root": "/absolute/robot_lab",
+            "repository_root": str(repository_root),
             "branch": "main",
             "head": "1" * 40,
             "dirty": False,
@@ -87,8 +90,8 @@ def make_event(
             "patch_evidence": None,
         },
         "training": {
-            "command": ["python", "train.py", "env.scene.num_envs=4096"],
-            "hydra_overrides": ["env.scene.num_envs=4096"],
+            "command": ["python", "train.py", "--task=lw-leg-rough"],
+            "hydra_overrides": [],
         },
         "config_files": [{"path": "config.yaml", "sha256": "2" * 64}],
         "evaluation_scenario": {
@@ -101,7 +104,102 @@ def make_event(
     identity["identity_sha256"] = IDENTITY._sha256_bytes(
         IDENTITY._canonical_json(identity).encode("utf-8")
     )
+    return identity
+
+
+def capture_config(
+    root: Path,
+    identity: dict,
+    *,
+    reward_weight: float,
+    snapshot_id: str,
+) -> tuple[dict, Path, dict]:
+    repository_root = Path(identity["source"]["repository_root"])
+    log_directory = (
+        repository_root
+        / "logs"
+        / "rsl_rl"
+        / "effective-config-test"
+        / identity["run_id"]
+    )
+    params = log_directory / "params"
+    params.mkdir(parents=True)
+    (params / "env.yaml").write_text(env_yaml(reward_weight), encoding="utf-8")
+    (params / "agent.yaml").write_text(AGENT_YAML, encoding="utf-8")
+    config = CONFIG.capture_effective_config(identity, log_directory)
+    path = (
+        root
+        / identity["task"]
+        / identity["run_id"]
+        / "evidence"
+        / "source"
+        / f"effective-config-{snapshot_id}.json"
+    )
+    path.parent.mkdir(parents=True)
+    receipt = CONFIG.write_new_evidence(path, config)
+    return config, path, receipt
+
+
+def make_event(
+    *,
+    event_id: str = "assessment-001",
+    recorded_at: str = "2026-08-01T18:00:00+08:00",
+    run_id: str = "run-001",
+    algorithm: str = "amp-roa",
+    host_id: str = "younghit",
+    observation: str = "obs-hash",
+    deployment: str = "deploy-hash",
+    version: int = 3,
+    evidence: dict | None = None,
+    root: Path | None = None,
+    reward_weight: float = -0.4,
+) -> dict:
+    event = {
+        "version": version,
+        "event_id": event_id,
+        "event_type": "assessment",
+        "recorded_at": recorded_at,
+        "task": "lw-leg-rough",
+        "run_id": run_id,
+        "algorithm": algorithm,
+        "context": {
+            "observation_fingerprint": observation,
+            "reward_fingerprint": "unknown",
+            "deployment_fingerprint": deployment,
+        },
+        "parameters": {"action_rate_l2": -0.15},
+        "evidence": evidence or {},
+        "analysis": {"summary": "healthy", "confidence": "medium"},
+        "next_suggestion": "recheck before changing parameters",
+    }
+    if version == 1:
+        event["context"]["reward_fingerprint"] = "legacy-reward-hash"
+        return event
+    if root is None:
+        raise ValueError("root is required for version 2 or 3 events")
+    identity = make_identity(
+        root.parents[1],
+        run_id=run_id,
+        algorithm=algorithm,
+        host_id=host_id,
+    )
     event["run_identity"] = identity
+    if version == 2:
+        event["context"]["reward_fingerprint"] = "legacy-reward-hash"
+        return event
+    config, path, receipt = capture_config(
+        root,
+        identity,
+        reward_weight=reward_weight,
+        snapshot_id=event_id,
+    )
+    event["context"]["reward_fingerprint"] = config["fingerprints"]["reward"]
+    event["evidence"]["effective_config"] = {
+        "path": str(path),
+        "sha256": receipt["sha256"],
+        "effective_config_fingerprint": config["fingerprints"]["effective_config"],
+        "reward_fingerprint": config["fingerprints"]["reward"],
+    }
     return event
 
 
@@ -109,36 +207,63 @@ class ExperienceQueryTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary_directory.cleanup)
-        self.root = Path(self.temporary_directory.name).resolve() / "history"
-        self.root.mkdir()
+        self.repository_root = (
+            Path(self.temporary_directory.name).resolve() / "robot_lab"
+        )
+        self.root = self.repository_root / "learnings" / "policy_tuning"
+        self.root.mkdir(parents=True)
+        self.current_identity = make_identity(
+            self.repository_root,
+            run_id="run-current",
+        )
+        (
+            self.current_config,
+            self.current_config_path,
+            self.current_config_receipt,
+        ) = capture_config(
+            self.root,
+            self.current_identity,
+            reward_weight=-0.4,
+            snapshot_id="current",
+        )
 
     def query(self, **overrides) -> dict:
         arguments = {
-            "task": "lw-leg-rough",
-            "algorithm": "amp-roa",
-            "host_id": "younghit",
+            "run_identity": self.current_identity,
+            "effective_config_path": self.current_config_path,
+            "effective_config_sha256": self.current_config_receipt["sha256"],
             "observation_fingerprint": "obs-hash",
-            "reward_fingerprint": "reward-hash",
             "deployment_fingerprint": "deploy-hash",
         }
         arguments.update(overrides)
         return MODULE.query_tuning_experience(self.root, **arguments)
 
     def write(self, event: dict) -> Path:
-        receipt = RECORD.write_event(self.root, event)
-        return Path(receipt["event_path"])
-
-    def test_exact_version_two_match_is_compatible_with_evidence_refs(self) -> None:
-        health_path = "/archive/run-001/evidence/health/health.json"
-        event_path = self.write(
-            make_event(
-                evidence={
-                    "health": {"path": health_path, "sha256": "a" * 64},
-                    "video_path": "/archive/run-001/evidence/play/video.mp4",
-                    "video_sha256": "b" * 64,
-                }
-            )
+        if event["version"] == 3:
+            receipt = RECORD.write_event(self.root, event)
+            return Path(receipt["event_path"])
+        run_dir = self.root / event["task"] / event["run_id"]
+        run_dir.mkdir(parents=True, exist_ok=True)
+        timestamp_slug = MODULE._timestamp_slug(event["recorded_at"])
+        path = run_dir / f"{timestamp_slug}__{event['event_id']}.json"
+        path.write_text(
+            json.dumps(event, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
         )
+        return path
+
+    def test_exact_version_three_match_is_verified_and_compatible(self) -> None:
+        health_path = "/archive/run-001/evidence/health/health.json"
+        value = make_event(
+            root=self.root,
+            evidence={
+                "health": {"path": health_path, "sha256": "a" * 64},
+                "video_path": "/archive/run-001/evidence/play/video.mp4",
+                "video_sha256": "b" * 64,
+            },
+        )
+        config_path = value["evidence"]["effective_config"]["path"]
+        event_path = self.write(value)
         result = self.query()
         self.assertEqual(result["summary"]["compatible"], 1)
         self.assertEqual(result["historical_support"]["status"], "compatible_history_available")
@@ -150,8 +275,17 @@ class ExperienceQueryTests(unittest.TestCase):
         )
         self.assertEqual(
             {reference["path"] for reference in item["evidence_refs"]},
-            {health_path, "/archive/run-001/evidence/play/video.mp4"},
+            {
+                health_path,
+                "/archive/run-001/evidence/play/video.mp4",
+                config_path,
+            },
         )
+        self.assertEqual(
+            item["effective_config_verification"]["status"],
+            "verified",
+        )
+        self.assertEqual(item["parameter_diff"]["summary"]["semantic_changes"], 0)
 
     def test_known_mismatches_are_conflicting_with_explicit_reasons(self) -> None:
         cases = [
@@ -164,7 +298,7 @@ class ExperienceQueryTests(unittest.TestCase):
             ),
             (
                 "reward",
-                {"reward": "different-reward"},
+                {"reward_weight": -0.3},
                 "reward_fingerprint_mismatch",
             ),
             (
@@ -178,6 +312,7 @@ class ExperienceQueryTests(unittest.TestCase):
             event_id = f"assessment-{name}"
             self.write(
                 make_event(
+                    root=self.root,
                     event_id=event_id,
                     run_id=f"run-{index:03d}",
                     **overrides,
@@ -193,19 +328,66 @@ class ExperienceQueryTests(unittest.TestCase):
             observed_reasons,
             expected_reasons,
         )
+        reward_item = next(
+            item
+            for item in result["conflicting_events"]
+            if item["event_id"] == "assessment-reward"
+        )
+        self.assertEqual(
+            reward_item["effective_config_verification"]["status"],
+            "verified",
+        )
+        self.assertEqual(
+            reward_item["parameter_diff"]["reward_weight_changes"],
+            [
+                {
+                    "path": "action_rate",
+                    "change": "changed",
+                    "before": -0.3,
+                    "after": -0.4,
+                }
+            ],
+        )
         self.assertEqual(result["historical_support"]["status"], "no_compatible_history")
 
     def test_legacy_and_explicit_unknown_events_never_become_compatible(self) -> None:
         self.write(make_event(version=1))
-        self.write(make_event(event_id="assessment-002", observation="unknown"))
+        self.write(
+            make_event(
+                root=self.root,
+                version=2,
+                event_id="assessment-v2",
+                run_id="run-v2",
+            )
+        )
+        self.write(
+            make_event(
+                root=self.root,
+                event_id="assessment-002",
+                observation="unknown",
+            )
+        )
         result = self.query()
-        self.assertEqual(result["summary"]["unknown"], 2)
+        self.assertEqual(result["summary"]["unknown"], 3)
         reasons = [item["classification_reasons"] for item in result["unknown_events"]]
-        self.assertIn(["event_host_id_unknown"], reasons)
+        self.assertTrue(
+            any(
+                "event_host_id_unknown" in item
+                and "event_effective_config_unknown" in item
+                for item in reasons
+            )
+        )
+        self.assertTrue(
+            any(
+                "event_effective_config_unknown" in item
+                and "event_host_id_unknown" not in item
+                for item in reasons
+            )
+        )
         self.assertIn(["event_observation_fingerprint_unknown"], reasons)
 
     def test_unknown_query_context_suppresses_historical_support(self) -> None:
-        self.write(make_event())
+        self.write(make_event(root=self.root))
         result = self.query(observation_fingerprint="unknown")
         self.assertEqual(result["summary"]["unknown"], 1)
         self.assertEqual(
@@ -214,7 +396,7 @@ class ExperienceQueryTests(unittest.TestCase):
         )
 
     def test_invalid_json_is_reported_and_suppresses_support(self) -> None:
-        self.write(make_event())
+        self.write(make_event(root=self.root))
         run_dir = self.root / "lw-leg-rough" / "run-002"
         run_dir.mkdir(parents=True)
         invalid = run_dir / "invalid.json"
@@ -225,17 +407,49 @@ class ExperienceQueryTests(unittest.TestCase):
         self.assertEqual(result["historical_support"]["status"], "history_invalid")
         self.assertFalse(result["scan"]["complete"])
 
+    def test_matching_context_with_changed_config_artifact_is_invalid(self) -> None:
+        value = make_event(root=self.root)
+        self.write(value)
+        config_path = Path(value["evidence"]["effective_config"]["path"])
+        config_path.write_text(
+            config_path.read_text(encoding="utf-8") + " ",
+            encoding="utf-8",
+        )
+        result = self.query()
+        self.assertEqual(result["summary"]["invalid"], 1)
+        self.assertEqual(result["historical_support"]["status"], "history_invalid")
+        self.assertIn("SHA-256 mismatch", result["invalid_events"][0]["error"])
+
+    def test_other_host_config_is_not_dereferenced(self) -> None:
+        value = make_event(root=self.root, host_id="server5090")
+        self.write(value)
+        config_path = Path(value["evidence"]["effective_config"]["path"])
+        config_path.write_text("unavailable on this host", encoding="utf-8")
+        result = self.query()
+        self.assertTrue(result["scan"]["complete"])
+        self.assertEqual(result["summary"]["conflicting"], 1)
+        item = result["conflicting_events"][0]
+        self.assertEqual(item["classification_reasons"], ["host_id_mismatch"])
+        self.assertEqual(
+            item["effective_config_verification"]["status"],
+            "not_checked_context_mismatch",
+        )
+
     def test_storage_scope_and_filename_mismatch_are_invalid(self) -> None:
-        event = make_event()
+        event = make_event(root=self.root)
         run_dir = self.root / "lw-leg-rough" / "wrong-run"
         run_dir.mkdir(parents=True)
         (run_dir / "wrong.json").write_text(
             json.dumps(event),
             encoding="utf-8",
         )
-        filename_event = make_event(event_id="assessment-filename", run_id="run-002")
+        filename_event = make_event(
+            root=self.root,
+            event_id="assessment-filename",
+            run_id="run-002",
+        )
         filename_run_dir = self.root / "lw-leg-rough" / "run-002"
-        filename_run_dir.mkdir()
+        filename_run_dir.mkdir(exist_ok=True)
         (filename_run_dir / "wrong.json").write_text(
             json.dumps(filename_event),
             encoding="utf-8",
@@ -249,6 +463,7 @@ class ExperienceQueryTests(unittest.TestCase):
     def test_results_are_deterministic_and_chronologically_sorted(self) -> None:
         self.write(
             make_event(
+                root=self.root,
                 event_id="assessment-later",
                 recorded_at="2026-08-01T18:00:00+08:00",
                 run_id="run-z",
@@ -256,6 +471,7 @@ class ExperienceQueryTests(unittest.TestCase):
         )
         self.write(
             make_event(
+                root=self.root,
                 event_id="assessment-earlier",
                 recorded_at="2026-08-01T09:30:00Z",
                 run_id="run-a",
@@ -270,7 +486,7 @@ class ExperienceQueryTests(unittest.TestCase):
         )
 
     def test_nested_evidence_json_is_not_scanned(self) -> None:
-        self.write(make_event())
+        self.write(make_event(root=self.root))
         nested = (
             self.root
             / "lw-leg-rough"
@@ -293,16 +509,14 @@ class ExperienceQueryTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.ExperienceQueryError, "symlinked"):
             MODULE.query_tuning_experience(
                 linked_root,
-                task="lw-leg-rough",
-                algorithm="amp-roa",
-                host_id="younghit",
+                run_identity=self.current_identity,
+                effective_config_path=self.current_config_path,
+                effective_config_sha256=self.current_config_receipt["sha256"],
                 observation_fingerprint="obs-hash",
-                reward_fingerprint="reward-hash",
                 deployment_fingerprint="deploy-hash",
             )
 
         task_dir = self.root / "lw-leg-rough"
-        task_dir.mkdir()
         external_run = Path(self.temporary_directory.name).resolve() / "external-run"
         external_run.mkdir()
         (task_dir / "run-linked").symlink_to(external_run, target_is_directory=True)
@@ -319,8 +533,14 @@ class ExperienceQueryTests(unittest.TestCase):
             self.query()
 
     def test_scan_and_file_size_bounds_are_enforced(self) -> None:
-        self.write(make_event())
-        self.write(make_event(event_id="assessment-002", run_id="run-002"))
+        self.write(make_event(root=self.root))
+        self.write(
+            make_event(
+                root=self.root,
+                event_id="assessment-002",
+                run_id="run-002",
+            )
+        )
         with self.assertRaisesRegex(MODULE.ExperienceQueryError, "max-events=1"):
             self.query(max_events=1)
         result = self.query(max_event_bytes=10)
@@ -328,7 +548,16 @@ class ExperienceQueryTests(unittest.TestCase):
         self.assertEqual(result["historical_support"]["status"], "history_invalid")
 
     def test_cli_prints_json_without_changing_history(self) -> None:
-        self.write(make_event())
+        self.write(make_event(root=self.root))
+        identity_path = (
+            self.root
+            / self.current_identity["task"]
+            / self.current_identity["run_id"]
+            / "evidence"
+            / "source"
+            / "identity-current.json"
+        )
+        identity_path.write_text(json.dumps(self.current_identity), encoding="utf-8")
 
         def snapshot() -> dict[str, bytes | None]:
             return {
@@ -342,16 +571,14 @@ class ExperienceQueryTests(unittest.TestCase):
             str(SCRIPT),
             "--root",
             str(self.root),
-            "--task",
-            "lw-leg-rough",
-            "--algorithm",
-            "amp-roa",
-            "--host-id",
-            "younghit",
+            "--run-identity",
+            str(identity_path),
+            "--effective-config",
+            str(self.current_config_path),
+            "--effective-config-sha256",
+            self.current_config_receipt["sha256"],
             "--observation-fingerprint",
             "obs-hash",
-            "--reward-fingerprint",
-            "reward-hash",
             "--deployment-fingerprint",
             "deploy-hash",
         ]

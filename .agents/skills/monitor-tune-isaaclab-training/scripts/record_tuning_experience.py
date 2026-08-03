@@ -12,6 +12,11 @@ import time
 from pathlib import Path
 from typing import Any
 
+from capture_effective_training_config import (
+    EffectiveConfigError,
+    SHA256_RE,
+    load_and_validate_effective_config,
+)
 from capture_run_identity import RunIdentityError, validate_run_identity
 
 
@@ -75,8 +80,8 @@ def _load(path: Path) -> dict[str, Any]:
 
 def validate_event(event: dict[str, Any]) -> None:
     version = event.get("version")
-    if version not in {1, 2}:
-        raise ExperienceError("event.version must be 1 or 2")
+    if version not in {1, 2, 3}:
+        raise ExperienceError("event.version must be 1, 2, or 3")
     for field in ("event_id", "task", "run_id", "algorithm"):
         value = event.get(field)
         if not isinstance(value, str) or not SLUG_RE.fullmatch(value):
@@ -105,7 +110,7 @@ def validate_event(event: dict[str, Any]) -> None:
         raise ExperienceError("next_suggestion must be a string")
     if event["event_type"] == "feedback" and event["evidence"].get("source") not in {"sim2sim", "sim2real"}:
         raise ExperienceError("feedback evidence.source must be sim2sim or sim2real")
-    if version == 2:
+    if version in {2, 3}:
         try:
             validate_run_identity(event.get("run_identity"))
         except RunIdentityError as exc:
@@ -116,6 +121,73 @@ def validate_event(event: dict[str, Any]) -> None:
                 raise ExperienceError(
                     f"event.{field} must match run_identity.{field}"
                 )
+    if version == 3:
+        reference = event["evidence"].get("effective_config")
+        expected_keys = {
+            "effective_config_fingerprint",
+            "path",
+            "reward_fingerprint",
+            "sha256",
+        }
+        if not isinstance(reference, dict) or set(reference) != expected_keys:
+            raise ExperienceError(
+                "version-3 evidence.effective_config must contain path, sha256, "
+                "effective_config_fingerprint, and reward_fingerprint"
+            )
+        path = reference["path"]
+        if (
+            not isinstance(path, str)
+            or not Path(path).is_absolute()
+            or ".." in Path(path).parts
+        ):
+            raise ExperienceError("effective config evidence path must be absolute")
+        for field in (
+            "sha256",
+            "effective_config_fingerprint",
+            "reward_fingerprint",
+        ):
+            value = reference[field]
+            if not isinstance(value, str) or not SHA256_RE.fullmatch(value):
+                raise ExperienceError(f"effective config {field} must be SHA-256")
+        if event["context"]["reward_fingerprint"] != reference["reward_fingerprint"]:
+            raise ExperienceError(
+                "context.reward_fingerprint must match effective config reference"
+            )
+
+
+def validate_effective_config_binding(
+    root: Path,
+    event: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate a version-3 event's host-local immutable config reference."""
+    if event.get("version") != 3:
+        raise ExperienceError("new experience events must use version 3")
+    reference = event["evidence"]["effective_config"]
+    path = Path(reference["path"])
+    expected_parent = root / event["task"] / event["run_id"] / "evidence" / "source"
+    if path.parent != expected_parent or not re.fullmatch(
+        r"effective-config-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
+        path.name,
+    ):
+        raise ExperienceError(
+            "effective config evidence must be a direct source artifact for this run"
+        )
+    try:
+        config, _ = load_and_validate_effective_config(
+            path,
+            expected_sha256=reference["sha256"],
+            run_identity=event["run_identity"],
+        )
+    except EffectiveConfigError as exc:
+        raise ExperienceError(str(exc)) from exc
+    if (
+        config["fingerprints"]["effective_config"]
+        != reference["effective_config_fingerprint"]
+    ):
+        raise ExperienceError("effective config fingerprint reference mismatch")
+    if config["fingerprints"]["reward"] != reference["reward_fingerprint"]:
+        raise ExperienceError("effective config reward fingerprint reference mismatch")
+    return config
 
 
 def write_event(root: Path, event: dict[str, Any]) -> dict[str, Any]:
@@ -127,6 +199,7 @@ def write_event(root: Path, event: dict[str, Any]) -> dict[str, Any]:
         raise ExperienceError("experience root must be an existing directory")
     run_dir = root / event["task"] / event["run_id"]
     _reject_symlink_components(run_dir, label="experience run directory")
+    validate_effective_config_binding(root, event)
     run_dir.mkdir(parents=True, exist_ok=True)
     _reject_symlink_components(run_dir, label="experience run directory")
     timestamp_slug = re.sub(r"[^0-9A-Za-z]+", "-", event["recorded_at"]).strip("-")
