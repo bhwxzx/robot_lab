@@ -238,10 +238,11 @@ recommendation.
 Run `rsl_rl_export_policy.py` only under a separate export authorization. Pass
 the approved selection receipt and hash, matching source/checkpoint/tensor
 fields, canonical export paths, and a bounded temporal parity contract with an
-explicit reset step. Treat only a version-3 receipt that passes
-`policy_export_evidence.py validate-export` as complete. JIT/ONNX files without
-that receipt are partial attempt artifacts and are ineligible for use or
-archive. See [`policy-export.md`](policy-export.md) for the exact protocol.
+explicit reset step and ONNX export profile. Treat only a new version-4 receipt
+that passes `policy_export_evidence.py validate-export` as complete. Validated
+legacy version-3 receipts remain eligible; JIT/ONNX files without a validated
+receipt are partial attempt artifacts and are ineligible for use or archive.
+See [`policy-export.md`](policy-export.md) for the exact protocol.
 
 ## Archive manifest
 

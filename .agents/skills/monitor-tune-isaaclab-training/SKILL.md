@@ -293,8 +293,14 @@ selection receipt with `scripts/policy_export_evidence.py record-selection`.
 Bind the exact run identity, effective config, selection report, closed-loop
 evaluation bundles, checkpoint filename/iteration/hash, and reviewed tensor
 contract. The exporter must publish exclusively from an owned attempt and write
-its validated version-3 receipt last. Require bounded multi-time parity with an
-explicit pre/post-reset boundary. Export is not deployment qualification.
+its validated version-4 receipt last. For a single-robot deployment, require the
+explicit `static_batch_1_simplified` ONNX profile: fixed batch 1, stable
+`obs`/`actions` names, opset 17, successful `onnxsim` validation, and a reloaded
+model-contract check. Use `dynamic_batch` only when the deployment runtime
+actually requires multi-item batches. Require bounded multi-time parity with an
+explicit pre/post-reset boundary; the static profile runs those samples one row
+at a time without reducing parity coverage. Legacy completed version-3 receipts
+remain validation-compatible. Export is not deployment qualification.
 
 Archive only after a separate user confirmation. Inspect `policy_storage`
 read-only first and show the exact version-2 manifest and destination before

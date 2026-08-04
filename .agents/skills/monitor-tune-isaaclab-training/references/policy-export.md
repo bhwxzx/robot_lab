@@ -90,10 +90,27 @@ conda run -n isaacsim-5.1 python \
   --result_path "$EXPORT_RECEIPT_PATH" \
   --history_contract "$HISTORY_CONTRACT" \
   --normalization_contract "$NORMALIZATION_CONTRACT" \
-  --reset_contract "$RESET_CONTRACT" --parity_steps 8 --reset_step 4 \
+  --reset_contract "$RESET_CONTRACT" \
+  --onnx_export_profile static_batch_1_simplified \
+  --parity_steps 8 --reset_step 4 \
   --minimum_parity_samples 8 --max_abs_action_error 1e-5 \
   --num_envs 1 --seed "$SEED" --require_idle_gpu --headless
 ```
+
+## ONNX export contract
+
+Choose the profile explicitly; there is no implicit default. Use
+`static_batch_1_simplified` for a single-robot deployment. It fixes input and
+output batch dimensions at 1, uses stable `obs` and `actions` names, exports
+with opset 17, requires `onnxsim` to pass its model check, then reloads and
+validates the final ONNX graph. Use `dynamic_batch` only when a consumer truly
+needs batches larger than 1; that profile retains dynamic batch axes and opset
+18 without simplification.
+
+The static profile evaluates the multi-sample parity corpus one row at a time
+and concatenates the actions, so it preserves the full temporal and reset
+coverage. A static-batch artifact rejects direct batch sizes greater than 1 by
+design.
 
 ## Parity contract
 
@@ -111,18 +128,22 @@ not deployment or hardware qualification.
 
 ## Export receipt and validation
 
-A completed version-3 receipt binds:
+A newly completed version-4 receipt binds:
 
 - task, run, runner, checkpoint ID, and export ID;
 - complete run identity and effective-config reference/fingerprints;
 - approved checkpoint-selection receipt;
-- tensor and parity contracts;
+- tensor, ONNX export, and parity contracts;
+- final ONNX input/output names, dtypes, shapes, opset/profile, simplifier
+  result, and pre/post-simplification node counts;
 - JIT/ONNX canonical paths, sizes, and SHA-256 values;
 - multi-time/reset-boundary parity evidence.
 
 Use `policy_export_evidence.py validate-export RECEIPT` before any downstream
 use. Missing receipt, source drift, hash mismatch, incomplete boundaries,
 parity failure, or a changed artifact invalidates the entire export.
+Completed version-3 receipts created before this contract upgrade remain
+validation-compatible, but every new export must publish version 4.
 
 ## Archive gate
 

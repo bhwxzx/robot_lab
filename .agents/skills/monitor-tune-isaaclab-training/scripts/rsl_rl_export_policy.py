@@ -24,6 +24,11 @@ from policy_export_evidence import (  # noqa: E402
     close_export_resources,
     preflight_export,
 )
+from onnx_export_contract import (  # noqa: E402
+    available_onnx_export_profiles,
+    export_onnx_policy,
+    run_onnx_policy,
+)
 
 from isaaclab.app import AppLauncher
 
@@ -47,6 +52,11 @@ parser.add_argument("--minimum_parity_samples", type=int, required=True)
 parser.add_argument("--history_contract", required=True)
 parser.add_argument("--normalization_contract", required=True)
 parser.add_argument("--reset_contract", required=True)
+parser.add_argument(
+    "--onnx_export_profile",
+    required=True,
+    choices=available_onnx_export_profiles(),
+)
 parser.add_argument("--parity_steps", type=int, required=True)
 parser.add_argument("--reset_step", type=int, required=True)
 parser.add_argument("--num_envs", type=int, default=16)
@@ -109,6 +119,7 @@ try:
         history_contract=args_cli.history_contract,
         normalization_contract=args_cli.normalization_contract,
         reset_contract=args_cli.reset_contract,
+        onnx_export_profile=args_cli.onnx_export_profile,
         parity_steps=args_cli.parity_steps,
         reset_step=args_cli.reset_step,
         minimum_parity_samples=args_cli.minimum_parity_samples,
@@ -133,7 +144,6 @@ app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
 import gymnasium as gym  # noqa: E402
-import numpy as np  # noqa: E402
 import torch  # noqa: E402
 import torch.nn as nn  # noqa: E402
 
@@ -292,21 +302,6 @@ def _action_tensor(value: Any) -> torch.Tensor:
 def _tensor_digest(value: torch.Tensor) -> str:
     array = value.detach().cpu().contiguous().numpy()
     return _bytes_sha256(array.tobytes())
-
-
-def _onnx_action(path: Path, policy_input: torch.Tensor) -> torch.Tensor:
-    import onnxruntime as ort
-
-    session = ort.InferenceSession(
-        str(path),
-        providers=["CPUExecutionProvider"],
-    )
-    input_name = session.get_inputs()[0].name
-    output = session.run(
-        None,
-        {input_name: policy_input.detach().cpu().numpy()},
-    )[0]
-    return torch.from_numpy(np.asarray(output))
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)
@@ -477,22 +472,20 @@ def main(
         example_input = policy_input[:1]
         traced = torch.jit.trace(deployment_model, example_input)
         traced.save(str(jit_path))
-        torch.onnx.export(
+        onnx_export_evidence = export_onnx_policy(
             deployment_model,
             example_input,
-            str(onnx_path),
-            input_names=["obs"],
-            output_names=["actions"],
-            dynamic_axes={
-                "obs": {0: "batch"},
-                "actions": {0: "batch"},
-            },
-            opset_version=18,
+            onnx_path,
+            contract=export_plan.onnx_export_contract,
         )
         jit_model = torch.jit.load(str(jit_path), map_location="cpu").eval()
         with torch.no_grad():
             jit_action = _action_tensor(jit_model(policy_input)).cpu()
-        onnx_action = _onnx_action(onnx_path, policy_input).cpu()
+        onnx_action = run_onnx_policy(
+            onnx_path,
+            policy_input,
+            contract=export_plan.onnx_export_contract,
+        ).cpu()
         artifact_parity: dict[str, Any] = {}
         for kind, path, action in (
             ("jit", jit_path, jit_action),
@@ -515,7 +508,7 @@ def main(
                 "max_abs_action_error": error,
             }
         result = {
-            "version": 3,
+            "version": 4,
             "status": "completed",
             "export": {
                 "task": export_plan.task,
@@ -536,8 +529,10 @@ def main(
                     "effective_config"
                 ],
                 "tensor_contract": export_plan.tensor_contract,
+                "onnx_export_contract": export_plan.onnx_export_contract,
                 "parity_contract": export_plan.parity_contract,
             },
+            "onnx_export": onnx_export_evidence,
             "parity": {
                 "sample_count": sample_count,
                 "boundaries": boundaries,

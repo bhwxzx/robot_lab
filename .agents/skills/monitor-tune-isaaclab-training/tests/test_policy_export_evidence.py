@@ -264,6 +264,7 @@ class PolicyExportEvidenceTests(unittest.TestCase):
                 "normalization_contract"
             ],
             "reset_contract": self.tensor_contract["reset_contract"],
+            "onnx_export_profile": "static_batch_1_simplified",
             "parity_steps": 4,
             "reset_step": 2,
             "minimum_parity_samples": 4,
@@ -275,8 +276,11 @@ class PolicyExportEvidenceTests(unittest.TestCase):
         return EXPORT.preflight_export(**values)
 
     def receipt(self, plan) -> dict:
+        static_batch = plan.onnx_export_contract["batch_contract"] == "static_batch_1"
+        batch_dimension = 1 if static_batch else "batch"
+        simplified = plan.onnx_export_contract["simplified"]
         return {
-            "version": 3,
+            "version": 4,
             "status": "completed",
             "export": {
                 "task": plan.task,
@@ -295,7 +299,16 @@ class PolicyExportEvidenceTests(unittest.TestCase):
                 "run_identity": plan.selection_receipt["run_identity"],
                 "effective_config": plan.selection_receipt["effective_config"],
                 "tensor_contract": plan.tensor_contract,
+                "onnx_export_contract": plan.onnx_export_contract,
                 "parity_contract": plan.parity_contract,
+            },
+            "onnx_export": {
+                "contract": plan.onnx_export_contract,
+                "input_shape": [batch_dimension, 48],
+                "output_shape": [batch_dimension, 12],
+                "pre_simplify_node_count": 40,
+                "post_simplify_node_count": 22 if simplified else 40,
+                "simplifier_check": True if simplified else None,
             },
             "parity": {
                 "sample_count": 4,
@@ -339,16 +352,71 @@ class PolicyExportEvidenceTests(unittest.TestCase):
             publisher.jit_work_path.write_bytes(b"jit")
             publisher.onnx_work_path.write_bytes(b"onnx")
             published = publisher.publish(self.receipt(plan))
-        self.assertEqual(published["version"], 3)
+        self.assertEqual(published["version"], 4)
         validation = EXPORT.validate_export_bundle(plan.paths["receipt"])
         self.assertEqual(validation["status"], "valid")
         self.assertFalse((plan.paths["export_dir"] / ".attempt").exists())
+
+    def test_legacy_version_3_receipt_remains_valid(self) -> None:
+        plan = self.plan()
+        receipt = self.receipt(plan)
+        receipt["version"] = 3
+        del receipt["inputs"]["onnx_export_contract"]
+        del receipt["onnx_export"]
+        with EXPORT.ExportPublisher(plan) as publisher:
+            publisher.jit_work_path.write_bytes(b"jit")
+            publisher.onnx_work_path.write_bytes(b"onnx")
+            publisher.publish(receipt)
+        validation = EXPORT.validate_export_bundle(plan.paths["receipt"])
+        self.assertEqual(validation["document"]["version"], 3)
+
+    def test_dynamic_batch_version_4_receipt_is_valid(self) -> None:
+        plan = self.plan(onnx_export_profile="dynamic_batch")
+        with EXPORT.ExportPublisher(plan) as publisher:
+            publisher.jit_work_path.write_bytes(b"jit")
+            publisher.onnx_work_path.write_bytes(b"onnx")
+            publisher.publish(self.receipt(plan))
+        validation = EXPORT.validate_export_bundle(plan.paths["receipt"])
+        self.assertEqual(
+            validation["document"]["onnx_export"]["input_shape"],
+            ["batch", 48],
+        )
+
+    def test_version_4_missing_onnx_contract_rolls_back_outputs(self) -> None:
+        plan = self.plan()
+        receipt = self.receipt(plan)
+        del receipt["inputs"]["onnx_export_contract"]
+        with EXPORT.ExportPublisher(plan) as publisher:
+            publisher.jit_work_path.write_bytes(b"jit")
+            publisher.onnx_work_path.write_bytes(b"onnx")
+            with self.assertRaisesRegex(
+                EXPORT.PolicyExportEvidenceError, "publication failed"
+            ):
+                publisher.publish(receipt)
+        for label in ("jit", "onnx", "receipt"):
+            self.assertFalse(plan.paths[label].exists())
+
+    def test_version_4_tampered_onnx_evidence_rolls_back_outputs(self) -> None:
+        plan = self.plan()
+        receipt = self.receipt(plan)
+        receipt["onnx_export"]["input_shape"] = ["batch", 48]
+        with EXPORT.ExportPublisher(plan) as publisher:
+            publisher.jit_work_path.write_bytes(b"jit")
+            publisher.onnx_work_path.write_bytes(b"onnx")
+            with self.assertRaisesRegex(
+                EXPORT.PolicyExportEvidenceError, "publication failed"
+            ):
+                publisher.publish(receipt)
+        for label in ("jit", "onnx", "receipt"):
+            self.assertFalse(plan.paths[label].exists())
 
     def test_checkpoint_id_and_tensor_contract_conflicts_are_rejected(self) -> None:
         with self.assertRaisesRegex(EXPORT.PolicyExportEvidenceError, "checkpoint_id"):
             self.plan(checkpoint_id="model_11")
         with self.assertRaisesRegex(EXPORT.PolicyExportEvidenceError, "tensor contract"):
             self.plan(history_contract="current_observation")
+        with self.assertRaisesRegex(EXPORT.PolicyExportEvidenceError, "unsupported ONNX"):
+            self.plan(onnx_export_profile="implicit-default")
 
     def test_wrong_output_and_existing_target_are_rejected(self) -> None:
         with self.assertRaisesRegex(EXPORT.PolicyExportEvidenceError, "outside"):
