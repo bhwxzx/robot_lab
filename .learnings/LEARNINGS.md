@@ -20,6 +20,41 @@ Whenever adding a custom network (e.g., `ActorCriticROA`) or algorithm (e.g., `A
 - Tags: python, eval, namespace, rsl-rl
 
 ---
+## [LRN-20260804-001] correction
+
+**Logged**: 2026-08-04T09:42:00+08:00
+**Priority**: high
+**Status**: pending
+**Area**: config
+
+### Summary
+LW 策略评估的关节扭矩和速度安全门限应从最终生效的机器人 URDF 与 actuator
+配置中解析，并按关节分组核对，不能因 criteria 尚未配置门限就声称无可用限制。
+
+### Details
+用户指出 LW 的关节限制可从 URDF 或关节配置取得。只读核对确认
+`LW.urdf` 与 `LW_LEG_CFG` 一致地定义了腿、轮和 foot 三组不同限制：
+120 Nm/20 rad/s、40 Nm/33 rad/s、27 Nm/10 rad/s。只检查聚合的
+`max_abs_applied_torque` 与 `max_abs_joint_velocity` 会丢失峰值所属关节，
+从而掩盖低门限关节的超限；本次 telemetry 中两个 foot 关节的速度均超过
+10 rad/s，且扭矩接近或触及 27 Nm。
+
+### Suggested Action
+训练顾问在评价关节安全裕量前，应解析当前任务实际引用的资产配置，建立
+joint-name 到 effort/velocity limit 的映射，再从完整 telemetry 计算逐关节峰值、
+利用率和超限。正式 convergence criteria 需要使用逐关节或归一化利用率门限；
+不得用所有关节的全局最大限制检查聚合峰值。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `source/robot_lab/data/Robots/LW/LW_description/LW.urdf`, `source/robot_lab/robot_lab/assets/LW.py`, `.agents/skills/monitor-tune-isaaclab-training/SKILL.md`
+- Tags: isaaclab, actuator-limits, telemetry, safety-gates, amp-roa
+- Pattern-Key: correct.policy_evaluation_joint_specific_limits
+- Recurrence-Count: 1
+- First-Seen: 2026-08-04
+- Last-Seen: 2026-08-04
+
+---
 
 ## [LRN-20260726-006] best_practice
 
