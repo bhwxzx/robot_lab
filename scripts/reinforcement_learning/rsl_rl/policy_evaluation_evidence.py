@@ -571,6 +571,17 @@ class EvaluationPublisher:
         return published_result
 
 
+def close_evaluation_resources(
+    publisher: EvaluationPublisher,
+    simulation_app: Any,
+) -> None:
+    """Release publication state before shutting down Isaac Sim."""
+    try:
+        publisher.close()
+    finally:
+        simulation_app.close()
+
+
 def _validate_reference(value: Any, *, label: str) -> dict[str, str]:
     if not isinstance(value, dict) or set(value) != {"path", "sha256"}:
         raise EvaluationEvidenceError(f"{label} reference is invalid")

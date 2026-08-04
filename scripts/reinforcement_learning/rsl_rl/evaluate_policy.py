@@ -28,6 +28,7 @@ from policy_evaluation_evidence import (
     EvaluationEvidenceError,
     EvaluationPublisher,
     build_scenario_contract,
+    close_evaluation_resources,
     preflight_evaluation,
 )
 
@@ -1227,5 +1228,4 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        simulation_app.close()
-        evaluation_publisher.close()
+        close_evaluation_resources(evaluation_publisher, simulation_app)
