@@ -517,6 +517,38 @@ class PolicyExportEvidenceTests(unittest.TestCase):
         self.assertEqual(receipt["version"], 2)
         self.assertTrue(Path(receipt["archive_path"]).is_dir())
 
+    def test_export_resources_close_publisher_before_simulation(self) -> None:
+        close_order: list[str] = []
+
+        class Publisher:
+            def close(self) -> None:
+                close_order.append("publisher")
+
+        class SimulationApp:
+            def close(self) -> None:
+                close_order.append("simulation")
+
+        EXPORT.close_export_resources(Publisher(), SimulationApp())
+
+        self.assertEqual(close_order, ["publisher", "simulation"])
+
+    def test_simulation_closes_when_export_publisher_close_fails(self) -> None:
+        close_order: list[str] = []
+
+        class Publisher:
+            def close(self) -> None:
+                close_order.append("publisher")
+                raise RuntimeError("export publisher cleanup failed")
+
+        class SimulationApp:
+            def close(self) -> None:
+                close_order.append("simulation")
+
+        with self.assertRaisesRegex(RuntimeError, "export publisher cleanup failed"):
+            EXPORT.close_export_resources(Publisher(), SimulationApp())
+
+        self.assertEqual(close_order, ["publisher", "simulation"])
+
 
 if __name__ == "__main__":
     unittest.main()

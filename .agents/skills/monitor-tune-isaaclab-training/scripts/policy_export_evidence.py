@@ -895,6 +895,17 @@ class ExportPublisher:
         return published
 
 
+def close_export_resources(
+    publisher: ExportPublisher,
+    simulation_app: Any,
+) -> None:
+    """Release export publication state before shutting down Isaac Sim."""
+    try:
+        publisher.close()
+    finally:
+        simulation_app.close()
+
+
 def _validate_parity_contract(value: Any) -> dict[str, Any]:
     expected_keys = {
         "parity_steps",

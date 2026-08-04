@@ -21,6 +21,7 @@ sys.path.insert(0, str(RSL_SCRIPT_DIR))
 from policy_export_evidence import (  # noqa: E402
     ExportPublisher,
     PolicyExportEvidenceError,
+    close_export_resources,
     preflight_export,
 )
 
@@ -559,5 +560,4 @@ def main(
 try:
     main()
 finally:
-    simulation_app.close()
-    export_publisher.close()
+    close_export_resources(export_publisher, simulation_app)
