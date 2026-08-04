@@ -183,5 +183,97 @@ class JointLimitTrackerTests(unittest.TestCase):
             tracker.observe([[1.0]], [[1.0]], step=0)
 
 
+class BodyJitterTrackerTests(unittest.TestCase):
+    def make_tracker(self) -> object:
+        return MODULE.BodyJitterTracker(
+            step_dt_seconds=0.5,
+            command_segments=[
+                {"start_step": 0, "end_step": 1, "command": [0.5, 0.0, 0.0]},
+                {"start_step": 2, "end_step": 3, "command": [0.0, 0.3, 0.0]},
+            ],
+        )
+
+    def test_records_whole_run_and_per_segment_jitter(self) -> None:
+        tracker = self.make_tracker()
+        tracker.observe([[0.0, 0.0, 0.0]], [[0.0, 0.0, 0.0]], [False], step=0)
+        tracker.observe([[0.0, 0.0, 1.0]], [[3.0, 4.0, 0.0]], [False], step=1)
+        tracker.observe([[0.0, 0.0, 5.0]], [[6.0, 8.0, 0.0]], [False], step=2)
+        tracker.observe([[0.0, 0.0, 6.0]], [[9.0, 12.0, 0.0]], [False], step=3)
+
+        report = tracker.report()
+        angular_acceleration = report["whole_run"][
+            "roll_pitch_angular_acceleration"
+        ]
+        vertical_acceleration = report["whole_run"]["vertical_acceleration"]
+        self.assertEqual(angular_acceleration["sample_count"], 2)
+        self.assertEqual(angular_acceleration["rms"], 10.0)
+        self.assertEqual(angular_acceleration["p95"], 10.0)
+        self.assertEqual(angular_acceleration["max"], 10.0)
+        self.assertEqual(angular_acceleration["peak_step"], 1)
+        self.assertEqual(vertical_acceleration["rms"], 2.0)
+        self.assertEqual(report["excluded_transitions"]["command_segment"], 1)
+        self.assertEqual(
+            report["command_segments"][0]["statistics"][
+                "roll_pitch_angular_acceleration"
+            ]["sample_count"],
+            1,
+        )
+        self.assertEqual(
+            report["metrics"]["body_roll_pitch_angular_acceleration_rms"],
+            10.0,
+        )
+
+    def test_excludes_reset_transition_but_keeps_following_sample(self) -> None:
+        tracker = MODULE.BodyJitterTracker(
+            step_dt_seconds=0.5,
+            command_segments=[
+                {"start_step": 0, "end_step": 2, "command": None},
+            ],
+        )
+        tracker.observe([[0.0, 0.0, 0.0]], [[0.0, 0.0, 0.0]], [False], step=0)
+        tracker.observe([[0.0, 0.0, 100.0]], [[100.0, 0.0, 0.0]], [True], step=1)
+        tracker.observe([[0.0, 0.0, 101.0]], [[103.0, 4.0, 0.0]], [False], step=2)
+
+        report = tracker.report()
+        self.assertEqual(report["excluded_transitions"]["reset"], 1)
+        self.assertEqual(
+            report["whole_run"]["roll_pitch_angular_acceleration"]["rms"],
+            10.0,
+        )
+        self.assertEqual(
+            report["whole_run"]["vertical_acceleration"]["rms"],
+            2.0,
+        )
+
+    def test_rejects_invalid_contract_and_samples(self) -> None:
+        with self.assertRaisesRegex(ValueError, "finite and positive"):
+            MODULE.BodyJitterTracker(
+                step_dt_seconds=0.0,
+                command_segments=[
+                    {"start_step": 0, "end_step": 0, "command": None},
+                ],
+            )
+        with self.assertRaisesRegex(ValueError, "contiguous"):
+            MODULE.BodyJitterTracker(
+                step_dt_seconds=0.5,
+                command_segments=[
+                    {"start_step": 1, "end_step": 1, "command": None},
+                ],
+            )
+        tracker = MODULE.BodyJitterTracker(
+            step_dt_seconds=0.5,
+            command_segments=[
+                {"start_step": 0, "end_step": 0, "command": None},
+            ],
+        )
+        with self.assertRaisesRegex(ValueError, "non-finite"):
+            tracker.observe(
+                [[0.0, 0.0, float("nan")]],
+                [[0.0, 0.0, 0.0]],
+                [False],
+                step=0,
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

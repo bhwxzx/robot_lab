@@ -1,0 +1,307 @@
+{
+  "advisory_only": true,
+  "convergence": "plateaued_with_defects",
+  "counts": {
+    "degrading": 0,
+    "hard_failures": 0,
+    "improving": 0,
+    "plateaued": 5,
+    "required_available": 5
+  },
+  "criteria": {
+    "approval": {
+      "approved_at": "2026-08-04T10:20:54+08:00",
+      "approved_contract_sha256": "d752249482dac6330f08f64ac7cf412b654fccb9f812cffd71aa344eecb459f0",
+      "hash_matches": true,
+      "status": "approved"
+    },
+    "contract_sha256": "d752249482dac6330f08f64ac7cf412b654fccb9f812cffd71aa344eecb459f0",
+    "criteria_file_sha256": "61c87a169ec2edd50bf4c47b7cfc33f936994aa18e76932618227281f22a975e",
+    "criteria_path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0/2026-08-01_16-31-56/evidence/criteria/criteria-advisor-eval-003.json",
+    "eligible": true,
+    "errors": [],
+    "expected_scope": {
+      "algorithm": "AMP-ROA",
+      "backend": "isaaclab",
+      "profile_id": "rsl-rl-amp-roa",
+      "run_id": "2026-08-01_16-31-56",
+      "runner": "OnPolicyRunnerAmpROA",
+      "task": "RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0"
+    },
+    "scope": {
+      "algorithm": "AMP-ROA",
+      "backend": "isaaclab",
+      "profile_id": "rsl-rl-amp-roa",
+      "run_id": "2026-08-01_16-31-56",
+      "runner": "OnPolicyRunnerAmpROA",
+      "task": "RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0"
+    },
+    "scope_mismatches": [],
+    "status": "approved",
+    "version": 1
+  },
+  "hard_failures": {
+    "checks": [
+      {
+        "actual": 0.5286128800000001,
+        "limit": 0.65,
+        "metric": "error_vel_xy",
+        "op": "<=",
+        "passed": true,
+        "source": "latest_training_window",
+        "status": "passed"
+      },
+      {
+        "actual": 0.59988888,
+        "limit": 0.75,
+        "metric": "error_vel_yaw",
+        "op": "<=",
+        "passed": true,
+        "source": "latest_training_window",
+        "status": "passed"
+      },
+      {
+        "actual": 0.02322868,
+        "limit": 0.05,
+        "metric": "illegal_contact",
+        "op": "<=",
+        "passed": true,
+        "source": "latest_training_window",
+        "status": "passed"
+      },
+      {
+        "actual": 0.9767897000000001,
+        "limit": 0.94,
+        "metric": "time_out",
+        "op": ">=",
+        "passed": true,
+        "source": "latest_training_window",
+        "status": "passed"
+      },
+      {
+        "actual": 0.0,
+        "limit": 0.001,
+        "metric": "terrain_out_of_bounds",
+        "op": "<=",
+        "passed": true,
+        "source": "latest_training_window",
+        "status": "passed"
+      }
+    ],
+    "complete": true,
+    "failed": false
+  },
+  "health_state": null,
+  "non_finite_metrics": [],
+  "observed_trends": [
+    {
+      "decision_bearing": false,
+      "description": "Report episode-duration stability without changing the recommendation.",
+      "direction": "observe",
+      "metric": "mean_episode_length",
+      "prior_mean": 988.7052859999999,
+      "recent_mean": 989.744978,
+      "relative_change": 0.0010515691730609998,
+      "status": "available"
+    },
+    {
+      "decision_bearing": false,
+      "description": "Report late critic-loss stability and recovered finite anomalies.",
+      "direction": "observe",
+      "metric": "value_function_loss",
+      "prior_samples": 4750,
+      "recent_samples": 4750,
+      "status": "insufficient"
+    },
+    {
+      "decision_bearing": false,
+      "description": "Report rough-terrain boundary terminations without plateau voting.",
+      "direction": "minimize",
+      "metric": "terrain_out_of_bounds",
+      "prior_mean": 0.0,
+      "recent_mean": 0.0,
+      "relative_change": 0.0,
+      "status": "available"
+    }
+  ],
+  "operator_attention_required": false,
+  "pending_user_decision": true,
+  "play": {
+    "available": true,
+    "checks": [
+      {
+        "actual": 0.0,
+        "limit": 0.05,
+        "metric": "termination_rate",
+        "op": "<=",
+        "passed": true,
+        "result_index": 0,
+        "source": "play",
+        "status": "passed"
+      },
+      {
+        "actual": 0.0,
+        "limit": 0.05,
+        "metric": "illegal_contact_rate",
+        "op": "<=",
+        "passed": true,
+        "result_index": 0,
+        "source": "play",
+        "status": "passed"
+      },
+      {
+        "actual": 0.20554027043331255,
+        "limit": 0.45,
+        "metric": "tracking_xy_rmse",
+        "op": "<=",
+        "passed": true,
+        "result_index": 0,
+        "source": "play",
+        "status": "passed"
+      },
+      {
+        "actual": 0.27994420887075466,
+        "limit": 0.45,
+        "metric": "tracking_yaw_rmse",
+        "op": "<=",
+        "passed": true,
+        "result_index": 0,
+        "source": "play",
+        "status": "passed"
+      },
+      {
+        "actual": 0.24247461557388306,
+        "limit": 0.5,
+        "metric": "max_tilt",
+        "op": "<=",
+        "passed": true,
+        "result_index": 0,
+        "source": "play",
+        "status": "passed"
+      },
+      {
+        "actual": 1.0,
+        "limit": 1.0,
+        "metric": "max_joint_effort_utilization",
+        "op": "<=",
+        "passed": true,
+        "result_index": 0,
+        "source": "play",
+        "status": "passed"
+      },
+      {
+        "actual": 1.2191176414489746,
+        "limit": 1.0,
+        "metric": "max_joint_velocity_utilization",
+        "op": "<=",
+        "passed": false,
+        "result_index": 0,
+        "source": "play",
+        "status": "failed"
+      },
+      {
+        "actual": 0.0,
+        "limit": 0.0,
+        "metric": "joint_effort_limit_violation_rate",
+        "op": "<=",
+        "passed": true,
+        "result_index": 0,
+        "source": "play",
+        "status": "passed"
+      },
+      {
+        "actual": 0.0004,
+        "limit": 0.0,
+        "metric": "joint_velocity_limit_violation_rate",
+        "op": "<=",
+        "passed": false,
+        "result_index": 0,
+        "source": "play",
+        "status": "failed"
+      }
+    ],
+    "eligible_for_convergence": false,
+    "passed": false,
+    "telemetry_checks": [
+      {
+        "complete": true,
+        "missing_required_signals": [],
+        "result_index": 0,
+        "runner": "OnPolicyRunnerAmpROA",
+        "status": "complete"
+      }
+    ],
+    "telemetry_complete": true,
+    "telemetry_required": true
+  },
+  "profile_id": "rsl-rl-amp-roa",
+  "reason": "required_metrics_plateaued",
+  "recommendation": "consider_stop_plateau",
+  "record_count": 10000,
+  "safety_alerts": [],
+  "training_finished": true,
+  "trends": [
+    {
+      "direction": "maximize",
+      "meaningfully_degrading": false,
+      "meaningfully_improving": false,
+      "metric": "mean_reward",
+      "plateau_tolerance": 0.02,
+      "plateaued": true,
+      "prior_mean": 101.388346,
+      "recent_mean": 100.752284,
+      "relative_improvement": -0.006273521810879482,
+      "status": "available"
+    },
+    {
+      "direction": "minimize",
+      "meaningfully_degrading": false,
+      "meaningfully_improving": false,
+      "metric": "error_vel_xy",
+      "plateau_tolerance": 0.02,
+      "plateaued": true,
+      "prior_mean": 0.52906722,
+      "recent_mean": 0.5286128800000001,
+      "relative_improvement": 0.0008587566623384578,
+      "status": "available"
+    },
+    {
+      "direction": "minimize",
+      "meaningfully_degrading": false,
+      "meaningfully_improving": false,
+      "metric": "error_vel_yaw",
+      "plateau_tolerance": 0.02,
+      "plateaued": true,
+      "prior_mean": 0.60162074,
+      "recent_mean": 0.59988888,
+      "relative_improvement": 0.0028786574079876794,
+      "status": "available"
+    },
+    {
+      "direction": "minimize",
+      "meaningfully_degrading": false,
+      "meaningfully_improving": false,
+      "metric": "illegal_contact",
+      "plateau_tolerance": 0.1,
+      "plateaued": true,
+      "prior_mean": 0.025114599999999997,
+      "recent_mean": 0.02322868,
+      "relative_improvement": 0.07509257563329681,
+      "status": "available"
+    },
+    {
+      "direction": "maximize",
+      "meaningfully_degrading": false,
+      "meaningfully_improving": false,
+      "metric": "time_out",
+      "plateau_tolerance": 0.01,
+      "plateaued": true,
+      "prior_mean": 0.9749015400000001,
+      "recent_mean": 0.9767897000000001,
+      "relative_improvement": 0.0019367699429421637,
+      "status": "available"
+    }
+  ],
+  "version": 2,
+  "window_size": 5000
+}

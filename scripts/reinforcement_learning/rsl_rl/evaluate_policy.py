@@ -17,6 +17,7 @@ from typing import Any
 
 from policy_evaluation_telemetry import (
     TELEMETRY_SIGNALS,
+    BodyJitterTracker,
     JointLimitTracker,
     SignalLedger,
     metric_availability_report,
@@ -625,6 +626,17 @@ def _evaluate(
         _prime_video_renderer(env)
     previous_actions: torch.Tensor | None = None
     robot = env.unwrapped.scene["robot"]
+    body_jitter_segments = command_schedule or [
+        {
+            "start_step": 0,
+            "end_step": args_cli.duration_steps - 1,
+            "command": None,
+        }
+    ]
+    body_jitter_tracker = BodyJitterTracker(
+        step_dt_seconds=float(env.unwrapped.step_dt),
+        command_segments=body_jitter_segments,
+    )
     telemetry_samples: list[dict[str, Any]] = []
     telemetry_joint_names: list[str] = []
     telemetry_joint_effort_limits: list[float] = []
@@ -921,6 +933,13 @@ def _evaluate(
             tracking_xy_sq_sum += float(torch.square(xy_error).sum().item())
             tracking_yaw_sq_sum += float(torch.square(yaw_error).sum().item())
             tracking_samples += int(command.shape[0])
+        if root_linear_velocity is not None and root_angular_velocity is not None:
+            body_jitter_tracker.observe(
+                root_linear_velocity.detach().cpu().tolist(),
+                root_angular_velocity.detach().cpu().tolist(),
+                dones_tensor.detach().cpu().tolist(),
+                step=step,
+            )
 
         if telemetry_ledger is not None and step % args_cli.telemetry_stride == 0:
             env_index = args_cli.telemetry_env_index
@@ -1005,8 +1024,10 @@ def _evaluate(
     joint_limit_evidence = (
         joint_limit_tracker.report() if joint_limit_tracker is not None else None
     )
+    body_jitter_evidence = body_jitter_tracker.report()
     if joint_limit_evidence is not None:
         peak_steps.update(joint_limit_evidence["peak_steps"])
+    peak_steps.update(body_jitter_evidence["peak_steps"])
 
     metric_availability = metric_availability_report(
         metric_signal_report,
@@ -1015,6 +1036,22 @@ def _evaluate(
             "tracking_yaw_rmse": ("command", "root_angular_velocity_b"),
             "tilt_rms": ("projected_gravity_b",),
             "max_tilt": ("projected_gravity_b",),
+            "body_roll_pitch_angular_velocity_rms": (
+                "root_angular_velocity_b",
+            ),
+            "body_roll_pitch_angular_velocity_p95": (
+                "root_angular_velocity_b",
+            ),
+            "body_vertical_velocity_rms": ("root_linear_velocity_b",),
+            "body_vertical_velocity_p95": ("root_linear_velocity_b",),
+            "body_roll_pitch_angular_acceleration_rms": (
+                "root_angular_velocity_b",
+            ),
+            "body_roll_pitch_angular_acceleration_p95": (
+                "root_angular_velocity_b",
+            ),
+            "body_vertical_acceleration_rms": ("root_linear_velocity_b",),
+            "body_vertical_acceleration_p95": ("root_linear_velocity_b",),
             "max_abs_joint_velocity": ("joint_velocity",),
             "max_abs_applied_torque": ("applied_torque",),
             "max_joint_effort_utilization": (
@@ -1072,6 +1109,22 @@ def _evaluate(
     record_complete_metric(
         metrics, metric_availability, "max_tilt", lambda: max_tilt
     )
+    for metric_name, metric_value in body_jitter_evidence["metrics"].items():
+        if metric_value is None:
+            availability = metric_availability[metric_name]
+            availability["available"] = False
+            availability["complete"] = False
+            availability["partial"] = True
+            availability["errors"]["derived"] = (
+                "insufficient consecutive samples after transition exclusions"
+            )
+            continue
+        record_complete_metric(
+            metrics,
+            metric_availability,
+            metric_name,
+            lambda value=metric_value: value,
+        )
     record_complete_metric(
         metrics,
         metric_availability,
@@ -1195,6 +1248,7 @@ def _evaluate(
         "metrics": metrics,
         "metric_availability": metric_availability,
         "joint_limit_evidence": joint_limit_evidence,
+        "body_jitter_evidence": body_jitter_evidence,
         "motion_evidence": {
             "step_dt_seconds": step_dt,
             "peak_steps": peak_steps,
