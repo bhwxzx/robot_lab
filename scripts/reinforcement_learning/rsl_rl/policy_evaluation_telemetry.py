@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
@@ -29,6 +30,8 @@ AMP_ROA_REQUIRED_SIGNALS = frozenset(
         "joint_position",
         "joint_velocity",
         "applied_torque",
+        "joint_effort_limits",
+        "joint_velocity_limits",
     }
 )
 TELEMETRY_SIGNALS = (
@@ -45,6 +48,8 @@ TELEMETRY_SIGNALS = (
     "joint_position",
     "joint_velocity",
     "applied_torque",
+    "joint_effort_limits",
+    "joint_velocity_limits",
     "action",
 )
 
@@ -63,6 +68,187 @@ def _bounded_error(exc: BaseException) -> str:
     message = " ".join(str(exc).split())
     rendered = f"{type(exc).__name__}: {message}" if message else type(exc).__name__
     return rendered[:500]
+
+
+def _finite_matrix(
+    values: Iterable[Iterable[float]],
+    *,
+    label: str,
+    columns: int,
+) -> list[list[float]]:
+    rows: list[list[float]] = []
+    for raw_row in values:
+        row = [float(value) for value in raw_row]
+        if len(row) != columns:
+            raise ValueError(f"{label} row width does not match joint_names")
+        if not all(math.isfinite(value) for value in row):
+            raise ValueError(f"{label} contains non-finite values")
+        rows.append(row)
+    if not rows:
+        raise ValueError(f"{label} must contain at least one environment row")
+    return rows
+
+
+class JointLimitTracker:
+    """Aggregate per-joint runtime limit utilization across environments and steps."""
+
+    def __init__(
+        self,
+        joint_names: Iterable[str],
+        joint_effort_limits: Iterable[Iterable[float]],
+        joint_velocity_limits: Iterable[Iterable[float]],
+    ) -> None:
+        self.joint_names = [str(name) for name in joint_names]
+        if not self.joint_names or any(not name for name in self.joint_names):
+            raise ValueError("joint_names must contain non-empty strings")
+        if len(set(self.joint_names)) != len(self.joint_names):
+            raise ValueError("joint_names must be unique")
+        columns = len(self.joint_names)
+        self.effort_limits = _finite_matrix(
+            joint_effort_limits,
+            label="joint_effort_limits",
+            columns=columns,
+        )
+        self.velocity_limits = _finite_matrix(
+            joint_velocity_limits,
+            label="joint_velocity_limits",
+            columns=columns,
+        )
+        if len(self.effort_limits) != len(self.velocity_limits):
+            raise ValueError("joint limit environment counts do not match")
+        if any(value <= 0.0 for row in self.effort_limits for value in row):
+            raise ValueError("joint_effort_limits must be positive")
+        if any(value <= 0.0 for row in self.velocity_limits for value in row):
+            raise ValueError("joint_velocity_limits must be positive")
+
+        self._environment_count = len(self.effort_limits)
+        self._sample_count = 0
+        self._joint_sample_counts = [0] * columns
+        self._max_abs_effort = [0.0] * columns
+        self._max_abs_velocity = [0.0] * columns
+        self._max_effort_utilization = [0.0] * columns
+        self._max_velocity_utilization = [0.0] * columns
+        self._effort_peak_steps: list[int | None] = [None] * columns
+        self._velocity_peak_steps: list[int | None] = [None] * columns
+        self._effort_violation_counts = [0] * columns
+        self._velocity_violation_counts = [0] * columns
+
+    def observe(
+        self,
+        applied_torque: Iterable[Iterable[float]],
+        joint_velocity: Iterable[Iterable[float]],
+        *,
+        step: int,
+    ) -> None:
+        if isinstance(step, bool) or not isinstance(step, int) or step < 0:
+            raise ValueError("step must be a non-negative integer")
+        columns = len(self.joint_names)
+        efforts = _finite_matrix(
+            applied_torque,
+            label="applied_torque",
+            columns=columns,
+        )
+        velocities = _finite_matrix(
+            joint_velocity,
+            label="joint_velocity",
+            columns=columns,
+        )
+        if len(efforts) != self._environment_count:
+            raise ValueError("applied_torque environment count does not match limits")
+        if len(velocities) != self._environment_count:
+            raise ValueError("joint_velocity environment count does not match limits")
+
+        for env_index, (effort_row, velocity_row) in enumerate(
+            zip(efforts, velocities, strict=True)
+        ):
+            for joint_index, (effort, velocity) in enumerate(
+                zip(effort_row, velocity_row, strict=True)
+            ):
+                abs_effort = abs(effort)
+                abs_velocity = abs(velocity)
+                effort_limit = self.effort_limits[env_index][joint_index]
+                velocity_limit = self.velocity_limits[env_index][joint_index]
+                effort_utilization = abs_effort / effort_limit
+                velocity_utilization = abs_velocity / velocity_limit
+                if effort_utilization > self._max_effort_utilization[joint_index]:
+                    self._max_effort_utilization[joint_index] = effort_utilization
+                    self._effort_peak_steps[joint_index] = step
+                if velocity_utilization > self._max_velocity_utilization[joint_index]:
+                    self._max_velocity_utilization[joint_index] = velocity_utilization
+                    self._velocity_peak_steps[joint_index] = step
+                self._max_abs_effort[joint_index] = max(
+                    self._max_abs_effort[joint_index], abs_effort
+                )
+                self._max_abs_velocity[joint_index] = max(
+                    self._max_abs_velocity[joint_index], abs_velocity
+                )
+                if abs_effort > effort_limit:
+                    self._effort_violation_counts[joint_index] += 1
+                if abs_velocity > velocity_limit:
+                    self._velocity_violation_counts[joint_index] += 1
+                self._joint_sample_counts[joint_index] += 1
+                self._sample_count += 1
+
+    def report(self) -> dict[str, Any]:
+        max_effort = max(self._max_effort_utilization)
+        max_velocity = max(self._max_velocity_utilization)
+        effort_peak_joint = self._max_effort_utilization.index(max_effort)
+        velocity_peak_joint = self._max_velocity_utilization.index(max_velocity)
+        effort_violations = sum(self._effort_violation_counts)
+        velocity_violations = sum(self._velocity_violation_counts)
+        joint_metrics: list[dict[str, Any]] = []
+        for index, name in enumerate(self.joint_names):
+            samples = self._joint_sample_counts[index]
+            joint_metrics.append(
+                {
+                    "joint_name": name,
+                    "effort_limit_min": min(row[index] for row in self.effort_limits),
+                    "effort_limit_max": max(row[index] for row in self.effort_limits),
+                    "velocity_limit_min": min(
+                        row[index] for row in self.velocity_limits
+                    ),
+                    "velocity_limit_max": max(
+                        row[index] for row in self.velocity_limits
+                    ),
+                    "max_abs_applied_torque": self._max_abs_effort[index],
+                    "max_abs_joint_velocity": self._max_abs_velocity[index],
+                    "max_effort_utilization": self._max_effort_utilization[index],
+                    "max_velocity_utilization": self._max_velocity_utilization[index],
+                    "effort_peak_step": self._effort_peak_steps[index],
+                    "velocity_peak_step": self._velocity_peak_steps[index],
+                    "effort_violation_count": self._effort_violation_counts[index],
+                    "velocity_violation_count": self._velocity_violation_counts[index],
+                    "effort_violation_rate": self._effort_violation_counts[index]
+                    / max(samples, 1),
+                    "velocity_violation_rate": self._velocity_violation_counts[index]
+                    / max(samples, 1),
+                    "sample_count": samples,
+                }
+            )
+        return {
+            "metrics": {
+                "max_joint_effort_utilization": max_effort,
+                "max_joint_velocity_utilization": max_velocity,
+                "joint_effort_limit_violation_rate": effort_violations
+                / max(self._sample_count, 1),
+                "joint_velocity_limit_violation_rate": velocity_violations
+                / max(self._sample_count, 1),
+            },
+            "peak_steps": {
+                "max_joint_effort_utilization": self._effort_peak_steps[
+                    effort_peak_joint
+                ],
+                "max_joint_velocity_utilization": self._velocity_peak_steps[
+                    velocity_peak_joint
+                ],
+            },
+            "peak_joints": {
+                "max_joint_effort_utilization": self.joint_names[effort_peak_joint],
+                "max_joint_velocity_utilization": self.joint_names[velocity_peak_joint],
+            },
+            "joint_metrics": joint_metrics,
+            "sample_count": self._sample_count,
+        }
 
 
 class SignalLedger:

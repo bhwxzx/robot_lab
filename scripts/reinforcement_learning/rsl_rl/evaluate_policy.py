@@ -17,6 +17,7 @@ from typing import Any
 
 from policy_evaluation_telemetry import (
     TELEMETRY_SIGNALS,
+    JointLimitTracker,
     SignalLedger,
     metric_availability_report,
     record_complete_metric,
@@ -378,6 +379,78 @@ def _required_tensor(
     return value
 
 
+def _joint_limit_tensor(
+    value: Any,
+    name: str,
+    *,
+    environment_count: int,
+    joint_count: int,
+) -> torch.Tensor:
+    tensor = _required_tensor(value, name, minimum_columns=joint_count)
+    if tensor.shape[0] != environment_count or tensor.shape[1] != joint_count:
+        raise ValueError(f"{name} shape does not match environments and joint_names")
+    if torch.any(tensor <= 0.0):
+        raise ValueError(f"{name} must contain only positive limits")
+    return tensor
+
+
+def _actuator_limit_tensor(
+    robot: Any,
+    attribute: str,
+    name: str,
+    *,
+    environment_count: int,
+    joint_count: int,
+) -> torch.Tensor:
+    joint_position = _required_tensor(
+        robot.data.joint_pos,
+        "joint_position",
+        minimum_columns=joint_count,
+    )
+    resolved = torch.full_like(joint_position, float("nan"))
+    assigned = torch.zeros(joint_count, dtype=torch.bool, device=resolved.device)
+    for actuator_name, actuator in robot.actuators.items():
+        raw_indices = actuator.joint_indices
+        if isinstance(raw_indices, slice):
+            indices = torch.arange(joint_count, device=resolved.device)[raw_indices]
+        else:
+            indices = torch.as_tensor(
+                raw_indices,
+                dtype=torch.long,
+                device=resolved.device,
+            ).flatten()
+        if indices.numel() == 0:
+            raise ValueError(f"actuator {actuator_name} has no joint indices")
+        if torch.any(indices < 0) or torch.any(indices >= joint_count):
+            raise ValueError(f"actuator {actuator_name} has invalid joint indices")
+        if torch.any(assigned[indices]):
+            raise ValueError(f"actuator {actuator_name} overlaps another actuator group")
+        actuator_limits = _required_tensor(
+            getattr(actuator, attribute),
+            f"{name}:{actuator_name}",
+            minimum_columns=int(indices.numel()),
+        )
+        if (
+            actuator_limits.shape[0] != environment_count
+            or actuator_limits.shape[1] != indices.numel()
+        ):
+            raise ValueError(f"{name}:{actuator_name} has an incompatible shape")
+        resolved[:, indices] = actuator_limits
+        assigned[indices] = True
+    if not torch.all(assigned):
+        missing = [
+            str(robot.joint_names[index])
+            for index in torch.nonzero(~assigned, as_tuple=False).flatten().tolist()
+        ]
+        raise ValueError(f"{name} missing actuator joints: {', '.join(missing)}")
+    return _joint_limit_tensor(
+        resolved,
+        name,
+        environment_count=environment_count,
+        joint_count=joint_count,
+    )
+
+
 def _finite_scalar(value: Any, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be numeric")
@@ -550,9 +623,11 @@ def _evaluate(
     if video_path is not None:
         _prime_video_renderer(env)
     previous_actions: torch.Tensor | None = None
+    robot = env.unwrapped.scene["robot"]
     telemetry_samples: list[dict[str, Any]] = []
     telemetry_joint_names: list[str] = []
-    telemetry_joint_names_captured = False
+    telemetry_joint_effort_limits: list[float] = []
+    telemetry_joint_velocity_limits: list[float] = []
     telemetry_expected_samples = (
         args_cli.duration_steps + args_cli.telemetry_stride - 1
     ) // args_cli.telemetry_stride
@@ -561,7 +636,12 @@ def _evaluate(
         telemetry_expected_counts = {
             name: telemetry_expected_samples for name in TELEMETRY_SIGNALS
         }
-        telemetry_expected_counts["joint_names"] = 1
+        for name in (
+            "joint_names",
+            "joint_effort_limits",
+            "joint_velocity_limits",
+        ):
+            telemetry_expected_counts[name] = 1
         telemetry_ledger = SignalLedger(
             telemetry_expected_counts,
             required_signals=required_signals_for_runner(runner_name),
@@ -574,10 +654,73 @@ def _evaluate(
         "joint_velocity",
         "applied_torque",
     )
+    metric_expected_counts = {
+        name: args_cli.duration_steps for name in metric_input_names
+    }
+    for name in (
+        "joint_names",
+        "joint_effort_limits",
+        "joint_velocity_limits",
+    ):
+        metric_expected_counts[name] = 1
     metric_ledger = SignalLedger(
-        {name: args_cli.duration_steps for name in metric_input_names},
-        required_signals=metric_input_names,
+        metric_expected_counts,
+        required_signals=metric_expected_counts,
     )
+    metric_joint_names = metric_ledger.capture("joint_names", lambda: _joint_names(robot))
+    joint_count = len(metric_joint_names) if metric_joint_names is not None else 0
+    metric_joint_effort_limits = metric_ledger.capture(
+        "joint_effort_limits",
+        lambda: _actuator_limit_tensor(
+            robot,
+            "effort_limit",
+            "joint_effort_limits",
+            environment_count=args_cli.num_envs,
+            joint_count=joint_count,
+        ),
+    )
+    metric_joint_velocity_limits = metric_ledger.capture(
+        "joint_velocity_limits",
+        lambda: _actuator_limit_tensor(
+            robot,
+            "velocity_limit",
+            "joint_velocity_limits",
+            environment_count=args_cli.num_envs,
+            joint_count=joint_count,
+        ),
+    )
+    joint_limit_tracker = None
+    if (
+        metric_joint_names is not None
+        and metric_joint_effort_limits is not None
+        and metric_joint_velocity_limits is not None
+    ):
+        joint_limit_tracker = JointLimitTracker(
+            metric_joint_names,
+            metric_joint_effort_limits.detach().cpu().tolist(),
+            metric_joint_velocity_limits.detach().cpu().tolist(),
+        )
+    if telemetry_ledger is not None:
+        names = telemetry_ledger.capture(
+            "joint_names",
+            lambda: list(metric_joint_names) if metric_joint_names is not None else None,
+        )
+        if names is not None:
+            telemetry_joint_names = names
+        effort_limits = telemetry_ledger.capture(
+            "joint_effort_limits",
+            lambda: _tensor_row(metric_joint_effort_limits, args_cli.telemetry_env_index),
+        )
+        if effort_limits is not None:
+            telemetry_joint_effort_limits = effort_limits
+        velocity_limits = telemetry_ledger.capture(
+            "joint_velocity_limits",
+            lambda: _tensor_row(
+                metric_joint_velocity_limits, args_cli.telemetry_env_index
+            ),
+        )
+        if velocity_limits is not None:
+            telemetry_joint_velocity_limits = velocity_limits
     reward_sum = 0.0
     sample_count = 0
     termination_count = 0
@@ -606,6 +749,8 @@ def _evaluate(
         "max_abs_action_error": None,
         "max_abs_applied_torque": None,
         "max_abs_joint_velocity": None,
+        "max_joint_effort_utilization": None,
+        "max_joint_velocity_utilization": None,
         "max_tilt": None,
     }
     termination_first_steps: dict[str, int] = {}
@@ -754,6 +899,16 @@ def _evaluate(
             ):
                 max_abs_applied_torque = current_max_applied_torque
                 peak_steps["max_abs_applied_torque"] = step
+        if (
+            joint_limit_tracker is not None
+            and joint_velocity is not None
+            and applied_torque is not None
+        ):
+            joint_limit_tracker.observe(
+                applied_torque.detach().cpu().tolist(),
+                joint_velocity.detach().cpu().tolist(),
+                step=step,
+            )
 
         if (
             command is not None
@@ -768,14 +923,6 @@ def _evaluate(
 
         if telemetry_ledger is not None and step % args_cli.telemetry_stride == 0:
             env_index = args_cli.telemetry_env_index
-            if not telemetry_joint_names_captured:
-                names = telemetry_ledger.capture(
-                    "joint_names",
-                    lambda: _joint_names(env.unwrapped.scene["robot"]),
-                )
-                if names is not None:
-                    telemetry_joint_names = names
-                    telemetry_joint_names_captured = True
             sample = {
                 "step": step,
                 "sim_time_seconds": step * float(env.unwrapped.step_dt),
@@ -854,6 +1001,11 @@ def _evaluate(
         args_cli.duration_steps * float(env.unwrapped.step_dt)
     )
     metric_signal_report = metric_ledger.report()["signals"]
+    joint_limit_evidence = (
+        joint_limit_tracker.report() if joint_limit_tracker is not None else None
+    )
+    if joint_limit_evidence is not None:
+        peak_steps.update(joint_limit_evidence["peak_steps"])
 
     metric_availability = metric_availability_report(
         metric_signal_report,
@@ -864,6 +1016,26 @@ def _evaluate(
             "max_tilt": ("projected_gravity_b",),
             "max_abs_joint_velocity": ("joint_velocity",),
             "max_abs_applied_torque": ("applied_torque",),
+            "max_joint_effort_utilization": (
+                "joint_names",
+                "joint_effort_limits",
+                "applied_torque",
+            ),
+            "max_joint_velocity_utilization": (
+                "joint_names",
+                "joint_velocity_limits",
+                "joint_velocity",
+            ),
+            "joint_effort_limit_violation_rate": (
+                "joint_names",
+                "joint_effort_limits",
+                "applied_torque",
+            ),
+            "joint_velocity_limit_violation_rate": (
+                "joint_names",
+                "joint_velocity_limits",
+                "joint_velocity",
+            ),
         },
     )
     metrics: dict[str, float] = {
@@ -911,6 +1083,18 @@ def _evaluate(
         "max_abs_applied_torque",
         lambda: max_abs_applied_torque,
     )
+    for metric_name in (
+        "max_joint_effort_utilization",
+        "max_joint_velocity_utilization",
+        "joint_effort_limit_violation_rate",
+        "joint_velocity_limit_violation_rate",
+    ):
+        record_complete_metric(
+            metrics,
+            metric_availability,
+            metric_name,
+            lambda name=metric_name: joint_limit_evidence["metrics"][name],
+        )
     for term_name, count in termination_term_counts.items():
         normalized_name = re.sub(r"[^a-z0-9]+", "_", term_name.lower()).strip(
             "_"
@@ -969,6 +1153,8 @@ def _evaluate(
             "stride": args_cli.telemetry_stride,
             "step_dt_seconds": step_dt,
             "joint_names": telemetry_joint_names,
+            "joint_effort_limits": telemetry_joint_effort_limits,
+            "joint_velocity_limits": telemetry_joint_velocity_limits,
             **telemetry_evidence,
             "samples": telemetry_samples,
         }
@@ -1007,6 +1193,7 @@ def _evaluate(
         "training_overlap": bool(args_cli.allow_training_overlap),
         "metrics": metrics,
         "metric_availability": metric_availability,
+        "joint_limit_evidence": joint_limit_evidence,
         "motion_evidence": {
             "step_dt_seconds": step_dt,
             "peak_steps": peak_steps,

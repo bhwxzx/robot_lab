@@ -78,6 +78,8 @@ class SignalLedgerTests(unittest.TestCase):
         self.assertTrue(report["telemetry_required_for_complete_assessment"])
         self.assertIn("joint_velocity", report["missing_required_signals"])
         self.assertIn("applied_torque", report["missing_required_signals"])
+        self.assertIn("joint_effort_limits", report["missing_required_signals"])
+        self.assertIn("joint_velocity_limits", report["missing_required_signals"])
 
     def test_non_amp_runner_does_not_get_amp_specific_requirements(self) -> None:
         required = MODULE.required_signals_for_runner("OnPolicyRunner")
@@ -109,6 +111,76 @@ class SignalLedgerTests(unittest.TestCase):
         )
         self.assertNotIn("max_abs_joint_velocity", metrics)
         self.assertFalse(availability["max_abs_joint_velocity"]["available"])
+
+
+class JointLimitTrackerTests(unittest.TestCase):
+    def test_per_joint_limits_expose_violation_hidden_by_global_peak(self) -> None:
+        tracker = MODULE.JointLimitTracker(
+            ["leg_joint", "foot_joint"],
+            [[120.0, 27.0]],
+            [[20.0, 10.0]],
+        )
+        tracker.observe(
+            [[104.0, 27.0]],
+            [[13.2, 12.2]],
+            step=7,
+        )
+        report = tracker.report()
+        self.assertEqual(report["metrics"]["max_joint_effort_utilization"], 1.0)
+        self.assertAlmostEqual(
+            report["metrics"]["max_joint_velocity_utilization"], 1.22
+        )
+        self.assertEqual(
+            report["metrics"]["joint_velocity_limit_violation_rate"], 0.5
+        )
+        self.assertEqual(
+            report["peak_joints"]["max_joint_velocity_utilization"],
+            "foot_joint",
+        )
+        foot = report["joint_metrics"][1]
+        self.assertEqual(foot["effort_violation_count"], 0)
+        self.assertEqual(foot["velocity_violation_count"], 1)
+        self.assertEqual(foot["velocity_peak_step"], 7)
+
+    def test_tracks_peak_steps_and_rates_across_multiple_steps(self) -> None:
+        tracker = MODULE.JointLimitTracker(
+            ["joint"],
+            [[10.0]],
+            [[5.0]],
+        )
+        tracker.observe([[2.0]], [[1.0]], step=1)
+        tracker.observe([[11.0]], [[6.0]], step=4)
+        report = tracker.report()
+        self.assertEqual(report["sample_count"], 2)
+        self.assertEqual(
+            report["metrics"]["joint_effort_limit_violation_rate"], 0.5
+        )
+        self.assertEqual(
+            report["metrics"]["joint_velocity_limit_violation_rate"], 0.5
+        )
+        self.assertEqual(report["peak_steps"]["max_joint_effort_utilization"], 4)
+        self.assertEqual(report["peak_steps"]["max_joint_velocity_utilization"], 4)
+
+    def test_rejects_invalid_limits_and_joint_order_shapes(self) -> None:
+        with self.assertRaisesRegex(ValueError, "positive"):
+            MODULE.JointLimitTracker(["joint"], [[0.0]], [[1.0]])
+        with self.assertRaisesRegex(ValueError, "non-finite"):
+            MODULE.JointLimitTracker(["joint"], [[1.0]], [[float("inf")]])
+        with self.assertRaisesRegex(ValueError, "row width"):
+            MODULE.JointLimitTracker(
+                ["left", "right"],
+                [[1.0]],
+                [[1.0, 1.0]],
+            )
+
+    def test_rejects_sample_environment_mismatch(self) -> None:
+        tracker = MODULE.JointLimitTracker(
+            ["joint"],
+            [[10.0], [10.0]],
+            [[5.0], [5.0]],
+        )
+        with self.assertRaisesRegex(ValueError, "environment count"):
+            tracker.observe([[1.0]], [[1.0]], step=0)
 
 
 if __name__ == "__main__":

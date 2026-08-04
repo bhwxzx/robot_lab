@@ -1,0 +1,128 @@
+{
+  "version": 2,
+  "contract": {
+    "scope": {
+      "task": "RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0",
+      "run_id": "2026-08-01_16-31-56",
+      "backend": "isaaclab",
+      "profile_id": "rsl-rl-amp-roa",
+      "algorithm": "AMP-ROA",
+      "runner": "OnPolicyRunnerAmpROA"
+    },
+    "windows": {
+      "window_size": 5000,
+      "minimum_records": 10000,
+      "plateau_required_metrics": 4
+    },
+    "required_metrics": {
+      "mean_reward": {
+        "direction": "maximize",
+        "plateau_relative_tolerance": 0.02
+      },
+      "error_vel_xy": {
+        "direction": "minimize",
+        "plateau_relative_tolerance": 0.02
+      },
+      "error_vel_yaw": {
+        "direction": "minimize",
+        "plateau_relative_tolerance": 0.02
+      },
+      "illegal_contact": {
+        "direction": "minimize",
+        "plateau_relative_tolerance": 0.1
+      },
+      "time_out": {
+        "direction": "maximize",
+        "plateau_relative_tolerance": 0.01
+      }
+    },
+    "observed_metrics": {
+      "mean_episode_length": {
+        "direction": "observe",
+        "description": "Report episode-duration stability without changing the recommendation."
+      },
+      "value_function_loss": {
+        "direction": "observe",
+        "description": "Report late critic-loss stability and recovered finite anomalies."
+      },
+      "terrain_out_of_bounds": {
+        "direction": "minimize",
+        "description": "Report rough-terrain boundary terminations without plateau voting."
+      }
+    },
+    "hard_failures": {
+      "non_finite_metrics": true,
+      "health_states": [
+        "stalled"
+      ],
+      "metric_limits": {
+        "error_vel_xy": {
+          "op": "<=",
+          "value": 0.65
+        },
+        "error_vel_yaw": {
+          "op": "<=",
+          "value": 0.75
+        },
+        "illegal_contact": {
+          "op": "<=",
+          "value": 0.05
+        },
+        "time_out": {
+          "op": ">=",
+          "value": 0.94
+        },
+        "terrain_out_of_bounds": {
+          "op": "<=",
+          "value": 0.001
+        }
+      }
+    },
+    "play_gates": {
+      "required_for_convergence": true,
+      "metrics": {
+        "termination_rate": {
+          "op": "<=",
+          "value": 0.05
+        },
+        "illegal_contact_rate": {
+          "op": "<=",
+          "value": 0.05
+        },
+        "tracking_xy_rmse": {
+          "op": "<=",
+          "value": 0.45
+        },
+        "tracking_yaw_rmse": {
+          "op": "<=",
+          "value": 0.45
+        },
+        "max_tilt": {
+          "op": "<=",
+          "value": 0.5
+        },
+        "max_joint_effort_utilization": {
+          "op": "<=",
+          "value": 1.0
+        },
+        "max_joint_velocity_utilization": {
+          "op": "<=",
+          "value": 1.0
+        },
+        "joint_effort_limit_violation_rate": {
+          "op": "<=",
+          "value": 0.0
+        },
+        "joint_velocity_limit_violation_rate": {
+          "op": "<=",
+          "value": 0.0
+        }
+      }
+    }
+  },
+  "approval": {
+    "status": "draft",
+    "approved_at": null,
+    "approved_contract_sha256": null
+  }
+}
