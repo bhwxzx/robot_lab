@@ -251,6 +251,256 @@ class JointLimitTracker:
         }
 
 
+def _nearest_rank_percentile(values: list[tuple[int, float]], percentile: float) -> float:
+    if not values:
+        raise ValueError("percentile requires at least one value")
+    rank = max(1, math.ceil(percentile * len(values)))
+    return sorted(value for _, value in values)[rank - 1]
+
+
+class _BodyJitterAccumulator:
+    _NAMES = (
+        "roll_pitch_angular_velocity",
+        "vertical_velocity",
+        "roll_pitch_angular_acceleration",
+        "vertical_acceleration",
+    )
+
+    def __init__(self) -> None:
+        self.values: dict[str, list[tuple[int, float]]] = {
+            name: [] for name in self._NAMES
+        }
+
+    def add_velocity(self, *, step: int, roll_pitch: float, vertical: float) -> None:
+        self.values["roll_pitch_angular_velocity"].append((step, roll_pitch))
+        self.values["vertical_velocity"].append((step, vertical))
+
+    def add_acceleration(
+        self,
+        *,
+        step: int,
+        roll_pitch: float,
+        vertical: float,
+    ) -> None:
+        self.values["roll_pitch_angular_acceleration"].append((step, roll_pitch))
+        self.values["vertical_acceleration"].append((step, vertical))
+
+    def report(self) -> dict[str, Any]:
+        report: dict[str, Any] = {}
+        for name, samples in self.values.items():
+            if not samples:
+                report[name] = {
+                    "sample_count": 0,
+                    "rms": None,
+                    "p95": None,
+                    "max": None,
+                    "peak_step": None,
+                }
+                continue
+            square_sum = sum(value * value for _, value in samples)
+            peak_step, peak_value = max(samples, key=lambda item: item[1])
+            report[name] = {
+                "sample_count": len(samples),
+                "rms": math.sqrt(square_sum / len(samples)),
+                "p95": _nearest_rank_percentile(samples, 0.95),
+                "max": peak_value,
+                "peak_step": peak_step,
+            }
+        return report
+
+
+class BodyJitterTracker:
+    """Measure body shake while excluding resets and command transitions."""
+
+    def __init__(
+        self,
+        *,
+        step_dt_seconds: float,
+        command_segments: Iterable[Mapping[str, Any]],
+    ) -> None:
+        self.step_dt_seconds = float(step_dt_seconds)
+        if not math.isfinite(self.step_dt_seconds) or self.step_dt_seconds <= 0.0:
+            raise ValueError("step_dt_seconds must be finite and positive")
+        self.command_segments: list[dict[str, Any]] = []
+        previous_end = -1
+        for index, raw_segment in enumerate(command_segments):
+            start_step = raw_segment.get("start_step")
+            end_step = raw_segment.get("end_step")
+            command = raw_segment.get("command")
+            if (
+                isinstance(start_step, bool)
+                or not isinstance(start_step, int)
+                or isinstance(end_step, bool)
+                or not isinstance(end_step, int)
+                or start_step != previous_end + 1
+                or end_step < start_step
+            ):
+                raise ValueError("command segments must be contiguous and ordered")
+            if command is not None:
+                command = [float(value) for value in command]
+                if len(command) != 3 or not all(math.isfinite(value) for value in command):
+                    raise ValueError("segment command must contain three finite values")
+            self.command_segments.append(
+                {
+                    "segment_index": index,
+                    "start_step": start_step,
+                    "end_step": end_step,
+                    "command": command,
+                }
+            )
+            previous_end = end_step
+        if not self.command_segments:
+            raise ValueError("command_segments must not be empty")
+
+        self._whole_run = _BodyJitterAccumulator()
+        self._segment_accumulators = [
+            _BodyJitterAccumulator() for _ in self.command_segments
+        ]
+        self._previous_linear_velocity: list[list[float]] | None = None
+        self._previous_angular_velocity: list[list[float]] | None = None
+        self._previous_step: int | None = None
+        self._previous_segment_index: int | None = None
+        self._environment_count: int | None = None
+        self._excluded_reset_transitions = 0
+        self._excluded_segment_transitions = 0
+        self._excluded_nonconsecutive_transitions = 0
+
+    def _segment_index(self, step: int) -> int:
+        for segment in self.command_segments:
+            if segment["start_step"] <= step <= segment["end_step"]:
+                return int(segment["segment_index"])
+        raise ValueError("step is outside the command segment contract")
+
+    def observe(
+        self,
+        root_linear_velocity_b: Iterable[Iterable[float]],
+        root_angular_velocity_b: Iterable[Iterable[float]],
+        done: Iterable[bool],
+        *,
+        step: int,
+    ) -> None:
+        if isinstance(step, bool) or not isinstance(step, int) or step < 0:
+            raise ValueError("step must be a non-negative integer")
+        linear = _finite_matrix(
+            root_linear_velocity_b,
+            label="root_linear_velocity_b",
+            columns=3,
+        )
+        angular = _finite_matrix(
+            root_angular_velocity_b,
+            label="root_angular_velocity_b",
+            columns=3,
+        )
+        done_values = list(done)
+        if any(not isinstance(value, bool) for value in done_values):
+            raise ValueError("done values must be boolean")
+        if len(linear) != len(angular) or len(linear) != len(done_values):
+            raise ValueError("body jitter environment counts do not match")
+        if self._environment_count is None:
+            self._environment_count = len(linear)
+        elif len(linear) != self._environment_count:
+            raise ValueError("body jitter environment count changed")
+
+        segment_index = self._segment_index(step)
+        segment_accumulator = self._segment_accumulators[segment_index]
+        for env_index, (linear_row, angular_row) in enumerate(
+            zip(linear, angular, strict=True)
+        ):
+            angular_velocity = math.hypot(angular_row[0], angular_row[1])
+            vertical_velocity = abs(linear_row[2])
+            self._whole_run.add_velocity(
+                step=step,
+                roll_pitch=angular_velocity,
+                vertical=vertical_velocity,
+            )
+            segment_accumulator.add_velocity(
+                step=step,
+                roll_pitch=angular_velocity,
+                vertical=vertical_velocity,
+            )
+
+            if self._previous_step is None:
+                continue
+            if done_values[env_index]:
+                self._excluded_reset_transitions += 1
+                continue
+            if step != self._previous_step + 1:
+                self._excluded_nonconsecutive_transitions += 1
+                continue
+            if segment_index != self._previous_segment_index:
+                self._excluded_segment_transitions += 1
+                continue
+            assert self._previous_linear_velocity is not None
+            assert self._previous_angular_velocity is not None
+            previous_linear = self._previous_linear_velocity[env_index]
+            previous_angular = self._previous_angular_velocity[env_index]
+            roll_pitch_acceleration = math.hypot(
+                (angular_row[0] - previous_angular[0]) / self.step_dt_seconds,
+                (angular_row[1] - previous_angular[1]) / self.step_dt_seconds,
+            )
+            vertical_acceleration = abs(
+                (linear_row[2] - previous_linear[2]) / self.step_dt_seconds
+            )
+            self._whole_run.add_acceleration(
+                step=step,
+                roll_pitch=roll_pitch_acceleration,
+                vertical=vertical_acceleration,
+            )
+            segment_accumulator.add_acceleration(
+                step=step,
+                roll_pitch=roll_pitch_acceleration,
+                vertical=vertical_acceleration,
+            )
+
+        self._previous_linear_velocity = linear
+        self._previous_angular_velocity = angular
+        self._previous_step = step
+        self._previous_segment_index = segment_index
+
+    def report(self) -> dict[str, Any]:
+        whole_run = self._whole_run.report()
+        metrics: dict[str, float | None] = {}
+        peak_steps: dict[str, int | None] = {}
+        for name, values in whole_run.items():
+            metrics[f"body_{name}_rms"] = values["rms"]
+            metrics[f"body_{name}_p95"] = values["p95"]
+            peak_steps[f"body_{name}_max"] = values["peak_step"]
+        command_segments = []
+        for segment, accumulator in zip(
+            self.command_segments,
+            self._segment_accumulators,
+            strict=True,
+        ):
+            command_segments.append({**segment, "statistics": accumulator.report()})
+        return {
+            "definition": {
+                "roll_pitch": "Euclidean magnitude of body-frame x/y components.",
+                "vertical": "Absolute body-frame z component.",
+                "acceleration": "First velocity difference divided by control step_dt.",
+                "transition_policy": (
+                    "Acceleration pairs crossing a reset, command boundary, or "
+                    "nonconsecutive step are excluded."
+                ),
+            },
+            "units": {
+                "roll_pitch_angular_velocity": "rad/s",
+                "vertical_velocity": "m/s",
+                "roll_pitch_angular_acceleration": "rad/s^2",
+                "vertical_acceleration": "m/s^2",
+            },
+            "step_dt_seconds": self.step_dt_seconds,
+            "metrics": metrics,
+            "peak_steps": peak_steps,
+            "whole_run": whole_run,
+            "command_segments": command_segments,
+            "excluded_transitions": {
+                "reset": self._excluded_reset_transitions,
+                "command_segment": self._excluded_segment_transitions,
+                "nonconsecutive_step": self._excluded_nonconsecutive_transitions,
+            },
+        }
+
+
 class SignalLedger:
     """Record success and failure counts independently for named signals."""
 

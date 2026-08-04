@@ -1,0 +1,167 @@
+{
+  "algorithm": "AMP-ROA",
+  "analysis": {
+    "confidence": "high",
+    "summary": "Completed Native advisor-eval-003 with complete AMP-ROA telemetry and robot-in-frame video. Training metrics plateaued; Play failed the approved joint velocity utilization and violation-rate gates. Body jitter was recorded as non-gating full-run and command-segment evidence."
+  },
+  "context": {
+    "deployment_fingerprint": "unknown",
+    "observation_fingerprint": "unknown",
+    "reward_fingerprint": "66d57946ec3118a2c6ec4655f5f4c3a8ec004c413b6b8db30a537c1b8df4ffd2"
+  },
+  "event_id": "advisor-eval-003",
+  "event_type": "checkpoint_evaluation",
+  "evidence": {
+    "effective_config": {
+      "effective_config_fingerprint": "fa7e5b0a4b81d328c47458425818e346b0551694e3be419dd1619445c344029f",
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0/2026-08-01_16-31-56/evidence/source/effective-config-advisor-eval-003-runtime.json",
+      "reward_fingerprint": "66d57946ec3118a2c6ec4655f5f4c3a8ec004c413b6b8db30a537c1b8df4ffd2",
+      "sha256": "a66f4771b8b2682ccd44a8d8ea8607acd5779be77d6f675e790ad9cb999a9ba2"
+    },
+    "event": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0/2026-08-01_16-31-56/evidence/play/advisor-eval-003/result.json",
+      "sha256": "e07e542b26b1ed9aa6c4e4cad286c6ac304403f3dd9028331351585b521bf5c5",
+      "status": "available"
+    },
+    "outcome": {
+      "reason": "checkpoint evaluation did not compare a parameter change against a baseline outcome",
+      "status": "unavailable"
+    }
+  },
+  "next_suggestion": "Review foot-joint velocity overspeed and the highest body-jitter windows before the operator chooses one next tuning change.",
+  "parameters": {
+    "checkpoint_iteration": 100000,
+    "checkpoint_sha256": "63297f55d4ae038f7394aa24ddc1da949d192fd4356b06f6a15ce70f9da4fb87",
+    "duration_steps": 1250,
+    "num_envs": 1,
+    "scenario_sha256": "0f6a9f82430067cf1b902baec3efe549577884fc2268d42553f0647fca1a0c59",
+    "video_requested": true
+  },
+  "recorded_at": "2026-08-04T10:27:58+08:00",
+  "run_id": "2026-08-01_16-31-56",
+  "run_identity": {
+    "algorithm": "AMP-ROA",
+    "backend": "isaaclab",
+    "config_files": [
+      {
+        "path": "scripts/reinforcement_learning/rsl_rl/evaluate_policy.py",
+        "sha256": "2eb7377a4345dca5d04eff7e6f1e21fc72d2830aa55b214eb267bfbf3bbe22f3"
+      },
+      {
+        "path": "scripts/reinforcement_learning/rsl_rl/policy_evaluation_telemetry.py",
+        "sha256": "48ca0c2985301225871799db99305cf82bbd52a04cfec15536e697040a665921"
+      },
+      {
+        "path": "scripts/reinforcement_learning/rsl_rl/train.py",
+        "sha256": "95a4a317d71089d9658b85a8048c857fe3990ff5fbf8a558d5e258fdd308f808"
+      },
+      {
+        "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/__init__.py",
+        "sha256": "a76bd52a55a06092e56aee67ec47e999a8d5e475130ffc8bf66a862cb580870f"
+      },
+      {
+        "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/agents/rsl_rl_amp_roa_cfg.py",
+        "sha256": "42996d3888a62a544f1199be0094c046c150163340f3feb4047831b3eb2bbce2"
+      },
+      {
+        "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/rough_env_cfg.py",
+        "sha256": "0b1b78ec9250be43286ad53a3b5cc46c9c5c3ecf7b3c2243b1025d7d416fdbbe"
+      },
+      {
+        "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/terrains/terrains_cfg.py",
+        "sha256": "8f640c5ec6c0c39b9a7916e701d6342d87c1960a0a7178011b24c992aa29c29d"
+      }
+    ],
+    "evaluation_scenario": {
+      "contract": {
+        "command_schedule": [
+          {
+            "command": [
+              0.5,
+              0.0,
+              0.0
+            ],
+            "end_step": 249,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.0,
+              0.3,
+              0.0
+            ],
+            "end_step": 499,
+            "start_step": 250
+          },
+          {
+            "command": [
+              0.0,
+              0.0,
+              0.5
+            ],
+            "end_step": 749,
+            "start_step": 500
+          },
+          {
+            "command": [
+              0.4,
+              0.0,
+              0.3
+            ],
+            "end_step": 999,
+            "start_step": 750
+          },
+          {
+            "command": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "end_step": 1249,
+            "start_step": 1000
+          }
+        ],
+        "duration_steps": 1250,
+        "num_envs": 1,
+        "scenario_id": "advisor-eval-003",
+        "scenario_overrides": {},
+        "seed": 42
+      },
+      "sha256": "0f6a9f82430067cf1b902baec3efe549577884fc2268d42553f0647fca1a0c59"
+    },
+    "host_id": "younghit",
+    "identity_sha256": "f03317ab221e8cb6af1197ab420177f260f8c833f64cb2b6dc1239b7803794ee",
+    "run_id": "2026-08-01_16-31-56",
+    "runner": "OnPolicyRunnerAmpROA",
+    "seed": 42,
+    "source": {
+      "branch": "main",
+      "diff_sha256": "de679dfd4333c8addceff435e9a8889688b179f8a44579873d990b025fb33210",
+      "dirty": true,
+      "dirty_paths": [
+        "scripts/reinforcement_learning/rsl_rl/evaluate_policy.py",
+        "scripts/reinforcement_learning/rsl_rl/policy_evaluation_telemetry.py"
+      ],
+      "head": "7e3f7188486dc863c5a6f13ebd5bb6f46f3a1cc8",
+      "patch_evidence": null,
+      "repository_root": "/home/young/liufengrong/robot_lab"
+    },
+    "task": "RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0",
+    "training": {
+      "command": [
+        "python",
+        "scripts/reinforcement_learning/rsl_rl/train.py",
+        "--task=RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0",
+        "--log_project_name=LW_leg_locomotion_amp_roa",
+        "--logger=wandb",
+        "--num_envs=4096",
+        "--max_iterations=100000",
+        "--headless"
+      ],
+      "hydra_overrides": []
+    },
+    "version": 1
+  },
+  "task": "RobotLab-Isaac-Velocity-Rough-LW-leg-Amp-Roa-v0",
+  "version": 4
+}
