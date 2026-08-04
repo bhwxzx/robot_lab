@@ -105,7 +105,8 @@ or the presence of a partial work file.
 Checkpoint selection receipts and export artifacts use their own immutable
 directories. Create a selection receipt only after explicit user choice. The
 exporter writes only below its private `.attempt/`, publishes JIT and ONNX with
-non-overwriting hard links, and publishes the version-3 `receipt.json` last.
+non-overwriting hard links, and publishes the version-4 `receipt.json` last.
+The validator remains backward-compatible with completed version-3 receipts.
 See [`policy-export.md`](policy-export.md) for the complete source, parity, and
 archive validation contract.
 

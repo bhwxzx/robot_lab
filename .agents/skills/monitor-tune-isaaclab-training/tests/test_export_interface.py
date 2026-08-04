@@ -29,6 +29,7 @@ class ExportInterfaceTests(unittest.TestCase):
         self.assertIn("--parity_steps PARITY_STEPS", result.stdout)
         self.assertIn("--reset_step RESET_STEP", result.stdout)
         self.assertIn("--reset_contract RESET_CONTRACT", result.stdout)
+        self.assertIn("--onnx_export_profile", result.stdout)
         self.assertNotIn("--trial_id", result.stdout)
         self.assertNotIn("--candidate_id", result.stdout)
 
@@ -61,6 +62,7 @@ class ExportInterfaceTests(unittest.TestCase):
                 "--parity_steps",
                 "--reset_step",
                 "--reset_contract",
+                "--onnx_export_profile",
             }.issubset(required)
         )
         self.assertNotIn("--trial_id", required)
@@ -68,7 +70,9 @@ class ExportInterfaceTests(unittest.TestCase):
 
     def test_result_metadata_uses_only_current_identifiers(self) -> None:
         source = SCRIPT.read_text(encoding="utf-8")
-        self.assertIn('"version": 3', source)
+        self.assertIn('"version": 4', source)
+        self.assertIn("export_onnx_policy(", source)
+        self.assertIn("run_onnx_policy(", source)
         self.assertIn('"run_id": export_plan.run_id', source)
         self.assertIn('"checkpoint_id": args_cli.checkpoint_id', source)
         self.assertIn('"export_id": export_plan.export_id', source)

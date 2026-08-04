@@ -28,6 +28,11 @@ from capture_effective_training_config import (  # noqa: E402
     load_and_validate_effective_config,
 )
 from capture_run_identity import RunIdentityError, validate_run_identity  # noqa: E402
+from onnx_export_contract import (  # noqa: E402
+    OnnxExportContractError,
+    get_onnx_export_contract,
+    validate_onnx_export_contract,
+)
 from policy_evaluation_evidence import (  # noqa: E402
     EvaluationEvidenceError,
     validate_evaluation_bundle,
@@ -648,6 +653,7 @@ class ExportPlan:
     selection_receipt: dict[str, Any]
     selection_reference: dict[str, Any]
     tensor_contract: dict[str, Any]
+    onnx_export_contract: dict[str, Any]
     parity_contract: dict[str, Any]
 
 
@@ -681,6 +687,7 @@ def preflight_export(
     history_contract: str,
     normalization_contract: str,
     reset_contract: str,
+    onnx_export_profile: str,
     parity_steps: int,
     reset_step: int,
     minimum_parity_samples: int,
@@ -710,6 +717,10 @@ def preflight_export(
     }
     if supplied_contract != tensor_contract:
         raise PolicyExportEvidenceError("export tensor contract differs from selection")
+    try:
+        onnx_export_contract = get_onnx_export_contract(onnx_export_profile)
+    except OnnxExportContractError as exc:
+        raise PolicyExportEvidenceError(str(exc)) from exc
     integer_fields = {
         "parity_steps": parity_steps,
         "reset_step": reset_step,
@@ -770,6 +781,7 @@ def preflight_export(
         selection_receipt=selection,
         selection_reference=selection_reference,
         tensor_contract=tensor_contract,
+        onnx_export_contract=onnx_export_contract,
         parity_contract=parity_contract,
     )
 
@@ -962,6 +974,73 @@ def _validate_shape(value: Any, *, label: str) -> list[int]:
     return value
 
 
+def _validate_receipt_onnx_contract(value: Any) -> dict[str, Any]:
+    try:
+        return validate_onnx_export_contract(value)
+    except OnnxExportContractError as exc:
+        raise PolicyExportEvidenceError(str(exc)) from exc
+
+
+def _validate_onnx_model_shape(
+    value: Any,
+    *,
+    label: str,
+    batch_contract: str,
+) -> list[int | str]:
+    expected_batch: int | str = 1 if batch_contract == "static_batch_1" else "batch"
+    if (
+        not isinstance(value, list)
+        or len(value) != 2
+        or value[0] != expected_batch
+        or isinstance(value[1], bool)
+        or not isinstance(value[1], int)
+        or value[1] <= 0
+    ):
+        raise PolicyExportEvidenceError(f"{label} shape is invalid")
+    return value
+
+
+def _validate_onnx_export_evidence(
+    value: Any,
+    *,
+    contract: dict[str, Any],
+) -> None:
+    expected_keys = {
+        "contract",
+        "input_shape",
+        "output_shape",
+        "pre_simplify_node_count",
+        "post_simplify_node_count",
+        "simplifier_check",
+    }
+    if not isinstance(value, dict) or set(value) != expected_keys:
+        raise PolicyExportEvidenceError("ONNX export evidence is invalid")
+    if _validate_receipt_onnx_contract(value["contract"]) != contract:
+        raise PolicyExportEvidenceError("ONNX export evidence contract mismatch")
+    _validate_onnx_model_shape(
+        value["input_shape"],
+        label="ONNX model input",
+        batch_contract=contract["batch_contract"],
+    )
+    _validate_onnx_model_shape(
+        value["output_shape"],
+        label="ONNX model output",
+        batch_contract=contract["batch_contract"],
+    )
+    pre_count = value["pre_simplify_node_count"]
+    post_count = value["post_simplify_node_count"]
+    if any(
+        isinstance(item, bool) or not isinstance(item, int) or item < 0
+        for item in (pre_count, post_count)
+    ) or post_count > pre_count:
+        raise PolicyExportEvidenceError("ONNX node-count evidence is invalid")
+    if contract["simplified"]:
+        if value["simplifier_check"] is not True:
+            raise PolicyExportEvidenceError("ONNX simplifier validation is incomplete")
+    elif value["simplifier_check"] is not None or post_count != pre_count:
+        raise PolicyExportEvidenceError("unsimplified ONNX evidence is inconsistent")
+
+
 def _validate_parity(
     parity: Any,
     *,
@@ -1040,8 +1119,13 @@ def validate_export_bundle(
 ) -> dict[str, Any]:
     receipt_reference = _regular_file(receipt_path, label="export receipt")
     receipt = _load_json(receipt_path, label="export receipt")
-    if receipt.get("version") != 3 or receipt.get("status") != "completed":
-        raise PolicyExportEvidenceError("completed version-3 export receipt required")
+    version = receipt.get("version")
+    if (
+        isinstance(version, bool)
+        or version not in (3, 4)
+        or receipt.get("status") != "completed"
+    ):
+        raise PolicyExportEvidenceError("completed version-3 or version-4 export receipt required")
     export = receipt.get("export")
     inputs = receipt.get("inputs")
     outputs = receipt.get("outputs")
@@ -1076,6 +1160,14 @@ def validate_export_bundle(
         raise PolicyExportEvidenceError("export effective config differs from selection")
     if inputs.get("tensor_contract") != selection["tensor_contract"]:
         raise PolicyExportEvidenceError("export tensor contract differs from selection")
+    if version == 4:
+        onnx_export_contract = _validate_receipt_onnx_contract(
+            inputs.get("onnx_export_contract")
+        )
+        _validate_onnx_export_evidence(
+            receipt.get("onnx_export"),
+            contract=onnx_export_contract,
+        )
     parity_contract = _validate_parity_contract(inputs.get("parity_contract"))
     _validate_parity(receipt.get("parity"), contract=parity_contract)
     repo_root = Path(
