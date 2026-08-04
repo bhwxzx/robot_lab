@@ -301,6 +301,14 @@ It creates one atomic directory and performs no Git action; the required pull
 belongs to the outer advisor workflow. Legacy version-1 path-only manifests
 cannot support an archive operation.
 
+For an explicitly requested replacement, never overwrite only one artifact.
+Inventory the existing four-file bundle, obtain separate destructive approval,
+and bind the exact destination plus all four old SHA-256 values under
+`replace_existing`. After the mandatory pull, any file-set or hash drift
+invalidates that approval. The archiver keeps collision rejection as the
+default and uses an atomic whole-directory exchange only for the exact approved
+bundle.
+
 ## Feedback and experience records
 
 Record feedback as an immutable `feedback` event with `source` set to

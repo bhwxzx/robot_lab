@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -170,6 +171,77 @@ def _existing_pairs(collection: Path) -> set[tuple[str, str]]:
     return pairs
 
 
+def _validate_replacement(
+    value: Any,
+    *,
+    destination: Path,
+) -> dict[str, Any] | None:
+    if value is None:
+        if destination.exists() or destination.is_symlink():
+            raise ArchiveError(f"archive destination already exists: {destination}")
+        return None
+    expected_keys = {"authorized", "path", "files"}
+    if not isinstance(value, dict) or set(value) != expected_keys:
+        raise ArchiveError("replace_existing contract is invalid")
+    if value["authorized"] is not True or value["path"] != str(destination):
+        raise ArchiveError("replace_existing authorization/path mismatch")
+    if destination.is_symlink() or not destination.is_dir():
+        raise ArchiveError("replace_existing target must be an existing regular directory")
+    expected_names = {
+        "policy.pt",
+        "policy.onnx",
+        "策略说明.txt",
+        "archive_manifest.json",
+    }
+    files = value["files"]
+    if not isinstance(files, dict) or set(files) != expected_names:
+        raise ArchiveError("replace_existing must bind exactly four archive files")
+    actual_names = {item.name for item in destination.iterdir()}
+    if actual_names != expected_names:
+        raise ArchiveError("replace_existing target contents differ from authorization")
+    for name in sorted(expected_names):
+        expected_hash = files[name]
+        path = destination / name
+        if (
+            not isinstance(expected_hash, str)
+            or not SHA256_RE.fullmatch(expected_hash)
+            or path.is_symlink()
+            or not path.is_file()
+            or _sha256(path) != expected_hash
+        ):
+            raise ArchiveError(f"replace_existing hash/type mismatch: {name}")
+    return value
+
+
+def _exchange_directories(left: Path, right: Path) -> None:
+    """Atomically exchange two directories on Linux without a missing-target gap."""
+    renameat2 = getattr(ctypes.CDLL(None, use_errno=True), "renameat2", None)
+    if renameat2 is None:
+        raise ArchiveError("atomic directory exchange is unavailable on this platform")
+    renameat2.argtypes = [
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_uint,
+    ]
+    renameat2.restype = ctypes.c_int
+    at_fdcwd = -100
+    rename_exchange = 2
+    result = renameat2(
+        at_fdcwd,
+        os.fsencode(left),
+        at_fdcwd,
+        os.fsencode(right),
+        rename_exchange,
+    )
+    if result != 0:
+        error_number = ctypes.get_errno()
+        raise ArchiveError(
+            "atomic directory exchange failed: " + os.strerror(error_number)
+        )
+
+
 def _description(manifest: dict[str, Any], destination_name: str) -> str:
     checkpoint = manifest["selected_checkpoint"]
     artifacts = manifest["artifacts"]
@@ -232,8 +304,10 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}", destination_name):
         raise ArchiveError("timestamp must use YYYY-MM-DD-HH-MM-SS")
     destination = collection / destination_name
-    if destination.exists():
-        raise ArchiveError(f"archive destination already exists: {destination}")
+    replacement = _validate_replacement(
+        manifest.get("replace_existing"),
+        destination=destination,
+    )
     temporary = Path(tempfile.mkdtemp(prefix=".advisor-archive-", dir=collection))
     try:
         os.chmod(temporary, 0o700)
@@ -255,7 +329,11 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
             json.dumps(archive_manifest, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n",
             encoding="utf-8",
         )
-        temporary.replace(destination)
+        if replacement is None:
+            temporary.replace(destination)
+        else:
+            _exchange_directories(temporary, destination)
+            shutil.rmtree(temporary)
     finally:
         if temporary.exists():
             shutil.rmtree(temporary)
@@ -269,6 +347,7 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
             "manifest": str(destination / "archive_manifest.json"),
         },
         "git_action": "none",
+        "replaced_existing": replacement is not None,
         "hardware_ready": False,
         "hardware_boundary": HARDWARE_NOTE,
         "export_receipt": manifest["export_receipt"],

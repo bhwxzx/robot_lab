@@ -163,3 +163,29 @@ cross-checks checkpoint, task, runner, algorithm, source HEAD/dirty state, and
 both artifacts before creating its atomic destination. It performs no Git
 action; the required pull belongs to the outer advisor workflow. Legacy
 version-1, path-only manifests are ineligible.
+
+An existing destination remains an error by default. Replace one only after a
+separate destructive-operation approval based on a read-only inventory. Add
+this exact-shape object to the otherwise complete version-2 manifest:
+
+```json
+{
+  "replace_existing": {
+    "authorized": true,
+    "path": "/absolute/policy_storage/collection/existing-directory",
+    "files": {
+      "policy.pt": "old SHA-256",
+      "policy.onnx": "old SHA-256",
+      "策略说明.txt": "old SHA-256",
+      "archive_manifest.json": "old SHA-256"
+    }
+  }
+}
+```
+
+Immediately after the required pull, recheck the exact four-file set and every
+old hash. The archiver builds and verifies the new bundle in a private sibling,
+atomically exchanges the directories, and deletes only the displaced bundle.
+Any missing/extra file, symlink, changed hash, unavailable atomic exchange, or
+cleanup failure aborts the operation. The original tracked bundle remains
+recoverable from its prior Git commit, but never restore it automatically.

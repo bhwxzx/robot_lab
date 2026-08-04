@@ -327,6 +327,17 @@ The archiver creates one atomic directory containing:
 - `策略说明.txt`;
 - `archive_manifest.json`.
 
+Treat replacement of an existing four-file archive as an exceptional,
+destructive operation. First inventory the exact destination and SHA-256 of all
+four files, explain that the whole bundle must be replaced, and obtain separate
+explicit deletion/replacement approval. Add a `replace_existing` contract that
+binds the destination and all four old hashes. After the normal pre-archive
+pull and rechecks, require those hashes and the exact four-file set to remain
+unchanged. The archiver must retain default collision rejection, construct the
+complete new bundle privately, atomically exchange the two directories on the
+same filesystem, and remove only the now-displaced authorized old bundle. Stop
+on any target, file-set, hash, Git-state, or exchange mismatch.
+
 Never stage, commit, push, or otherwise mutate the storage repository unless
 the user separately asks. The fast-forward-only pre-archive pull above is the
 single standing exception. Every description must say:
