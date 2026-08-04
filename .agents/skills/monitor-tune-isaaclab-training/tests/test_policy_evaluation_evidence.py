@@ -346,6 +346,38 @@ class PolicyEvaluationEvidenceTests(unittest.TestCase):
                 )
         self.assertEqual(linked_targets[-1], plan.result_path)
 
+    def test_evaluation_resources_close_publisher_before_simulation(self) -> None:
+        close_order: list[str] = []
+
+        class Publisher:
+            def close(self) -> None:
+                close_order.append("publisher")
+
+        class SimulationApp:
+            def close(self) -> None:
+                close_order.append("simulation")
+
+        MODULE.close_evaluation_resources(Publisher(), SimulationApp())
+
+        self.assertEqual(close_order, ["publisher", "simulation"])
+
+    def test_simulation_closes_when_publisher_close_fails(self) -> None:
+        close_order: list[str] = []
+
+        class Publisher:
+            def close(self) -> None:
+                close_order.append("publisher")
+                raise RuntimeError("publisher cleanup failed")
+
+        class SimulationApp:
+            def close(self) -> None:
+                close_order.append("simulation")
+
+        with self.assertRaisesRegex(RuntimeError, "publisher cleanup failed"):
+            MODULE.close_evaluation_resources(Publisher(), SimulationApp())
+
+        self.assertEqual(close_order, ["publisher", "simulation"])
+
 
 if __name__ == "__main__":
     unittest.main()
