@@ -1304,3 +1304,42 @@ campaign、multi-fidelity 和 Git mailbox 工具保留为 legacy，不再由主�
   Skill validator、Python 编译和范围 diff 检查通过。
 
 ---
+
+## [LRN-20260804-002] correction
+
+**Logged**: 2026-08-04T11:27:58+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+策略归档前必须先以 fast-forward-only pull 同步 `policy_storage`，再基于更新后的
+checkout 复核目标冲突和重复制品。
+
+### Details
+原归档流程只读检查 `policy_storage` 后禁止 pull，可能在本地落后远端时使用陈旧
+库存做重复与目标判断。用户明确要求以后每次归档前先拉取，确保归档基于最新的
+storage 状态。该授权仅覆盖已批准归档前的 `git pull --ff-only`，不扩张为自动
+合并、变基、stash、清理、暂存、提交或推送权限。
+
+### Suggested Action
+在用户批准精确 manifest 后、调用原子归档器前，重新确认 storage Git 根、
+upstream、HEAD、工作区和暂存区；仅在完全干净时执行 `git pull --ff-only`。
+随后重新检查 HEAD、Git 状态、目标目录和 JIT/ONNX 重复对。任何 dirty、缺少
+upstream、非 fast-forward、pull 失败或新冲突都必须停止并报告用户。
+
+### Metadata
+- Source: user_feedback
+- Related Files: `.agents/skills/monitor-tune-isaaclab-training/SKILL.md`, `.agents/skills/monitor-tune-isaaclab-training/references/human-guided-training-advisor.md`, `.agents/skills/monitor-tune-isaaclab-training/references/policy-export.md`
+- Tags: policy-archive, policy-storage, git-pull, fast-forward, preflight
+- Pattern-Key: correct.policy_archive_pull_storage_before_write
+- Recurrence-Count: 1
+- First-Seen: 2026-08-04
+- Last-Seen: 2026-08-04
+
+### Resolution
+- **Resolved**: 2026-08-04T11:27:58+08:00
+- **Commit/PR**: N/A
+- **Notes**: 已将归档前 fast-forward-only 同步及失败停止条件写入主 Skill 和两份归档引用；归档器继续保持不执行 Git 操作。
+
+---

@@ -128,7 +128,17 @@ parity failure, or a changed artifact invalidates the entire export.
 
 Archive only after a separate user authorization. A version-2 archive manifest
 must reference the export receipt by path and SHA-256 and list evaluation
-results as `{path, sha256}` objects. The archiver revalidates the complete
-export and evaluation bundles, then cross-checks checkpoint, task, runner,
-algorithm, source HEAD/dirty state, and both artifacts before creating its
-atomic destination. Legacy version-1, path-only manifests are ineligible.
+results as `{path, sha256}` objects. After authorization and immediately before
+the archive write, require a clean storage worktree and index, including no
+untracked paths, then run `git -C "$STORAGE_ROOT" pull --ff-only`. Recheck the
+updated HEAD and Git state, destination collision, and duplicate JIT/ONNX pair.
+Stop without archiving if the upstream is missing, the pull fails or cannot
+fast-forward, the repository is dirty, or a target or duplicate appears. Never
+stash, merge, rebase, reset, checkout, clean, or resolve storage state
+automatically.
+
+The archiver revalidates the complete export and evaluation bundles, then
+cross-checks checkpoint, task, runner, algorithm, source HEAD/dirty state, and
+both artifacts before creating its atomic destination. It performs no Git
+action; the required pull belongs to the outer advisor workflow. Legacy
+version-1, path-only manifests are ineligible.
