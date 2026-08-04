@@ -120,6 +120,21 @@ class AdvisorArchiveTests(unittest.TestCase):
         ):
             return MODULE.archive_policy(manifest, timestamp=timestamp)
 
+    def replacement_contract(self, destination: Path) -> dict:
+        return {
+            "authorized": True,
+            "path": str(destination),
+            "files": {
+                name: sha(destination / name)
+                for name in (
+                    "policy.pt",
+                    "policy.onnx",
+                    "策略说明.txt",
+                    "archive_manifest.json",
+                )
+            },
+        }
+
     def test_archives_four_files_without_git_action(self) -> None:
         receipt = self.archive(self.manifest(), "2026-07-31-18-00-00")
         destination = Path(receipt["archive_path"])
@@ -128,6 +143,7 @@ class AdvisorArchiveTests(unittest.TestCase):
             {"policy.pt", "policy.onnx", "策略说明.txt", "archive_manifest.json"},
         )
         self.assertEqual(receipt["git_action"], "none")
+        self.assertFalse(receipt["replaced_existing"])
         self.assertEqual(receipt["version"], 2)
         self.assertFalse(receipt["hardware_ready"])
         archived_manifest = json.loads((destination / "archive_manifest.json").read_text(encoding="utf-8"))
@@ -144,6 +160,62 @@ class AdvisorArchiveTests(unittest.TestCase):
         subprocess.run(["git", "-C", str(self.storage), "commit", "-qm", "archive"], check=True)
         with self.assertRaisesRegex(MODULE.ArchiveError, "already exists"):
             self.archive(self.manifest(), "2026-07-31-18-00-01")
+
+    def test_refuses_destination_collision_without_replacement_contract(self) -> None:
+        receipt = self.archive(self.manifest(), "2026-07-31-18-00-00")
+        subprocess.run(["git", "-C", str(self.storage), "add", "."], check=True)
+        subprocess.run(
+            ["git", "-C", str(self.storage), "commit", "-qm", "archive"],
+            check=True,
+        )
+        self.jit.write_bytes(b"new-jit")
+        self.onnx.write_bytes(b"new-onnx")
+        with self.assertRaisesRegex(MODULE.ArchiveError, "already exists"):
+            self.archive(self.manifest(), Path(receipt["archive_path"]).name)
+
+    def test_atomically_replaces_exact_authorized_archive(self) -> None:
+        receipt = self.archive(self.manifest(), "2026-07-31-18-00-00")
+        destination = Path(receipt["archive_path"])
+        replacement = self.replacement_contract(destination)
+        subprocess.run(["git", "-C", str(self.storage), "add", "."], check=True)
+        subprocess.run(
+            ["git", "-C", str(self.storage), "commit", "-qm", "archive"],
+            check=True,
+        )
+        self.jit.write_bytes(b"new-jit")
+        self.onnx.write_bytes(b"new-onnx")
+        manifest = self.manifest()
+        manifest["replace_existing"] = replacement
+
+        replaced = self.archive(manifest, destination.name)
+
+        self.assertTrue(replaced["replaced_existing"])
+        self.assertEqual((destination / "policy.pt").read_bytes(), b"new-jit")
+        self.assertEqual((destination / "policy.onnx").read_bytes(), b"new-onnx")
+        self.assertFalse(any(destination.parent.glob(".advisor-archive-*")))
+        archived_manifest = json.loads(
+            (destination / "archive_manifest.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(archived_manifest["replace_existing"], replacement)
+
+    def test_refuses_replacement_when_old_hash_contract_differs(self) -> None:
+        receipt = self.archive(self.manifest(), "2026-07-31-18-00-00")
+        destination = Path(receipt["archive_path"])
+        replacement = self.replacement_contract(destination)
+        replacement["files"]["policy.onnx"] = "0" * 64
+        subprocess.run(["git", "-C", str(self.storage), "add", "."], check=True)
+        subprocess.run(
+            ["git", "-C", str(self.storage), "commit", "-qm", "archive"],
+            check=True,
+        )
+        self.jit.write_bytes(b"new-jit")
+        self.onnx.write_bytes(b"new-onnx")
+        manifest = self.manifest()
+        manifest["replace_existing"] = replacement
+
+        with self.assertRaisesRegex(MODULE.ArchiveError, "hash/type mismatch"):
+            self.archive(manifest, destination.name)
+        self.assertEqual((destination / "policy.onnx").read_bytes(), b"onnx")
 
     def test_rejects_manifest_artifact_that_differs_from_export(self) -> None:
         manifest = self.manifest()
