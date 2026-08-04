@@ -281,13 +281,24 @@ user archive authorization:
 }
 ```
 
+After the user approves that exact manifest and immediately before calling the
+archiver, re-resolve the storage Git root, upstream, HEAD, worktree, and index.
+Require a completely clean checkout, including no untracked paths, then run
+`git -C "$STORAGE_ROOT" pull --ff-only`. Recheck HEAD, worktree, index,
+destination collision, and duplicate JIT/ONNX pairs against the updated
+checkout. Stop without archiving if the upstream is missing, the pull fails or
+cannot fast-forward, the repository is dirty, or a target or duplicate appears.
+Never stash, merge, rebase, reset, checkout, clean, or resolve storage state
+automatically.
+
 The archiver first revalidates the export receipt, selection receipt, complete
 run identity, effective configuration, JIT/ONNX hashes, parity evidence, and
 every closed-loop evaluation bundle. It requires repeated manifest fields to
 match that evidence. It then verifies a clean storage Git worktree, existing
 non-symlinked collection, duplicate artifact pairs, and destination collision.
-It creates one atomic directory and performs no Git action. Legacy version-1
-path-only manifests cannot support an archive operation.
+It creates one atomic directory and performs no Git action; the required pull
+belongs to the outer advisor workflow. Legacy version-1 path-only manifests
+cannot support an archive operation.
 
 ## Feedback and experience records
 

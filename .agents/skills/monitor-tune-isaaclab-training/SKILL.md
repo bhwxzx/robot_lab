@@ -297,19 +297,33 @@ its validated version-3 receipt last. Require bounded multi-time parity with an
 explicit pre/post-reset boundary. Export is not deployment qualification.
 
 Archive only after a separate user confirmation. Inspect `policy_storage`
-read-only first, then use `scripts/archive_advised_policy.py` with an approved
-version-2 manifest. Revalidate the export receipt, JIT/ONNX hashes, selection,
-and all closed-loop evaluation bundles before any archive write. Legacy
-path-only manifests are ineligible. The archiver creates one atomic directory
-containing:
+read-only first and show the exact version-2 manifest and destination before
+requesting that confirmation. After confirmation and immediately before any
+archive write:
+
+1. re-resolve the exact storage Git root, upstream, HEAD, worktree, and index;
+2. require a clean worktree and index, including no untracked paths;
+3. run `git -C "$STORAGE_ROOT" pull --ff-only`;
+4. re-resolve HEAD, worktree, and index, then repeat the destination-collision
+   and duplicate JIT/ONNX-pair checks against the updated checkout;
+5. stop without archiving if the upstream is missing, the pull fails or cannot
+   fast-forward, the repository is dirty, or a target or duplicate appears.
+
+Never stash, merge, rebase, reset, checkout, clean, or resolve storage state
+automatically. Once the post-pull checks pass, use
+`scripts/archive_advised_policy.py` with the approved manifest. Revalidate the
+export receipt, JIT/ONNX hashes, selection, and all closed-loop evaluation
+bundles before the archive write. Legacy path-only manifests are ineligible.
+The archiver creates one atomic directory containing:
 
 - `policy.pt`;
 - `policy.onnx`;
 - `策略说明.txt`;
 - `archive_manifest.json`.
 
-Never stage, commit, pull, push, clean, or resolve the storage repository unless
-the user separately asks. Every description must say:
+Never stage, commit, push, or otherwise mutate the storage repository unless
+the user separately asks. The fast-forward-only pre-archive pull above is the
+single standing exception. Every description must say:
 
 > 仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。
 
