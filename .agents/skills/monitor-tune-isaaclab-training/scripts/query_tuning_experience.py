@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from evidence_provenance import require_source_path
+
 import argparse
 import hashlib
 import json
@@ -128,22 +130,28 @@ def _event_paths(root: Path, task: str, max_events: int) -> list[Path]:
                 raise ExperienceQueryError(
                     f"task history contains an unsafe run directory: {run_path}"
                 )
-            with os.scandir(run_path) as candidate_entries:
-                for candidate in sorted(candidate_entries, key=lambda entry: entry.name):
-                    if candidate.name.startswith(".") or not candidate.name.endswith(".json"):
-                        continue
-                    candidate_path = Path(candidate.path)
-                    if candidate.is_symlink():
-                        raise ExperienceQueryError(
-                            f"task history contains a symlinked event file: {candidate_path}"
-                        )
-                    if not candidate.is_file(follow_symlinks=False):
-                        continue
-                    event_paths.append(candidate_path)
-                    if len(event_paths) > max_events:
-                        raise ExperienceQueryError(
-                            f"history exceeds max-events={max_events}; narrow the query"
-                        )
+            event_directories = [run_path]
+            nested = run_path / "events"
+            _reject_symlink_components(nested, label="events directory")
+            if nested.is_dir():
+                event_directories.append(nested)
+            for event_directory in event_directories:
+                with os.scandir(event_directory) as candidate_entries:
+                    for candidate in sorted(candidate_entries, key=lambda entry: entry.name):
+                        if candidate.name.startswith(".") or not candidate.name.endswith(".json"):
+                            continue
+                        candidate_path = Path(candidate.path)
+                        if candidate.is_symlink():
+                            raise ExperienceQueryError(
+                                f"task history contains a symlinked event file: {candidate_path}"
+                            )
+                        if not candidate.is_file(follow_symlinks=False):
+                            continue
+                        event_paths.append(candidate_path)
+                        if len(event_paths) > max_events:
+                            raise ExperienceQueryError(
+                                f"history exceeds max-events={max_events}; narrow the query"
+                            )
     return event_paths
 
 
@@ -181,7 +189,12 @@ def _timestamp_slug(timestamp: str) -> str:
 
 
 def _validate_storage_binding(event: dict[str, Any], path: Path, task: str) -> None:
-    run_id = path.parent.name
+    if event["version"] == 5:
+        if path.parent.name != "events":
+            raise ExperienceQueryError("version-5 event must be under events/")
+        run_id = path.parent.parent.name
+    else:
+        run_id = path.parent.name
     if event["task"] != task or event["run_id"] != run_id:
         raise ExperienceQueryError(
             "event scope does not match its task/run history directory"
@@ -297,7 +310,7 @@ def _configuration_comparison_eligible(
     observation_fingerprint: str,
     deployment_fingerprint: str,
 ) -> bool:
-    if event["version"] not in {3, 4}:
+    if event["version"] not in {3, 4, 5}:
         return False
     event_values = (
         event["algorithm"],
@@ -348,16 +361,10 @@ def query_tuning_experience(
     _reject_symlink_components(root, label="history root")
     if not root.is_dir():
         raise ExperienceQueryError("history root must be an existing directory")
-    expected_current_parent = (
-        root / task / run_identity["run_id"] / "evidence" / "source"
-    )
-    if effective_config_path.parent != expected_current_parent or not re.fullmatch(
-        r"effective-config-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
-        effective_config_path.name,
-    ):
-        raise ExperienceQueryError(
-            "current effective config must be a direct source artifact for this run"
-        )
+    try:
+        require_source_path(effective_config_path, root / task / run_identity["run_id"], "config")
+    except ValueError as exc:
+        raise ExperienceQueryError(str(exc)) from exc
     try:
         current_config, current_config_source = load_and_validate_effective_config(
             effective_config_path,

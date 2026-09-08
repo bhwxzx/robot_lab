@@ -5,410 +5,105 @@ description: Assist a human operator with IsaacLab parameter tuning by assessing
 
 # IsaacLab Training Advisor
 
-Act as a human-in-the-loop training advisor. The user owns training commands,
-parameter edits, stop decisions, checkpoint selection, deployment, and the
-decision to archive. Collect evidence, explain tradeoffs, and recommend the next
-bounded action. Never turn a recommendation into an automatic training action.
+Help the operator assess one live or completed training run, evaluate bounded
+policy behavior, compare checkpoints, export a selected policy, and learn from
+feedback. Training decisions and parameter edits remain with the user.
 
-Read [references/human-guided-training-advisor.md](references/human-guided-training-advisor.md)
-for the complete evidence, evaluation, archive, feedback, and experience-record
-schemas.
-Read [references/assessment-criteria-contract.md](references/assessment-criteria-contract.md)
-before drafting, validating, approving, or applying assessment criteria.
-Read [references/evidence-layout.md](references/evidence-layout.md) before
-creating criteria, health, summary, assessment, or Play evidence files.
-Read [references/run-identity.md](references/run-identity.md) before recording
-host, Git source, training-command, configuration, or scenario identity.
-Read [references/effective-training-config.md](references/effective-training-config.md)
-before capturing or interpreting the effective reward, environment, or agent
-configuration dumped for one training run.
-Read [references/experience-query.md](references/experience-query.md) before
-using prior tuning records to support a parameter suggestion.
-Read [references/policy-export.md](references/policy-export.md) before recording
-a user checkpoint selection, exporting JIT/ONNX, validating an export receipt,
-or preparing an archive manifest.
+## Route the task
 
-## Scope
+Read only the references needed for the current action:
 
-This skill may:
+| Task | Read before acting |
+| --- | --- |
+| Establish or reuse run provenance | [run-identity.md](references/run-identity.md), [effective-training-config.md](references/effective-training-config.md) |
+| Plan or summarize evaluations | [evidence-layout.md](references/evidence-layout.md), [human-guided-training-advisor.md](references/human-guided-training-advisor.md) |
+| Monitor training or judge convergence | [human-guided-training-advisor.md](references/human-guided-training-advisor.md), [assessment-criteria-contract.md](references/assessment-criteria-contract.md) |
+| Select, export, archive or replace a policy | [policy-export.md](references/policy-export.md) |
+| Interpret historical feedback or propose parameters | [experience-query.md](references/experience-query.md) |
 
-- inspect a running or completed IsaacLab training run;
-- summarize short-, medium-, and long-window metric trends;
-- run a short Native Play evaluation while training when the user allows it;
-- collect bounded robot telemetry and motion-risk metrics;
-- recommend continue, recheck, consider stopping, or stop-invalid;
-- assess convergence after training;
-- shortlist and compare checkpoints from one run;
-- export the user-selected checkpoint to JIT and ONNX;
-- copy an approved artifact pair into `policy_storage` with a description;
-- analyze Sim2Sim or Sim2Real feedback and suggest the next parameter change;
-- record each run, decision, result, and lesson under `learnings/policy_tuning/`.
+Resolve the most specific profile in `references/algorithm-profiles.json`.
+A generic profile may parse progress but cannot supply missing algorithm-specific
+observation, normalization, history, reset or deployment contracts.
+Use `conda run -n isaacsim-5.1` for IsaacLab/RSL-RL and validation commands.
 
-This skill does not autonomously:
+## Preserve identity and evidence
 
-- start, stop, resume, restart, or signal training;
-- edit training parameters, rewards, environments, algorithms, or deployment;
-- generate or execute trial campaigns;
-- run multi-seed training, adaptive search, multi-fidelity training, or remote
-  Git-mailbox coordination;
-- select a final checkpoint without showing the evidence to the user;
-- deploy to hardware, qualify hardware readiness, commit, or push any Git repo.
+- Verify the actual task/run, backend, algorithm, runner, seed, log/checkpoint
+  paths, branch/HEAD, dirty relevant source, process and GPU before acting.
+- Reuse a previously user-chosen host ID and previously supplied exact argv;
+  do not ask again when the session already establishes them. Never reconstruct
+  missing exact argv from configuration guesses. Preserve ordered Hydra overrides.
+- Capture effective `params/env.yaml` and `params/agent.yaml` before interpreting
+  parameters. Logs, TensorBoard and W&B are activity/metric evidence.
+- For new evaluation batches use reusable context v2 and effective config v2.
+  Store identical verified content once; changed context/source gets a new hash.
+  Each result binds context, config and its own scenario/evaluator-source evidence.
+- Keep old evidence in place. Read legacy formats through their validators.
+  Never weaken hashes, source scope or required telemetry for compatibility.
 
-## Establish the run identity
+## Evaluate a bounded question
 
-Before interpreting a run, verify current state rather than reusing an old
-conversation summary:
+Use `scripts/run_evaluation_batch.py` for a finite list of explicitly supplied
+Native cases. The operator's authorized question defines the cases and budget;
+the runner never generates cases or launches training. It requires an idle GPU,
+executes cases sequentially, retains one console log per attempt, publishes
+lossless `telemetry.json.gz`, and seals one `manifest.json` and one `report.md`.
+One batch creates one `evaluation_batch` event. Retries use new batch/attempt IDs.
+Use `scripts/summarize_evaluation_batch.py` to group already completed evaluations
+without moving or rewriting them. Read the run's `index.md` first; it is mutable
+navigation, never hash-bound evidence. Finished reports and manifests are immutable.
 
-- repository root, branch, HEAD, and dirty files;
-- exact task, backend, algorithm, runner, seed, command, run directory, log,
-  TensorBoard source, checkpoint directory, PID, and GPU;
-- effective parameter values and the changes from the previous run;
-- observation, history, normalization, Play, export, and deployment tensor
-  contracts for the selected algorithm.
+Start video work with a short Native robot-in-frame smoke test. A terrain-only
+video is not motion evidence. Only generate plots when they answer the question.
+For turns, distinguish body yaw-rate tracking from accumulated world heading;
+state averaging windows, resets and command transitions. One seed cannot prove a
+universal speed threshold. Missing contact telemetry cannot establish foot contact.
 
-Resolve the most specific entry in `references/algorithm-profiles.json`.
-Generic profiles may parse progress, but any parameter or deployment advice
-must state the missing algorithm-specific evidence.
+For training overlap, use the existing single-evaluation route with explicit
+session authorization, Native only, normally one environment, at most 2,000 steps,
+and no video. Record pre/post training progress and throughput. Stop only the
+evaluation if it interferes; never restart or signal training automatically.
 
-Use `conda run -n isaacsim-5.1` for IsaacLab and RSL-RL commands.
+Require bundle validation before using a result. `result.json` is published last;
+partial work files are not completed evaluations. Inspect `telemetry_status`,
+`missing_required_signals`, `signal_status` and `metric_availability`. AMP-ROA needs
+complete required telemetry for complete assessment or Pareto eligibility.
+Missing signals are unknown, never zero. Simulation evidence is not hardware readiness.
 
-Capture run identity independently on each host with
-`scripts/capture_run_identity.py`. Require a user-chosen `host_id`, exact argv
-and ordered Hydra overrides, every relevant config file, and the exact
-evaluation scenario contract. For dirty relevant source, require a tracked
-diff SHA-256 or controlled patch evidence. Treat version-1 and version-2
-experience events as unknown history; version 3 may prove context compatibility
-but not outcome completeness. Use version 4 with a complete `run_identity`,
-verified effective-config reference, and explicit evidence availability for
-every new event.
-Never turn identity capture into Git synchronization or a cross-host state
-machine.
+## Assess and advise
 
-For every RSL-RL run handled by this advisor, capture the effective
-`params/env.yaml` and `params/agent.yaml` after the training entry point writes
-them and before interpreting parameters or proposing a change. Use
-`scripts/capture_effective_training_config.py` with the validated run identity,
-the exact absolute run log directory, and the new `EFFECTIVE_CONFIG_PATH` from
-the evidence layout. Treat its reward, environment, agent, and combined
-fingerprints as configuration provenance. Logs, TensorBoard, and W&B remain
-metric or activity evidence; never use them to replace missing effective
-configuration evidence.
+Training health needs two identity-compatible observations and monotonic log or
+TensorBoard steps. GPU utilization and file timestamps alone cannot prove progress.
+Use the health and assessment scripts described in the advisor reference.
+Missing, unapproved or scope/hash-invalid criteria force `insufficient_evidence`
+and `indeterminate`; never equate reward, elapsed training or normal completion
+with convergence. Never invent acceptance thresholds.
 
-## Assess a running training process
+Compare checkpoints under matching scenarios, duration, seed, environment count
+and approved criteria. Show alternatives and uncertainty; export only the user's
+selected checkpoint. Require Native/JIT/ONNX parity at multiple times including
+before and after reset. Preserve AMP-ROA time-major history, current-frame-only
+normalization and actor input `[current_obs, code_vel, hist_latent]`.
 
-Collect process health and parse the latest bounded log window:
+For feedback, first check export/tensor/reset contracts, runtime differences and
+physical timing/calibration before proposing training changes. State the current
+value, proposed change, expected effect, counter-metric, risk and compatible
+historical evidence. Keep `direct_parameter_change_supported` false.
 
-```bash
-# Prepare the first observation. The helper creates directories, not evidence.
-eval "$(
-  python3 \
-    .agents/skills/monitor-tune-isaaclab-training/scripts/prepare_evidence_layout.py \
-    --task "$TASK" --run-id "$RUN_ID" --snapshot-id snapshot-001 \
-    --format shell
-)"
-first_health_path="$HEALTH_PATH"
+## Authorization and final response
 
-# First observation: record a baseline. It cannot prove healthy progress.
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/collect_training_health.py \
-  --profile-id "$PROFILE_ID" --log "$ABSOLUTE_LOG" \
-  --tensorboard "$ABSOLUTE_EVENT_OR_RUN_DIRECTORY" \
-  --stale-after-seconds 1200 --pid "$PID" \
-  --expected-process-pattern "$TRAIN_ENTRYPOINT" --gpu-index 0 \
-  --output "$first_health_path"
+Do not start/stop/resume training, edit parameters, run adaptive campaigns, deploy,
+install packages, delete user files, or commit/push repositories without applicable
+user authorization. Preserve unrelated dirty files. Authorization already supplied
+in the session is sufficient; ask only for a missing decision.
 
-# Prepare a distinct later observation without touching the first snapshot.
-eval "$(
-  python3 \
-    .agents/skills/monitor-tune-isaaclab-training/scripts/prepare_evidence_layout.py \
-    --task "$TASK" --run-id "$RUN_ID" --snapshot-id snapshot-002 \
-    --evaluation-id eval-001 --format shell
-)"
-
-# Later observation: compare the same run with the saved baseline.
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/collect_training_health.py \
-  --profile-id "$PROFILE_ID" --log "$ABSOLUTE_LOG" \
-  --tensorboard "$ABSOLUTE_EVENT_OR_RUN_DIRECTORY" \
-  --stale-after-seconds 1200 --pid "$PID" \
-  --expected-process-pattern "$TRAIN_ENTRYPOINT" --gpu-index 0 \
-  --previous-health "$first_health_path" --output "$HEALTH_PATH"
-
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/summarize_training_log.py \
-  "$ABSOLUTE_LOG" --profile-id "$PROFILE_ID" --last 200 \
-  --output "$SUMMARY_PATH"
-
-# Create a new criteria draft at "$CRITERIA_PATH" before this command.
-# Validate once to obtain the contract hash; after user approval, add the
-# approval receipt and run the same validator again before assessment.
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/validate_assessment_criteria.py \
-  "$CRITERIA_PATH" \
-  --task "$TASK" --run-id "$RUN_ID" --backend "$BACKEND" \
-  --profile-id "$PROFILE_ID" --algorithm "$ALGORITHM" --runner "$RUNNER"
-
-conda run -n isaacsim-5.1 python \
-  .agents/skills/monitor-tune-isaaclab-training/scripts/assess_training_run.py \
-  "$SUMMARY_PATH" --health "$HEALTH_PATH" --criteria "$CRITERIA_PATH" \
-  --task "$TASK" --run-id "$RUN_ID" --backend "$BACKEND" \
-  --profile-id "$PROFILE_ID" --algorithm "$ALGORITHM" --runner "$RUNNER" \
-  --output "$ASSESSMENT_PATH"
-```
-
-Start criteria from `assets/assessment-criteria-template.json`; it is an
-unapproved, numberless draft. Fill the exact run scope and task-specific
-contract, show the entire contract and its validator-reported SHA-256 to the
-user, and wait for explicit approval. Only then record the approval timestamp
-and approved contract hash. Never infer approval or refresh the hash after a
-contract edit.
-
-Require two identity-compatible observations before calling a run `healthy`.
-Only a monotonic log or TensorBoard step increase confirms healthy progress.
-The first valid observation is `observing`; an unchanged comparison is
-`suspect` until the stale duration is reached while the expected process remains
-alive, which confirms `stalled` regardless of GPU utilization. Record
-`activity_without_progress` when GPU activity remains high during that confirmed
-stall. Only a confirmed low-GPU stall is a recovery candidate, and that marker
-never authorizes a process action. Treat step regression or snapshot identity
-mismatch as `unknown`. Process, GPU, checkpoint, TensorBoard wall time, and W&B
-file activity are auxiliary only.
-
-The assessment status is advisory:
-
-- `continue`: evidence is healthy and meaningful metrics are improving;
-- `continue_and_recheck`: progress is still `observing` or `suspect`, or a
-  healthy run has incomplete or mixed trend evidence;
-- `consider_stop_plateau`: improvement is below the approved plateau tolerance;
-- `recommend_stop_invalid`: non-finite metrics, confirmed stall, or an approved
-  hard constraint failed;
-- `insufficient_evidence`: progress is `unknown` or `stopped`, or the run or
-  metric meaning cannot be resolved.
-
-Missing, draft, hash-invalid, or scope-mismatched criteria force
-`insufficient_evidence` and `indeterminate`; they cannot produce a strong
-continue, stop, plateau, or convergence conclusion. Safety alerts remain
-visible for operator attention. The assessment records the absolute criteria
-path, full-file SHA-256, contract SHA-256, approval time, and exact scope.
-
-Never signal the process from an assessment. If the user asks to terminate a
-run, re-resolve the exact process group and follow the repository's bounded
-process-removal rules.
-
-## Run a lightweight evaluation during training
-
-A short Native evaluation may overlap training when the user permits it. This
-is a resource-budgeted exception, not permission for a full Native/JIT/ONNX
-matrix.
-
-Before launch:
-
-1. confirm the exact training PID and that progress is currently advancing;
-2. select a regular checkpoint whose size and mtime are stable and record its
-   SHA-256;
-3. inspect GPU free memory and use the smallest useful budget;
-4. default to one environment, at most 2,000 steps, Native-only, and no video;
-5. record the pre-evaluation training step and throughput.
-
-Run `evaluate_policy.py` with the checkpoint as both the Native checkpoint and
-Native artifact. Pass `--allow_training_overlap`. Add `--no_video` for the
-lowest overhead and `--telemetry_path` when robot time-series data is needed.
-Use paths returned by `prepare_evidence_layout.py`, and bind the attempt with
-`--evaluation_id`, `--run_identity_path`, and the exact
-`--run_identity_file_sha256`. The evaluator rejects an existing target, a
-non-layout destination, a symlinked path component, an input hash mismatch, or
-a scenario that differs from the bound run identity before Isaac Sim starts.
-It claims the evaluation directory exclusively, writes only inside its private
-attempt directory, and publishes video and telemetry before `result.json`.
-Treat only a version-2 `result.json` that passes bundle revalidation as a
-completed evaluation; never reuse an evaluation ID after any attempt.
-
-After evaluation, recheck training progress, throughput, process state, and GPU
-errors. If evaluation interferes, stop only the evaluation process and report
-the interference. Never stop or restart training automatically.
-
-The evaluator records reward, termination reasons, tracking RMSE, tilt, action
-rate, action magnitude, joint velocity, applied torque, action parity, and
-bounded env-0 telemetry. A video is evidence only after confirming the robot
-remains in frame.
-
-Read `telemetry_status`, `missing_required_signals`, every entry in
-`signal_status`, and `metric_availability` before interpreting Play metrics.
-Never replace a missing signal with zero. For `OnPolicyRunnerAmpROA`, require
-`telemetry_status: complete` before calling Play evidence complete, declaring
-convergence, or recommending one checkpoint from Pareto comparison. Partial or
-unavailable telemetry lowers evidence to incomplete; it does not itself prove
-policy failure. Simulation telemetry never establishes hardware readiness.
-
-## Judge convergence
-
-Do not equate the highest reward, a long run, or normal termination with
-convergence. Compare at least two adjacent windows of the user-approved metrics
-and combine:
-
-- objective direction and relative improvement;
-- constraint failures and non-finite values;
-- episode length and termination composition;
-- task tracking errors and motion-risk metrics;
-- algorithm-specific losses and stability;
-- checkpoint Play metrics and visual evidence.
-
-For completed runs, report one of:
-
-- `converged`;
-- `plateaued_with_defects`;
-- `not_converged`;
-- `indeterminate`.
-
-`converged` requires a completed run, sufficient windows, no hard failure, and
-acceptable Play evidence. A plateau with unacceptable tracking, contacts,
-oscillation, or action/torque behavior is `plateaued_with_defects`.
-
-## Compare checkpoints
-
-Inventory `model_N.pt` files with
-`scripts/select_checkpoint_candidates.py`. Never assume the newest or the
-highest-reward checkpoint is best.
-
-Shortlist a small set representing the best available training metrics, the
-plateau region, and the final checkpoint. Evaluate all shortlisted checkpoints
-with the same task, command schedule, scenario, duration, seed, environment
-count, and metric criteria. Use multi-objective Pareto comparison and visual
-notes. Treat an AMP-ROA result with incomplete required telemetry as evaluation
-still required, not as a Pareto-eligible result. Present the recommended
-checkpoint, alternatives, rejected candidates, and uncertainty. Export only
-after the user selects one.
-
-## Export and archive
-
-Before export, inspect training, Play, export, observation history,
-normalization, state reset, and deployment input ordering end to end. For ROA
-and AMP-ROA preserve flattened time-major history, normalization of the current
-frame only, and actor input `[current_obs, code_vel, hist_latent]`.
-
-Use `scripts/rsl_rl_export_policy.py` to create JIT and ONNX and require finite
-Native/JIT/ONNX action parity. First allocate fresh selection/export evidence
-paths and, only after the user chooses a checkpoint, create an immutable
-selection receipt with `scripts/policy_export_evidence.py record-selection`.
-Bind the exact run identity, effective config, selection report, closed-loop
-evaluation bundles, checkpoint filename/iteration/hash, and reviewed tensor
-contract. The exporter must publish exclusively from an owned attempt and write
-its validated version-4 receipt last. For a single-robot deployment, require the
-explicit `static_batch_1_simplified` ONNX profile: fixed batch 1, stable
-`obs`/`actions` names, opset 17, successful `onnxsim` validation, and a reloaded
-model-contract check. Use `dynamic_batch` only when the deployment runtime
-actually requires multi-item batches. Require bounded multi-time parity with an
-explicit pre/post-reset boundary; the static profile runs those samples one row
-at a time without reducing parity coverage. Legacy completed version-3 receipts
-remain validation-compatible. Export is not deployment qualification.
-
-Archive only after a separate user confirmation. Inspect `policy_storage`
-read-only first and show the exact version-2 manifest and destination before
-requesting that confirmation. After confirmation and immediately before any
-archive write:
-
-1. re-resolve the exact storage Git root, upstream, HEAD, worktree, and index;
-2. require a clean worktree and index, including no untracked paths;
-3. run `git -C "$STORAGE_ROOT" pull --ff-only`;
-4. re-resolve HEAD, worktree, and index, then repeat the destination-collision
-   and duplicate JIT/ONNX-pair checks against the updated checkout;
-5. stop without archiving if the upstream is missing, the pull fails or cannot
-   fast-forward, the repository is dirty, or a target or duplicate appears.
-
-Never stash, merge, rebase, reset, checkout, clean, or resolve storage state
-automatically. Once the post-pull checks pass, use
-`scripts/archive_advised_policy.py` with the approved manifest. Revalidate the
-export receipt, JIT/ONNX hashes, selection, and all closed-loop evaluation
-bundles before the archive write. Legacy path-only manifests are ineligible.
-The archiver creates one atomic directory containing:
-
-- `policy.pt`;
-- `policy.onnx`;
-- `策略说明.txt`;
-- `archive_manifest.json`.
-
-Treat replacement of an existing four-file archive as an exceptional,
-destructive operation. First inventory the exact destination and SHA-256 of all
-four files, explain that the whole bundle must be replaced, and obtain separate
-explicit deletion/replacement approval. Add a `replace_existing` contract that
-binds the destination and all four old hashes. After the normal pre-archive
-pull and rechecks, require those hashes and the exact four-file set to remain
-unchanged. The archiver must retain default collision rejection, construct the
-complete new bundle privately, atomically exchange the two directories on the
-same filesystem, and remove only the now-displaced authorized old bundle. Stop
-on any target, file-set, hash, Git-state, or exchange mismatch.
-
-Never stage, commit, push, or otherwise mutate the storage repository unless
-the user separately asks. The fast-forward-only pre-archive pull above is the
-single standing exception. Every description must say:
+Before archiving, follow the exact manifest, clean-storage, fast-forward pull,
+collision and duplicate checks in `policy-export.md`. Replacement requires separate
+approval binding all four existing hashes. Archive authorization does not authorize
+Git commit/push. Every policy description must state:
 
 > 仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。
 
-## Learn from Sim2Sim and Sim2Real feedback
-
-Accept subjective observations, video, or telemetry. Bind the feedback to the
-exact checkpoint or archived artifact when possible. Classify the leading
-cause before suggesting a parameter:
-
-1. export, tensor, history, normalization, or reset mismatch;
-2. Sim2Sim runtime or deployment-configuration mismatch;
-3. real-robot timing, calibration, communication, actuator, or mechanism;
-4. insufficient evidence;
-5. training coverage, reward, or parameter candidate.
-
-Safety events stop further physical testing and trigger diagnosis. Subjective
-feedback remains useful but carries low confidence. Never turn one observation
-directly into an automatic reward edit.
-
-For a training candidate, show the exact current parameter, proposed change or
-range, expected effect, counter-metric, risk, supporting current evidence, and
-compatible historical evidence. The user chooses whether to edit and train.
-
-Before calling history compatible, run `scripts/query_tuning_experience.py`
-with the validated current run identity, effective-config artifact and
-whole-file SHA-256, plus the exact observation and deployment fingerprints.
-Let the tool derive task, algorithm, host, and reward fingerprint from those
-validated artifacts. Treat version-1, version-2, explicitly unknown,
-conflicting, invalid, or incomplete-query results as unable to support a
-parameter change. Read `context_compatible` and
-`outcome_evidence_complete` separately. Only `candidate_events` has both, and
-even those events remain advisory. Never use the query to select a parameter,
-generate an experiment, start training, or coordinate hosts.
-
-## Record tuning experience
-
-Use `scripts/record_tuning_experience.py` to append immutable events under
-`learnings/policy_tuning/<task>/<run-id>/`. Record:
-
-- run identity, command, source state, algorithm, seed, and effective params;
-- parameter hypothesis and expected effect;
-- assessment snapshots and continue/stop decisions;
-- checkpoint evaluations and final user selection;
-- export and archive hashes and paths;
-- Sim2Sim/Sim2Real feedback;
-- observed effect, lesson, next suggestion, and confidence.
-
-For every new event, use version 4, embed the complete host-local
-`run_identity`, and reference the matching effective-config artifact by
-absolute path, whole-file SHA-256, effective-config fingerprint, and reward
-fingerprint. Require the event task, run ID, algorithm, host, identity hash,
-and `context.reward_fingerprint` to match the recomputed artifact. Declare
-type-specific event evidence and an available or explicitly unavailable
-outcome as documented in `references/experience-query.md`. A recommendation is
-never an observed result; selection, export, and archive are lifecycle evidence
-only. Keep `direct_parameter_change_supported` false.
-
-Keep raw artifacts under the run's `evidence/` directory. Store immutable
-timestamped event JSON at the run root, reference evidence by absolute path and
-SHA-256, and never overwrite referenced evidence. Use a new snapshot or
-evaluation ID for every later observation.
-
-Reuse an earlier lesson only when task, algorithm, observation, reward, and
-deployment context are compatible. State incompatibilities and uncertainty.
-
-## Preserve and report
-
-Do not install packages or delete logs, checkpoints, policies, or user changes.
-Do not stage unrelated dirty files. Report evidence paths, exact metrics,
-window definitions, decision status, confidence, recommended next check or
-parameter, and which action still requires user approval.
+Report the finding, limitations, next bounded action and links to the index/report.
+Do not create a second prose report, per-case summary files, or a new event merely
+to restate the same batch. Preserve raw evidence; a later fact belongs in a new batch.

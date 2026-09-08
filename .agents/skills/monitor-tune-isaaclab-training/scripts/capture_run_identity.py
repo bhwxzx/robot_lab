@@ -253,8 +253,8 @@ def _inspect_config_state(
 
 
 def validate_run_identity(identity: Any) -> None:
-    if not isinstance(identity, dict) or identity.get("version") != 1:
-        raise RunIdentityError("run_identity.version must be 1")
+    if not isinstance(identity, dict) or identity.get("version") not in {1, 2}:
+        raise RunIdentityError("run_identity.version must be 1 or 2")
     for field in ("task", "run_id", "host_id", "backend", "algorithm", "runner"):
         _validate_identifier(f"run_identity.{field}", identity.get(field))
     seed = identity.get("seed")
@@ -359,15 +359,19 @@ def validate_run_identity(identity: Any) -> None:
     if config_paths != sorted(set(config_paths)):
         raise RunIdentityError("config file paths must be sorted and unique")
 
-    evaluation = identity.get("evaluation_scenario")
-    if not isinstance(evaluation, dict):
-        raise RunIdentityError("run_identity.evaluation_scenario must be an object")
-    contract = evaluation.get("contract")
-    validate_scenario_contract(contract)
-    scenario_hash = evaluation.get("sha256")
-    expected_scenario_hash = _sha256_bytes(_canonical_json(contract).encode("utf-8"))
-    if scenario_hash != expected_scenario_hash:
-        raise RunIdentityError("run_identity evaluation scenario SHA-256 mismatch")
+    if identity["version"] == 1:
+        evaluation = identity.get("evaluation_scenario")
+        if not isinstance(evaluation, dict):
+            raise RunIdentityError("run_identity.evaluation_scenario must be an object")
+        contract = evaluation.get("contract")
+        validate_scenario_contract(contract)
+        scenario_hash = evaluation.get("sha256")
+        expected_scenario_hash = _sha256_bytes(_canonical_json(contract).encode("utf-8"))
+        if scenario_hash != expected_scenario_hash:
+            raise RunIdentityError("run_identity evaluation scenario SHA-256 mismatch")
+
+    elif "evaluation_scenario" in identity:
+        raise RunIdentityError("training context must not embed a scenario")
 
     identity_hash = identity.get("identity_sha256")
     payload = {key: value for key, value in identity.items() if key != "identity_sha256"}
@@ -389,7 +393,7 @@ def capture_run_identity(
     training_command: list[str],
     hydra_overrides: list[str],
     config_paths: list[str],
-    scenario_contract: dict[str, Any],
+    scenario_contract: dict[str, Any] | None = None,
     patch_evidence_path: Path | None = None,
 ) -> dict[str, Any]:
     """Capture a host-local identity using only read-only Git queries."""
@@ -409,7 +413,8 @@ def capture_run_identity(
     command_iterator = iter(training_command)
     if not all(any(token == override for token in command_iterator) for override in hydra_overrides):
         raise RunIdentityError("Hydra overrides must appear in training command order")
-    validate_scenario_contract(scenario_contract)
+    if scenario_contract is not None:
+        validate_scenario_contract(scenario_contract)
     if not config_paths:
         raise RunIdentityError("at least one --config is required")
 
@@ -597,6 +602,9 @@ def capture_run_identity(
             "sha256": scenario_hash,
         },
     }
+    if scenario_contract is None:
+        identity["version"] = 2
+        del identity["evaluation_scenario"]
     identity["identity_sha256"] = _sha256_bytes(
         _canonical_json(identity).encode("utf-8")
     )
@@ -638,10 +646,10 @@ def main() -> int:
     parser.add_argument("--training-command-json", required=True)
     parser.add_argument("--hydra-overrides-json", default="[]")
     parser.add_argument("--config", action="append", default=[])
-    parser.add_argument("--scenario-contract-json", required=True)
+    parser.add_argument("--scenario-contract-json", help="Legacy v1 only; omit for reusable v2 context")
     parser.add_argument("--patch-evidence")
     parser.add_argument("--repo-root", default=str(REPO_ROOT))
-    parser.add_argument("--output", required=True)
+    parser.add_argument("--output", help="New legacy identity path; v2 uses content-addressed storage")
     args = parser.parse_args()
     training_command = _parse_json_argument(
         parser,
@@ -657,7 +665,7 @@ def main() -> int:
         parser,
         "--scenario-contract-json",
         args.scenario_contract_json,
-    )
+    ) if args.scenario_contract_json is not None else None
     try:
         identity = capture_run_identity(
             Path(args.repo_root),
@@ -683,7 +691,15 @@ def main() -> int:
             ensure_ascii=False,
             allow_nan=False,
         ) + "\n"
-        write_new_absolute_output(Path(args.output), encoded)
+        if identity["version"] == 2:
+            from evidence_provenance import store_object, run_root
+            if args.output:
+                raise RunIdentityError("v2 context chooses its content-addressed output; omit --output")
+            print(json.dumps(store_object(run_root(identity), "context", identity)))
+        else:
+            if not args.output:
+                raise RunIdentityError("legacy identity requires --output")
+            write_new_absolute_output(Path(args.output), encoded)
     except (OSError, RunIdentityError) as exc:
         parser.error(str(exc))
     return 0

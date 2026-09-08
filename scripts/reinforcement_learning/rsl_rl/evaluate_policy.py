@@ -72,6 +72,9 @@ parser.add_argument(
     default="[3.0, 3.0, 2.0]",
     help="World-frame camera eye offset from the selected robot",
 )
+parser.add_argument("--batch_id")
+parser.add_argument("--effective_config_reference_json")
+parser.add_argument("--scenario_evidence_reference_json")
 parser.add_argument("--telemetry_path")
 parser.add_argument("--telemetry_env_index", type=int, default=0)
 parser.add_argument("--telemetry_stride", type=int, default=1)
@@ -176,6 +179,9 @@ try:
         run_identity_path=Path(args_cli.run_identity_path),
         run_identity_file_sha256=args_cli.run_identity_file_sha256,
         scenario_contract=scenario_contract,
+        batch_id=args_cli.batch_id,
+        effective_config=json.loads(args_cli.effective_config_reference_json) if args_cli.effective_config_reference_json else None,
+        scenario_evidence=json.loads(args_cli.scenario_evidence_reference_json) if args_cli.scenario_evidence_reference_json else None,
     )
     _assert_gpu_idle(args_cli.device)
     evaluation_publisher = EvaluationPublisher(evaluation_plan)
@@ -1197,10 +1203,14 @@ def _evaluate(
         },
         "resource_mode": resource_mode,
     }
+    if evaluation_plan.batch_id is not None:
+        evaluation_binding["batch_id"] = evaluation_plan.batch_id
+        inputs["effective_config"] = evaluation_plan.effective_config
+        inputs["scenario_evidence"] = evaluation_plan.scenario_evidence
     telemetry = None
     if telemetry_path is not None:
         telemetry = {
-            "version": 3,
+            "version": 4 if evaluation_plan.batch_id else 3,
             "evaluation": evaluation_binding,
             "inputs": inputs,
             "environment_index": args_cli.telemetry_env_index,
@@ -1213,7 +1223,8 @@ def _evaluate(
             "samples": telemetry_samples,
         }
     result = {
-        "version": 2,
+        "version": 3 if evaluation_plan.batch_id else 2,
+        "layout_version": 2 if evaluation_plan.batch_id else 1,
         "run_id": args_cli.run_id,
         "status": "completed",
         "evaluation": evaluation_binding,

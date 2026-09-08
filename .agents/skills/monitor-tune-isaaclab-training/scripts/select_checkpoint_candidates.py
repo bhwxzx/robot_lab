@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import math
+import sys
 import re
 import time
 from pathlib import Path
@@ -39,6 +40,13 @@ def _load_object(path: Path, label: str) -> dict[str, Any]:
         ) from exc
     if not isinstance(value, dict):
         raise SelectionError(f"{label} must be a JSON object")
+    if label == "evaluation result" and value.get("version") in {2, 3}:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "scripts/reinforcement_learning/rsl_rl"))
+        from policy_evaluation_evidence import validate_evaluation_bundle
+        try:
+            validate_evaluation_bundle(path)
+        except (ValueError, OSError) as exc:
+            raise SelectionError(str(exc)) from exc
     return value
 
 

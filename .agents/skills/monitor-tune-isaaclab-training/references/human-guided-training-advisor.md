@@ -20,24 +20,27 @@ training evidence.
 
 ## Evidence paths and immutability
 
-Prepare every output with `prepare_evidence_layout.py` and follow
-[`evidence-layout.md`](evidence-layout.md). It creates the deterministic
-`learnings/policy_tuning/<task>/<run-id>/evidence/` directories and returns new
-absolute criteria, health, summary, assessment, Play result, telemetry, and
-video paths. Use a new snapshot ID for each observation and a new evaluation
-ID for each Play attempt. Never overwrite referenced raw evidence.
+Follow [evidence-layout.md](evidence-layout.md). New evaluations use one batch per
+bounded question: one immutable manifest/report, raw result + telemetry + optional
+video and one console log per attempt. Summarize six related turning cases in one
+comparison report and one v5 batch event, without six prose reports or duplicate
+config dumps. Rebuild only `index.md`; add later facts under a new batch ID.
+Existing raw evidence and v1-v4 events remain at their original paths.
 
-Keep timestamped experience events at the run root, outside `evidence/`.
-Events reference evidence with absolute paths and SHA-256 values; later facts
-belong in new evidence and a newly appended event.
+A report states checkpoint/context/config identity; exact scenario overrides and
+command schedule; scenario comparison metrics; selected plots/videos; limitations;
+and recommendations or missing authorization. Include failed/not-run attempts.
+For turning diagnosis use both body yaw rate and accumulated world heading with
+explicit windows and resets. Avoid treating a transient spike or one seed as a
+universal failure/threshold. Do not infer contact without measured contact signals.
 
 ## Host-local source identity
 
 Follow [`run-identity.md`](run-identity.md) and run
 `capture_run_identity.py` independently on each host. Record a user-controlled
 host ID, local branch and full HEAD, exact training argv, ordered Hydra
-overrides, relevant configuration hashes, and a canonical evaluator scenario
-fingerprint. A dirty relevant source requires exactly one tracked diff hash or
+overrides, relevant training configuration hashes. For new batches, store the canonical evaluator scenario
+and its source snapshot separately; legacy v1 retains its scenario fingerprint. A dirty relevant source requires exactly one tracked diff hash or
 controlled patch evidence. These records provide provenance only; they never
 authorize remote Git writes or coordinate work between hosts.
 

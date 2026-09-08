@@ -53,8 +53,11 @@ def prepare_evidence_layout(
     evaluation_id: str | None = None,
     selection_id: str | None = None,
     export_id: str | None = None,
+    batch_id: str | None = None,
 ) -> dict[str, Any]:
     """Create safe evidence directories and return new absolute artifact paths."""
+    if batch_id is not None:
+        return prepare_batch_layout(tuning_root, task=task, run_id=run_id, batch_id=batch_id, evaluation_id=evaluation_id)
     for name, value in (
         ("task", task),
         ("run-id", run_id),
@@ -159,6 +162,36 @@ def prepare_evidence_layout(
     }
 
 
+def prepare_batch_layout(tuning_root: Path, *, task: str, run_id: str, batch_id: str, evaluation_id: str | None = None) -> dict:
+    from evidence_provenance import identifier, safe_path
+    for value in (task, run_id, batch_id):
+        identifier(value)
+    safe_path(tuning_root)
+    run = tuning_root / task / run_id
+    batch = run / "evaluations" / batch_id
+    safe_path(batch)
+    if (batch / "manifest.json").exists():
+        raise EvidenceLayoutError("batch is sealed; choose a new batch ID")
+    paths = {name: None for name in (
+        "criteria", "health", "source_identity", "effective_config", "source_patch",
+        "summary", "assessment", "play_result", "telemetry", "video", "checkpoint_selection",
+        "export_jit", "export_onnx", "export_receipt",
+    )}
+    if evaluation_id is not None:
+        identifier(evaluation_id)
+        attempt = batch / "raw" / evaluation_id
+        safe_path(attempt)
+        if attempt.exists():
+            raise EvidenceLayoutError("attempt ID already used; allocate a new ID")
+        attempt.mkdir(parents=True)
+        paths.update(play_result=str(attempt / "result.json"), telemetry=str(attempt / "telemetry.json.gz"), video=str(attempt / "video.mp4"))
+    else:
+        batch.mkdir(parents=True, exist_ok=True)
+    return {"version": 2, "task": task, "run_id": run_id, "batch_id": batch_id,
+            "evaluation_id": evaluation_id, "run_root": str(run), "evidence_root": str(batch),
+            "paths": paths, "directories": {"batch": str(batch)}}
+
+
 def _shell_assignments(layout: dict[str, Any]) -> str:
     values = {
         "RUN_ROOT": layout["run_root"],
@@ -195,6 +228,7 @@ def main() -> int:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--snapshot-id", required=True)
     parser.add_argument("--evaluation-id")
+    parser.add_argument("--batch-id", help="Use layout v2; evaluation-id is a unique attempt ID")
     parser.add_argument("--selection-id")
     parser.add_argument("--export-id")
     parser.add_argument("--format", choices=("json", "shell"), default="json")
@@ -208,6 +242,7 @@ def main() -> int:
             evaluation_id=args.evaluation_id,
             selection_id=args.selection_id,
             export_id=args.export_id,
+            batch_id=args.batch_id,
         )
     except EvidenceLayoutError as exc:
         parser.error(str(exc))

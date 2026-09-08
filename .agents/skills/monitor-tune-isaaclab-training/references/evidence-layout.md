@@ -1,6 +1,146 @@
 # Policy-tuning evidence layout
 
-Use one deterministic repository-local tree for raw observations and keep it
+## Default: version 2 evaluation batches
+
+```text
+learnings/policy_tuning/<task>/<run-id>/
+  index.md                         # mutable, regenerable navigation only
+  provenance/
+    context-<file-sha256>.json      # training identity v2, no scenario
+    config-<file-sha256>.json       # effective config v2, no identity hash
+    source-<file-sha256>.json       # exact evaluator source snapshot
+    scenario-<file-sha256>.json     # contract plus source snapshot reference
+  evaluations/<batch-id>/
+    contract.json                  # finite execution input, executed batches only
+    manifest.json                  # sealed cases/outcomes/refs, published last
+    report.md                      # one human report for the question
+    raw/<attempt-id>/
+      result.json                  # completed result v3, layout_version 2
+      telemetry.json.gz            # telemetry v4, gzip mtime=0, full precision
+      video.mp4                    # only if requested
+      console.log                  # one log per attempted case, including failures
+      .attempt-used                # persistent reservation, never reuse this ID
+  events/<timestamp>__<event-id>.json # v5 batch event
+  evidence/                        # existing monitoring and lifecycle producers
+    training/                      # only when training summaries are needed
+    checkpoint_selection/
+    export/
+```
+
+The lifecycle directory names stay compatible with the existing selection/export
+receipt protocols; they accept both provenance schemas through one shared path
+validator. No historical migration, deletion, recompression or rewritten receipts.
+New batch layout is explicit (`layout_version: 2`); result/telemetry/context/config
+versions distinguish contracts. Version-2 results, v1 identities/configs, old events
+and export v3/v4 still require all their original hashes and scope checks.
+
+`index.md` is the only replaceable generated output. Never reference its hash from
+an immutable event. Rebuild it with `summarize_evaluation_batch.py --run-root
+"$RUN_ROOT" --index-only`. Finished batch reports/manifests are immutable. Include
+all completed, failed and not-run cases in one manifest; recommendations and
+optional plot/video links belong in its report. Avoid parallel `summary.json` or
+per-case prose. Training log summaries remain separate machine evidence when needed.
+
+## Capture reusable provenance
+
+Run `capture_run_identity.py` with the confirmed host/argv/config flags described
+in `run-identity.md`, omitting `--scenario-contract-json` and `--output` for context
+v2. It prints `{path, sha256}` for `provenance/context-<hash>.json`. Then run:
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/capture_effective_training_config.py \
+  "$CONTEXT_PATH" --log-dir "$ABSOLUTE_RUN_LOG_DIRECTORY"
+```
+
+The returned config reference names `provenance/config-<hash>.json`. Exact content
+may be reused only after fresh validation. A changed training source or command
+gets a new context; identical effective YAML may still reuse one config. Different
+YAML bytes, scope, resolved runner/seed or semantic fingerprints cannot be merged.
+`evidence_provenance.py` stores full evaluator source bytes once, including approved
+untracked helper changes. Each scenario references this snapshot. Launch preflight
+checks live evaluator hashes; historical reads validate captured content without
+requiring the current checkout to remain at the old revision.
+
+## Execute a finite Native batch
+
+The input JSON contains exactly:
+
+```json
+{
+  "version": 1,
+  "batch_id": "turning-001",
+  "run_identity": {"path": "<absolute context path>", "sha256": "<file sha256>"},
+  "effective_config": {"path": "<absolute config path>", "sha256": "<file sha256>"},
+  "checkpoint": {"path": "<absolute model_N.pt path>", "sha256": "<file sha256>"},
+  "cases": [{
+    "attempt_id": "left-direct-a01",
+    "scenario": {
+      "scenario_id": "left-direct",
+      "scenario_overrides": {},
+      "command_schedule": [{"start_step": 0, "end_step": 249, "command": [0, 0, 0.5]}],
+      "duration_steps": 250, "num_envs": 1, "seed": 42
+    },
+    "video": false,
+    "timeout_seconds": 600
+  }]
+}
+```
+
+This example is a schema illustration, not an approved test budget. Command segments
+are inclusive and must cover the whole duration when supplied. Scenario seed must
+match the run. Maximum safeguards: 32 cases, 64 environments, 100,000 steps per case,
+3,600 seconds per process. Choose a much smaller task-appropriate budget normally.
+The runner accepts no arbitrary shell commands and never adapts cases after failures.
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/run_evaluation_batch.py \
+  "$BATCH_CONTRACT" --validate-only
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/run_evaluation_batch.py \
+  "$BATCH_CONTRACT"
+```
+
+The runner reserves a fresh batch directory, captures the input contract and source,
+then starts only its own evaluation subprocesses. It requires idle GPU and retains
+console logs. A timeout stops only that evaluation process group; an interruption
+marks remaining cases not-run. Hard process loss may leave an unsealed directory;
+inspect its console/contract and use a new batch ID. Never erase an attempt to retry.
+For manual new evaluations allocate with `prepare_evidence_layout.py --batch-id ...
+--evaluation-id ...`; pass the returned result/telemetry/video paths plus
+`--batch_id`, `--effective_config_reference_json`, and
+`--scenario_evidence_reference_json` to the evaluator. The runner normally handles
+those bindings, so prefer it for batches.
+
+Publication retains exclusive claims/private attempts, no-overwrite links, SHA-256
+of the actual compressed telemetry bytes, and `result.json` last. Compression is
+lossless: no stride increase, sample removal or rounding. Consumers revalidate the
+whole bundle and then read either legacy JSON or gzip. Reports do not replace raw
+telemetry or establish approved convergence criteria.
+
+## Group existing evidence without migration
+
+```bash
+conda run -n isaacsim-5.1 python \
+  .agents/skills/monitor-tune-isaaclab-training/scripts/summarize_evaluation_batch.py \
+  --run-root "$RUN_ROOT" --batch-id turning-review-001 \
+  --result "$LEFT_RESULT" --result "$RIGHT_RESULT" \
+  --supporting-evidence "$EXISTING_REPORT" \
+  --note "State observed behavior and limits here"
+```
+
+An adopted batch validates every original result and stores references without
+copying raw files or claiming that missing historical logs exist. Existing per-case
+events remain unchanged; grouping them does not append duplicate experiences. New
+executed batches append exactly one v5 `evaluation_batch` event. Selections, exports
+and archives retain independent lifecycle events. Unknown observation/deployment
+fingerprints remain explicit unknowns, so the automatic batch event cannot silently
+become compatible parameter-change history.
+
+# Legacy layout (v1)
+
+For existing v1 evidence, use its deterministic repository-local tree for raw observations and keep it
 separate from immutable tuning-experience events:
 
 ```text

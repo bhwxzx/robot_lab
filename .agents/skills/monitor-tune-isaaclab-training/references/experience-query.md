@@ -1,5 +1,22 @@
 # Read-only experience query
 
+## Version 5 batch events
+
+New finite batches write one `evaluation_batch` event under `<run>/events/` after
+sealing the manifest. It uses the v4 identity/config/evidence availability contract
+and adds a manifest reference that revalidates every completed case, all failure/log
+records, the finite contract and report hashes. Context v2/config v2 are supported.
+No per-case events are emitted. Adopted summaries of existing cases do not duplicate
+historical events. Selection/export/archive events remain independent.
+
+Query scans both legacy run-root JSON and `events/*.json`, applying the same bounded,
+non-symlink and schema checks. V5 batch events are evidence records, not parameter
+outcomes: `outcome.status` is unavailable and direct parameter changes remain false.
+The automatic event records unknown observation/deployment fingerprints honestly;
+unknown context cannot become compatible history. V1-v4 classifications and actual
+baseline/change/result-window requirements remain unchanged.
+
+
 Use `scripts/query_tuning_experience.py` to find historical tuning events that
 may be relevant to the current run. The query is an inventory and
 compatibility check. It never selects a parameter, generates an experiment,
@@ -47,7 +64,7 @@ Each event must:
 - match the task and run ID encoded by its storage directory;
 - use the immutable filename derived from `recorded_at` and `event_id`.
 
-Every version-3 or version-4 event must also reference one effective-config
+Every version-3, version-4 or version-5 event must also reference one effective-config
 artifact under its own `evidence/source/` directory. For events whose
 algorithm, host, observation, and deployment context match the current query,
 the tool verifies that artifact's path, whole-file SHA-256, run identity,
@@ -59,7 +76,7 @@ rejected rather than classified.
 
 ## Version-4 evidence contract
 
-Write new events as version 4. Versions 1 through 3 remain readable; version 3
+Write lifecycle events as version 4 and evaluation batch events as version 5. Versions 1 through 3 remain readable; version 3
 can prove context compatibility but cannot satisfy the version-4 outcome
 contract.
 
@@ -89,7 +106,7 @@ must never declare an available outcome.
 The result contains `compatible_events`, `conflicting_events`,
 `unknown_events`, and `invalid_events`:
 
-- `compatible`: a version-3 or version-4 event has verified effective-config
+- `compatible`: a version-3, version-4 or version-5 event has verified effective-config
   evidence and its algorithm, host ID, and all three context fingerprints
   exactly match;
 - `conflicting`: at least one known field differs; `classification_reasons`
@@ -103,7 +120,7 @@ Version-1 and version-2 events remain readable but lack the required verified
 effective-config binding, so they are always `unknown`. Never treat
 `unknown == unknown` as a match.
 
-A version-3/4 event with matching algorithm, host, observation, and deployment
+A version-3/4/5 event with matching algorithm, host, observation, and deployment
 context remains comparison-eligible when only the reward fingerprint differs.
 It stays `conflicting`, but its `parameter_diff` shows the verified historical
 configuration as baseline and the current configuration as current. Events
@@ -135,7 +152,7 @@ An evidence reference is not proof that the artifact still exists or is
 available on the current host. Verify the referenced file and hash separately
 before using it.
 
-`effective_config_verification` reports whether a version-3/4 artifact was
+`effective_config_verification` reports whether a version-3/4/5 artifact was
 verified, skipped because its context belongs elsewhere, or unavailable on a
 legacy event. A verified `parameter_diff` is complete and deterministic. It
 contains semantic JSON-Pointer changes plus separate reward-weight and selected
