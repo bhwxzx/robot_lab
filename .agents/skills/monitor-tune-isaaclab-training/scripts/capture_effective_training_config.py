@@ -455,7 +455,7 @@ def capture_effective_config(
 
     for source in (env_source, agent_source):
         source.pop("signature")
-    return {
+    evidence = {
         "version": 1,
         "task": run_identity["task"],
         "run_id": run_identity["run_id"],
@@ -482,6 +482,11 @@ def capture_effective_config(
             "reward": reward_fingerprint,
         },
     }
+
+    if run_identity["version"] == 2:
+        evidence["version"] = 2
+        del evidence["run_identity_sha256"]
+    return evidence
 
 
 def _require_exact_keys(value: Any, expected: set[str], *, label: str) -> dict[str, Any]:
@@ -511,22 +516,26 @@ def validate_effective_config_evidence(
             "reward_terms",
             "reward_weights",
             "run_id",
-            "run_identity_sha256",
             "source_files",
             "task",
             "training_parameters",
             "version",
-        },
+        }
+        | ({"run_identity_sha256"} if evidence.get("version") == 1 else set()),
         label="effective config evidence",
     )
-    if document["version"] != 1:
-        raise EffectiveConfigError("effective config evidence.version must be 1")
+    if document["version"] not in {1, 2}:
+        raise EffectiveConfigError("effective config evidence.version must be 1 or 2")
     expected_scope = {
         "task": run_identity["task"],
         "run_id": run_identity["run_id"],
         "host_id": run_identity["host_id"],
         "run_identity_sha256": run_identity["identity_sha256"],
     }
+    if document["version"] == 2:
+        if run_identity["version"] != 2:
+            raise EffectiveConfigError("config v2 requires context v2")
+        del expected_scope["run_identity_sha256"]
     for field, expected in expected_scope.items():
         if document[field] != expected:
             raise EffectiveConfigError(
@@ -861,14 +870,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_identity", help="Validated host-local run identity JSON")
     parser.add_argument("--log-dir", required=True, help="Absolute RSL-RL run directory")
-    parser.add_argument("--output", required=True, help="New absolute evidence JSON path")
+    parser.add_argument("--output", help="Legacy v1 path; v2 chooses content-addressed storage")
     args = parser.parse_args()
     try:
         evidence = capture_effective_config(
             load_run_identity(Path(args.run_identity)),
             Path(args.log_dir),
         )
-        receipt = write_new_evidence(Path(args.output), evidence)
+        if evidence["version"] == 2:
+            from evidence_provenance import store_object, run_root
+            if args.output:
+                raise EffectiveConfigError("v2 config chooses its output; omit --output")
+            receipt = store_object(run_root(load_run_identity(Path(args.run_identity))), "config", evidence)
+        else:
+            if not args.output:
+                raise EffectiveConfigError("legacy config requires --output")
+            receipt = write_new_evidence(Path(args.output), evidence)
     except (EffectiveConfigError, OSError) as exc:
         parser.error(str(exc))
     print(json.dumps(receipt, indent=2, sort_keys=True, ensure_ascii=False))

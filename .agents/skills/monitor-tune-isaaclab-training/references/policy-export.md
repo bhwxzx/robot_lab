@@ -1,5 +1,12 @@
 # Transactional policy selection, export, and archive
 
+Selection/export/archive validators accept both legacy v1 identity/config paths and
+new content-addressed v2 provenance through `evidence_provenance.require_source_path`.
+Closed-loop result v3/gzip bundles are fully revalidated alongside legacy v2 bundles.
+Selection and export receipt formats and lifecycle directories stay unchanged; this
+is compatibility with additional validated inputs, not a relaxed parity/reset gate.
+
+
 ## Contents
 
 - [Prepare evidence paths](#prepare-evidence-paths)

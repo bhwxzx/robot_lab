@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from evidence_provenance import require_source_path
+
 import argparse
 import hashlib
 import json
@@ -281,20 +283,10 @@ def _load_run_identity_reference(
     except RunIdentityError as exc:
         raise PolicyExportEvidenceError(str(exc)) from exc
     repo_root = Path(identity["source"]["repository_root"])
-    expected_parent = (
-        repo_root
-        / "learnings"
-        / "policy_tuning"
-        / identity["task"]
-        / identity["run_id"]
-        / "evidence"
-        / "source"
-    )
-    if path.parent != expected_parent or not re.fullmatch(
-        r"identity-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
-        path.name,
-    ):
-        raise PolicyExportEvidenceError("run identity is outside the source evidence layout")
+    try:
+        require_source_path(path, repo_root / "learnings" / "policy_tuning" / identity["task"] / identity["run_id"], "context")
+    except ValueError as exc:
+        raise PolicyExportEvidenceError(str(exc)) from exc
     reference["identity_sha256"] = identity["identity_sha256"]
     return identity, reference
 
@@ -306,22 +298,10 @@ def _load_effective_config_reference(
     run_identity: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     repo_root = Path(run_identity["source"]["repository_root"])
-    expected_parent = (
-        repo_root
-        / "learnings"
-        / "policy_tuning"
-        / run_identity["task"]
-        / run_identity["run_id"]
-        / "evidence"
-        / "source"
-    )
-    if path.parent != expected_parent or not re.fullmatch(
-        r"effective-config-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
-        path.name,
-    ):
-        raise PolicyExportEvidenceError(
-            "effective config is outside the source evidence layout"
-        )
+    try:
+        require_source_path(path, repo_root / "learnings" / "policy_tuning" / run_identity["task"] / run_identity["run_id"], "config")
+    except ValueError as exc:
+        raise PolicyExportEvidenceError(str(exc)) from exc
     try:
         document, metadata = load_and_validate_effective_config(
             path,

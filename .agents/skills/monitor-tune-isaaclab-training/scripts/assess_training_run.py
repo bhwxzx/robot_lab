@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from pathlib import Path
 from statistics import fmean
 from typing import Any, Callable
@@ -42,6 +43,13 @@ def load_object(path: Path, label: str) -> dict[str, Any]:
         ) from exc
     if not isinstance(value, dict):
         raise AssessmentError(f"{label} must be a JSON object")
+    if label == "Play result" and value.get("version") in {2, 3}:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "scripts/reinforcement_learning/rsl_rl"))
+        from policy_evaluation_evidence import validate_evaluation_bundle
+        try:
+            validate_evaluation_bundle(path)
+        except (ValueError, OSError) as exc:
+            raise AssessmentError(str(exc)) from exc
     return value
 
 

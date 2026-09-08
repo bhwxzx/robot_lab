@@ -1,6 +1,26 @@
 # Host-local run identity
 
-Capture one version-1 run identity independently on every machine. This is
+## Reusable training context (version 2, new batches)
+
+Use the same host, task/run, source, exact argv, ordered Hydra, relevant training
+config, runner and seed checks below. Omit `--scenario-contract-json` and `--output`
+from the legacy command to create v2. The CLI prints a `{path, sha256}` reference
+and exclusively stores `provenance/context-<file-sha256>.json`. Identical verified
+bytes reuse that object; changed command, source, host or configuration yields a
+new context. A previously confirmed host ID/argv remains valid authorization.
+
+V2 omits `evaluation_scenario`; the remaining identity fields and internal identity
+hash are validated as before. Do not weaken dirty-source evidence or omit relevant
+training config files to obtain the same hash. Keep evaluator implementation sources
+in the independently captured source snapshot, referenced by each scenario. The
+finite batch runner preserves exact source bytes and verifies the live files before
+launch. Its result binds context + effective config + scenario references.
+
+Read [evidence-layout.md](evidence-layout.md) for the new batch protocol. The following
+v1 scenario binding and command remain supported for existing/single evaluations.
+
+
+For the legacy single-evaluation route, capture one version-1 run identity independently on every machine. This is
 provenance evidence, not a distributed job protocol. Never use it to publish,
 claim, synchronize, or control work on another host.
 

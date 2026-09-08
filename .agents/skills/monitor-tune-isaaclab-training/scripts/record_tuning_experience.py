@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from evidence_provenance import require_source_path
+
 import argparse
 import hashlib
 import json
@@ -47,6 +49,7 @@ EVENT_TYPES = {
     "assessment",
     "decision",
     "checkpoint_evaluation",
+    "evaluation_batch",
     "checkpoint_selection",
     "export",
     "archive",
@@ -56,6 +59,7 @@ EVENT_TYPES = {
 EVIDENCE_EVENT_TYPES = {
     "assessment",
     "checkpoint_evaluation",
+    "evaluation_batch",
     "checkpoint_selection",
     "export",
     "archive",
@@ -285,7 +289,7 @@ def _validate_outcome_schema(value: Any, *, event_type: str) -> None:
 
 def validate_event(event: dict[str, Any]) -> None:
     version = event.get("version")
-    if version not in {1, 2, 3, 4}:
+    if version not in {1, 2, 3, 4, 5}:
         raise ExperienceError("event.version must be 1, 2, 3, or 4")
     for field in ("event_id", "task", "run_id", "algorithm"):
         value = event.get(field)
@@ -293,6 +297,8 @@ def validate_event(event: dict[str, Any]) -> None:
             raise ExperienceError(f"{field} must be a safe ASCII identifier")
     if event.get("event_type") not in EVENT_TYPES:
         raise ExperienceError("event_type is unsupported")
+    if event["event_type"] == "evaluation_batch" and version != 5:
+        raise ExperienceError("evaluation_batch requires event version 5")
     timestamp = event.get("recorded_at")
     if not isinstance(timestamp, str) or not TIMESTAMP_RE.fullmatch(timestamp):
         raise ExperienceError("recorded_at must be an ISO-8601 timestamp with timezone")
@@ -317,7 +323,7 @@ def validate_event(event: dict[str, Any]) -> None:
         "source"
     ) not in {"sim2sim", "sim2real"}:
         raise ExperienceError("feedback evidence.source must be sim2sim or sim2real")
-    if version in {2, 3, 4}:
+    if version in {2, 3, 4, 5}:
         try:
             validate_run_identity(event.get("run_identity"))
         except RunIdentityError as exc:
@@ -328,7 +334,7 @@ def validate_event(event: dict[str, Any]) -> None:
                 raise ExperienceError(
                     f"event.{field} must match run_identity.{field}"
                 )
-    if version in {3, 4}:
+    if version in {3, 4, 5}:
         reference = event["evidence"].get("effective_config")
         expected_keys = {
             "effective_config_fingerprint",
@@ -360,7 +366,7 @@ def validate_event(event: dict[str, Any]) -> None:
             raise ExperienceError(
                 "context.reward_fingerprint must match effective config reference"
             )
-    if version == 4:
+    if version >= 4:
         evidence = event["evidence"]
         if event["event_type"] in EVIDENCE_EVENT_TYPES:
             _validate_reference_schema(
@@ -388,18 +394,14 @@ def validate_effective_config_binding(
     event: dict[str, Any],
 ) -> dict[str, Any]:
     """Validate a version-3/4 event's host-local immutable config reference."""
-    if event.get("version") not in {3, 4}:
+    if event.get("version") not in {3, 4, 5}:
         raise ExperienceError("verifiable experience events must use version 3 or 4")
     reference = event["evidence"]["effective_config"]
     path = Path(reference["path"])
-    expected_parent = root / event["task"] / event["run_id"] / "evidence" / "source"
-    if path.parent != expected_parent or not re.fullmatch(
-        r"effective-config-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
-        path.name,
-    ):
-        raise ExperienceError(
-            "effective config evidence must be a direct source artifact for this run"
-        )
+    try:
+        require_source_path(path, root / event["task"] / event["run_id"], "config")
+    except ValueError as exc:
+        raise ExperienceError(f"effective config must be a direct source artifact for this run: {exc}") from exc
     try:
         config, _ = load_and_validate_effective_config(
             path,
@@ -604,6 +606,17 @@ def _validate_available_event_reference(
         _validate_assessment_reference(root, event, reference)
     elif event_type == "checkpoint_evaluation":
         _validate_evaluation_reference(event, reference)
+    elif event_type == "evaluation_batch":
+        from summarize_evaluation_batch import validate_batch
+        try:
+            batch = validate_batch(Path(reference["path"]), expected_sha256=reference["sha256"])
+        except (ValueError, OSError) as exc:
+            raise ExperienceError(str(exc)) from exc
+        if any(batch[field] != event[field] for field in ("task", "run_id")):
+            raise ExperienceError("batch event scope mismatch")
+        for case in batch["cases"]:
+            if case["status"] == "completed":
+                _validate_evaluation_reference(event, case["result"])
     elif event_type == "checkpoint_selection":
         _validate_selection_reference(event, reference)
     elif event_type == "export":
@@ -652,35 +665,19 @@ def _validate_outcome_evidence(
     except RunIdentityError as exc:
         raise ExperienceError(str(exc)) from exc
     current_identity = event["run_identity"]
-    expected_identity_parent = (
-        root
-        / baseline_identity["task"]
-        / baseline_identity["run_id"]
-        / "evidence"
-        / "source"
-    )
-    if identity_path.parent != expected_identity_parent or not re.fullmatch(
-        r"identity-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
-        identity_path.name,
-    ):
-        raise ExperienceError("outcome baseline identity is outside its run evidence")
+    try:
+        require_source_path(identity_path, root / baseline_identity["task"] / baseline_identity["run_id"], "context")
+    except ValueError as exc:
+        raise ExperienceError(str(exc)) from exc
     for field in ("task", "algorithm", "host_id", "backend", "runner"):
         if baseline_identity[field] != current_identity[field]:
             raise ExperienceError(f"outcome baseline {field} mismatch")
     config_reference = baseline["effective_config"]
     config_path = Path(config_reference["path"])
-    expected_parent = (
-        root
-        / baseline_identity["task"]
-        / baseline_identity["run_id"]
-        / "evidence"
-        / "source"
-    )
-    if config_path.parent != expected_parent or not re.fullmatch(
-        r"effective-config-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
-        config_path.name,
-    ):
-        raise ExperienceError("outcome baseline config is outside its run evidence")
+    try:
+        require_source_path(config_path, root / baseline_identity["task"] / baseline_identity["run_id"], "config")
+    except ValueError as exc:
+        raise ExperienceError(str(exc)) from exc
     try:
         baseline_config, _ = load_and_validate_effective_config(
             config_path,
@@ -775,8 +772,8 @@ def validate_event_evidence(
 
 def write_event(root: Path, event: dict[str, Any]) -> dict[str, Any]:
     validate_event(event)
-    if event.get("version") != 4:
-        raise ExperienceError("new experience events must use version 4")
+    if event.get("version") not in {4, 5}:
+        raise ExperienceError("new experience events must use version 4 or 5")
     if not root.is_absolute():
         raise ExperienceError("experience root must be absolute")
     _reject_symlink_components(root, label="experience root")
@@ -792,6 +789,10 @@ def write_event(root: Path, event: dict[str, Any]) -> dict[str, Any]:
     )
     run_dir.mkdir(parents=True, exist_ok=True)
     _reject_symlink_components(run_dir, label="experience run directory")
+    if event["version"] == 5:
+        run_dir = run_dir / "events"
+        _reject_symlink_components(run_dir, label="events directory")
+        run_dir.mkdir(exist_ok=True)
     timestamp_slug = re.sub(r"[^0-9A-Za-z]+", "-", event["recorded_at"]).strip("-")
     destination = run_dir / f"{timestamp_slug}__{event['event_id']}.json"
     if destination.exists() or destination.is_symlink():

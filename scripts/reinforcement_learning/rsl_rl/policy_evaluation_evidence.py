@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
+import sys
 import json
 import math
 import os
@@ -12,6 +14,11 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+
+SKILL_SCRIPTS = Path(__file__).resolve().parents[3] / ".agents/skills/monitor-tune-isaaclab-training/scripts"
+sys.path.insert(0, str(SKILL_SCRIPTS))
+from evidence_provenance import require_source_path, validate_provenance
 
 
 SAFE_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -99,7 +106,8 @@ def _require_regular_file(
 
 def _load_json_object(path: Path, *, label: str) -> dict[str, Any]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        data = gzip.decompress(path.read_bytes()) if path.suffix == ".gz" else path.read_bytes()
+        value = json.loads(data.decode("utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise EvaluationEvidenceError(f"cannot read {label}: {exc}") from exc
     if not isinstance(value, dict):
@@ -223,6 +231,7 @@ def expected_evaluation_paths(
     task: str,
     run_id: str,
     evaluation_id: str,
+    batch_id: str | None = None,
 ) -> dict[str, Path]:
     _reject_unsafe_path(repo_root, label="repository root")
     _validate_identifier("task", task)
@@ -238,10 +247,13 @@ def expected_evaluation_paths(
         / "play"
         / evaluation_id
     )
+    if batch_id is not None:
+        _validate_identifier("batch_id", batch_id)
+        evaluation_dir = repo_root / "learnings" / "policy_tuning" / task / run_id / "evaluations" / batch_id / "raw" / evaluation_id
     return {
         "evaluation_dir": evaluation_dir,
         "result": evaluation_dir / "result.json",
-        "telemetry": evaluation_dir / "telemetry.json",
+        "telemetry": evaluation_dir / ("telemetry.json.gz" if batch_id else "telemetry.json"),
         "video": evaluation_dir / "video.mp4",
     }
 
@@ -277,25 +289,14 @@ def _load_bound_run_identity(
         label="run identity",
         expected_sha256=expected_file_sha256,
     )
-    expected_source_dir = (
-        repo_root
-        / "learnings"
-        / "policy_tuning"
-        / task
-        / run_id
-        / "evidence"
-        / "source"
-    )
-    if path.parent != expected_source_dir or not re.fullmatch(
-        r"identity-[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
-        path.name,
-    ):
-        raise EvaluationEvidenceError(
-            "run identity is outside the current run evidence/source layout"
-        )
     identity = _load_json_object(path, label="run identity")
-    if identity.get("version") != 1:
-        raise EvaluationEvidenceError("run identity version must be 1")
+    try:
+        require_source_path(path, repo_root / "learnings" / "policy_tuning" / task / run_id, "context")
+        if identity.get("version") == 2:
+            from capture_run_identity import validate_run_identity
+            validate_run_identity(identity)
+    except ValueError as exc:
+        raise EvaluationEvidenceError(str(exc)) from exc
     payload = {key: value for key, value in identity.items() if key != "identity_sha256"}
     internal_sha256 = sha256_bytes(canonical_json(payload).encode("utf-8"))
     if identity.get("identity_sha256") != internal_sha256:
@@ -306,15 +307,16 @@ def _load_bound_run_identity(
     source = identity.get("source")
     if not isinstance(source, dict) or source.get("repository_root") != str(repo_root):
         raise EvaluationEvidenceError("run identity repository root mismatch")
-    evaluation = identity.get("evaluation_scenario")
-    if not isinstance(evaluation, dict):
-        raise EvaluationEvidenceError("run identity evaluation_scenario is missing")
-    identity_contract = validate_scenario_contract(evaluation.get("contract"))
-    expected_scenario_sha256 = scenario_sha256(identity_contract)
-    if evaluation.get("sha256") != expected_scenario_sha256:
-        raise EvaluationEvidenceError("run identity scenario SHA-256 mismatch")
-    if identity_contract != scenario_contract:
-        raise EvaluationEvidenceError("run identity scenario contract mismatch")
+    if identity["version"] == 1:
+        evaluation = identity.get("evaluation_scenario")
+        if not isinstance(evaluation, dict):
+            raise EvaluationEvidenceError("run identity evaluation_scenario is missing")
+        identity_contract = validate_scenario_contract(evaluation.get("contract"))
+        expected_scenario_sha256 = scenario_sha256(identity_contract)
+        if evaluation.get("sha256") != expected_scenario_sha256:
+            raise EvaluationEvidenceError("run identity scenario SHA-256 mismatch")
+        if identity_contract != scenario_contract:
+            raise EvaluationEvidenceError("run identity scenario contract mismatch")
     return identity, {
         "path": reference["path"],
         "file_sha256": reference["sha256"],
@@ -338,6 +340,9 @@ class EvaluationPlan:
     run_identity: dict[str, str]
     scenario_contract: dict[str, Any]
     scenario_sha256: str
+    batch_id: str | None = None
+    effective_config: dict | None = None
+    scenario_evidence: dict | None = None
 
 
 def preflight_evaluation(
@@ -357,6 +362,9 @@ def preflight_evaluation(
     run_identity_path: Path,
     run_identity_file_sha256: str,
     scenario_contract: dict[str, Any],
+    batch_id: str | None = None,
+    effective_config: dict | None = None,
+    scenario_evidence: dict | None = None,
 ) -> EvaluationPlan:
     if artifact_kind not in {"native", "jit", "onnx"}:
         raise EvaluationEvidenceError("artifact_kind must be native, jit, or onnx")
@@ -366,6 +374,7 @@ def preflight_evaluation(
         task=task,
         run_id=run_id,
         evaluation_id=evaluation_id,
+        batch_id=batch_id,
     )
     evaluation_dir = canonical_paths["evaluation_dir"]
     _reject_unsafe_path(evaluation_dir, label="evaluation directory")
@@ -383,6 +392,8 @@ def preflight_evaluation(
     if video_path is not None:
         _require_exact_path(video_path, canonical_paths["video"], label="video_path")
     _require_new_targets(canonical_paths)
+    if batch_id is not None and (evaluation_dir / ".attempt-used").exists():
+        raise EvaluationEvidenceError("attempt ID already used")
 
     checkpoint = _require_regular_file(
         checkpoint_path,
@@ -395,7 +406,7 @@ def preflight_evaluation(
         expected_sha256=artifact_sha256,
     )
     scenario_contract = validate_scenario_contract(scenario_contract)
-    _, run_identity = _load_bound_run_identity(
+    identity, run_identity = _load_bound_run_identity(
         run_identity_path,
         expected_file_sha256=run_identity_file_sha256,
         repo_root=repo_root,
@@ -404,6 +415,13 @@ def preflight_evaluation(
         seed=scenario_contract["seed"],
         scenario_contract=scenario_contract,
     )
+    if batch_id is not None:
+        try:
+            validate_provenance(identity, effective_config, scenario_evidence, scenario_contract, live=True)
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            raise EvaluationEvidenceError(str(exc)) from exc
+    elif identity["version"] != 1 or effective_config is not None or scenario_evidence is not None:
+        raise EvaluationEvidenceError("new provenance requires a batch_id")
     return EvaluationPlan(
         repo_root=repo_root,
         task=task,
@@ -419,6 +437,9 @@ def preflight_evaluation(
         run_identity=run_identity,
         scenario_contract=scenario_contract,
         scenario_sha256=scenario_sha256(scenario_contract),
+        batch_id=batch_id,
+        effective_config=effective_config,
+        scenario_evidence=scenario_evidence,
     )
 
 
@@ -460,6 +481,9 @@ class EvaluationPublisher:
         claim_stat = self.claim_path.stat(follow_symlinks=False)
         self._claim_identity = (claim_stat.st_dev, claim_stat.st_ino)
         try:
+            if self.plan.batch_id is not None:
+                with (self.evaluation_dir / ".attempt-used").open("x") as stream:
+                    stream.write(self.plan.evaluation_id + "\n")
             self.attempt_dir.mkdir()
         except OSError as exc:
             if self._still_owned(self.claim_path, self._claim_identity):
@@ -519,7 +543,12 @@ class EvaluationPublisher:
         result_work = self.attempt_dir / "result.json"
         telemetry_reference = None
         if telemetry is not None:
-            _write_new_json(telemetry_work, telemetry)
+            if self.plan.batch_id is not None:
+                encoded = (json.dumps(telemetry, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
+                with telemetry_work.open("xb") as stream:
+                    stream.write(gzip.compress(encoded, mtime=0))
+            else:
+                _write_new_json(telemetry_work, telemetry)
             telemetry_reference = {
                 "path": str(self.plan.telemetry_path),
                 "sha256": sha256_file(telemetry_work),
@@ -604,8 +633,10 @@ def validate_evaluation_bundle(
     """Revalidate a final bundle or a private result before final publication."""
     result_reference = _require_regular_file(result_path, label="evaluation result")
     result = _load_json_object(result_path, label="evaluation result")
-    if result.get("version") != 2 or result.get("status") != "completed":
-        raise EvaluationEvidenceError("evaluation result must be completed version 2")
+    if result.get("version") not in {2, 3} or result.get("status") != "completed":
+        raise EvaluationEvidenceError("evaluation result must be completed version 2 or 3")
+    if result["version"] == 3 and result.get("layout_version") != 2:
+        raise EvaluationEvidenceError("new result requires layout_version 2")
     evaluation = result.get("evaluation")
     inputs = result.get("inputs")
     outputs = result.get("outputs")
@@ -649,6 +680,7 @@ def validate_evaluation_bundle(
         task=task,
         run_id=run_id,
         evaluation_id=evaluation_id,
+        batch_id=evaluation.get("batch_id") if result["version"] == 3 else None,
     )
     declared_result_path = canonical_result_path or result_path
     _require_exact_path(
@@ -676,7 +708,16 @@ def validate_evaluation_bundle(
     )
     if run_identity.get("identity_sha256") != bound_identity["identity_sha256"]:
         raise EvaluationEvidenceError("result run identity SHA-256 mismatch")
-    del loaded_identity
+    if result["version"] == 3:
+        _validate_identifier("batch_id", evaluation.get("batch_id"))
+        if loaded_identity["runner"] != evaluation["runner"]:
+            raise EvaluationEvidenceError("result runner mismatch")
+        try:
+            validate_provenance(loaded_identity, inputs.get("effective_config"), inputs.get("scenario_evidence"), scenario_contract)
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            raise EvaluationEvidenceError(str(exc)) from exc
+    elif loaded_identity["version"] != 1:
+        raise EvaluationEvidenceError("legacy result requires legacy identity")
 
     checkpoint = _validate_reference(inputs.get("checkpoint"), label="result checkpoint")
     artifact = inputs.get("artifact")
@@ -713,6 +754,8 @@ def validate_evaluation_bundle(
         telemetry = _load_json_object(
             Path(telemetry_reference["path"]), label="evaluation telemetry"
         )
+        if result["version"] == 3 and telemetry.get("version") != 4:
+            raise EvaluationEvidenceError("new result requires telemetry version 4")
         if telemetry.get("evaluation") != evaluation:
             raise EvaluationEvidenceError("telemetry evaluation binding mismatch")
         if telemetry.get("inputs") != inputs:
