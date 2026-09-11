@@ -457,6 +457,12 @@ class LWLegRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.scale = 1.0
         self.observations.policy.joint_vel.scale = 0.05
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Preserve leg position noise while keeping wheel columns exactly zero.
+        self.observations.policy.joint_pos.noise = mdp.GaussianJointPositionNoiseCfg(
+            mean=0.0, std=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.base_ang_vel.scale = 0.25
         self.observations.critic.joint_pos.scale = 1.0
@@ -815,6 +821,12 @@ class LWLegRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.scale = 1.0
         self.observations.policy.joint_vel.scale = 0.05
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Preserve leg position noise while keeping wheel columns exactly zero.
+        self.observations.policy.joint_pos.noise = mdp.GaussianJointPositionNoiseCfg(
+            mean=0.0, std=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.teacher.base_ang_vel.scale = 0.25
         self.observations.teacher.joint_pos.scale = 1.0
@@ -1054,6 +1066,12 @@ class LWLegRoughNormalPPOEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.scale = 1.0
         self.observations.policy.joint_vel.scale = 0.05
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Preserve leg position noise while keeping wheel columns exactly zero.
+        self.observations.policy.joint_pos.noise = mdp.UniformJointPositionNoiseCfg(
+            n_min=-0.01, n_max=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.base_ang_vel.scale = 0.25
         self.observations.critic.joint_pos.scale = 1.0
@@ -1412,6 +1430,12 @@ class LWLegRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.scale = 1.0
         self.observations.policy.joint_vel.scale = 0.05
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Preserve leg position noise while keeping wheel columns exactly zero.
+        self.observations.policy.joint_pos.noise = mdp.UniformJointPositionNoiseCfg(
+            n_min=-0.01, n_max=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.base_ang_vel.scale = 0.25
         self.observations.critic.joint_pos.scale = 1.0
@@ -1819,6 +1843,12 @@ class LWLegRoughAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.scale = 1.0
         self.observations.policy.joint_vel.scale = 0.05
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Preserve leg position noise while keeping wheel columns exactly zero.
+        self.observations.policy.joint_pos.noise = mdp.UniformJointPositionNoiseCfg(
+            n_min=-0.01, n_max=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.base_ang_vel.scale = 0.25
         self.observations.critic.joint_pos.scale = 1.0
@@ -2225,6 +2255,12 @@ class LWLegRoughAmpDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.scale = 1.0
         self.observations.policy.joint_vel.scale = 0.05
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Preserve leg position noise while keeping wheel columns exactly zero.
+        self.observations.policy.joint_pos.noise = mdp.UniformJointPositionNoiseCfg(
+            n_min=-0.01, n_max=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.base_ang_vel.scale = 0.25
         self.observations.critic.joint_pos.scale = 1.0
@@ -2709,6 +2745,14 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.scale = 1.0
         self.observations.policy.joint_vel.scale = 0.05
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Match deployment: wheel position columns stay exactly zero, including
+        # after corruption; retain the existing noise on all eight leg joints.
+        self.observations.policy.joint_pos.noise = mdp.UniformJointPositionNoiseCfg(
+            n_min=-0.01,
+            n_max=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.base_ang_vel.scale = 0.25
         self.observations.critic.joint_pos.scale = 1.0
@@ -3175,6 +3219,12 @@ class LWLegRoughRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.scale = 1.0
         self.observations.policy.joint_vel.scale = 0.05
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Preserve leg position noise while keeping wheel columns exactly zero.
+        self.observations.policy.joint_pos.noise = mdp.UniformJointPositionNoiseCfg(
+            n_min=-0.01, n_max=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.base_ang_vel.scale = 0.25
         self.observations.critic.joint_pos.scale = 1.0

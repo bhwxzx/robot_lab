@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "recorded_at": "2026-09-11T08:04:27.475149+00:00",
+  "scope": "LW_Leg and LW_Wheel position masking and selective noise; existing module layout retained; no training or policy deployment",
+  "status": "implemented_with_preexisting_validation_gaps",
+  "baseline": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/code_validation/lw-unified-joint-position-baseline-20260911-002.json",
+    "sha256": "2269906929761b2ed93064a156e067b80d360e55985bd2e33d5d2303b1526c17"
+  },
+  "configuration_count": 42,
+  "configurations_verified_except_target_noise": 38,
+  "preexisting_configuration_errors": [
+    {
+      "config": "robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Wheel.rough_env_cfg:LWWheelRoughStudentEnvCfg",
+      "status": "preexisting_construction_error",
+      "error": "NameError: name 'BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG' is not defined"
+    },
+    {
+      "config": "robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Wheel.rough_env_cfg:LWWheelRoughStudentEnvCfg_Play",
+      "status": "preexisting_construction_error",
+      "error": "NameError: name 'BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG' is not defined"
+    },
+    {
+      "config": "robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Wheel.rough_env_cfg:LWWheelRoughTeacherEnvCfg",
+      "status": "preexisting_construction_error",
+      "error": "NameError: name 'BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG' is not defined"
+    },
+    {
+      "config": "robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Wheel.rough_env_cfg:LWWheelRoughTeacherEnvCfg_Play",
+      "status": "preexisting_construction_error",
+      "error": "NameError: name 'BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG' is not defined"
+    }
+  ],
+  "representative_environments": {
+    "leg": {
+      "evidence": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/code_validation/lw-unified-joint-position-leg-20260911-001.json",
+        "sha256": "25d063c485b477aa030f899def17008c039fda6c3b0e038222e4df2c602510e0"
+      },
+      "status": "passed_with_configuration_gaps",
+      "tests_run": 8,
+      "failures": 0,
+      "errors": 0,
+      "live_samples": 17,
+      "policy_shape": [
+        2,
+        10,
+        41
+      ],
+      "wheel_position_max_abs": 0.0,
+      "leg_noise_max_abs": 0.00996999442577362
+    },
+    "wheel": {
+      "evidence": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/code_validation/lw-unified-joint-position-wheel-20260911-001.json",
+        "sha256": "f1adaa64e839cbaec3bee5e4abfd5262c4c39070a9e2fe39d3cd9ec7d4a9c389"
+      },
+      "status": "passed_with_configuration_gaps",
+      "tests_run": 8,
+      "failures": 0,
+      "errors": 0,
+      "live_samples": 17,
+      "policy_shape": [
+        2,
+        10,
+        39
+      ],
+      "wheel_position_max_abs": 0.0,
+      "leg_noise_max_abs": 0.009941190481185913
+    },
+    "leg-teacher": {
+      "evidence": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/code_validation/lw-unified-joint-position-leg-teacher-20260911-001.json",
+        "sha256": "01d6f9df3d8d5544375ecd087afb87d3b6bcf432b1089522620df1ae9c6d32bb"
+      },
+      "status": "failed",
+      "tests_run": 8,
+      "failures": 0,
+      "errors": 1,
+      "live_samples": 0,
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/code_validation/lw-unified-joint-position-leg-teacher-20260911-001.log",
+        "sha256": "e23dc3df5f97d860aa2f485b8c45ce3479b3f98059381276b568c88d44b863bd"
+      }
+    },
+    "leg-beyondmimic": {
+      "evidence": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/code_validation/lw-unified-joint-position-leg-beyondmimic-20260911-001.json",
+        "sha256": "01d6f9df3d8d5544375ecd087afb87d3b6bcf432b1089522620df1ae9c6d32bb"
+      },
+      "status": "failed",
+      "tests_run": 8,
+      "failures": 0,
+      "errors": 1,
+      "live_samples": 0,
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/code_validation/lw-unified-joint-position-leg-beyondmimic-20260911-001.log",
+        "sha256": "328128f32dd32b8ddee0f246a4e0806d09fe188ca5f69d38030b161c4c288c77"
+      }
+    },
+    "wheel-beyondmimic": {
+      "evidence": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/code_validation/lw-unified-joint-position-wheel-beyondmimic-20260911-001.json",
+        "sha256": "4c90b4cbcc4889174bf24ae3f41440a40cc71dad06eb97f0b85df70185ee5209"
+      },
+      "status": "passed_with_configuration_gaps",
+      "tests_run": 8,
+      "failures": 0,
+      "errors": 0,
+      "live_samples": 17,
+      "policy_shape": [
+        2,
+        59
+      ],
+      "wheel_position_max_abs": 0.0,
+      "leg_noise_max_abs": 0.00997946411371231
+    }
+  },
+  "sources": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/scripts/tests/test_joint_position_observation.py",
+      "sha256": "336e66bc9e8707f020a61748f73bcbb2576e6dc738553786c9fcaff69b432791"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Leg/flat_env_cfg.py",
+      "sha256": "88140c2975ca8dfc81be0f7cbbb1d95c48724dce95ab9424ee65ca852e358c9b"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py",
+      "sha256": "fed9632e7dd7efc783e136a9af3d323f97bfde83449a3930975bd006ac9ec75f"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/observations.py",
+      "sha256": "325cbafcd9de75479b545229772d24f271beb2f26a6f3523d4710c6854020872"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/flat_env_cfg.py",
+      "sha256": "9f57f49d7be1c9d88e81d0030b272beebc2cf419af17df8cdf68595535610afe"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/rough_env_cfg.py",
+      "sha256": "ad1f79e2e42a4d0c271c66f069b58934e1cf465a62b98859dc0fed6a47a2a0ab"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py",
+      "sha256": "6924bf80c49f5058e9964c836c4e99f798b33f77d975ce73114b8ad2ba3a17f5"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py",
+      "sha256": "1225c46ab31587acb8ed759d998f52e2bb718f7c5512a3a8cfe228218d877f7f"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/__init__.py",
+      "sha256": "27d793de0b04c39a69d79296eea9691c00bb9460db0b42b4019bbd25be9fc4aa"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/noise.py",
+      "sha256": "fb28bee6a7afe57b63677667540f708a33f4fc9c5402bdb0045d245c9d738282"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/observations.py",
+      "sha256": "8c3c31d676dbe832110eafe7f57cd19223a9c68c4f79cab1118b9e4c14ab545e"
+    }
+  ],
+  "findings": [
+    "Both observation implementations zero wheels in native asset index space before selecting/reordering.",
+    "All 12 locomotion base algorithms and both BeyondMimic LW configs select position noise by joint name. Non-wheel Gaussian/uniform distributions and parameters are retained.",
+    "38 constructible configurations including derived Flat and Play variants retain identical configuration hashes after excluding only policy.joint_pos.noise; this includes rewards, other observation groups, shapes/history settings and actions.",
+    "4 Wheel Teacher/Student configurations have an unchanged missing BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG import; their observation assignments were checked statically but runtime instantiation is unverified.",
+    "Real Leg AMP-ROA, Wheel ROA and Wheel BeyondMimic observations passed; both index functions and Gaussian/uniform CPU/CUDA numerical tests passed.",
+    "Leg Teacher full environment failed on the unchanged empty add_joint_default_pos selector and /Robot/base contact sensor path.",
+    "Leg BeyondMimic full environment failed on the unchanged empty joint_vel_wheel_l2 selector. Its test evidence was published as failed; only that test process was stopped after simulator teardown stalled.",
+    "Existing training reward edits were preserved; no new public utility module was created."
+  ],
+  "remaining_validation": "Fix the preexisting construction/startup errors in a separately scoped change before claiming all training environments can run."
+}
