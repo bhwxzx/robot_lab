@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "capture_method": "sys.setprofile call/return observer; no source, arguments, function outputs or tensors modified",
+  "timing": "input copied at actual ActorCriticROA.act_inference entry; output copied on return",
+  "step_dt": 0.02,
+  "observation_terms": [
+    "base_ang_vel",
+    "projected_gravity",
+    "velocity_commands",
+    "joint_pos",
+    "joint_vel",
+    "actions",
+    "gait_phase"
+  ],
+  "joint_position_noise": {
+    "enabled": true,
+    "operation": "add",
+    "n_min": -0.01,
+    "n_max": 0.01
+  },
+  "normalizer_type": "Identity",
+  "samples": 500,
+  "trace_sha256": "ae8f347d91d7634f195a457b10dacac07fb4a17d358cac7ea088d8c4d2093450",
+  "runtime_sources": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/rsl_rl/rsl_rl/modules/actor_critic_roa.py",
+      "sha256": "6161e94f0fdd0b07308ea237962fe0c7d0925ba7255c050d64887e4c1da851a8"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/observations.py",
+      "sha256": "6d0e6ed4efd179ced8ba829ed716eaf36061421d208f5730e70c16fa9139ece9"
+    }
+  ]
+}
