@@ -1,6 +1,6 @@
 ---
 name: monitor-tune-isaaclab-training
-description: Assist a human operator with IsaacLab parameter tuning by assessing live or completed training, running bounded low-overhead Play checks, collecting robot metrics and telemetry, recommending continue or stop decisions, comparing checkpoints, exporting a user-selected policy, archiving it with a description, and turning Sim2Sim or Sim2Real feedback plus prior tuning records into the next parameter suggestions. Use when the user wants evidence and advice rather than an autonomous tuning campaign.
+description: Assess IsaacLab training and bounded policy evaluations, compare and export selected checkpoints, and advise parameter changes from evidence. Also generate MuJoCo Sim2Sim test reports on a deployment-only computer, including full evidence packages with receiver-confirmed model-resource hash reuse. Use for human-guided assessment or finite Sim2Sim reporting, not autonomous training campaigns.
 ---
 
 # IsaacLab Training Advisor
@@ -8,6 +8,22 @@ description: Assist a human operator with IsaacLab parameter tuning by assessing
 Help the operator assess one live or completed training run, evaluate bounded
 policy behavior, compare checkpoints, export a selected policy, and learn from
 feedback. Training decisions and parameter edits remain with the user.
+
+## Select the mode first
+
+- **sim2sim-report**: For MuJoCo/deployment test reports, including a computer
+  used only to produce those reports, read [sim2sim-report.md](references/sim2sim-report.md).
+  Follow that workflow and the shared authorization rules below. It supports
+  analyzing existing evidence or running a user-specified finite test. It does
+  not require IsaacLab, a local training checkout, training argv, or training YAML.
+  Use the deployment environment already available there; packaging uses only
+  Python 3.10+ standard library. Do not invoke the Isaac Native batch runner.
+- **IsaacLab advisor**: Use the routing table and IsaacLab workflow below for
+  training, Native evaluation, export, or interpreting returned feedback here.
+
+The skill folder is portable as a whole. Resolve its references and scripts from
+its installed location, not from an assumed robot_lab checkout. An installation
+used for `sim2sim-report` need not run or install the other capabilities.
 
 ## Route the task
 
@@ -24,7 +40,8 @@ Read only the references needed for the current action:
 Resolve the most specific profile in `references/algorithm-profiles.json`.
 A generic profile may parse progress but cannot supply missing algorithm-specific
 observation, normalization, history, reset or deployment contracts.
-Use `conda run -n isaacsim-5.1` for IsaacLab/RSL-RL and validation commands.
+Use `conda run -n isaacsim-5.1` for IsaacLab/RSL-RL commands and their validation;
+this does not apply to the independent Sim2Sim mode or its packaging tests.
 
 ## Preserve identity and evidence
 
@@ -97,7 +114,7 @@ install packages, delete user files, or commit/push repositories without applica
 user authorization. Preserve unrelated dirty files. Authorization already supplied
 in the session is sufficient; ask only for a missing decision.
 
-Before archiving, follow the exact manifest, clean-storage, fast-forward pull,
+Before archiving a selected policy into policy_storage, follow the exact manifest, clean-storage, fast-forward pull,
 collision and duplicate checks in `policy-export.md`. Replacement requires separate
 approval binding all four existing hashes. Archive authorization does not authorize
 Git commit/push. Every policy description must state:
