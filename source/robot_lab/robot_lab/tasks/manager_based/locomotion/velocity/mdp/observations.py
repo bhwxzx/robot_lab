@@ -23,9 +23,11 @@ def joint_pos_rel_without_wheel(
     """The joint positions of the asset w.r.t. the default joint positions.(Without the wheel joints)"""
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
-    joint_pos_rel = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+    # Both selectors use asset indices. Mask wheels before selecting/reordering
+    # observation columns; subtraction creates a tensor independent of asset data.
+    joint_pos_rel = asset.data.joint_pos - asset.data.default_joint_pos
     joint_pos_rel[:, wheel_asset_cfg.joint_ids] = 0
-    return joint_pos_rel
+    return joint_pos_rel[:, asset_cfg.joint_ids]
 
 
 def phase(env: ManagerBasedRLEnv, cycle_time: float) -> torch.Tensor:

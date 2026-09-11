@@ -9,6 +9,7 @@ from isaaclab.managers import SceneEntityCfg
 from robot_lab.assets.LW import LW_LEG_CFG  
 from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import TrackingEnvCfg
 import robot_lab.tasks.manager_based.beyondmimic.mdp as mdp
+from robot_lab.tasks.manager_based.locomotion.velocity.mdp.noise import UniformJointPositionNoiseCfg
 
 @configclass
 class LWActionsCfg:
@@ -60,6 +61,11 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
             "robot", joint_names=self.wheel_joint_names
         )
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        self.observations.policy.joint_pos.noise = UniformJointPositionNoiseCfg(
+            n_min=-0.01, n_max=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.joint_pos.params["asset_cfg"].joint_names = self.joint_names
         self.observations.critic.joint_vel.params["asset_cfg"].joint_names = self.joint_names
