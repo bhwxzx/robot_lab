@@ -154,6 +154,20 @@ validation-compatible, but every new export must publish version 4.
 
 ## Archive gate
 
+The archive directory MUST use the selected checkpoint's training run start
+time in `YYYY-MM-DD-HH-MM-SS` format. Obtain this time from the verified run
+identity and training run directory; preserve its recorded local time. For
+example, run `2026-09-11_17-04-10` must be archived under
+`policy_storage/LW/wheel_loco/2026-09-11-17-04-10`.
+Always pass that value explicitly as `--timestamp 2026-09-11-17-04-10` to
+`archive_advised_policy.py`; omitting the option currently defaults to the
+archive time and violates this workflow. Do not substitute export time,
+archive time, checkpoint mtime, or the time of evaluation. If the training
+start time cannot be verified, resolve it before archiving rather than inventing
+a timestamp. Use the same destination in collision checks, `archive_path`,
+the policy description, and current navigation. A collision must follow the
+replacement approval rules below; never avoid it by choosing a newer timestamp.
+
 Archive only after a separate user authorization. A version-2 archive manifest
 must reference the export receipt by path and SHA-256 and list evaluation
 results as `{path, sha256}` objects. After authorization and immediately before

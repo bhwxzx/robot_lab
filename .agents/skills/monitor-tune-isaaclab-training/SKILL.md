@@ -115,7 +115,12 @@ user authorization. Preserve unrelated dirty files. Authorization already suppli
 in the session is sufficient; ask only for a missing decision.
 
 Before archiving a selected policy into policy_storage, follow the exact manifest, clean-storage, fast-forward pull,
-collision and duplicate checks in `policy-export.md`. Replacement requires separate
+collision and duplicate checks in `policy-export.md`. Name the archive directory
+using the selected checkpoint's training run start time, formatted as
+`YYYY-MM-DD-HH-MM-SS`, and pass it explicitly via the archiver's `--timestamp`.
+Never use export time, archive time, or checkpoint modification time. For example,
+run `2026-09-11_17-04-10` maps to archive directory `2026-09-11-17-04-10`.
+Replacement requires separate
 approval binding all four existing hashes. Archive authorization does not authorize
 Git commit/push. Every policy description must state:
 

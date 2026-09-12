@@ -249,6 +249,14 @@ See [`policy-export.md`](policy-export.md) for the exact protocol.
 
 ## Archive manifest
 
+Use the selected checkpoint's verified training run start time for the archive
+directory, formatted as `YYYY-MM-DD-HH-MM-SS`, and pass it explicitly with
+`archive_advised_policy.py --timestamp`. For example, run
+`2026-09-11_17-04-10` maps to directory `2026-09-11-17-04-10`.
+Export/archive time and checkpoint mtime are not valid substitutes. Keep the
+destination consistent in the manifest, description, and current navigation;
+follow the collision rules in [`policy-export.md`](policy-export.md).
+
 `archive_advised_policy.py` consumes a version-2 JSON object after separate
 user archive authorization:
 
