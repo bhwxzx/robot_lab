@@ -1343,3 +1343,88 @@ upstream、非 fast-forward、pull 失败或新冲突都必须停止并报告用
 - **Notes**: 已将归档前 fast-forward-only 同步及失败停止条件写入主 Skill 和两份归档引用；归档器继续保持不执行 Git 操作。
 
 ---
+
+## [LRN-20260912-001] correction
+
+**Logged**: 2026-09-12T11:15:30+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: evaluation
+
+### Summary
+Policy evaluation max_tilt is the dimensionless norm of projected gravity XY, not an angle in radians.
+
+### Details
+The 2026-09-10 wheel DWAQ response converted max_tilt directly with radians-to-degrees. Source inspection confirms evaluate_policy.py computes norm(projected_gravity_b[:, :2]). This equals abs(sin(inclination)) for normalized gravity and cannot distinguish inclinations above 90 degrees. In the 2026-09-12 legacy-push check, env 0 reached 92.7014 degrees at step 991 before illegal_contact at step 992; the scalar max_tilt was only 0.9999256. Compute inclination from complete gravity samples as acos(clamp(-gz / norm(g), -1, 1)); label env-0 telemetry scope separately from all-environment metric scope. Split position/heading analysis at done/reset samples.
+
+### Suggested Action
+Always inspect metric definitions and units before reporting angles. Never infer full inclination from max_tilt alone or include reset position jumps in motion measurements.
+
+### Metadata
+- Source: self_review
+- Related Files: scripts/reinforcement_learning/rsl_rl/evaluate_policy.py; learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/native-assess-20260912-001/raw/legacy-push-a01/telemetry.json.gz
+- Pattern-Key: correct.policy_evaluation_tilt_units
+- Recurrence-Count: 1
+- First-Seen: 2026-09-12
+- Last-Seen: 2026-09-12
+
+### Resolution
+- **Notes**: Verified source definition and full telemetry, corrected the user-facing interpretation, and preserved immutable historical evidence.
+
+---
+
+## [LRN-20260912-002] correction
+
+**Logged**: 2026-09-12T14:33:45+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: evaluation
+
+### Summary
+Separate zero-command steady standing from braking and initialization recovery before labeling persistent drift.
+
+### Details
+The user noted wheel inverted-pendulum dynamics could explain displacement following a moving command. A matched 120-second plane test used all-zero commands, zero initial root/joint velocities, nominal mass/COM/joint defaults, fixed material coefficients, no pushes, and zero actuator delay. Only actor observation noise differed. No-noise initialization drift continued into the 20-40 s window, then the 40-120 s XY span was below 0.7 mm; training-noise 40-120 s net displacement was 3.7219 m. Both completed without reset or joint-limit violations. A planned 20 s warm-up was insufficient in the no-noise case; report it and the supplementary 40-120 s window explicitly. This is one-seed evidence, not proof of real sensor behavior or a specific noise channel.
+
+### Suggested Action
+Report long-horizon position trends and bounded sway separately from net displacement after a command transition. Use a plane, zero initial motion, controlled perturbations, and explicit noise/timing conditions for a dedicated standing diagnosis.
+
+### Metadata
+- Source: user_feedback
+- Related Files: learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/zero-standing-plane-20260912-001/manifest.json
+- Pattern-Key: correct.standing_drift_vs_braking_and_initialization
+- Recurrence-Count: 1
+- First-Seen: 2026-09-12
+- Last-Seen: 2026-09-12
+
+### Resolution
+- **Notes**: Completed matched tests, validated all telemetry, and plotted full trajectories without modifying prior evidence.
+
+---
+
+## [LRN-20260912-003] correction
+
+**Logged**: 2026-09-12T07:07:31.250881+00:00
+**Priority**: high
+**Status**: resolved
+**Area**: docs
+
+### Summary
+Policy archive directories must use training run start time, not export or archive time.
+
+### Details
+User corrected the wheel DWAQ archive name. Training run 2026-09-11_17-04-10 belongs in policy_storage/LW/wheel_loco/2026-09-11-17-04-10. The initial archive used export time 2026-09-12-14-59-12. Renamed the directory, corrected archive_path and description, and verified both model hashes remain unchanged. Original immutable export/archive receipts retain historical paths; a separate correction record and mutable index point to the new location.
+
+### Suggested Action
+Derive the archive timestamp from the selected checkpoint's training run ID and pass it explicitly to the archiver. Preserve the collection's hyphenated timestamp format.
+
+### Metadata
+- Source: user_feedback
+- Pattern-Key: correct.policy_archive_training_timestamp
+- Related Files: ../policy_storage/LW/wheel_loco/2026-09-11-17-04-10/archive_manifest.json
+
+### Resolution
+- **Commit/PR**: 1854e61ce4b2286b73cee4c19d7d61ce8b3dacf2
+- **Notes**: Renamed archive and verified JIT/ONNX byte identity.
+
+---
