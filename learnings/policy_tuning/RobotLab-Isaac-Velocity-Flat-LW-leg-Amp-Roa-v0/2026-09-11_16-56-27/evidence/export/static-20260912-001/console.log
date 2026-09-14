@@ -1,0 +1,51 @@
+{"argv": ["conda", "run", "--no-capture-output", "-n", "isaacsim-5.1", "python", "-B", "/home/young/liufengrong/robot_lab/.agents/skills/monitor-tune-isaaclab-training/scripts/rsl_rl_export_policy.py", "--task", "RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0", "--run_id", "2026-09-11_16-56-27", "--export_run_id", "static-20260912-001", "--checkpoint_id", "model_50000", "--checkpoint", "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-11_16-56-27/model_50000.pt", "--checkpoint_sha256", "cf0ae2f701c0b2ec15f5a43bfadb61425b879f68e425667a41d67a0b673d4d93", "--selection_receipt_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evidence/checkpoint_selection/selection-user-current-20260912-001.json", "--selection_receipt_sha256", "4c509c8b5da000946012256ced5f686b5381e863565f6343a2b5f7ec6987b88c", "--jit_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evidence/export/static-20260912-001/policy.pt", "--onnx_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evidence/export/static-20260912-001/policy.onnx", "--result_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evidence/export/static-20260912-001/receipt.json", "--history_contract", "flat_time_major_history", "--normalization_contract", "current_frame_only", "--reset_contract", "environment_history_reset", "--onnx_export_profile", "static_batch_1_simplified", "--parity_steps", "16", "--reset_step", "8", "--minimum_parity_samples", "16", "--max_abs_action_error", "1e-5", "--num_envs", "1", "--seed", "42", "--device", "cuda:0", "--require_idle_gpu", "--headless", "env.rewards.track_lin_vel_xy_exp.params.std=0.7071067811865476", "env.rewards.track_ang_vel_z_exp.params.std=0.7071067811865476", "env.rewards.stand_still.params.asset_cfg.joint_names=.*", "agent.amp_motion_files=[source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx*_vy0.00_wz0.00.txt]"]}
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/young/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Leg.flat_env_cfg:LWLegFlatAmpRoaEnvCfg
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Leg.agents.rsl_rl_amp_roa_cfg:LWFlatAmpRoaRunnerCfg
+Error executing job with overrides: ['env.rewards.track_lin_vel_xy_exp.params.std=0.7071067811865476', 'env.rewards.track_ang_vel_z_exp.params.std=0.7071067811865476', 'env.rewards.stand_still.params.asset_cfg.joint_names=.*', 'agent.amp_motion_files=[source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx*_vy0.00_wz0.00.txt]']
+Traceback (most recent call last):
+  File "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab_tasks/isaaclab_tasks/utils/hydra.py", line 90, in hydra_main
+    env_cfg.from_dict(hydra_env_cfg["env"])
+  File "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/utils/configclass.py", line 142, in _update_class_from_dict
+    update_class_from_dict(obj, data, _ns="")
+  File "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/utils/dict.py", line 102, in update_class_from_dict
+    update_class_from_dict(obj_mem, value, _ns=key_ns)
+  File "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/utils/dict.py", line 102, in update_class_from_dict
+    update_class_from_dict(obj_mem, value, _ns=key_ns)
+  File "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/utils/dict.py", line 102, in update_class_from_dict
+    update_class_from_dict(obj_mem, value, _ns=key_ns)
+  [Previous line repeated 1 more time]
+  File "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/utils/dict.py", line 154, in update_class_from_dict
+    raise ValueError(
+ValueError: [Config]: Incorrect type under namespace: /rewards/stand_still/params/asset_cfg/joint_names. Expected: <class 'list'>, Received: <class 'str'>.
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+Loading user config located at: '/home/young/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/young/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20260912_160217.log
+2026-09-12T08:02:17Z [105ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-09-12T08:02:18Z [393ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-09-12T08:02:18Z [398ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4080 SUPER    | Yes: 0 |     | 16376   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2702      | eb541e47.. |
+|     |                                  |        |     |            | 1         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-138-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: Intel(R) Core(TM) i7-14700KF
+| Cores: 20 | Logical Cores: 28
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 64085 | Free Memory: 55998
+| Total Page/Swap (MB): 2047 | Free Page/Swap: 2047
+|---------------------------------------------------------------------------------------------|
+2026-09-12T08:02:21Z [3,480ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-09-12T08:02:21Z [3,488ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+ERROR conda.cli.main_run:execute(125): `conda run python -B /home/young/liufengrong/robot_lab/.agents/skills/monitor-tune-isaaclab-training/scripts/rsl_rl_export_policy.py --task RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0 --run_id 2026-09-11_16-56-27 --export_run_id static-20260912-001 --checkpoint_id model_50000 --checkpoint /home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-11_16-56-27/model_50000.pt --checkpoint_sha256 cf0ae2f701c0b2ec15f5a43bfadb61425b879f68e425667a41d67a0b673d4d93 --selection_receipt_path /home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evidence/checkpoint_selection/selection-user-current-20260912-001.json --selection_receipt_sha256 4c509c8b5da000946012256ced5f686b5381e863565f6343a2b5f7ec6987b88c --jit_path /home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evidence/export/static-20260912-001/policy.pt --onnx_path /home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evidence/export/static-20260912-001/policy.onnx --result_path /home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evidence/export/static-20260912-001/receipt.json --history_contract flat_time_major_history --normalization_contract current_frame_only --reset_contract environment_history_reset --onnx_export_profile static_batch_1_simplified --parity_steps 16 --reset_step 8 --minimum_parity_samples 16 --max_abs_action_error 1e-5 --num_envs 1 --seed 42 --device cuda:0 --require_idle_gpu --headless env.rewards.track_lin_vel_xy_exp.params.std=0.7071067811865476 env.rewards.track_ang_vel_z_exp.params.std=0.7071067811865476 env.rewards.stand_still.params.asset_cfg.joint_names=.* agent.amp_motion_files=[source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx*_vy0.00_wz0.00.txt]` failed. (See above for error)

@@ -1,0 +1,533 @@
+{
+  "version": 1,
+  "recorded_at": "2026-09-12T07:19:58.436820+00:00",
+  "scope": "Read-only command coverage and reward semantics audit; CPU sampler replay and offline partial reward reconstruction, no new simulation or code changes.",
+  "source_config": {
+    "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-11_16-56-27/params/env.yaml",
+    "sha256": "68820022f84f78a0a159bd3f6223c16db61505ab5037cc62d4c0a7c52b02b6a7"
+  },
+  "source_agent": {
+    "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-11_16-56-27/params/agent.yaml",
+    "sha256": "fb0dc68e8bbf785cbdb27ecb5422af30368007c06fdf20da3efa0f925dbe49b9"
+  },
+  "command_configuration": {
+    "class_type": "isaaclab.envs.mdp.commands.velocity_command:UniformVelocityCommand",
+    "resampling_time_range": [
+      10.0,
+      10.0
+    ],
+    "debug_vis": true,
+    "asset_name": "robot",
+    "heading_command": false,
+    "heading_control_stiffness": 0.5,
+    "rel_standing_envs": 0.02,
+    "rel_heading_envs": 1.0,
+    "ranges": {
+      "lin_vel_x": [
+        -0.8,
+        0.8
+      ],
+      "lin_vel_y": [
+        -0.0,
+        0.0
+      ],
+      "ang_vel_z": [
+        -0.5,
+        0.5
+      ],
+      "heading": [
+        -0.5235987755982988,
+        0.5235987755982988
+      ]
+    },
+    "goal_vel_visualizer_cfg": {
+      "prim_path": "/Visuals/Command/velocity_goal",
+      "markers": {
+        "arrow": {
+          "func": "isaaclab.sim.spawners.from_files.from_files:spawn_from_usd",
+          "visible": true,
+          "semantic_tags": null,
+          "copy_from_source": true,
+          "mass_props": null,
+          "deformable_props": null,
+          "rigid_props": null,
+          "collision_props": null,
+          "activate_contact_sensors": false,
+          "scale": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "articulation_props": null,
+          "fixed_tendons_props": null,
+          "spatial_tendons_props": null,
+          "joint_drive_props": null,
+          "visual_material_path": "material",
+          "visual_material": {
+            "func": "isaaclab.sim.spawners.materials.visual_materials:spawn_preview_surface",
+            "diffuse_color": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "emissive_color": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "roughness": 0.5,
+            "metallic": 0.0,
+            "opacity": 1.0
+          },
+          "usd_path": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/UIElements/arrow_x.usd",
+          "variants": null
+        }
+      }
+    },
+    "current_vel_visualizer_cfg": {
+      "prim_path": "/Visuals/Command/velocity_current",
+      "markers": {
+        "arrow": {
+          "func": "isaaclab.sim.spawners.from_files.from_files:spawn_from_usd",
+          "visible": true,
+          "semantic_tags": null,
+          "copy_from_source": true,
+          "mass_props": null,
+          "deformable_props": null,
+          "rigid_props": null,
+          "collision_props": null,
+          "activate_contact_sensors": false,
+          "scale": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "articulation_props": null,
+          "fixed_tendons_props": null,
+          "spatial_tendons_props": null,
+          "joint_drive_props": null,
+          "visual_material_path": "material",
+          "visual_material": {
+            "func": "isaaclab.sim.spawners.materials.visual_materials:spawn_preview_surface",
+            "diffuse_color": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "emissive_color": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "roughness": 0.5,
+            "metallic": 0.0,
+            "opacity": 1.0
+          },
+          "usd_path": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/UIElements/arrow_x.usd",
+          "variants": null
+        }
+      }
+    }
+  },
+  "command_sampling": {
+    "samples": 1000000,
+    "seed": 42,
+    "device": "cpu",
+    "counts": {
+      "all_zero": 20091,
+      "exact_pure_turn_nonzero_yaw": 0,
+      "near_pure_turn_vx_lt_0_05_yaw_gt_0_1": 48445,
+      "near_pure_turn_vx_lt_0_1_yaw_gt_0_1": 97537,
+      "stand_still_gate_norm_lt_0_1": 39372
+    },
+    "analytic_probabilities": {
+      "exact_zero_branch": 0.02,
+      "near_pure_turn_abs_vx_lt_0_05_abs_yaw_gt_0_1": 0.049,
+      "near_pure_turn_abs_vx_lt_0_1_abs_yaw_gt_0_1": 0.098,
+      "norm_lt_0_1": 0.03924225500323748
+    },
+    "limitation": "Replay of actual sampler implementation with stored config; not recovered per-step historical training occupancy. Continuous uniform vx has no dedicated exact-zero pure-turn branch; floating point can produce isolated exact zeros."
+  },
+  "gate_checks": {
+    "commands": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.5
+      ],
+      [
+        0.0,
+        0.0,
+        -0.5
+      ],
+      [
+        0.4000000059604645,
+        0.0,
+        0.5
+      ]
+    ],
+    "phase_norm": [
+      0.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "stand_still_raw_for_fixed_joint_deviation": [
+      1.0000001192092896,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "stop_motion_raw_for_v_zero_and_wz_0_5": [
+      0.5,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "clearance_raw_for_stationary_feet_at_z_zero": [
+      0.0,
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "expert_selection": {
+    "loaded_pattern": [
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx*_vy0.00_wz0.00.txt"
+    ],
+    "selected_files": [
+      {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.35_vy0.00_wz0.00.txt",
+        "sha256": "1ac5296a5b4aefef11f18e66be03c5886d72863d13d892dd09c4efe8a588d44b",
+        "weight": 0.5,
+        "frames": 303,
+        "frame_dim": 22
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.70_vy0.00_wz0.00.txt",
+        "sha256": "992fae2a054993a8a0c2e643d099489edbded8ad67ab8e726b9adb6f6a879e66",
+        "weight": 0.5,
+        "frames": 303,
+        "frame_dim": 22
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz0.00.txt",
+        "sha256": "56b2a68e3ff200420acf87f506c2ca4d76afb057fd97a56e91dafbe4ba582482",
+        "weight": 0.5,
+        "frames": 303,
+        "frame_dim": 22
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz0.00.txt",
+        "sha256": "589e5c95be11fcd930c2d73c60b233414ec780dcc9f6aa3eb0bebd5009d19451",
+        "weight": 0.5,
+        "frames": 303,
+        "frame_dim": 22
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz0.00.txt",
+        "sha256": "dfe5183421ca8ad0247eb80b1e0e8880757013205731a9df91575676706a3531",
+        "weight": 0.5,
+        "frames": 303,
+        "frame_dim": 22
+      }
+    ],
+    "each_selected_probability": 0.2,
+    "excluded_turning_files": [
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.35_vy0.00_wz-0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.35_vy0.00_wz0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz-0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.70_vy0.00_wz-0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.70_vy0.00_wz0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz-0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz0.15.txt",
+      "source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz-0.15.txt"
+    ],
+    "amp_observation_terms": {
+      "joint_pos": "isaaclab.envs.mdp.observations:joint_pos_rel",
+      "joint_vel": "isaaclab.envs.mdp.observations:joint_vel_rel",
+      "end_effort_pos": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.observations:feet_pos_in_body"
+    },
+    "note": "Five equal-weight straight/standing clips; no command condition in discriminator input. Turning-style conflict is plausible, not proven by discriminator scores."
+  },
+  "reward_findings": {
+    "stand_still_joint_selector": ".*",
+    "wheel_default_positions": {
+      "right_wheel_joint": 0.0,
+      "left_wheel_joint": 0.0
+    },
+    "wheel_default_not_randomized": true,
+    "upright_terms_identical": "flat_orientation_l2 and body_orientation_l2 both sum projected_gravity_b[:2]^2; effective combined weight -8. They do not penalize yaw heading.",
+    "clearance_static_degeneracy": "For nonzero command norm > .1, zero horizontal foot speed makes error zero and raw reward 1 regardless of foot height. This is a weak incentive to lift, not proof of the learned cause.",
+    "mix": "PPO reward = .3 * task_reward + .7 * (.02 * 2 * clamp(1 - (D-1)^2/4,min=0)); scalar mixing coefficients do not establish actual contribution percentages.",
+    "stationary_yaw_tracking_fraction_at_cmd_0_5": 0.6065306597126334,
+    "perfect_vs_zero_yaw_task_gain_after_dt_and_mix": 0.009443264166896798,
+    "maximum_amp_term_after_mix": 0.027999999999999997
+  },
+  "partial_reconstructions": {
+    "backward-stop-a01": {
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evaluations/flat-review-20260912-001/raw/backward-stop-a01/telemetry.json.gz",
+        "sha256": "f50e37b12b3465c079b2d4af99f34869ffd1258ca1f0de6ca1abe6905a00f797"
+      },
+      "window_means_weighted_before_dt_and_amp_mix": {
+        "5-15s": {
+          "wheel_stand_still_component": 0.0,
+          "stop_linear": 0.0,
+          "stop_angular": -0.11910776310456761,
+          "yaw_tracking": 3.967502732893098,
+          "linear_tracking": 4.270065555907203,
+          "combined_upright": -0.01161471058692355,
+          "hip_raw_action_penalty": -0.3960907388329506
+        },
+        "17-20s": {
+          "wheel_stand_still_component": -13.193265388011932,
+          "stop_linear": -0.16918042090839536,
+          "stop_angular": -0.1279542365917592,
+          "yaw_tracking": 3.972167644777184,
+          "linear_tracking": 4.9746816305010455,
+          "combined_upright": -0.01135897097059093,
+          "hip_raw_action_penalty": -0.4076759387552738
+        }
+      }
+    },
+    "forward-stop-a01": {
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evaluations/flat-review-20260912-001/raw/forward-stop-a01/telemetry.json.gz",
+        "sha256": "ae2e001caefe179fd9478e27baea30ce276c216087335ee5bb0ace4924854da1"
+      },
+      "window_means_weighted_before_dt_and_amp_mix": {
+        "5-15s": {
+          "wheel_stand_still_component": 0.0,
+          "stop_linear": 0.0,
+          "stop_angular": -0.16862665193869014,
+          "yaw_tracking": 3.932544937417716,
+          "linear_tracking": 4.471793368313979,
+          "combined_upright": -0.01861284901335317,
+          "hip_raw_action_penalty": -0.46118470595777034
+        },
+        "17-20s": {
+          "wheel_stand_still_component": -19.380331196784972,
+          "stop_linear": -0.1464901475843182,
+          "stop_angular": -0.1250256434415962,
+          "yaw_tracking": 3.968518132617736,
+          "linear_tracking": 4.980315104105456,
+          "combined_upright": -0.010316182571034595,
+          "hip_raw_action_penalty": -0.3990961041053136
+        }
+      }
+    },
+    "moving-turn-a01": {
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evaluations/flat-review-20260912-001/raw/moving-turn-a01/telemetry.json.gz",
+        "sha256": "5acc0dd9bf6568e7627d0c8b2450028dd71ec0947b4d62f5cb8eb52616f53816"
+      },
+      "window_means_weighted_before_dt_and_amp_mix": {
+        "5-15s": {
+          "wheel_stand_still_component": 0.0,
+          "stop_linear": 0.0,
+          "stop_angular": 0.0,
+          "yaw_tracking": 2.707002913603628,
+          "linear_tracking": 4.529160552159759,
+          "combined_upright": -0.042785786329479845,
+          "hip_raw_action_penalty": -0.4027445911169052
+        },
+        "17-20s": {
+          "wheel_stand_still_component": -21.310531417131426,
+          "stop_linear": -0.8102354598691911,
+          "stop_angular": -0.25244781695323065,
+          "yaw_tracking": 3.8642074218523583,
+          "linear_tracking": 4.544459209746655,
+          "combined_upright": -0.047888467599984386,
+          "hip_raw_action_penalty": -0.5413472697635492
+        }
+      }
+    },
+    "stand-a01": {
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evaluations/flat-review-20260912-001/raw/stand-a01/telemetry.json.gz",
+        "sha256": "3ee8f8de283c42d19d3614ecaa3630f3e7887eff0ebf37e197e750238d5eba83"
+      },
+      "window_means_weighted_before_dt_and_amp_mix": {
+        "5-15s": {
+          "wheel_stand_still_component": -16.41661396819353,
+          "stop_linear": -0.6836919491777012,
+          "stop_angular": -0.21610548346933806,
+          "yaw_tracking": 3.889235589486372,
+          "linear_tracking": 4.648157976685005,
+          "combined_upright": -0.03757419057723142,
+          "hip_raw_action_penalty": -0.5224858935475349
+        },
+        "17-20s": {
+          "wheel_stand_still_component": -10.79713298201561,
+          "stop_linear": -0.6567570875957078,
+          "stop_angular": -0.24740352937422386,
+          "yaw_tracking": 3.8656354063979235,
+          "linear_tracking": 4.6716167968919295,
+          "combined_upright": -0.030950223986433878,
+          "hip_raw_action_penalty": -0.5119673248628775
+        }
+      }
+    },
+    "turn-left-a01": {
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evaluations/flat-review-20260912-001/raw/turn-left-a01/telemetry.json.gz",
+        "sha256": "66ba448864810785025ebf1200cae061d2be58c8d98e1fcd1b88213ca6cdfcf3"
+      },
+      "window_means_weighted_before_dt_and_amp_mix": {
+        "5-15s": {
+          "wheel_stand_still_component": 0.0,
+          "stop_linear": -0.238892312680747,
+          "stop_angular": 0.0,
+          "yaw_tracking": 2.3856508726119006,
+          "linear_tracking": 4.933699951263556,
+          "combined_upright": -0.012270900298984925,
+          "hip_raw_action_penalty": -0.2236838821619749
+        },
+        "17-20s": {
+          "wheel_stand_still_component": -20.43793996334076,
+          "stop_linear": -0.18043958684444716,
+          "stop_angular": -0.12558605767271908,
+          "yaw_tracking": 3.96898101484645,
+          "linear_tracking": 4.972893956198654,
+          "combined_upright": -0.018873141514585103,
+          "hip_raw_action_penalty": -0.4108456651866436
+        }
+      }
+    },
+    "turn-right-a01": {
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-11_16-56-27/evaluations/flat-review-20260912-001/raw/turn-right-a01/telemetry.json.gz",
+        "sha256": "cde956322efc0b1ce22359e76e2a001b6adbf0d72e312519b76d65876a9fba37"
+      },
+      "window_means_weighted_before_dt_and_amp_mix": {
+        "5-15s": {
+          "wheel_stand_still_component": 0.0,
+          "stop_linear": -0.17371812223109181,
+          "stop_angular": 0.0,
+          "yaw_tracking": 2.343200483574516,
+          "linear_tracking": 4.9720909248682315,
+          "combined_upright": -0.03545152049021147,
+          "hip_raw_action_penalty": -0.2322192181944847
+        },
+        "17-20s": {
+          "wheel_stand_still_component": -20.3914554977417,
+          "stop_linear": -0.6843441915160164,
+          "stop_angular": -0.2757223641157093,
+          "yaw_tracking": 3.8266912364592507,
+          "linear_tracking": 4.6628997459907735,
+          "combined_upright": -0.049922929510893825,
+          "hip_raw_action_penalty": -0.5219973405698936
+        }
+      }
+    }
+  },
+  "reconstruction_limits": [
+    "Window reward values are weighted terms before multiplication by dt=.02 and task mixing .3, not total training rewards.",
+    "Wheel-only stand_still component is reconstructible because wheel defaults remain zero; non-wheel startup default offsets are absent from telemetry, so full stand_still is not reconstructed.",
+    "Task tracking uses yaw-aligned linear velocity and WORLD angular z; previous evaluation also separately reports BODY yaw-rate.",
+    "No foot state/contact arrays, discriminator inputs/scores, or full term trace captured; actual gait/clearance/AMP competition remains unmeasured."
+  ],
+  "source_function_checks": [
+    {
+      "source": {
+        "path": "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/mdp/commands/velocity_command.py",
+        "sha256": "0ff254a375c9ea8d408824c24145e7ac7906cc7b513c52c4dd4ca0834c1ce241"
+      },
+      "function": "_resample_command",
+      "class": "UniformVelocityCommand",
+      "line": 126,
+      "code": "def _resample_command(self, env_ids: Sequence[int]):\n        # sample velocity commands\n        r = torch.empty(len(env_ids), device=self.device)\n        # -- linear velocity - x direction\n        self.vel_command_b[env_ids, 0] = r.uniform_(*self.cfg.ranges.lin_vel_x)\n        # -- linear velocity - y direction\n        self.vel_command_b[env_ids, 1] = r.uniform_(*self.cfg.ranges.lin_vel_y)\n        # -- ang vel yaw - rotation around z\n        self.vel_command_b[env_ids, 2] = r.uniform_(*self.cfg.ranges.ang_vel_z)\n        # heading target\n        if self.cfg.heading_command:\n            self.heading_target[env_ids] = r.uniform_(*self.cfg.ranges.heading)\n            # update heading envs\n            self.is_heading_env[env_ids] = r.uniform_(0.0, 1.0) <= self.cfg.rel_heading_envs\n        # update standing envs\n        self.is_standing_env[env_ids] = r.uniform_(0.0, 1.0) <= self.cfg.rel_standing_envs"
+    },
+    {
+      "source": {
+        "path": "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/mdp/commands/velocity_command.py",
+        "sha256": "0ff254a375c9ea8d408824c24145e7ac7906cc7b513c52c4dd4ca0834c1ce241"
+      },
+      "function": "_update_command",
+      "class": "UniformVelocityCommand",
+      "line": 143,
+      "code": "def _update_command(self):\n        \"\"\"Post-processes the velocity command.\n\n        This function sets velocity command to zero for standing environments and computes angular\n        velocity from heading direction if the heading_command flag is set.\n        \"\"\"\n        # Compute angular velocity from heading direction\n        if self.cfg.heading_command:\n            # resolve indices of heading envs\n            env_ids = self.is_heading_env.nonzero(as_tuple=False).flatten()\n            # compute angular velocity\n            heading_error = math_utils.wrap_to_pi(self.heading_target[env_ids] - self.robot.data.heading_w[env_ids])\n            self.vel_command_b[env_ids, 2] = torch.clip(\n                self.cfg.heading_control_stiffness * heading_error,\n                min=self.cfg.ranges.ang_vel_z[0],\n                max=self.cfg.ranges.ang_vel_z[1],\n            )\n        # Enforce standing (i.e., zero velocity command) for standing envs\n        # TODO: check if conversion is needed\n        standing_env_ids = self.is_standing_env.nonzero(as_tuple=False).flatten()\n        self.vel_command_b[standing_env_ids, :] = 0.0"
+    },
+    {
+      "source": {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/observations.py",
+        "sha256": "8c3c31d676dbe832110eafe7f57cd19223a9c68c4f79cab1118b9e4c14ab545e"
+      },
+      "function": "get_gait_phase_from_param_with_mask",
+      "class": null,
+      "line": 205,
+      "code": "def get_gait_phase_from_param_with_mask(\n    env: ManagerBasedRLEnv, \n    gait_freq: Union[float, torch.Tensor],\n    vel_command_name: str = \"base_velocity\",\n    vel_threshold: float = 0.1\n) -> torch.Tensor:\n    \"\"\"获取带有速度命令遮罩的步态相位。\n    \n    如果速度指令模长大于 vel_threshold，则正常输出相位；\n    如果小于 vel_threshold，则直接屏蔽为 [0, 0]，避免机器人在原地站立时也出现踏步动作。\n    \n    参数:\n        env: 环境实例。\n        gait_freq: 步频参数。\n        vel_command_name: 获取速度指令的 command_name。\n        vel_threshold: 速度阈值（默认 0.1）。\n    \"\"\"\n    # 检查 episode_length_buf 是否可用\n    if not hasattr(env, \"episode_length_buf\"):\n        return torch.zeros(env.num_envs, 2, device=env.device)\n\n    # 计算标准相位\n    if isinstance(gait_freq, (float, int)):\n        gait_freq = torch.tensor(gait_freq, device=env.device)\n\n    gait_indices = torch.remainder(env.episode_length_buf * env.step_dt * gait_freq, 1.0)\n    gait_indices = gait_indices.view(env.num_envs, 1)\n    \n    sin_phase = torch.sin(2 * torch.pi * gait_indices)\n    cos_phase = torch.cos(2 * torch.pi * gait_indices)\n    phase_tensor = torch.cat([sin_phase, cos_phase], dim=-1)\n\n    # 获取速度指令进行遮罩\n    vel_cmd = env.command_manager.get_command(vel_command_name)\n    cmd_norm = torch.norm(vel_cmd, dim=1, keepdim=True)\n    \n    is_moving = (cmd_norm > vel_threshold).float()\n\n    return phase_tensor * is_moving"
+    },
+    {
+      "source": {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+        "sha256": "6d4e49de8ad941c5b2396ddc6a1187c7a90a72410853755d9e8e98590de9a726"
+      },
+      "function": "stop_motion",
+      "class": null,
+      "line": 120,
+      "code": "def stop_motion(\n    env, lin_threshold: float = 0.05, ang_threshold: float = 0.05, asset_cfg: SceneEntityCfg = SceneEntityCfg(\"robot\")\n) -> torch.Tensor:\n    \"\"\"\n    penalizing linear and angular motion when command velocities are near zero.\n    \"\"\"\n\n    asset = env.scene[asset_cfg.name]\n    base_lin_vel = asset.data.root_lin_vel_w[:, :2]\n    base_ang_vel = asset.data.root_ang_vel_w[:, -1]\n\n    commands = env.command_manager.get_command(\"base_velocity\")\n\n    lin_commands = commands[:, :2]\n    ang_commands = commands[:, 2]\n\n    reward_lin = torch.sum(\n        torch.abs(base_lin_vel) * (torch.norm(lin_commands, dim=1, keepdim=True) < lin_threshold), dim=-1\n    )\n\n    reward_ang = torch.abs(base_ang_vel) * (torch.abs(ang_commands) < ang_threshold)\n\n    total_reward = reward_lin + reward_ang\n    return total_reward"
+    },
+    {
+      "source": {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+        "sha256": "6d4e49de8ad941c5b2396ddc6a1187c7a90a72410853755d9e8e98590de9a726"
+      },
+      "function": "stand_still",
+      "class": null,
+      "line": 107,
+      "code": "def stand_still(\n    env: ManagerBasedRLEnv,\n    command_name: str,\n    command_threshold: float = 0.06,\n    asset_cfg: SceneEntityCfg = SceneEntityCfg(\"robot\"),\n) -> torch.Tensor:\n    \"\"\"Penalize offsets from the default joint positions when the command is very small.\"\"\"\n    # Penalize motion when command is nearly zero.\n    reward = mdp.joint_deviation_l1(env, asset_cfg)\n    reward *= torch.norm(env.command_manager.get_command(command_name), dim=1) < command_threshold\n    # reward *= torch.clamp(-env.scene[\"robot\"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7\n    return reward"
+    },
+    {
+      "source": {
+        "path": "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/mdp/rewards.py",
+        "sha256": "918a18c90ecf9815ca646973de05060dbcd90f6615cd93b0fd4e6d629490191d"
+      },
+      "function": "joint_deviation_l1",
+      "class": null,
+      "line": 180,
+      "code": "def joint_deviation_l1(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg(\"robot\")) -> torch.Tensor:\n    \"\"\"Penalize joint positions that deviate from the default one.\"\"\"\n    # extract the used quantities (to enable type-hinting)\n    asset: Articulation = env.scene[asset_cfg.name]\n    # compute out of limits constraints\n    angle = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]\n    return torch.sum(torch.abs(angle), dim=1)"
+    },
+    {
+      "source": {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+        "sha256": "6d4e49de8ad941c5b2396ddc6a1187c7a90a72410853755d9e8e98590de9a726"
+      },
+      "function": "feet_clearance_reward",
+      "class": null,
+      "line": 598,
+      "code": "def feet_clearance_reward(\n    env: ManagerBasedRLEnv, \n    command_name: str,\n    asset_cfg: SceneEntityCfg, \n    target_height: float, \n    std: float, \n    tanh_mult: float\n) -> torch.Tensor:\n    \"\"\"Reward the swinging feet for clearing a specified height off the ground\"\"\"\n    asset: RigidObject = env.scene[asset_cfg.name]\n    foot_z_target_error = torch.square(asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - target_height)\n    foot_velocity_tanh = torch.tanh(\n        tanh_mult * torch.norm(asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2], dim=2)\n    )\n    error = foot_z_target_error * foot_velocity_tanh\n    reward = torch.exp(-torch.sum(error, dim=1) / std)\n    reward *= torch.linalg.norm(env.command_manager.get_command(command_name), dim=1) > 0.1\n    # reward *= torch.clamp(-env.scene[\"robot\"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7\n    return reward"
+    }
+  ],
+  "other_sources": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/rsl_rl/rsl_rl/modules/discriminator.py",
+      "sha256": "a893aec62209cdc0a990df4f42513b0dc19c220eb2b5887ffd97d53b9b589589"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/rsl_rl/rsl_rl/algorithms/amp_roa_ppo.py",
+      "sha256": "15420c06a4cd343f5b3e5f145ed34eaa6fe959bac0c57214211623f2d4f37038"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/motion_loader.py",
+      "sha256": "bda02a2b37499b8c98c8961323e7919312118d263e011c36355ed4c3f392e721"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+      "sha256": "6d4e49de8ad941c5b2396ddc6a1187c7a90a72410853755d9e8e98590de9a726"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/observations.py",
+      "sha256": "8c3c31d676dbe832110eafe7f57cd19223a9c68c4f79cab1118b9e4c14ab545e"
+    }
+  ],
+  "direct_parameter_change_supported": false
+}
