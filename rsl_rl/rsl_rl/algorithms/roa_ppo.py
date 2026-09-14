@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from itertools import chain
+import math
+from numbers import Real
 
 from rsl_rl.algorithms.ppo import PPO
 
@@ -21,6 +23,11 @@ class ROAPPO(PPO):
                  vel_loss_coef=1.0,
                  priv_reg_coef_schedule_resume=None,
                  **kwargs):
+        if isinstance(dagger_update_freq, bool) or not isinstance(dagger_update_freq, int) or dagger_update_freq <= 0:
+            raise ValueError("dagger_update_freq must be a positive integer")
+        priv_reg_coef_schedule = self.validate_priv_reg_schedule(priv_reg_coef_schedule)
+        if priv_reg_coef_schedule_resume is not None:
+            self.validate_priv_reg_schedule(priv_reg_coef_schedule_resume)
         super().__init__(policy=policy, **kwargs)
         
         # ROA 专属参数
@@ -40,6 +47,17 @@ class ROAPPO(PPO):
             self.hist_encoder_optimizer = optim.Adam(self.policy.history_encoder.parameters(), lr=self.learning_rate)
         else:
             self.hist_encoder_optimizer = None
+
+    @staticmethod
+    def validate_priv_reg_schedule(schedule):
+        """Validate [start coefficient, end coefficient, start iteration, duration]."""
+        if not isinstance(schedule, (list, tuple)) or len(schedule) != 4:
+            raise ValueError("priv_reg schedule must contain four numbers")
+        if any(isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value) for value in schedule):
+            raise ValueError("priv_reg schedule values must be finite numbers")
+        if any(value < 0 for value in schedule[:3]) or schedule[3] <= 0:
+            raise ValueError("priv_reg coefficients/start must be non-negative and duration must be positive")
+        return list(schedule)
 
     def act(self, obs, hist_encoding=False):
         """
@@ -286,6 +304,8 @@ class ROAPPO(PPO):
         在此过程中，特权编码器被彻底冻结（纯粹作为标签产生器），历史编码器进行监督学习，努力拉近两者的隐向量距离。
         """
         if self.hist_encoder_optimizer is None:
+            self.storage.clear()
+            self.counter += 1
             return {}
         
         mean_hist_latent_loss = 0
@@ -301,8 +321,6 @@ class ROAPPO(PPO):
             
             # 1. 使用 inference_mode 完全冻结 Teacher (特权编码器) 的梯度更新
             with torch.inference_mode():
-                # 这一步前向传播是为了维持网络里的一些隐状态（如归一化层等），同时可以预热网络
-                self.policy.act(obs_batch, hist_encoding=True, masks=masks_batch, hidden_states=hid_states_batch[0] if hid_states_batch else None)
                 # 提取出特权隐向量和真实速度，也就是我们的监督目标 (Target/Label)
                 priv_latent_batch = self.policy.infer_priv_latent(obs_batch)
                 true_vel_batch = self.policy.get_true_vel(obs_batch)
@@ -333,6 +351,8 @@ class ROAPPO(PPO):
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_hist_latent_loss /= num_updates
         mean_vel_loss /= num_updates
+        self.storage.clear()
+        self.counter += 1
         return {"hist_latent": mean_hist_latent_loss, "vel_loss": mean_vel_loss}
 
     def broadcast_parameters(self):

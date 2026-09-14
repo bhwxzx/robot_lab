@@ -133,26 +133,16 @@ class OnPolicyRunnerROA(OnPolicyRunner):
                 # 基于最后一步的 Critic Value 计算 GAE 优势函数与回报
                 self.alg.compute_returns(obs)
 
-            # =============================================================================
-            # ROA 算法核心 1：PPO 基础策略更新
-            # 此过程会顺带计算 Privileged Regularization Loss (特权信息不要距离历史信息过远)
-            # =============================================================================
-            loss_dict = self.alg.update()
-
-            # =============================================================================
-            # ROA 算法核心 2：DAgger 蒸馏
-            # 当本次回合是由历史编码器驱动探索时，进行监督学习：
-            # 冻结所有策略，独占式地让 History Encoder 去模仿(L2 Loss) Privileged Encoder 的输出
-            # =============================================================================
+            # ROA Algorithm 1: student rollouts train the history encoder only.
+            # Teacher rollouts train PPO with the student-latent regularizer.
             if hist_encoding:
-                dagger_loss_dict = self.alg.update_dagger()
-                # 这一步非常精妙！我们将新产生的 Loss 塞入字典，父类的 log() 会在打印表格和
-                # wandb 上传时自动提取并记录。无侵入式整合。
-                loss_dict.update(dagger_loss_dict)
+                loss_dict = self.alg.update_dagger()
+            else:
+                loss_dict = self.alg.update()
 
             stop = time.time()
             learn_time = stop - start
-            self.current_learning_iteration = it
+            self.current_learning_iteration = it + 1
             
             # 使用继承的强大 log 函数进行性能输出
             if self.log_dir is not None and not self.disable_logs:
@@ -163,15 +153,15 @@ class OnPolicyRunnerROA(OnPolicyRunner):
             ep_infos.clear()
             
             # 代码状态快照存储 (支持复现)
-            if it == start_iter and not self.disable_logs:
+            if self.log_dir is not None and it == start_iter and not self.disable_logs:
                 git_file_paths = store_code_state(self.log_dir, self.git_status_repos)
                 if self.logger_type in ["wandb", "neptune"] and git_file_paths:
                     for path in git_file_paths:
                         self.writer.save_file(path)
 
         # 训练结束保存最终模型
-        if self.log_dir is not None and not self.disable_logs:
-            self.save(os.path.join(self.log_dir, f"model_{self.current_learning_iteration}.pt"))
+        if num_learning_iterations > 0 and self.log_dir is not None and not self.disable_logs:
+            self.save(os.path.join(self.log_dir, f"model_{self.current_learning_iteration - 1}.pt"))
 
     def get_inference_policy(self, device=None, hist_encoding=True):
         """
@@ -192,16 +182,57 @@ class OnPolicyRunnerROA(OnPolicyRunner):
             
         return act_inference_wrapper
 
+    def save(self, path: str, infos=None):
+        """Save ROA optimizer/schedule state, with iter naming the next rollout."""
+        saved_dict = {
+            "model_state_dict": self.alg.policy.state_dict(),
+            "optimizer_state_dict": self.alg.optimizer.state_dict(),
+            "iter": self.current_learning_iteration,
+            "iteration_is_next": True,
+            "algorithm_counter": self.alg.counter,
+            "priv_reg_coef_schedule": list(self.alg.priv_reg_coef_schedule),
+            "infos": infos,
+        }
+        if self.alg.hist_encoder_optimizer is not None:
+            saved_dict["hist_encoder_optimizer_state_dict"] = self.alg.hist_encoder_optimizer.state_dict()
+        if self.alg.rnd:
+            saved_dict["rnd_state_dict"] = self.alg.rnd.state_dict()
+            saved_dict["rnd_optimizer_state_dict"] = self.alg.rnd_optimizer.state_dict()
+        torch.save(saved_dict, path)
+        if getattr(self, "logger_type", None) in ["neptune", "wandb"] and not self.disable_logs:
+            self.writer.save_model(path, self.current_learning_iteration)
+
     def load(self, path: str, load_optimizer: bool = True, map_location: str | None = None):
-        """
-        重写原有的 load 方法。在恢复训练 (resume) 时，检查配置中是否存在
-        'priv_reg_coef_schedule_resume'，并将其覆盖到特权正则化调度参数中，
-        从而避免 resume 之后系数突然掉回 0。
-        """
-        super().load(path, load_optimizer=load_optimizer, map_location=map_location)
-        
-        # 处理 Resume 特有的调度覆盖
-        if "priv_reg_coef_schedule_resume" in self.alg_cfg:
-            resume_schedule = self.alg_cfg["priv_reg_coef_schedule_resume"]
-            self.alg.priv_reg_coef_schedule = resume_schedule
-            print(f"[ROA Resume] Overriding priv_reg_coef_schedule with {resume_schedule}")
+        """Resume ROA state; an explicit schedule override uses the restored counter."""
+        loaded_dict = torch.load(path, weights_only=False, map_location=map_location)
+        schedule = self.alg_cfg.get("priv_reg_coef_schedule_resume")
+        if schedule is None:
+            schedule = loaded_dict.get("priv_reg_coef_schedule", self.alg.priv_reg_coef_schedule)
+        schedule = self.alg.validate_priv_reg_schedule(schedule)
+        resumed_training = self.alg.policy.load_state_dict(loaded_dict["model_state_dict"])
+        if self.alg.rnd:
+            self.alg.rnd.load_state_dict(loaded_dict["rnd_state_dict"])
+        if resumed_training:
+            if load_optimizer:
+                self.alg.optimizer.load_state_dict(loaded_dict["optimizer_state_dict"])
+                self.alg.learning_rate = self.alg.optimizer.param_groups[0]["lr"]
+                if self.alg.hist_encoder_optimizer is not None:
+                    if "hist_encoder_optimizer_state_dict" in loaded_dict:
+                        self.alg.hist_encoder_optimizer.load_state_dict(loaded_dict["hist_encoder_optimizer_state_dict"])
+                    else:
+                        warnings.warn("ROA checkpoint lacks history optimizer state; exact optimizer continuation is unavailable.")
+                if self.alg.rnd:
+                    self.alg.rnd_optimizer.load_state_dict(loaded_dict["rnd_optimizer_state_dict"])
+            self.current_learning_iteration = int(loaded_dict["iter"])
+            if not loaded_dict.get("iteration_is_next", False):
+                self.current_learning_iteration += 1
+                warnings.warn("Legacy ROA checkpoint: migrated completed iteration to next iteration (+1).")
+            if "algorithm_counter" not in loaded_dict:
+                warnings.warn("ROA checkpoint lacks algorithm_counter; inferring it from the next iteration.")
+            self.alg.counter = int(loaded_dict.get("algorithm_counter", self.current_learning_iteration))
+            if "priv_reg_coef_schedule" not in loaded_dict and self.alg_cfg.get("priv_reg_coef_schedule_resume") is None:
+                warnings.warn("ROA checkpoint lacks regularization schedule; using the configured training schedule.")
+            self.alg.priv_reg_coef_schedule = schedule
+            if self.alg_cfg.get("priv_reg_coef_schedule_resume") is not None:
+                print(f"[ROA Resume] Overriding priv_reg_coef_schedule with {schedule} at counter={self.alg.counter}")
+        return loaded_dict.get("infos")
