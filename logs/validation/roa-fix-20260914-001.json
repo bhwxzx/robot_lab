@@ -1,0 +1,93 @@
+{
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+  "run_dir": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-14_21-43-55_roa_fix_smoke",
+  "num_envs": 32,
+  "iterations": 2,
+  "total_environment_steps": 1536,
+  "seed": 42,
+  "exit_code": 0,
+  "cpu_regression_tests_passed": 8,
+  "cpu_test": {
+    "path": "/home/server/liufengrong/robot_lab/scripts/tests/test_roa_training.py",
+    "sha256": "3488535c0e695daffa6b19784f56b94d31ad330e5025c470098e0cad42cdd81f"
+  },
+  "checkpoints": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-14_21-43-55_roa_fix_smoke/model_0.pt",
+      "sha256": "ec0db19d774b81e6892fc3a4ace0f02dd99791900664cc7094b426733741cbbd"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-14_21-43-55_roa_fix_smoke/model_1.pt",
+      "sha256": "cdd334b453b1e19360d98694f97816ed1a078f0cbd115538ee5c2b479fa59220"
+    }
+  ],
+  "console": {
+    "path": "/home/server/liufengrong/robot_lab/logs/validation/roa-fix-20260914-001.log",
+    "sha256": "108f1cf680e0eebd76c2c5667bf626744ddd0888b4d3b51c92aa102949557999"
+  },
+  "losses": {
+    "Loss/hist_latent": [
+      {
+        "step": 0,
+        "value": 0.7826417684555054
+      }
+    ],
+    "Loss/vel_loss": [
+      {
+        "step": 0,
+        "value": 0.7952176332473755
+      }
+    ],
+    "Loss/learning_rate": [
+      {
+        "step": 0,
+        "value": 0.0010000000474974513
+      },
+      {
+        "step": 1,
+        "value": 9.999999747378752e-06
+      }
+    ],
+    "Loss/value_function": [
+      {
+        "step": 1,
+        "value": 17.878292083740234
+      }
+    ],
+    "Loss/surrogate": [
+      {
+        "step": 1,
+        "value": -0.030467458069324493
+      }
+    ],
+    "Loss/entropy": [
+      {
+        "step": 1,
+        "value": 14.183124542236328
+      }
+    ],
+    "Loss/priv_reg": [
+      {
+        "step": 1,
+        "value": 0.5686377882957458
+      }
+    ]
+  },
+  "checks": {
+    "student_only_at_iteration_0": true,
+    "teacher_only_at_iteration_1": true,
+    "history_unchanged_during_real_teacher_update": true,
+    "checkpoint_counter_and_next_iteration": 2,
+    "history_optimizer_restored": true,
+    "learning_rate_restored": 1e-05,
+    "restored_inference_shape": [
+      32,
+      10
+    ]
+  },
+  "limitations": [
+    "Synthetic CPU regression verifies identical updates only with the same input/random state; simulator state is not checkpointed.",
+    "Existing PhysX GroupBase/GroupFoot/GroupWheel/GroupOthers replication diagnostics also occur in the prior DWAQ evaluation; smoke test completed despite them.",
+    "Two iterations validate execution, not policy quality or convergence."
+  ]
+}

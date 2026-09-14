@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "analysis_kind": "receiver_read_only_analysis_of_existing_sim2sim",
+  "created_at": "2026-09-12T12:28:01.872210+00:00",
+  "source_root": "/home/server/liufengrong/sim2sim_test/sim2sim_diagnostics/20260912-172700-wheel-dwaq-drift",
+  "source_manifest": {
+    "path": "/home/server/liufengrong/sim2sim_test/sim2sim_diagnostics/20260912-172700-wheel-dwaq-drift/manifest.json",
+    "sha256": "07b16f4d3296d952f0a488d700235fd08ca29144bc10b81d793538147eebe4b7"
+  },
+  "identity": {
+    "path": "/home/lfr/sim2sim_test/sim2sim_work/20260912-172700-wheel-dwaq-drift/policy/LW/robot_lab/wheel_loco/policy.onnx",
+    "archive": "/home/lfr/policy_storage/LW/wheel_loco/2026-09-11-17-04-10",
+    "sha256": "f19ef4d568e3fc5b0cc4cf07d3f34519683e372b4bc3f296284af4823257015d",
+    "jit_sha256": "7fe006dade63ed6003321e37392834e490ef5e993ddc43dad64c72a5f5cb3ac3",
+    "run": "2026-09-11_17-04-10",
+    "checkpoint": "model_49999.pt",
+    "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0"
+  },
+  "receiver_validation": {
+    "manifest_sidecar_matches": true,
+    "verified_payload_files": 159,
+    "manifest_payload_files": 161,
+    "hash_mismatches": [],
+    "unavailable_lfs_payloads": [
+      "cases/A-seed42/telemetry.jsonl.gz",
+      "cases/C-seed44/telemetry.jsonl.gz"
+    ],
+    "limitation": "Repeated HTTPS reads failed; these two files remain Git LFS pointers. Sender nine-case validation is distinct from receiver validation."
+  },
+  "independent_full_window_recomputation": {
+    "cases": [
+      "A-seed43",
+      "B-seed43",
+      "B-seed44",
+      "C-seed43"
+    ],
+    "records_per_case": 6000,
+    "metrics": [
+      "xy_net_m",
+      "fit_drift_speed_m_s"
+    ],
+    "agreement_abs_tolerance": 1e-08,
+    "actual_commands_history_wheel_mask_finite_input_checks": true
+  },
+  "offline_velocity_estimator": {
+    "method": "Expose /encode_mean_vel/Gemm_output_0 as an additional output in an in-memory copy of the hash-matched ONNX. Divide by critic base_lin_vel scale 2.0; compare with pre.base_origin_linear_velocity_body[0] at all original policy samples. The pre state is the current policy boundary; deployed sensors usually lag by 2ms. No saved model changes or new closed-loop runs.",
+    "model_sha256": "f19ef4d568e3fc5b0cc4cf07d3f34519683e372b4bc3f296284af4823257015d",
+    "training_velocity_scale": 2.0,
+    "supervision_source": {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/algorithms/dwaq_ppo.py",
+      "sha256": "e8ca7a01ec08a9ef3d390ba31b41dfe36e9f63193410c9bf1026cbab667bf2a0"
+    },
+    "full_action_replay_cases": [
+      "A-seed43",
+      "B-seed42",
+      "C-seed43"
+    ],
+    "full_action_replay_samples": 18000,
+    "max_abs_action_error": 0.0,
+    "windows": [
+      {
+        "case": "A-seed43",
+        "window_s": [
+          40,
+          120
+        ],
+        "samples": 4000,
+        "estimated_vx_mean_m_s": -0.08703982938081026,
+        "actual_vx_mean_m_s": -0.13794923820481728,
+        "bias_m_s": 0.050909408824007046,
+        "rmse_m_s": 0.05092242998023183
+      },
+      {
+        "case": "B-seed42",
+        "window_s": [
+          40,
+          120
+        ],
+        "samples": 4000,
+        "estimated_vx_mean_m_s": -0.04982511295285076,
+        "actual_vx_mean_m_s": -0.07814342718149792,
+        "bias_m_s": 0.02831831422864716,
+        "rmse_m_s": 0.046442735813424174
+      },
+      {
+        "case": "C-seed43",
+        "window_s": [
+          40,
+          60
+        ],
+        "samples": 1000,
+        "estimated_vx_mean_m_s": 0.4506347311548889,
+        "actual_vx_mean_m_s": 0.492056430190137,
+        "bias_m_s": -0.041421699035248144,
+        "rmse_m_s": 0.044979643507169806
+      },
+      {
+        "case": "C-seed43",
+        "window_s": [
+          80,
+          120
+        ],
+        "samples": 2000,
+        "estimated_vx_mean_m_s": -0.08585979689285159,
+        "actual_vx_mean_m_s": -0.13640813862892756,
+        "bias_m_s": 0.05054834173607598,
+        "rmse_m_s": 0.05056175565049173
+      }
+    ],
+    "interpretation": "Backward speed magnitude is underestimated in these MuJoCo trajectories; correlation only, not a causal intervention or proof that the estimator is the sole source of drift."
+  },
+  "configuration_comparison": {
+    "isaac_source": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/provenance/config-5b31a80d98c92183b81556df703062b454a62b7df4091becebb2ffcb97a93730.json",
+      "sha256": "5b31a80d98c92183b81556df703062b454a62b7df4091becebb2ffcb97a93730"
+    },
+    "isaac_zero_standing_scenario": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/zero-standing-plane-20260912-001/manifest.json",
+      "sha256": "7981ab44f8a11b5467a37925fa9ebd45928e0b2c7e4a58c2a6c307724d8a6d58"
+    },
+    "foot_kp_kd": {
+      "isaac_config": [
+        28,
+        1.4
+      ],
+      "mujoco_config": [
+        36,
+        1.8
+      ]
+    },
+    "physics_dt_s": {
+      "isaac_config": 0.005,
+      "mujoco_config": 0.002
+    },
+    "policy_period_s": {
+      "isaac_config": 0.02,
+      "mujoco_config": 0.02
+    },
+    "mujoco_pd_actual_intervals_s": [
+      0.004,
+      0.006
+    ],
+    "mujoco_first_action_application_delay_s": 0.006,
+    "nominal_initial_base_z_m": {
+      "isaac_config": 0.725,
+      "mujoco_config": 0.7
+    },
+    "plane_sliding_friction": {
+      "isaac_zero_standing_override": 1.0,
+      "mujoco_config": 0.8
+    },
+    "limitation": "Configuration evidence is not proof of equal compiled physics, contact geometry or actual first-state equivalence."
+  },
+  "recommended_next_bounded_test": "On deployment machine, compare A-seed42 120s zero-command no-noise against only foot Kp/Kd changed to 28/1.4; keep all other conditions fixed. Report position drift, yaw, attitude, force limits and velocity-estimator bias. This audit does not execute or authorize that new test."
+}

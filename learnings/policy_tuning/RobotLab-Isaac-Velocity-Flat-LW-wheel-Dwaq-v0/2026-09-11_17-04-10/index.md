@@ -32,3 +32,7 @@
 - [归档凭据](evidence/checkpoint_selection/archive-receipt-user-latest-20260912-001.json)：`policy_storage/LW/wheel_loco/2026-09-11-17-04-10`（按训练开始时间更名，原始归档凭据保留历史路径）。
 - [提交与远端核验](evidence/checkpoint_selection/git-publish-user-latest-20260912-001.json)：`a9fd8651d9d8403aed914275d519ebb1c181db8b` 已在远端 `master`。
 - [归档目录更正记录](evidence/checkpoint_selection/archive-path-correction-20260912-001.json)：按训练开始时间命名，模型内容不变。
+
+## MuJoCo 返回结果复核
+
+- [接收端离线复核与速度估计偏差](evidence/training/sim2sim-receiver-audit-20260912-001.json)：159/161 个载荷文件哈希通过，2 个原始遥测仍为 LFS 指针；3 个用例共18,000步 ONNX 动作重放逐值一致。未追加仿真。
