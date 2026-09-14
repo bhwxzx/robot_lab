@@ -1,0 +1,71 @@
+{
+  "version": 2,
+  "archive_authorized": true,
+  "storage_root": "/home/young/liufengrong/policy_storage",
+  "collection": "LW/leg_loco",
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0",
+  "algorithm": "AMPROAPPO",
+  "runner": "OnPolicyRunnerAmpROA",
+  "selected_checkpoint": {
+    "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-12_22-03-53/model_50000.pt",
+    "sha256": "c085221208af7328c74da8c260f198822b604c0388a9609c13eb0ec515971536",
+    "iteration": 50000
+  },
+  "artifacts": {
+    "jit": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evidence/export/export-50000-20260914-001/policy.pt",
+      "sha256": "783a2a671716f7c9c38fee54ab10d470163d4bee8ae6503170c8ff3fe973df42"
+    },
+    "onnx": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evidence/export/export-50000-20260914-001/policy.onnx",
+      "sha256": "8d3ee152ca53c9f835318023e3095f868191c960c433c5a897317b2a7e38ce3b"
+    }
+  },
+  "source": {
+    "commit": "2af36488f956fe014768f4a770a5dff9748fb934",
+    "dirty": true
+  },
+  "parameters": {
+    "rel_standing_envs": 0.1,
+    "track_velocity_std": 0.5,
+    "flat_orientation_l2": -5.0,
+    "body_orientation_l2": -3.0,
+    "ang_vel_xy_l2": -0.1,
+    "amp_task_reward_lerp": 0.3,
+    "amp_reward_coef": 2.0
+  },
+  "evaluation": {
+    "results": [
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evaluations/flat-review-20260914-001/raw/stand-a01/result.json",
+        "sha256": "a7d9347d2e50f53221d508db7a0ee5f34b48dc23857b2edf31d26769796deeec"
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evaluations/flat-review-20260914-001/raw/forward-stop-a01/result.json",
+        "sha256": "1066ee9d50c709a61b9f3ffbbc0ddaacddf55726f7662db2fe25419f6b88f8a7"
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evaluations/flat-review-20260914-001/raw/backward-stop-a01/result.json",
+        "sha256": "e7600b7ac676028a772ec17a727080ea8b10bff4e07ccde4cc6164840aea2aa2"
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evaluations/flat-review-20260914-001/raw/turn-left-a01/result.json",
+        "sha256": "b08c68cc82f83c34b65afc2d7a17f358bf5964b977667c292fbfe0d34d84bfd8"
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evaluations/flat-review-20260914-001/raw/turn-right-a01/result.json",
+        "sha256": "2e97a02400b3d44f41444297609cd1adb11c6e6a99b5e230af5a3fa872e5511f"
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evaluations/flat-review-20260914-001/raw/moving-turn-a01/result.json",
+        "sha256": "efb64e2a8f2f8e554a0545da2f9298462c4077ca0bd1911e788e9113af88b73a"
+      }
+    ]
+  },
+  "export_receipt": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-12_22-03-53/evidence/export/export-50000-20260914-001/receipt.json",
+    "sha256": "2394c4cf4304b2c2fca5e69602d218e16b33810b52e0eecca2799ab984267080",
+    "size_bytes": 11183
+  },
+  "description_notes": "用户于本会话授权导出归档并提交推送。训练开始时间 2026-09-12 22:03:53，归档 model_50000.pt；不是后续奖励调参模型，姿态和角速度奖励建议均未实施。Native 基础六场景各 20 秒、seed42，遥测完整且无终止，不构成收敛或长期可靠性证明。原配置 [5,15) 秒右转平均横滚 -6.12 度，左右侧倾对横向附加质心偏移敏感；边走边转姿态波动仍待优化。JIT/ONNX static batch1 导出经过 8 个时序样本及第4步重置边界校验。原始完整评估、进一步质心对照和导出日志保留在训练仓库的 learnings/policy_tuning 对应运行目录。"
+}
