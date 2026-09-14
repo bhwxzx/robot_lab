@@ -25,14 +25,18 @@ class LWWheelFlatDwaqEnvCfg(LWWheelRoughDwaqEnvCfg):
         # no terrain curriculum
         # self.curriculum.terrain_levels = None
 
+        self.commands.base_velocity.rel_standing_envs = 0.10
+
         # events
         self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
         # wheel状态下承受侧向冲击能力弱
-        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (1.0, 1.0)}
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
         self.events.randomize_rigid_body_mass_base.params["mass_distribution_params"] = (-1.0, 3.0)
-        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)}
-        self.events.randomize_actuator_gains = None
+        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.075, 0.075), "y": (-0.075, 0.075), "z": (-0.075, 0.075)}
+        self.events.randomize_actuator_gains.params["distribution"] = "uniform"
+        self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
+        self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
         self.events.randomize_apply_external_force_torque = None
         self.events.randomize_rigid_body_mass_others.params["mass_distribution_params"] = (0.7, 1.3)
 
@@ -42,7 +46,7 @@ class LWWheelFlatDwaqEnvCfg(LWWheelRoughDwaqEnvCfg):
         self.rewards.joint_deviation_legs.weight = -0.4
         self.rewards.lin_vel_z_l2.weight = -1.0
         self.rewards.undesired_contacts.weight = -5.0
-        self.rewards.track_lin_vel_xy_exp.weight = 3.0
+        self.rewards.track_lin_vel_xy_exp.weight = 4.0
         self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
         self.rewards.track_ang_vel_z_exp.weight = 3.0
         self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)
@@ -102,13 +106,15 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):
         # no terrain curriculum
         # self.curriculum.terrain_levels = None
 
+        self.commands.base_velocity.rel_standing_envs = 0.10
+
         # events
         self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
         # wheel状态下承受侧向冲击能力弱
-        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (1.0, 1.0)}
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
         self.events.randomize_rigid_body_mass_base.params["mass_distribution_params"] = (-1.0, 3.0)
-        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)}
+        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.075, 0.075), "y": (-0.075, 0.075), "z": (-0.075, 0.075)}
         self.events.randomize_actuator_gains.params["distribution"] = "uniform"
         self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
         self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
@@ -122,7 +128,7 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):
         self.rewards.joint_deviation_legs.weight = -0.4
         self.rewards.lin_vel_z_l2.weight = -1.0
         self.rewards.undesired_contacts.weight = -5.0
-        self.rewards.track_lin_vel_xy_exp.weight = 3.0
+        self.rewards.track_lin_vel_xy_exp.weight = 4.0
         self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
         self.rewards.track_ang_vel_z_exp.weight = 3.0
         self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)

@@ -193,7 +193,7 @@ class LWWheelCommandsCfg(CommandsCfg):
         resampling_time_range=(10.0, 10.0), # (3.0, 15.0)
         rel_standing_envs=0.02,
         rel_heading_envs=1.0,
-        heading_command=True,
+        heading_command=False,
         heading_control_stiffness=0.5,
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
@@ -1155,7 +1155,7 @@ class LWWheelRoaObservationsCfg(ObservationsCfg):
             func=mdp.joint_vel_rel,
             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
             # noise=GaussianNoise(mean=0.0, std=0.02),
-            noise=Unoise(n_min=-0.5, n_max=0.5),
+            noise=Unoise(n_min=-1.5, n_max=1.5),
             clip=(-100.0, 100.0),
             scale=1.0,
         )
