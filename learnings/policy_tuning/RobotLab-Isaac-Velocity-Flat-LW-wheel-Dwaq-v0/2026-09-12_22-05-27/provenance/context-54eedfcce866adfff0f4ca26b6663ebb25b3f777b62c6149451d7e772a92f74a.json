@@ -1,0 +1,78 @@
+{
+  "algorithm": "DWAQPPO",
+  "backend": "rsl_rl",
+  "config_files": [
+    {
+      "path": "scripts/reinforcement_learning/rsl_rl/train.py",
+      "sha256": "95a4a317d71089d9658b85a8048c857fe3990ff5fbf8a558d5e258fdd308f808"
+    },
+    {
+      "path": "scripts/start_dwaq.sh",
+      "sha256": "c1640045e9181f6b6f756e91a16b934fc1ef015e75b366c9c919c636220b44b1"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/assets/LW.py",
+      "sha256": "bf3e50239ae24fa94baf4ed608318ed880f2bc429d0113f010a2c09fba0d8905"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/__init__.py",
+      "sha256": "6b6612fb65644f78d65667f305dc4ce754ea121ab4e72a53362359e675ef1274"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_dwaq_cfg.py",
+      "sha256": "7fda4446c63c98535e54385b08fd320d3fc464b2d46736f8082daef6ce0247de"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py",
+      "sha256": "68c6d3fd6641e503da334252b1d8251fda822db306e46fc20dac220f828b63fc"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py",
+      "sha256": "1225c46ab31587acb8ed759d998f52e2bb718f7c5512a3a8cfe228218d877f7f"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/terrains/terrains_cfg.py",
+      "sha256": "8f640c5ec6c0c39b9a7916e701d6342d87c1960a0a7178011b24c992aa29c29d"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/velocity_env_cfg.py",
+      "sha256": "3ebb97c31a34b37e273d2f6a35403ab822875d88897f67c31b894711d4a9b697"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/utils/wrappers/rsl_rl/rl_dwaq_cfg.py",
+      "sha256": "774b182a4377238b68f6cfe9378ec1fdc4a75c5d8a794234be7d06b5bb02a556"
+    }
+  ],
+  "host_id": "server-System-Product-Name",
+  "identity_sha256": "91837ba3b1908fc9e4046a7c39c2b64338ca24a2d3f7acd42339225de6f3c11d",
+  "run_id": "2026-09-12_22-05-27",
+  "runner": "OnPolicyRunnerDwaq",
+  "seed": 42,
+  "source": {
+    "branch": "main",
+    "diff_sha256": "a79fe6f9ba1270de8a7c5ca7e7b797556403224d0ef206e75ff68e4ab4df9140",
+    "dirty": true,
+    "dirty_paths": [
+      "source/robot_lab/robot_lab/assets/LW.py",
+      "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py",
+      "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/velocity_env_cfg.py"
+    ],
+    "head": "d65db4a524f267177fee1710810bc7005ccdfdca",
+    "patch_evidence": null,
+    "repository_root": "/home/server/liufengrong/robot_lab"
+  },
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0",
+  "training": {
+    "command": [
+      "python",
+      "scripts/reinforcement_learning/rsl_rl/train.py",
+      "--task=RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0",
+      "--log_project_name=LW_wheel_locomotion_dwaq",
+      "--logger=wandb",
+      "--num_envs=4096",
+      "--headless"
+    ],
+    "hydra_overrides": []
+  },
+  "version": 2
+}

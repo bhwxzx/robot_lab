@@ -1,0 +1,93 @@
+{
+  "baseline_config": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/provenance/config-5b31a80d98c92183b81556df703062b454a62b7df4091becebb2ffcb97a93730.json",
+  "current_config": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-12_22-05-27/provenance/config-f46d43603f25a340da12ac319f6fd9a594315e59c6bc510c30a5574a910f700f.json",
+  "changes": [
+    {
+      "path": "/environment/commands/base_velocity/rel_standing_envs",
+      "before": "0.02",
+      "after": "0.1"
+    },
+    {
+      "path": "/environment/events/randomize_actuator_gains",
+      "before": "null",
+      "after": {
+        "func": "isaaclab.envs.mdp.events:randomize_actuator_gains",
+        "params": {
+          "asset_cfg": {
+            "name": "robot",
+            "joint_names": [
+              "right_hip_joint",
+              "left_hip_joint",
+              "right_thigh_joint",
+              "left_thigh_joint",
+              "right_shank_joint",
+              "left_shank_joint",
+              "right_foot_joint",
+              "left_foot_joint",
+              "right_wheel_joint",
+              "left_wheel_joint"
+            ],
+            "joint_ids": [
+              "null",
+              "null",
+              "null"
+            ],
+            "fixed_tendon_names": "null",
+            "fixed_tendon_ids": [
+              "null",
+              "null",
+              "null"
+            ],
+            "body_names": "null",
+            "body_ids": [
+              "null",
+              "null",
+              "null"
+            ],
+            "object_collection_names": "null",
+            "object_collection_ids": [
+              "null",
+              "null",
+              "null"
+            ],
+            "preserve_order": "false"
+          },
+          "stiffness_distribution_params": [
+            "0.8",
+            "1.2"
+          ],
+          "damping_distribution_params": [
+            "0.8",
+            "1.2"
+          ],
+          "operation": "scale",
+          "distribution": "uniform"
+        },
+        "mode": "reset",
+        "interval_range_s": "null",
+        "is_global_time": "false",
+        "min_step_count_between_reset": "0"
+      }
+    },
+    {
+      "path": "/environment/log_dir",
+      "before": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_dwaq/2026-09-11_17-04-10",
+      "after": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_dwaq/2026-09-12_22-05-27"
+    },
+    {
+      "path": "/environment/scene/robot/actuators/foots/max_delay",
+      "before": "6",
+      "after": "3"
+    },
+    {
+      "path": "/environment/scene/robot/actuators/legs/max_delay",
+      "before": "6",
+      "after": "3"
+    },
+    {
+      "path": "/environment/scene/robot/actuators/wheels/max_delay",
+      "before": "6",
+      "after": "3"
+    }
+  ]
+}
