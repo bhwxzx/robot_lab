@@ -43,7 +43,7 @@ class LWRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
         desired_kl=0.01,
         max_grad_norm=1.0,
         priv_reg_coef_schedule=[0.0, 0.1, 2000, 3000],
-        priv_reg_coef_schedule_resume=[0.0, 0.1, 0, 1],
+        priv_reg_coef_schedule_resume=None,
         dagger_update_freq=20,
         vel_loss_coef=1.0,
         # None：原有真实速度 PPO；课程格式：[初始概率, 最终概率, 起始迭代, 渐变迭代数]。
