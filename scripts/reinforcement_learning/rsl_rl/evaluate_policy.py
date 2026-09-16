@@ -20,6 +20,8 @@ from policy_evaluation_telemetry import (
     ROA_ABLATION_MODES,
     roa_diagnostic_signals,
     capture_roa_diagnostics,
+    DWAQ_DIAGNOSTIC_SIGNALS,
+    capture_dwaq_diagnostics,
     BodyJitterTracker,
     JointLimitTracker,
     SignalLedger,
@@ -566,8 +568,14 @@ def _evaluate(
     )
     command_schedule = evaluation_plan.scenario_contract["command_schedule"]
     roa_mode = evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.roa_mode")
+    dwaq_mode = evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.dwaq_mode")
     roa_velocity_enabled = getattr(agent_cfg.policy, "use_velocity_estimation", True)
     diagnostic_signals = roa_diagnostic_signals(roa_mode, roa_velocity_enabled) if roa_mode else ()
+    if dwaq_mode is not None:
+        diagnostic_signals = DWAQ_DIAGNOSTIC_SIGNALS
+        if (agent_cfg.class_name != "OnPolicyRunnerDwaq" or args_cli.artifact_kind != "native"
+                or evaluation_plan.telemetry_path is None):
+            raise ValueError("DWAQ diagnostics require native OnPolicyRunnerDwaq and telemetry")
     if roa_mode is not None and (
         agent_cfg.class_name != "OnPolicyRunnerROA" or args_cli.artifact_kind != "native"
         or evaluation_plan.telemetry_path is None
@@ -576,7 +584,7 @@ def _evaluate(
     for dotted_path, value in evaluation_plan.scenario_contract[
         "scenario_overrides"
     ].items():
-        if dotted_path == "evaluation.roa_mode":
+        if dotted_path in ("evaluation.roa_mode", "evaluation.dwaq_mode"):
             continue
         _set_dotted(env_cfg, dotted_path, value)
     if command_schedule:
@@ -646,15 +654,19 @@ def _evaluate(
     previous_actions: torch.Tensor | None = None
     robot = env.unwrapped.scene["robot"]
     roa_diagnostics = None
-    if roa_mode is not None:
+    dwaq_diagnostics = None
+    if roa_mode is not None or dwaq_mode is not None:
         velocity_scale = env_cfg.observations.critic.base_lin_vel.scale
         velocity_scale = 1.0 if velocity_scale is None else velocity_scale
         diagnostics = {
-            "controller": roa_mode, "sampling_phase": "pre_action", "velocity_units": "m/s",
+            "controller": roa_mode or dwaq_mode, "sampling_phase": "pre_action", "velocity_units": "m/s",
             "velocity_observation_scale": torch.as_tensor(velocity_scale).reshape(-1).tolist(),
         }
-        diagnostics["use_velocity_estimation"] = policy_module.use_velocity_estimation
-        roa_diagnostics = diagnostics
+        if roa_mode is not None:
+            diagnostics["use_velocity_estimation"] = policy_module.use_velocity_estimation
+            roa_diagnostics = diagnostics
+        else:
+            dwaq_diagnostics = diagnostics
     body_jitter_segments = command_schedule or [
         {
             "start_step": 0,
@@ -812,12 +824,18 @@ def _evaluate(
             observations = env.get_observations()
         with torch.inference_mode():
             roa_snapshot = None
+            dwaq_snapshot = None
             if roa_mode is not None:
                 roa_snapshot = capture_roa_diagnostics(
                     policy_module, observations, robot.data.root_lin_vel_b, velocity_scale,
                     include_ablations=roa_mode in ROA_ABLATION_MODES,
                 )
                 native_actions = roa_snapshot[f"roa_{roa_mode}_action"]
+            elif dwaq_mode is not None:
+                dwaq_snapshot = capture_dwaq_diagnostics(
+                    policy_module, observations, robot.data.root_lin_vel_b, velocity_scale,
+                )
+                native_actions = dwaq_snapshot[f"dwaq_{dwaq_mode}_action"]
             else:
                 native_actions = native_policy(observations)
             if artifact_policy is None:
@@ -1056,6 +1074,11 @@ def _evaluate(
                     sample[name] = telemetry_ledger.capture(
                         name, lambda name=name: _tensor_row(roa_snapshot[name], env_index)
                     )
+            if dwaq_snapshot is not None:
+                for name in diagnostic_signals:
+                    sample[name] = telemetry_ledger.capture(
+                        name, lambda name=name: _tensor_row(dwaq_snapshot[name], env_index)
+                    )
             telemetry_samples.append(sample)
 
     elapsed = max(time.monotonic() - start_time, 1e-12)
@@ -1261,6 +1284,8 @@ def _evaluate(
         }
         if roa_diagnostics is not None:
             telemetry["roa_diagnostics"] = roa_diagnostics
+        if dwaq_diagnostics is not None:
+            telemetry["dwaq_diagnostics"] = dwaq_diagnostics
     result = {
         "version": 3 if evaluation_plan.batch_id else 2,
         "layout_version": 2 if evaluation_plan.batch_id else 1,
@@ -1313,6 +1338,8 @@ def _evaluate(
     }
     if roa_diagnostics is not None:
         result["roa_diagnostics"] = roa_diagnostics
+    if dwaq_diagnostics is not None:
+        result["dwaq_diagnostics"] = dwaq_diagnostics
     publisher.publish(
         result,
         telemetry=telemetry,

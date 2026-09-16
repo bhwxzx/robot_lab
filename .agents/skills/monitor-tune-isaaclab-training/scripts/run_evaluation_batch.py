@@ -53,6 +53,10 @@ def validate_contract(contract: dict) -> dict:
             raise ValueError("duplicate attempt ID")
         seen.add(case["attempt_id"])
         validate_scenario_contract(case["scenario"])
+        if "evaluation.roa_mode" in case["scenario"]["scenario_overrides"] and identity["runner"] != "OnPolicyRunnerROA":
+            raise ValueError("ROA diagnostic mode requires OnPolicyRunnerROA")
+        if "evaluation.dwaq_mode" in case["scenario"]["scenario_overrides"] and identity["runner"] != "OnPolicyRunnerDwaq":
+            raise ValueError("DWAQ diagnostic mode requires OnPolicyRunnerDwaq")
         if case["scenario"]["seed"] != identity["seed"]:
             raise ValueError("scenario seed mismatch")
         if case["scenario"]["num_envs"] > 64 or case["scenario"]["duration_steps"] > 100000:

@@ -154,10 +154,13 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
         raise EvaluationEvidenceError("scenario_overrides must be an object")
     for key, setting in value["scenario_overrides"].items():
         if key.startswith("evaluation."):
-            from policy_evaluation_telemetry import ROA_CONTROL_MODES
-            modes = {"evaluation.roa_mode": ROA_CONTROL_MODES}
+            from policy_evaluation_telemetry import ROA_CONTROL_MODES, DWAQ_CONTROL_MODES
+            modes = {"evaluation.roa_mode": ROA_CONTROL_MODES,
+                     "evaluation.dwaq_mode": DWAQ_CONTROL_MODES}
             if key not in modes or setting not in modes[key]:
                 raise EvaluationEvidenceError("invalid evaluation controller or unknown evaluation option")
+    if all(key in value["scenario_overrides"] for key in ("evaluation.roa_mode", "evaluation.dwaq_mode")):
+        raise EvaluationEvidenceError("ROA and DWAQ diagnostic modes are mutually exclusive")
     if not isinstance(value["command_schedule"], list):
         raise EvaluationEvidenceError("command_schedule must be an array")
     for field in ("duration_steps", "num_envs"):
@@ -831,6 +834,39 @@ def validate_evaluation_bundle(
             raise EvaluationEvidenceError("ROA diagnostic sample count mismatch")
         if any(not telemetry.get("signal_status", {}).get(name, {}).get("complete") for name in required):
             raise EvaluationEvidenceError("incomplete ROA diagnostic signals")
+
+    dwaq_mode = scenario_contract["scenario_overrides"].get("evaluation.dwaq_mode")
+    if dwaq_mode is not None:
+        from policy_evaluation_telemetry import DWAQ_DIAGNOSTIC_SIGNALS
+        if evaluation["runner"] != "OnPolicyRunnerDwaq" or artifact["kind"] != "native":
+            raise EvaluationEvidenceError("DWAQ diagnostics require native OnPolicyRunnerDwaq")
+        if telemetry_reference is None:
+            raise EvaluationEvidenceError("DWAQ diagnostics require telemetry")
+        diagnostic = result.get("dwaq_diagnostics", {})
+        if (diagnostic.get("controller") != dwaq_mode
+                or diagnostic.get("sampling_phase") != "pre_action"
+                or diagnostic.get("velocity_units") != "m/s"
+                or telemetry.get("dwaq_diagnostics") != diagnostic):
+            raise EvaluationEvidenceError("DWAQ diagnostic mode/units/timing binding mismatch")
+        scales = diagnostic.get("velocity_observation_scale")
+        if (not isinstance(scales, list) or len(scales) not in (1, 3)
+                or any(isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x) or x <= 0 for x in scales)):
+            raise EvaluationEvidenceError("invalid DWAQ velocity observation scale")
+        required = set(DWAQ_DIAGNOSTIC_SIGNALS)
+        if not required.issubset(telemetry.get("required_signals", [])):
+            raise EvaluationEvidenceError("DWAQ diagnostic signals must be required")
+        for sample in telemetry.get("samples", []):
+            for name in required:
+                values = sample.get(name)
+                if not isinstance(values, list) or not values or any(not isinstance(x, (int, float)) or isinstance(x, bool) or not math.isfinite(x) for x in values):
+                    raise EvaluationEvidenceError(f"invalid or missing DWAQ signal {name}")
+            if sample["action"] != sample[f"dwaq_{dwaq_mode}_action"]:
+                raise EvaluationEvidenceError("executed action differs from selected DWAQ branch")
+        expected = len(range(0, scenario_contract["duration_steps"], resource_mode["telemetry_stride"]))
+        if len(telemetry.get("samples", [])) != expected:
+            raise EvaluationEvidenceError("DWAQ diagnostic sample count mismatch")
+        if any(not telemetry.get("signal_status", {}).get(name, {}).get("complete") for name in required):
+            raise EvaluationEvidenceError("incomplete DWAQ diagnostic signals")
 
     return {
         "status": "valid",

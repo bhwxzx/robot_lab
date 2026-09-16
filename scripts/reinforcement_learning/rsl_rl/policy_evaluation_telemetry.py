@@ -62,6 +62,56 @@ ROA_DIAGNOSTIC_SIGNALS = (
 ROA_ABLATION_MODES = ("student_true_velocity", "student_teacher_latent")
 ROA_CONTROL_MODES = ("teacher", "student", *ROA_ABLATION_MODES)
 ROA_ABLATION_SIGNALS = tuple(f"roa_{mode}_action" for mode in ROA_ABLATION_MODES)
+DWAQ_CONTROL_MODES = ("estimated_velocity", "true_velocity")
+DWAQ_DIAGNOSTIC_SIGNALS = (
+    "dwaq_true_velocity_b", "dwaq_label_velocity_b", "dwaq_estimated_velocity_b",
+    "dwaq_latent", "dwaq_estimated_velocity_action", "dwaq_true_velocity_action",
+)
+
+
+def capture_dwaq_diagnostics(policy, observations, actual_velocity, velocity_scale):
+    """Replace only deterministic DWAQ velocity before actor normalization.
+
+    No VAE sampling, history advance or model update occurs. Both candidate
+    actions use the same latent/current observation and pre-action state.
+    """
+    import torch
+
+    with torch.inference_mode():
+        scale = torch.as_tensor(velocity_scale, device=actual_velocity.device,
+                                dtype=actual_velocity.dtype)
+        if scale.numel() not in (1, 3) or not torch.isfinite(scale).all() or (scale <= 0).any():
+            raise ValueError("DWAQ velocity scale must contain one or three positive finite values")
+        scale = scale.reshape(-1)
+        if policy.velocity_dim != 3:
+            raise ValueError("DWAQ diagnostics require three linear velocity components")
+        history = policy.get_obs_from_group(observations, "policy")
+        flat, current = policy._process_history(history)
+        features = policy.encoder_backbone(flat)
+        velocity = policy.encode_mean_vel(features)
+        latent = policy.encode_mean_latent(features)
+        critic = policy.get_obs_from_group(observations, "critic")
+        label = critic[:, policy.obs_dim:policy.obs_dim + 3]
+        values = {
+            "dwaq_true_velocity_b": actual_velocity,
+            "dwaq_label_velocity_b": label / scale,
+            "dwaq_estimated_velocity_b": velocity / scale,
+            "dwaq_latent": latent,
+        }
+        for mode, actor_velocity in (("estimated_velocity", velocity),
+                                     ("true_velocity", actual_velocity * scale)):
+            actor_input = torch.cat((actor_velocity, latent, current), dim=-1)
+            action = policy.actor(policy.actor_obs_normalizer(actor_input))
+            # Reject nonfinite values rather than masking them with nan_to_num.
+            values[f"dwaq_{mode}_action"] = action
+        for name, value in values.items():
+            if value.ndim != 2 or value.shape[0] != actual_velocity.shape[0] or not torch.isfinite(value).all():
+                raise ValueError(f"invalid DWAQ diagnostic tensor: {name}")
+        if not torch.allclose(label / scale, actual_velocity, rtol=1e-5, atol=1e-6):
+            raise ValueError("DWAQ velocity label differs from pre-action physical velocity")
+        return {name: value.detach().clone() for name, value in values.items()}
+
+
 def roa_diagnostic_signals(mode, use_velocity_estimation=True):
     if mode not in ROA_CONTROL_MODES:
         raise ValueError("unknown ROA controller")
