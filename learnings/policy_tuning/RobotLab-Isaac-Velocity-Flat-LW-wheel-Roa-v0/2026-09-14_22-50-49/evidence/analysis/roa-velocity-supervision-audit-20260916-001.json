@@ -1,0 +1,644 @@
+{
+  "version": 1,
+  "created_at": "2026-09-16T02:53:37.500415+00:00",
+  "scope": "Read-only source, checkpoint, TensorBoard and validated telemetry analysis; no new simulation or training; no code/config changes.",
+  "inputs": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evidence/analysis/roa-input-ablation-metrics-20260916-001.json",
+      "sha256": "426f52da9de07417dc1b0b8fe12c07305baf60da94cad082c1f4d4044a054ba8"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evidence/training/tensorboard-review-20260916-001.json",
+      "sha256": "7aca30480bfca4021caf16d3fcf949c51aa0a99021f319fdcbab6d7aaf49b632"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/manifest.json",
+      "sha256": "12d7b68f1bca10e44e7b832c2c00b2b11f3d2101ce54ae1b63ab142c763b5f00"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-14_22-50-49/model_49999.pt",
+      "sha256": "2ceff27d14d1df0c878e05cf1ff831b056f36853fde787b78aa0733a39523119"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-14_22-50-49/params/env.yaml",
+      "sha256": "1ef07d47b11f9d13342d7d88e06db0c0a2a020c3d639dc467b1dc52ab6b091a0"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-14_22-50-49/params/agent.yaml",
+      "sha256": "151578f4dfef296a005a39884dd3759074c9cc490f0f2fefc3477e074c3783e1"
+    }
+  ],
+  "source_files": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/algorithms/roa_ppo.py",
+      "sha256": "ccc636a55677d2418a1edf4c6452f4b7b6001e050dcab1e2bf7adecc4c009719"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/algorithms/ppo.py",
+      "sha256": "f27cfdffc291ae3806dd11ecb09deb3156880c61976d4458e8b465e0001c3f18"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/runners/on_policy_runner_roa.py",
+      "sha256": "67088812cead7adb1e840611eaf0b750510e3389748e676ab81536a612cca650"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/modules/actor_critic_roa.py",
+      "sha256": "6161e94f0fdd0b07308ea237962fe0c7d0925ba7255c050d64887e4c1da851a8"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/storage/rollout_storage.py",
+      "sha256": "001abca2226cfb9b9b3a1c1023ac22a1658406bb024c075d3f0237c6fbb8f639"
+    },
+    {
+      "path": "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/managers/observation_manager.py",
+      "sha256": "57539db34658e98f92961ea6a182d5b1326ec9c9ec5a1cc39e5c032bfdd2cf01"
+    },
+    {
+      "path": "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/utils/buffers/circular_buffer.py",
+      "sha256": "7e3d298e9c43fb05edf96ff3bc9333ca1081faacba7d73b412e5edd5ca60198b"
+    },
+    {
+      "path": "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/manager_based_rl_env.py",
+      "sha256": "974977825dbbd916460b4f9bb12176ab2cde41026fadc05e1de02d8fbbc94725"
+    },
+    {
+      "path": "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/mdp/observations.py",
+      "sha256": "3cbe93ba4e37b9ad9063a65dab244547ad4582798960c0190375fd74d930fd54"
+    },
+    {
+      "path": "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/mdp/commands/velocity_command.py",
+      "sha256": "0ff254a375c9ea8d408824c24145e7ac7906cc7b513c52c4dd4ca0834c1ce241"
+    }
+  ],
+  "implementation_checks": {
+    "velocity_target": "critic[:,39:42], body-frame root linear velocity scaled by 2.0; no velocity observation noise. Teacher target matched pre-action simulator velocity exactly in validated cases.",
+    "history_order": "10 x 39, oldest to latest; current frame at index -1. Storage flattening combines rollout time/environment only, preserving each full observation history.",
+    "label_alignment": "act stores pre-action observations; process_env_step copies those observations to storage; policy history and critic target are indexed from the same TensorDict minibatch. IsaacLab clones observation terms and concatenates fresh group tensors. Static audit plus prior pre-action telemetry checks; no new live rollout-storage instrumentation performed.",
+    "loss": "mean L2 latent distance + 1.0 * mean squared error over all samples and all 3 scaled velocity components; no standing/low-speed weighting.",
+    "regularization": "Teacher PPO latent regularizer excludes the explicit velocity input. Actor uses true velocity in PPO; student collection updates history encoder only.",
+    "training_actions": "Both teacher/student collection sample stochastic actions; evaluation is deterministic."
+  },
+  "training_budget": {
+    "iterations": 50000,
+    "student_rollout_iterations": 2500,
+    "teacher_rollout_iterations": 47500,
+    "num_envs": 4096,
+    "steps_per_rollout": 24,
+    "control_dt_s": 0.02,
+    "student_continuous_control_s": 0.48,
+    "student_start_spacing_s": 9.6,
+    "intervening_teacher_control_s": 9.12,
+    "history_samples": 10,
+    "history_first_to_last_span_s": 0.18,
+    "epochs_per_student_rollout": 5,
+    "minibatches_per_epoch": 4,
+    "student_optimizer_steps": 50000,
+    "student_rollout_transitions_including_correlated_samples": 245760000,
+    "note": "Environments continue across controller switches. Large sample count is not proof of adequate stationary-state coverage."
+  },
+  "optimizer_checkpoint": {
+    "optimizer_state_dict": {
+      "learning_rates": [
+        0.00017085937500000006
+      ],
+      "step_min": 950000.0,
+      "step_max": 950000.0
+    },
+    "hist_encoder_optimizer_state_dict": {
+      "learning_rates": [
+        0.001
+      ],
+      "step_min": 50000.0,
+      "step_max": 50000.0
+    }
+  },
+  "training_action_std": [
+    0.29380130767822266,
+    0.2908013164997101,
+    0.23888935148715973,
+    0.23285797238349915,
+    0.2657904624938965,
+    0.26582884788513184,
+    0.4166297912597656,
+    0.4116327464580536,
+    0.5112209320068359,
+    0.5151190161705017
+  ],
+  "command_coverage": {
+    "zero_command_probability_configured": 0.1,
+    "nonstanding_vx_uniform_range_m_s": [
+      -1.5,
+      1.5
+    ],
+    "nonstanding_wz_uniform_range_rad_s": [
+      -1.5,
+      1.5
+    ],
+    "resample_seconds": 10,
+    "analysis_low_speed_thresholds": {
+      "abs_vx_m_s": 0.1,
+      "abs_wz_rad_s": 0.1
+    },
+    "probability_nonstanding_and_both_small_expected": 0.004,
+    "probability_standing_or_both_small_expected": 0.10400000000000001,
+    "observed_training_stationary_sample_fraction": null,
+    "reason_unavailable": "All 49 recorded scalar tags inspected: no command/actual-speed stratified counts, bias or per-axis velocity losses. Rollout data is not in the final checkpoint.",
+    "note": "Analytical command sampling probabilities only, not measured actual-state occupancy. Thresholds used for analysis do not change stop_motion."
+  },
+  "velocity_loss": {
+    "last_5000_iteration_mean_scaled_mse": 0.022005868382751943,
+    "pooled_all_axis_physical_rmse_equivalent_m_s": 0.07417187536855183,
+    "interpretation": "Root of mean logged online training MSE divided by scale; not final checkpoint held-out RMSE and not forward-axis bias.",
+    "hypothetical_zero_state_vx_bias_m_s": 0.025,
+    "hypothetical_fraction": 0.1,
+    "hypothetical_total_scaled_mse_contribution": 8.333333333333336e-05,
+    "hypothetical_share_of_logged_mean": 0.0037868686608454626,
+    "warning": "Illustrates dilution by sample/axis averaging; assumes 10% actual stationary samples, which were not measured."
+  },
+  "motion_velocity_diagnostics": {
+    "motion-clean-teacher-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/motion-clean-teacher-a01/result.json",
+        "sha256": "d256f9fbb6fc9b1a535c1ce9d3403ada18504ea3d4261a542ebb6be4b913d02b"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/motion-clean-teacher-a01/telemetry.json.gz",
+        "sha256": "f2044ff022b325676c3dbb614180c3d00b827daaed8e8f53c60926e00279b00e"
+      },
+      "windows": [
+        {
+          "window_seconds": [
+            1,
+            6
+          ],
+          "samples": 250,
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            0.004423986063338816,
+            -0.004761752396938391,
+            -0.0012029158533841838
+          ],
+          "student_velocity_mean_m_s": [
+            -0.016782912582159044,
+            0.006330838240683079,
+            0.0026801326870918274
+          ],
+          "student_bias_m_s": [
+            -0.02120689864549786,
+            0.01109259063762147,
+            0.0038830485404760112
+          ],
+          "student_rmse_m_s": [
+            0.02130084524082456,
+            0.012102089137335006,
+            0.004228803937168664
+          ]
+        },
+        {
+          "window_seconds": [
+            7,
+            12
+          ],
+          "samples": 250,
+          "command": [
+            0.5,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            0.5851566820144654,
+            0.0024391379666049034,
+            0.005135743010265287
+          ],
+          "student_velocity_mean_m_s": [
+            0.5522797560691833,
+            0.00027653454244136813,
+            0.00803600274771452
+          ],
+          "student_bias_m_s": [
+            -0.03287692594528198,
+            -0.0021626034241635354,
+            0.0029002597374492324
+          ],
+          "student_rmse_m_s": [
+            0.034387648151157864,
+            0.01513501028288215,
+            0.016351134816294056
+          ]
+        },
+        {
+          "window_seconds": [
+            13,
+            18
+          ],
+          "samples": 250,
+          "command": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            1.0034775595664978,
+            0.0004356380754034035,
+            -0.018264805847778915
+          ],
+          "student_velocity_mean_m_s": [
+            0.9657115225791931,
+            0.001426229827105999,
+            -0.025357703387737275
+          ],
+          "student_bias_m_s": [
+            -0.037766036987304685,
+            0.0009905917517025954,
+            -0.0070928975399583575
+          ],
+          "student_rmse_m_s": [
+            0.04711887322735608,
+            0.015547902603356303,
+            0.02134700493565627
+          ]
+        },
+        {
+          "window_seconds": [
+            19,
+            24
+          ],
+          "samples": 250,
+          "command": [
+            -0.5,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            -0.581568365573883,
+            0.003061017278698273,
+            0.025514681705099063
+          ],
+          "student_velocity_mean_m_s": [
+            -0.5667631821632385,
+            -0.005749942623078823,
+            0.02938389091193676
+          ],
+          "student_bias_m_s": [
+            0.014805183410644532,
+            -0.008810959901777096,
+            0.003869209206837695
+          ],
+          "student_rmse_m_s": [
+            0.021406740596255355,
+            0.014089583056838407,
+            0.015591978156409246
+          ]
+        },
+        {
+          "window_seconds": [
+            25,
+            30
+          ],
+          "samples": 250,
+          "command": [
+            0.5,
+            0.0,
+            0.6000000238418579
+          ],
+          "true_velocity_mean_m_s": [
+            0.541255546927452,
+            0.014996342386119068,
+            0.0061125888740643855
+          ],
+          "student_velocity_mean_m_s": [
+            0.5128563249111175,
+            0.02830300460010767,
+            0.004364589624106884
+          ],
+          "student_bias_m_s": [
+            -0.028399222016334533,
+            0.013306662213988601,
+            -0.0017479992499575018
+          ],
+          "student_rmse_m_s": [
+            0.03230723930249249,
+            0.01986053843161644,
+            0.01569642027343513
+          ]
+        },
+        {
+          "window_seconds": [
+            31,
+            36
+          ],
+          "samples": 250,
+          "command": [
+            0.5,
+            0.0,
+            -0.6000000238418579
+          ],
+          "true_velocity_mean_m_s": [
+            0.6068779830932617,
+            -0.011712987980572506,
+            0.004564117984380573
+          ],
+          "student_velocity_mean_m_s": [
+            0.5553392446041108,
+            -0.027187707282602787,
+            0.013872320391237735
+          ],
+          "student_bias_m_s": [
+            -0.051538738489151,
+            -0.01547471930203028,
+            0.009308202406857162
+          ],
+          "student_rmse_m_s": [
+            0.05236291332593509,
+            0.02014312543294546,
+            0.018062931671198566
+          ]
+        },
+        {
+          "window_seconds": [
+            37,
+            42
+          ],
+          "samples": 250,
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            0.005135525289049838,
+            0.0008232152140699326,
+            0.0007094856815822368
+          ],
+          "student_velocity_mean_m_s": [
+            -0.01701100417971611,
+            -0.0019499246552586555,
+            0.006865149766206741
+          ],
+          "student_bias_m_s": [
+            -0.022146529468765948,
+            -0.0027731398693285883,
+            0.006155664084624504
+          ],
+          "student_rmse_m_s": [
+            0.02229041607531394,
+            0.003567148706755246,
+            0.0064757142248564525
+          ]
+        }
+      ]
+    },
+    "motion-clean-student-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/motion-clean-student-a01/result.json",
+        "sha256": "ad15cd1bfd7f52ef4c74f936a0c31b9ab13dc8d9f5102af3f8cf07c4c7183b02"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/motion-clean-student-a01/telemetry.json.gz",
+        "sha256": "022e850d7e4c7d562d1daf544bbdc6681db5aaf82d811b65b8c877b61c220d88"
+      },
+      "windows": [
+        {
+          "window_seconds": [
+            1,
+            6
+          ],
+          "samples": 250,
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            0.05163966010510922,
+            0.0006899368457889068,
+            0.0009001865269092377
+          ],
+          "student_velocity_mean_m_s": [
+            0.02521968173980713,
+            0.00882057873904705,
+            0.015145179852843284
+          ],
+          "student_bias_m_s": [
+            -0.026419978365302087,
+            0.008130641893258144,
+            0.014244993325934046
+          ],
+          "student_rmse_m_s": [
+            0.02781903408322973,
+            0.013789994543445394,
+            0.015604634685329969
+          ]
+        },
+        {
+          "window_seconds": [
+            7,
+            12
+          ],
+          "samples": 250,
+          "command": [
+            0.5,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            0.6867649528980255,
+            0.002368224566831486,
+            0.007308482044376433
+          ],
+          "student_velocity_mean_m_s": [
+            0.6274749250411987,
+            0.0006751799136400223,
+            0.009271076366305352
+          ],
+          "student_bias_m_s": [
+            -0.059290027856826785,
+            -0.0016930446531914641,
+            0.001962594321928918
+          ],
+          "student_rmse_m_s": [
+            0.0631403482446164,
+            0.014281344428908703,
+            0.01654723157877218
+          ]
+        },
+        {
+          "window_seconds": [
+            13,
+            18
+          ],
+          "samples": 250,
+          "command": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            0.9932035911083221,
+            0.00015345537930261345,
+            -0.022756633900979067
+          ],
+          "student_velocity_mean_m_s": [
+            0.9650578212738037,
+            0.004289713844656944,
+            -0.033708124741911885
+          ],
+          "student_bias_m_s": [
+            -0.02814576983451843,
+            0.004136258465354331,
+            -0.01095149084093282
+          ],
+          "student_rmse_m_s": [
+            0.05797691309332596,
+            0.018147953826256846,
+            0.022047828201205915
+          ]
+        },
+        {
+          "window_seconds": [
+            19,
+            24
+          ],
+          "samples": 250,
+          "command": [
+            -0.5,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            -0.5063212124109269,
+            -0.0016122343922033906,
+            0.018307935640754294
+          ],
+          "student_velocity_mean_m_s": [
+            -0.5153595926761627,
+            -0.00983994546532631,
+            0.020578705161809922
+          ],
+          "student_bias_m_s": [
+            -0.009038380265235901,
+            -0.008227711073122918,
+            0.0022707695210556268
+          ],
+          "student_rmse_m_s": [
+            0.024463828428425944,
+            0.013118019944762315,
+            0.01441795450913689
+          ]
+        },
+        {
+          "window_seconds": [
+            25,
+            30
+          ],
+          "samples": 250,
+          "command": [
+            0.5,
+            0.0,
+            0.6000000238418579
+          ],
+          "true_velocity_mean_m_s": [
+            0.5976649562120437,
+            0.012487296887440607,
+            0.008800272579566809
+          ],
+          "student_velocity_mean_m_s": [
+            0.5551141402721405,
+            0.027223454535007477,
+            0.006435701154172421
+          ],
+          "student_bias_m_s": [
+            -0.04255081593990326,
+            0.01473615764756687,
+            -0.002364571425394388
+          ],
+          "student_rmse_m_s": [
+            0.052342224178366946,
+            0.023572800181830646,
+            0.01638033170876535
+          ]
+        },
+        {
+          "window_seconds": [
+            31,
+            36
+          ],
+          "samples": 250,
+          "command": [
+            0.5,
+            0.0,
+            -0.6000000238418579
+          ],
+          "true_velocity_mean_m_s": [
+            0.7771587209701538,
+            -0.013527814170811326,
+            0.01299571610870771
+          ],
+          "student_velocity_mean_m_s": [
+            0.6793777821063995,
+            -0.021188980013132096,
+            0.021300885632634162
+          ],
+          "student_bias_m_s": [
+            -0.09778093886375427,
+            -0.00766116584232077,
+            0.008305169523926452
+          ],
+          "student_rmse_m_s": [
+            0.09851834853792088,
+            0.015941169581131537,
+            0.01900209480132236
+          ]
+        },
+        {
+          "window_seconds": [
+            37,
+            42
+          ],
+          "samples": 250,
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "true_velocity_mean_m_s": [
+            0.042618174895644186,
+            -0.0019059505756013095,
+            0.0012272334024164592
+          ],
+          "student_velocity_mean_m_s": [
+            0.016546163856983185,
+            0.005123314283788204,
+            0.01036250314116478
+          ],
+          "student_bias_m_s": [
+            -0.026072011038661004,
+            0.007029264859389514,
+            0.009135269738748321
+          ],
+          "student_rmse_m_s": [
+            0.026875163418284262,
+            0.014876672672728856,
+            0.011433127092529725
+          ]
+        }
+      ]
+    }
+  },
+  "next_bounded_check": {
+    "proposal_only": true,
+    "description": "Instrument a finite frozen-checkpoint collection under original training conditions to record zero/low/other commands separately from actual near-zero states; report per-axis bias/RMSE, occupancy and stochastic-vs-deterministic controller differences. No optimizer steps. Requires approval of the concrete evaluator/logging modification plan before implementation.",
+    "parameter_changes_selected": false
+  },
+  "limitations": [
+    "No saved training observation histories, so training occupancy, per-group gradients and gradient conflict cannot be reconstructed.",
+    "Continuous short student collection and exploration noise are confirmed configuration facts; their causal contribution to standing bias has not been separately tested.",
+    "Do not infer that reducing DAgger frequency alone lengthens continuous student collection: at frequency 10 each isolated student rollout would still be 0.48 s.",
+    "Increasing global velocity loss weight does not selectively increase standing samples or their relative weight."
+  ],
+  "direct_parameter_change_supported": false
+}

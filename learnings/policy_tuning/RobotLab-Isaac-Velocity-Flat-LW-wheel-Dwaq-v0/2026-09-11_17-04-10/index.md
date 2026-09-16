@@ -4,6 +4,7 @@
 
 ## 评估批次
 
+- [dwaq-velocity-ablation-20260916-001](<evaluations/dwaq-velocity-ablation-20260916-001/report.md>)：4 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/dwaq-velocity-ablation-20260916-001/manifest.json>)。
 - [native-assess-20260912-001](<evaluations/native-assess-20260912-001/report.md>)：3 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/native-assess-20260912-001/manifest.json>)。
 - [zero-standing-plane-20260912-001](<evaluations/zero-standing-plane-20260912-001/report.md>)：2 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/zero-standing-plane-20260912-001/manifest.json>)。
 
@@ -36,3 +37,9 @@
 ## MuJoCo 返回结果复核
 
 - [接收端离线复核与速度估计偏差](evidence/training/sim2sim-receiver-audit-20260912-001.json)：159/161 个载荷文件哈希通过，2 个原始遥测仍为 LFS 指针；3 个用例共18,000步 ONNX 动作重放逐值一致。未追加仿真。
+
+## DWAQ 真实速度替换试验
+
+- [dwaq-velocity-ablation-metrics-20260916-001.json](evidence/analysis/dwaq-velocity-ablation-metrics-20260916-001.json)
+- [dwaq-velocity-ablation-20260916-001.png](evidence/analysis/dwaq-velocity-ablation-20260916-001.png)
+- [dwaq-velocity-ablation-preflight-20260916-001.json](evidence/training/dwaq-velocity-ablation-preflight-20260916-001.json)

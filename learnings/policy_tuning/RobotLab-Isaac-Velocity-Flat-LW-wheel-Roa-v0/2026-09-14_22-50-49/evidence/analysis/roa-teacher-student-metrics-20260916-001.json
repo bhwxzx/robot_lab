@@ -1,0 +1,1746 @@
+{
+  "version": 1,
+  "batch_manifest": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/manifest.json",
+    "sha256": "12d7b68f1bca10e44e7b832c2c00b2b11f3d2101ce54ae1b63ab142c763b5f00"
+  },
+  "figure": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evidence/analysis/roa-teacher-student-20260916-001.png",
+    "sha256": "c6ee0a7e8a11e6705bf64b267e3916eb2457c36de0b11e7b2038791105cda52b"
+  },
+  "created_at": "2026-09-16T02:28:07.700798+00:00",
+  "method": {
+    "conditions": "Same pure plane, fixed initial state, no push/delay/physical randomization; paired cases differ only in controller. Command visualization disabled in all cases.",
+    "sampling": "Diagnostic velocity/latent/action values are pre-action; position/angular-velocity fields are post-step, as in the existing evaluator. Bias compares only simultaneous pre-action velocity signals.",
+    "units": "Teacher label and student prediction divided by configured observation scale 2.0 to obtain m/s.",
+    "windows": "Half-open seconds. Standing excludes first 40 s; motion excludes first 1 s of each 6 s segment.",
+    "plot_smoothing": "Only standing velocity panels use a 50-sample trailing mean (1 s). All reported statistics use raw values.",
+    "shadow_outputs": "Unexecuted branch outputs are evaluated on the executed branch trajectory; they are not counterfactual closed-loop trajectories."
+  },
+  "cases": {
+    "stand-clean-teacher-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/stand-clean-teacher-a01/result.json",
+        "sha256": "af5a6ab4e7b615fa5a385ecf18f4dc630b4e94e4342104051ed87f7ea11dfe65"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/stand-clean-teacher-a01/telemetry.json.gz",
+        "sha256": "d1a49734e16f12a939580e833174505739f0954b5bbd1e50e7f4531f89644561"
+      },
+      "diagnostics": {
+        "controller": "teacher",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "aggregate_metrics": {
+        "action_rate_rms": 0.013170004468515512,
+        "body_roll_pitch_angular_acceleration_p95": 0.020482398543887625,
+        "body_roll_pitch_angular_acceleration_rms": 1.3323552329784503,
+        "body_roll_pitch_angular_velocity_p95": 0.005284975887582054,
+        "body_roll_pitch_angular_velocity_rms": 0.026917817522653802,
+        "body_vertical_acceleration_p95": 0.0012151343071309384,
+        "body_vertical_acceleration_rms": 0.29920047051800175,
+        "body_vertical_velocity_p95": 7.02278848621063e-05,
+        "body_vertical_velocity_rms": 0.012718812228422886,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 6.381663799285889,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 20.609378814697266,
+        "max_abs_joint_velocity": 2.742415189743042,
+        "max_joint_effort_utilization": 0.17174482345581055,
+        "max_joint_velocity_utilization": 0.1371207594871521,
+        "max_tilt": 0.054958272725343704,
+        "mean_reward": 0.21349860124786696,
+        "real_time_factor": 0.8341309284627617,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.01072026462156689,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.0022609347006208665,
+        "tracking_yaw_rmse": 0.016176917373546786
+      },
+      "teacher_label_physical_velocity_max_error_m_s": 0.0,
+      "windows": [
+        {
+          "window_seconds": [
+            40,
+            80
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 2000,
+          "mean_true_velocity_b_m_s": [
+            6.209331870195456e-05,
+            -0.001440138147037942,
+            -3.4985945142921085e-05
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.02008786678686738,
+            0.011532588531263172,
+            0.002589915279299021
+          ],
+          "student_velocity_bias_m_s": [
+            -0.020149960105569336,
+            0.012972726678301115,
+            0.002624901224441942
+          ],
+          "student_velocity_rmse_m_s": [
+            0.020149962400423955,
+            0.012972730041734482,
+            0.0026249137753512866
+          ],
+          "mean_wz_rad_s": -0.015940732502844186,
+          "net_displacement_m": 2.4389878437817986e-06,
+          "path_length_m": 0.00031745094843553783,
+          "linear_fit_speed_m_s": 1.2838182190908243e-07,
+          "world_heading_change_deg": 5.344532832536162e-05,
+          "cross_track_to_start_heading_m": -1.268492036825654e-07,
+          "latent_component_rmse": 0.0024326321440051313,
+          "shadow_action_component_rmse": 0.1159076762145915,
+          "mean_shadow_action_difference": [
+            -0.039916347041726113,
+            0.0005691418796777725,
+            0.020385014966130256,
+            0.043885967805981634,
+            -0.0018842220455408097,
+            -0.023717916652560234,
+            -0.0005454416126012802,
+            -0.007869160871952772,
+            0.23508749759197234,
+            -0.2729766731262207
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            80,
+            120
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 2000,
+          "mean_true_velocity_b_m_s": [
+            6.199139528689557e-05,
+            -0.0014401873890892603,
+            -3.5011176969248935e-05
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.02008847027271986,
+            0.011532542090862989,
+            0.0025898293163627386
+          ],
+          "student_velocity_bias_m_s": [
+            -0.020150461668006756,
+            0.01297272947995225,
+            0.0026248404933319875
+          ],
+          "student_velocity_rmse_m_s": [
+            0.020150463751291335,
+            0.01297273302634923,
+            0.0026248529774659927
+          ],
+          "mean_wz_rad_s": -0.01594038039864972,
+          "net_displacement_m": 3.0383358110054593e-06,
+          "path_length_m": 0.00029905010948375987,
+          "linear_fit_speed_m_s": 1.1050277336179741e-07,
+          "world_heading_change_deg": 1.2126220973033835e-05,
+          "cross_track_to_start_heading_m": 4.484228498514975e-07,
+          "latent_component_rmse": 0.002432633064461302,
+          "shadow_action_component_rmse": 0.11590991720163699,
+          "mean_shadow_action_difference": [
+            -0.03991628961265087,
+            0.0005691955238580704,
+            0.02038496819138527,
+            0.04388617205619812,
+            -0.0018842674791812897,
+            -0.023718232050538062,
+            -0.0005454325508326292,
+            -0.007869365509599447,
+            0.2350918574333191,
+            -0.27298238211870196
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            40,
+            120
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 4000,
+          "mean_true_velocity_b_m_s": [
+            6.204235699442507e-05,
+            -0.001440162768063601,
+            -3.4998561056085007e-05
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.02008816852979362,
+            0.011532565311063081,
+            0.0025898722978308798
+          ],
+          "student_velocity_bias_m_s": [
+            -0.020150210886788044,
+            0.012972728079126682,
+            0.0026248708588869647
+          ],
+          "student_velocity_rmse_m_s": [
+            0.020150213077416903,
+            0.01297273153404194,
+            0.002624883376584663
+          ],
+          "mean_wz_rad_s": -0.015940556450746955,
+          "net_displacement_m": 5.401074853433071e-06,
+          "path_length_m": 0.0006166469667739259,
+          "linear_fit_speed_m_s": 7.137830109345204e-09,
+          "world_heading_change_deg": 8.864453135892771e-05,
+          "cross_track_to_start_heading_m": 4.55070455724407e-07,
+          "latent_component_rmse": 0.0024326326042332603,
+          "shadow_action_component_rmse": 0.11590879671353017,
+          "mean_shadow_action_difference": [
+            -0.03991631832718849,
+            0.0005691687017679214,
+            0.020384991578757762,
+            0.04388606993108988,
+            -0.0018842447623610497,
+            -0.02371807435154915,
+            -0.0005454370817169547,
+            -0.00786926319077611,
+            0.23508967751264573,
+            -0.2729795276224613
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        }
+      ]
+    },
+    "stand-clean-student-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/stand-clean-student-a01/result.json",
+        "sha256": "475d5c85bf20bd9b333bcb745b0c4d227b40378083d1131c1ec3cc5736d7f435"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/stand-clean-student-a01/telemetry.json.gz",
+        "sha256": "f27fa2fe758d4dac53326b0268ea842341a556b4a28b90e954f77903a93ccbad"
+      },
+      "diagnostics": {
+        "controller": "student",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "aggregate_metrics": {
+        "action_rate_rms": 0.12528001293683455,
+        "body_roll_pitch_angular_acceleration_p95": 6.190358584720247,
+        "body_roll_pitch_angular_acceleration_rms": 3.2237034962564857,
+        "body_roll_pitch_angular_velocity_p95": 0.17274435111337366,
+        "body_roll_pitch_angular_velocity_rms": 0.08364280512869898,
+        "body_vertical_acceleration_p95": 0.8338440209627151,
+        "body_vertical_acceleration_rms": 0.4717666062855457,
+        "body_vertical_velocity_p95": 0.03717106208205223,
+        "body_vertical_velocity_rms": 0.020822558506853002,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 10.169050216674805,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 31.937137603759766,
+        "max_abs_joint_velocity": 5.419989585876465,
+        "max_joint_effort_utilization": 0.2661428133646647,
+        "max_joint_velocity_utilization": 0.1642421086629232,
+        "max_tilt": 0.0649469867348671,
+        "mean_reward": 0.21121634465207656,
+        "real_time_factor": 0.84474284916616,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.029811447263922094,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.03172055597977351,
+        "tracking_yaw_rmse": 0.029062106170051682
+      },
+      "teacher_label_physical_velocity_max_error_m_s": 0.0,
+      "windows": [
+        {
+          "window_seconds": [
+            40,
+            80
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 2000,
+          "mean_true_velocity_b_m_s": [
+            0.04126719072414562,
+            0.00022050479083759455,
+            0.0010584171592063285
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.015749219788238407,
+            0.005925501263700426,
+            0.010197732066735625
+          ],
+          "student_velocity_bias_m_s": [
+            -0.025517970935907214,
+            0.005704996472862831,
+            0.009139314907529297
+          ],
+          "student_velocity_rmse_m_s": [
+            0.027315827382395137,
+            0.013123409246122954,
+            0.011318297432871955
+          ],
+          "mean_wz_rad_s": -0.0012980536285513153,
+          "net_displacement_m": 1.6511394306467262,
+          "path_length_m": 1.7496849415277447,
+          "linear_fit_speed_m_s": 0.04039937786999401,
+          "world_heading_change_deg": 1.357373917692182,
+          "cross_track_to_start_heading_m": 0.021333549339690366,
+          "latent_component_rmse": 0.0024757736891084293,
+          "shadow_action_component_rmse": 0.1298831576048051,
+          "mean_shadow_action_difference": [
+            -0.03828670305013657,
+            0.01913767746090889,
+            0.01120049288123846,
+            0.025569389577955008,
+            0.025533868931233883,
+            -0.00981436786102131,
+            -0.0024842185880988837,
+            -0.010749516131356359,
+            0.2525793783608824,
+            -0.2766063942159526
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            80,
+            120
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 2000,
+          "mean_true_velocity_b_m_s": [
+            0.037679565822822045,
+            -0.0007304529981465749,
+            0.0009392669999597275
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.013670033611357211,
+            0.00655865235440433,
+            0.010953806360252201
+          ],
+          "student_velocity_bias_m_s": [
+            -0.02400953221146483,
+            0.007289105352550905,
+            0.010014539360292474
+          ],
+          "student_velocity_rmse_m_s": [
+            0.025542017291224177,
+            0.012912122835133818,
+            0.012185569915755985
+          ],
+          "mean_wz_rad_s": -0.005598709713330209,
+          "net_displacement_m": 1.506613591025362,
+          "path_length_m": 1.5945998765673897,
+          "linear_fit_speed_m_s": 0.0367417918664324,
+          "world_heading_change_deg": -3.343944193432611,
+          "cross_track_to_start_heading_m": -0.031597404756073505,
+          "latent_component_rmse": 0.0025084932527105197,
+          "shadow_action_component_rmse": 0.11973294843592937,
+          "mean_shadow_action_difference": [
+            -0.041759650573134424,
+            0.017086439162492754,
+            0.014781875230371952,
+            0.028284861154854297,
+            0.02076279079169035,
+            -0.01140932644251734,
+            -0.0019338266253471374,
+            -0.009722356149926783,
+            0.24171898143552245,
+            -0.25055127298878505
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            40,
+            120
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 4000,
+          "mean_true_velocity_b_m_s": [
+            0.03947337827348383,
+            -0.00025497410365449014,
+            0.0009988420795830279
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.01470962669979781,
+            0.006242076809052378,
+            0.010575769213493914
+          ],
+          "student_velocity_bias_m_s": [
+            -0.024763751573686023,
+            0.006497050912706868,
+            0.009576927133910885
+          ],
+          "student_velocity_rmse_m_s": [
+            0.02644379958411806,
+            0.013018194697246077,
+            0.011759931355044835
+          ],
+          "mean_wz_rad_s": -0.003448381670940762,
+          "net_displacement_m": 3.159173192985282,
+          "path_length_m": 3.3458041646069554,
+          "linear_fit_speed_m_s": 0.03880628668129143,
+          "world_heading_change_deg": -1.9062008711634157,
+          "cross_track_to_start_heading_m": 0.02710078141681016,
+          "latent_component_rmse": 0.002492187167788142,
+          "shadow_action_component_rmse": 0.1249111955962226,
+          "mean_shadow_action_difference": [
+            -0.040023176811635496,
+            0.01811205831170082,
+            0.012991184055805207,
+            0.026927125366404653,
+            0.023148329861462116,
+            -0.010611847151769325,
+            -0.0022090226067230105,
+            -0.01023593614064157,
+            0.24714917989820243,
+            -0.26357883360236883
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        }
+      ]
+    },
+    "stand-noisy-teacher-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/stand-noisy-teacher-a01/result.json",
+        "sha256": "61bc7c3c57aff7ed2b3fb3d8e5c6a6070372a129cfb8c7962519c033baf02f2c"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/stand-noisy-teacher-a01/telemetry.json.gz",
+        "sha256": "6311d046497eefda02602b80be8adc80a968aac37e675e435f69b1b070f8f8d9"
+      },
+      "diagnostics": {
+        "controller": "teacher",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "aggregate_metrics": {
+        "action_rate_rms": 0.18915993258870728,
+        "body_roll_pitch_angular_acceleration_p95": 9.548388699606443,
+        "body_roll_pitch_angular_acceleration_rms": 5.677933669035282,
+        "body_roll_pitch_angular_velocity_p95": 0.1706491257201036,
+        "body_roll_pitch_angular_velocity_rms": 0.10161010073103269,
+        "body_vertical_acceleration_p95": 2.201477740891278,
+        "body_vertical_acceleration_rms": 1.1840550197725757,
+        "body_vertical_velocity_p95": 0.04440433904528618,
+        "body_vertical_velocity_rms": 0.02622346046355256,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 8.91292667388916,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 21.679231643676758,
+        "max_abs_joint_velocity": 4.450946807861328,
+        "max_joint_effort_utilization": 0.1806602636973063,
+        "max_joint_velocity_utilization": 0.13487717599579782,
+        "max_tilt": 0.06490384042263031,
+        "mean_reward": 0.22165606708079577,
+        "real_time_factor": 0.8197482165483315,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.029634954712002587,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.0129465492376376,
+        "tracking_yaw_rmse": 0.016113035078779446
+      },
+      "teacher_label_physical_velocity_max_error_m_s": 0.0,
+      "windows": [
+        {
+          "window_seconds": [
+            40,
+            80
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 2000,
+          "mean_true_velocity_b_m_s": [
+            7.900583473337974e-05,
+            0.0002641295678329243,
+            -0.00014628510170405207
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.01613667187653482,
+            0.00011729538068175316,
+            -0.0007174757700413465
+          ],
+          "student_velocity_bias_m_s": [
+            -0.0162156777112682,
+            -0.00014683418715117114,
+            -0.0005711906683372945
+          ],
+          "student_velocity_rmse_m_s": [
+            0.038695556444690714,
+            0.025216082223216245,
+            0.012391544456144205
+          ],
+          "mean_wz_rad_s": 0.0038485464396853784,
+          "net_displacement_m": 0.003822331771466311,
+          "path_length_m": 0.6848636542901763,
+          "linear_fit_speed_m_s": 0.00024400594091888333,
+          "world_heading_change_deg": -0.3432623301570449,
+          "cross_track_to_start_heading_m": 0.0008850412818811684,
+          "latent_component_rmse": 0.0021804469976723835,
+          "shadow_action_component_rmse": 0.1806956822986545,
+          "mean_shadow_action_difference": [
+            -0.03128401518333703,
+            0.025224571930244567,
+            -0.009762866698205471,
+            0.01879581919312477,
+            0.02710036936402321,
+            0.0024826557729393244,
+            -0.003740084499120712,
+            -0.005621958963572979,
+            0.17259807389415802,
+            -0.19271035683620721
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            80,
+            120
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 2000,
+          "mean_true_velocity_b_m_s": [
+            0.0001349820235241168,
+            0.00023600251274956462,
+            -0.00025685391893148334
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.015619930459186434,
+            -0.0005302438684739173,
+            -0.0008702153181657195
+          ],
+          "student_velocity_bias_m_s": [
+            -0.01575491248271055,
+            -0.0007662463812234819,
+            -0.0006133613992342361
+          ],
+          "student_velocity_rmse_m_s": [
+            0.040188390344945465,
+            0.0237359270854922,
+            0.012486076822069944
+          ],
+          "mean_wz_rad_s": 0.004325811072008492,
+          "net_displacement_m": 0.0010811445361529567,
+          "path_length_m": 0.6482228914783391,
+          "linear_fit_speed_m_s": 0.000361625533570298,
+          "world_heading_change_deg": -0.2128044049545196,
+          "cross_track_to_start_heading_m": -0.0005997313696413623,
+          "latent_component_rmse": 0.002192289919455706,
+          "shadow_action_component_rmse": 0.1828334874431195,
+          "mean_shadow_action_difference": [
+            -0.031066473948769272,
+            0.024867486173287035,
+            -0.010893559966236354,
+            0.016345089331269266,
+            0.026549973465502263,
+            0.005308150847442448,
+            -0.003912020714953542,
+            -0.0054320804234594105,
+            0.17043931416980923,
+            -0.18772384592564775
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            40,
+            120
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 4000,
+          "mean_true_velocity_b_m_s": [
+            0.00010699392912874827,
+            0.0002500660402912445,
+            -0.00020156951031776772
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.015878301167860626,
+            -0.00020647424389608204,
+            -0.000793845544103533
+          ],
+          "student_velocity_bias_m_s": [
+            -0.015985295096989375,
+            -0.0004565402841873265,
+            -0.0005922760337857653
+          ],
+          "student_velocity_rmse_m_s": [
+            0.03944903552104893,
+            0.02448719090969611,
+            0.012438900442065443
+          ],
+          "mean_wz_rad_s": 0.004087178755846935,
+          "net_displacement_m": 0.0050344859621720564,
+          "path_length_m": 1.3334921608285737,
+          "linear_fit_speed_m_s": 3.207145254669439e-05,
+          "world_heading_change_deg": -0.558356595013962,
+          "cross_track_to_start_heading_m": 0.0002755343803042829,
+          "latent_component_rmse": 0.002186376477257018,
+          "shadow_action_component_rmse": 0.18176772779015202,
+          "mean_shadow_action_difference": [
+            -0.031175244566053154,
+            0.0250460290517658,
+            -0.010328213332220912,
+            0.017570454262197017,
+            0.026825171414762736,
+            0.0038954033101908864,
+            -0.003826052607037127,
+            -0.005527019693516195,
+            0.1715186940319836,
+            -0.19021710138092748
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        }
+      ]
+    },
+    "stand-noisy-student-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/stand-noisy-student-a01/result.json",
+        "sha256": "57fb3fb260d9feb30f65235221131e569cfb295f445989039ec4a1f24356e5af"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/stand-noisy-student-a01/telemetry.json.gz",
+        "sha256": "0ac4517e6976256f38e7e3de237419738b18ee4e108b0b3b659b89ab77fe1938"
+      },
+      "diagnostics": {
+        "controller": "student",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "aggregate_metrics": {
+        "action_rate_rms": 0.3073601138529992,
+        "body_roll_pitch_angular_acceleration_p95": 14.687439710214017,
+        "body_roll_pitch_angular_acceleration_rms": 8.485889697610144,
+        "body_roll_pitch_angular_velocity_p95": 0.29854833227222366,
+        "body_roll_pitch_angular_velocity_rms": 0.1720154387750146,
+        "body_vertical_acceleration_p95": 2.712850458920002,
+        "body_vertical_acceleration_rms": 1.4089796827016547,
+        "body_vertical_velocity_p95": 0.06974852830171585,
+        "body_vertical_velocity_rms": 0.037910003838030074,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 13.475774765014648,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 42.62437438964844,
+        "max_abs_joint_velocity": 7.686307430267334,
+        "max_joint_effort_utilization": 0.355203119913737,
+        "max_joint_velocity_utilization": 0.232918406977798,
+        "max_tilt": 0.08121123164892197,
+        "mean_reward": 0.20111103899528582,
+        "real_time_factor": 0.8280253314181223,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.026316646203884023,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.051882836867826604,
+        "tracking_yaw_rmse": 0.04772667451406608
+      },
+      "teacher_label_physical_velocity_max_error_m_s": 0.0,
+      "windows": [
+        {
+          "window_seconds": [
+            40,
+            80
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 2000,
+          "mean_true_velocity_b_m_s": [
+            0.048032939591449574,
+            -1.6662011598782557e-05,
+            0.0013109704899925418
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.023750571131706238,
+            0.007429077675566077,
+            0.002793623908422887
+          ],
+          "student_velocity_bias_m_s": [
+            -0.02428236845974334,
+            0.0074457396871648596,
+            0.0014826534184303455
+          ],
+          "student_velocity_rmse_m_s": [
+            0.04245069302254355,
+            0.029909143268026843,
+            0.015995579929369383
+          ],
+          "mean_wz_rad_s": -0.0027729610735441382,
+          "net_displacement_m": 1.91703457912835,
+          "path_length_m": 2.4071062820368043,
+          "linear_fit_speed_m_s": 0.05011022660199169,
+          "world_heading_change_deg": 1.575121370260903,
+          "cross_track_to_start_heading_m": 0.07901383312447488,
+          "latent_component_rmse": 0.0025343956955735775,
+          "shadow_action_component_rmse": 0.18637143778457993,
+          "mean_shadow_action_difference": [
+            -0.042643825583159926,
+            0.016699912190437316,
+            0.015765264552086593,
+            0.03261546107381582,
+            0.013506880765780806,
+            -0.010178520795889198,
+            -0.0016134919822216034,
+            -0.00853194096684456,
+            0.2408559041302651,
+            -0.2457752949083224
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            80,
+            120
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 2000,
+          "mean_true_velocity_b_m_s": [
+            0.05166462366459246,
+            -0.00021894428218547545,
+            0.0010533798354554166
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.026838590307161212,
+            0.0036140753841027618,
+            0.0021991613414138553
+          ],
+          "student_velocity_bias_m_s": [
+            -0.02482603335743124,
+            0.0038330196662882373,
+            0.001145781505958439
+          ],
+          "student_velocity_rmse_m_s": [
+            0.04659007430761989,
+            0.027378124011520472,
+            0.01571848193167315
+          ],
+          "mean_wz_rad_s": -0.0005554249595907095,
+          "net_displacement_m": 2.064597369843163,
+          "path_length_m": 2.680620993999278,
+          "linear_fit_speed_m_s": 0.0519462575904737,
+          "world_heading_change_deg": 2.5201866269419972,
+          "cross_track_to_start_heading_m": 0.057366607719199894,
+          "latent_component_rmse": 0.002510187329021424,
+          "shadow_action_component_rmse": 0.19554253230696975,
+          "mean_shadow_action_difference": [
+            -0.0390087261274457,
+            0.02090335538983345,
+            0.007884439278393983,
+            0.023795884389430283,
+            0.022009606499224902,
+            -0.0029026232729665933,
+            -0.0034269257932901384,
+            -0.009489557096734644,
+            0.23762977384962142,
+            -0.24995501014078036
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            40,
+            120
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 4000,
+          "mean_true_velocity_b_m_s": [
+            0.04984878162802102,
+            -0.000117803146892129,
+            0.0011821751627239792
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.025294580719433725,
+            0.00552157652983442,
+            0.0024963926249183714
+          ],
+          "student_velocity_bias_m_s": [
+            -0.02455420090858729,
+            0.005639379676726549,
+            0.0013142174621943923
+          ],
+          "student_velocity_rmse_m_s": [
+            0.04456846621818952,
+            0.028671575867202922,
+            0.015857636197005816
+          ],
+          "mean_wz_rad_s": -0.0016641930165674239,
+          "net_displacement_m": 3.9820201141400005,
+          "path_length_m": 5.088289222060115,
+          "linear_fit_speed_m_s": 0.04947948402331392,
+          "world_heading_change_deg": 4.079742050346754,
+          "cross_track_to_start_heading_m": 0.19226328842741663,
+          "latent_component_rmse": 0.0025223205554133665,
+          "shadow_action_component_rmse": 0.19101203465084846,
+          "mean_shadow_action_difference": [
+            -0.04082627585530281,
+            0.018801633790135382,
+            0.011824851915240287,
+            0.028205672731623055,
+            0.017758243632502856,
+            -0.006540572034427896,
+            -0.002520208887755871,
+            -0.0090107490317896,
+            0.23924283898994328,
+            -0.24786515252455138
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        }
+      ]
+    },
+    "motion-clean-teacher-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/motion-clean-teacher-a01/result.json",
+        "sha256": "d256f9fbb6fc9b1a535c1ce9d3403ada18504ea3d4261a542ebb6be4b913d02b"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/motion-clean-teacher-a01/telemetry.json.gz",
+        "sha256": "f2044ff022b325676c3dbb614180c3d00b827daaed8e8f53c60926e00279b00e"
+      },
+      "diagnostics": {
+        "controller": "teacher",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "aggregate_metrics": {
+        "action_rate_rms": 0.15160250663338115,
+        "body_roll_pitch_angular_acceleration_p95": 32.29988633373041,
+        "body_roll_pitch_angular_acceleration_rms": 16.336171755382413,
+        "body_roll_pitch_angular_velocity_p95": 0.4253569416845273,
+        "body_roll_pitch_angular_velocity_rms": 0.2336165743440564,
+        "body_vertical_acceleration_p95": 2.383920270949602,
+        "body_vertical_acceleration_rms": 1.2213972412300347,
+        "body_vertical_velocity_p95": 0.06264804303646088,
+        "body_vertical_velocity_rms": 0.03588777719096905,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 24.439605712890625,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 22.59075927734375,
+        "max_abs_joint_velocity": 18.37635612487793,
+        "max_joint_effort_utilization": 0.21563396453857422,
+        "max_joint_velocity_utilization": 0.5568592765114524,
+        "max_tilt": 0.10209158807992935,
+        "mean_reward": 0.19622655264201708,
+        "real_time_factor": 0.8104784388931614,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.02917235869537539,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.15393747146380227,
+        "tracking_yaw_rmse": 0.2597287881357904
+      },
+      "teacher_label_physical_velocity_max_error_m_s": 0.0,
+      "windows": [
+        {
+          "window_seconds": [
+            1,
+            6
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.004423986063338816,
+            -0.004761752396938391,
+            -0.0012029158533841838
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.016782912582159044,
+            0.006330838240683079,
+            0.0026801326870918274
+          ],
+          "student_velocity_bias_m_s": [
+            -0.02120689864549786,
+            0.01109259063762147,
+            0.0038830485404760112
+          ],
+          "student_velocity_rmse_m_s": [
+            0.02130084524082456,
+            0.012102089137335006,
+            0.004228803937168664
+          ],
+          "mean_wz_rad_s": -0.013010293611034285,
+          "net_displacement_m": 0.02859115919966811,
+          "path_length_m": 0.03563534572423473,
+          "linear_fit_speed_m_s": 0.0055599562481222515,
+          "world_heading_change_deg": 0.38491236675751817,
+          "cross_track_to_start_heading_m": -0.017947667642415715,
+          "latent_component_rmse": 0.0023833690619384186,
+          "shadow_action_component_rmse": 0.1153515333120234,
+          "mean_shadow_action_difference": [
+            -0.03707184034585953,
+            0.0025852760076522825,
+            0.017018921494483946,
+            0.03992922759056091,
+            0.0017698818445205688,
+            -0.02020013892650604,
+            -0.0022713813483715055,
+            -0.00956892342865467,
+            0.22579479002952577,
+            -0.2763924621008337
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            7,
+            12
+          ],
+          "command": [
+            0.5,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.5851566820144654,
+            0.0024391379666049034,
+            0.005135743010265287
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.5522797560691833,
+            0.00027653454244136813,
+            0.00803600274771452
+          ],
+          "student_velocity_bias_m_s": [
+            -0.03287692594528198,
+            -0.0021626034241635354,
+            0.0029002597374492324
+          ],
+          "student_velocity_rmse_m_s": [
+            0.034387648151157864,
+            0.01513501028288215,
+            0.016351134816294056
+          ],
+          "mean_wz_rad_s": 0.022437149269971996,
+          "net_displacement_m": 2.920526903489259,
+          "path_length_m": 2.9254565514775597,
+          "linear_fit_speed_m_s": 0.5827294941389443,
+          "world_heading_change_deg": 7.713285184232942,
+          "cross_track_to_start_heading_m": 0.1743582103705597,
+          "latent_component_rmse": 0.0023385334139283892,
+          "shadow_action_component_rmse": 0.07742383889990215,
+          "mean_shadow_action_difference": [
+            -0.050602253437042236,
+            0.038175151824951174,
+            -0.002798827826976776,
+            0.021654442518949508,
+            0.04198508694767952,
+            -0.00711141637340188,
+            -0.001959751918911934,
+            -0.00761693161725998,
+            0.13866114234924318,
+            -0.141295804977417
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            13,
+            18
+          ],
+          "command": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            1.0034775595664978,
+            0.0004356380754034035,
+            -0.018264805847778915
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.9657115225791931,
+            0.001426229827105999,
+            -0.025357703387737275
+          ],
+          "student_velocity_bias_m_s": [
+            -0.037766036987304685,
+            0.0009905917517025954,
+            -0.0070928975399583575
+          ],
+          "student_velocity_rmse_m_s": [
+            0.04711887322735608,
+            0.015547902603356303,
+            0.02134700493565627
+          ],
+          "mean_wz_rad_s": 0.0038504845052957535,
+          "net_displacement_m": 5.012859835317796,
+          "path_length_m": 5.015234367938403,
+          "linear_fit_speed_m_s": 1.0034859848241071,
+          "world_heading_change_deg": -3.8241530479861425,
+          "cross_track_to_start_heading_m": -0.17389752218131604,
+          "latent_component_rmse": 0.002486786865974523,
+          "shadow_action_component_rmse": 0.09266533222442139,
+          "mean_shadow_action_difference": [
+            -0.04037016290426254,
+            0.024615800023078917,
+            -0.017402489840984345,
+            0.03882520666718483,
+            0.0336350953578949,
+            -0.023224851965904236,
+            0.0018641883730888366,
+            -0.0034309526830911636,
+            0.07196894073486328,
+            -0.08345547866821289
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            19,
+            24
+          ],
+          "command": [
+            -0.5,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            -0.581568365573883,
+            0.003061017278698273,
+            0.025514681705099063
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.5667631821632385,
+            -0.005749942623078823,
+            0.02938389091193676
+          ],
+          "student_velocity_bias_m_s": [
+            0.014805183410644532,
+            -0.008810959901777096,
+            0.003869209206837695
+          ],
+          "student_velocity_rmse_m_s": [
+            0.021406740596255355,
+            0.014089583056838407,
+            0.015591978156409246
+          ],
+          "mean_wz_rad_s": -0.07280287425406277,
+          "net_displacement_m": 2.883474055921753,
+          "path_length_m": 2.8950703098890065,
+          "linear_fit_speed_m_s": 0.5783742330498134,
+          "world_heading_change_deg": -17.116442654427278,
+          "cross_track_to_start_heading_m": 0.4361825730798833,
+          "latent_component_rmse": 0.0024443597028027775,
+          "shadow_action_component_rmse": 0.05372171595999625,
+          "mean_shadow_action_difference": [
+            -0.0266618572473526,
+            0.022125248908996583,
+            0.00257820326089859,
+            -0.020121050357818603,
+            0.00659029370546341,
+            0.036842167787253854,
+            -0.00013714531064033507,
+            0.0012997273355722428,
+            0.06964980125427246,
+            -0.026877674102783203
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            25,
+            30
+          ],
+          "command": [
+            0.5,
+            0.0,
+            0.6000000238418579
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.541255546927452,
+            0.014996342386119068,
+            0.0061125888740643855
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.5128563249111175,
+            0.02830300460010767,
+            0.004364589624106884
+          ],
+          "student_velocity_bias_m_s": [
+            -0.028399222016334533,
+            0.013306662213988601,
+            -0.0017479992499575018
+          ],
+          "student_velocity_rmse_m_s": [
+            0.03230723930249249,
+            0.01986053843161644,
+            0.01569642027343513
+          ],
+          "mean_wz_rad_s": 0.2733529081009328,
+          "net_displacement_m": 2.4639104421143694,
+          "path_length_m": 2.7064042252847647,
+          "linear_fit_speed_m_s": 0.5061394674503664,
+          "world_heading_change_deg": 84.41610157655845,
+          "cross_track_to_start_heading_m": 1.6262535016382178,
+          "latent_component_rmse": 0.0023780438636187475,
+          "shadow_action_component_rmse": 0.07336421694639292,
+          "mean_shadow_action_difference": [
+            -0.05424700736999512,
+            0.013508338451385498,
+            0.01279600340127945,
+            0.03870601031184197,
+            0.011417183071374893,
+            -0.032654416624456645,
+            -0.0002603139281272888,
+            -0.008631591767072677,
+            0.10352609634399414,
+            -0.11267747402191162
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            31,
+            36
+          ],
+          "command": [
+            0.5,
+            0.0,
+            -0.6000000238418579
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.6068779830932617,
+            -0.011712987980572506,
+            0.004564117984380573
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.5553392446041108,
+            -0.027187707282602787,
+            0.013872320391237735
+          ],
+          "student_velocity_bias_m_s": [
+            -0.051538738489151,
+            -0.01547471930203028,
+            0.009308202406857162
+          ],
+          "student_velocity_rmse_m_s": [
+            0.05236291332593509,
+            0.02014312543294546,
+            0.018062931671198566
+          ],
+          "mean_wz_rad_s": -0.2183870116006583,
+          "net_displacement_m": 2.8462865831336126,
+          "path_length_m": 3.0348117765093896,
+          "linear_fit_speed_m_s": 0.5854954621641352,
+          "world_heading_change_deg": -70.44752071482824,
+          "cross_track_to_start_heading_m": -1.6260595023451865,
+          "latent_component_rmse": 0.0022711550405871196,
+          "shadow_action_component_rmse": 0.12173054269491866,
+          "mean_shadow_action_difference": [
+            -0.04266733074188232,
+            0.0577567834854126,
+            -0.02846243590116501,
+            0.016811476588249205,
+            0.06858733779191971,
+            0.004817045331001282,
+            -5.2078783512115477e-05,
+            -0.01208180746436119,
+            0.23766157913208008,
+            -0.26426585006713865
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            37,
+            42
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.005135525289049838,
+            0.0008232152140699326,
+            0.0007094856815822368
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.01701100417971611,
+            -0.0019499246552586555,
+            0.006865149766206741
+          ],
+          "student_velocity_bias_m_s": [
+            -0.022146529468765948,
+            -0.0027731398693285883,
+            0.006155664084624504
+          ],
+          "student_velocity_rmse_m_s": [
+            0.02229041607531394,
+            0.003567148706755246,
+            0.0064757142248564525
+          ],
+          "mean_wz_rad_s": 0.00891168685473167,
+          "net_displacement_m": 0.026347638276807517,
+          "path_length_m": 0.03540472273731345,
+          "linear_fit_speed_m_s": 0.005977119063255392,
+          "world_heading_change_deg": -0.06391941024094067,
+          "cross_track_to_start_heading_m": -0.00045983291899422666,
+          "latent_component_rmse": 0.0021210071505847676,
+          "shadow_action_component_rmse": 0.10517092602148655,
+          "mean_shadow_action_difference": [
+            -0.008813711762428284,
+            0.01762847661972046,
+            -0.009302678108215333,
+            0.012763755798339844,
+            0.03438741374015808,
+            0.005192464351654053,
+            -0.006503399029374123,
+            -0.010433962866663933,
+            0.22975728473067283,
+            -0.22906718063354492
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        }
+      ]
+    },
+    "motion-clean-student-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/motion-clean-student-a01/result.json",
+        "sha256": "ad15cd1bfd7f52ef4c74f936a0c31b9ab13dc8d9f5102af3f8cf07c4c7183b02"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-14_22-50-49/evaluations/roa-teacher-student-20260916-001/raw/motion-clean-student-a01/telemetry.json.gz",
+        "sha256": "022e850d7e4c7d562d1daf544bbdc6681db5aaf82d811b65b8c877b61c220d88"
+      },
+      "diagnostics": {
+        "controller": "student",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "aggregate_metrics": {
+        "action_rate_rms": 0.17184375460658824,
+        "body_roll_pitch_angular_acceleration_p95": 34.45755704102266,
+        "body_roll_pitch_angular_acceleration_rms": 17.58685113724107,
+        "body_roll_pitch_angular_velocity_p95": 0.44574311025208224,
+        "body_roll_pitch_angular_velocity_rms": 0.25090258283059697,
+        "body_vertical_acceleration_p95": 2.40105246193707,
+        "body_vertical_acceleration_rms": 1.2492929963394643,
+        "body_vertical_velocity_p95": 0.06683652848005295,
+        "body_vertical_velocity_rms": 0.03960200918700203,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 23.905227661132812,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 25.096803665161133,
+        "max_abs_joint_velocity": 18.339599609375,
+        "max_joint_effort_utilization": 0.20914003054300945,
+        "max_joint_velocity_utilization": 0.5557454427083334,
+        "max_tilt": 0.09746232628822327,
+        "mean_reward": 0.18673771416452448,
+        "real_time_factor": 0.8184186297044298,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.03298433385792161,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.16971691143734466,
+        "tracking_yaw_rmse": 0.27581951143563305
+      },
+      "teacher_label_physical_velocity_max_error_m_s": 0.0,
+      "windows": [
+        {
+          "window_seconds": [
+            1,
+            6
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.05163966010510922,
+            0.0006899368457889068,
+            0.0009001865269092377
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.02521968173980713,
+            0.00882057873904705,
+            0.015145179852843284
+          ],
+          "student_velocity_bias_m_s": [
+            -0.026419978365302087,
+            0.008130641893258144,
+            0.014244993325934046
+          ],
+          "student_velocity_rmse_m_s": [
+            0.02781903408322973,
+            0.013789994543445394,
+            0.015604634685329969
+          ],
+          "mean_wz_rad_s": -0.011117711617533133,
+          "net_displacement_m": 0.256909062226282,
+          "path_length_m": 0.26499736399011,
+          "linear_fit_speed_m_s": 0.05136436545972601,
+          "world_heading_change_deg": -2.7016993172173476,
+          "cross_track_to_start_heading_m": 0.0034376515172140046,
+          "latent_component_rmse": 0.002339748789159005,
+          "shadow_action_component_rmse": 0.1357807829622123,
+          "mean_shadow_action_difference": [
+            -0.031506916880607604,
+            0.013432628661394119,
+            0.00794830459356308,
+            0.027280032753944396,
+            0.025276753962039947,
+            -0.018715102076530456,
+            -0.0014477996677160264,
+            -0.013779224142432213,
+            0.27520198780298233,
+            -0.2876718440949917
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            7,
+            12
+          ],
+          "command": [
+            0.5,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.6867649528980255,
+            0.002368224566831486,
+            0.007308482044376433
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.6274749250411987,
+            0.0006751799136400223,
+            0.009271076366305352
+          ],
+          "student_velocity_bias_m_s": [
+            -0.059290027856826785,
+            -0.0016930446531914641,
+            0.001962594321928918
+          ],
+          "student_velocity_rmse_m_s": [
+            0.0631403482446164,
+            0.014281344428908703,
+            0.01654723157877218
+          ],
+          "mean_wz_rad_s": 0.02178227891633287,
+          "net_displacement_m": 3.4281353152064766,
+          "path_length_m": 3.4332585644092317,
+          "linear_fit_speed_m_s": 0.6790457429099273,
+          "world_heading_change_deg": 7.260308501126175,
+          "cross_track_to_start_heading_m": 0.18638291174837152,
+          "latent_component_rmse": 0.0023313927050664495,
+          "shadow_action_component_rmse": 0.14620344027128615,
+          "mean_shadow_action_difference": [
+            -0.05644620883464813,
+            0.039128419995307924,
+            -0.011190773934125901,
+            0.02993016976118088,
+            0.046069854110479355,
+            -0.017151269361376762,
+            -0.0018139321506023408,
+            -0.01004677113890648,
+            0.27933252143859866,
+            -0.29384255027770995
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            13,
+            18
+          ],
+          "command": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.9932035911083221,
+            0.00015345537930261345,
+            -0.022756633900979067
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.9650578212738037,
+            0.004289713844656944,
+            -0.033708124741911885
+          ],
+          "student_velocity_bias_m_s": [
+            -0.02814576983451843,
+            0.004136258465354331,
+            -0.01095149084093282
+          ],
+          "student_velocity_rmse_m_s": [
+            0.05797691309332596,
+            0.018147953826256846,
+            0.022047828201205915
+          ],
+          "mean_wz_rad_s": -0.05600213282660115,
+          "net_displacement_m": 4.951401517453396,
+          "path_length_m": 4.964459680869922,
+          "linear_fit_speed_m_s": 0.971821519987723,
+          "world_heading_change_deg": -14.220856865136634,
+          "cross_track_to_start_heading_m": -0.6081928444812301,
+          "latent_component_rmse": 0.0027468194693233594,
+          "shadow_action_component_rmse": 0.1441223778142139,
+          "mean_shadow_action_difference": [
+            -0.04491428560018539,
+            0.027010416746139528,
+            -0.013208170652389526,
+            0.03876759034395218,
+            0.026003001987934114,
+            -0.017808015942573547,
+            -0.001556245803833008,
+            0.003556782752275467,
+            -0.008203014373779297,
+            0.016701045989990233
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            19,
+            24
+          ],
+          "command": [
+            -0.5,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            -0.5063212124109269,
+            -0.0016122343922033906,
+            0.018307935640754294
+          ],
+          "mean_student_velocity_b_m_s": [
+            -0.5153595926761627,
+            -0.00983994546532631,
+            0.020578705161809922
+          ],
+          "student_velocity_bias_m_s": [
+            -0.009038380265235901,
+            -0.008227711073122918,
+            0.0022707695210556268
+          ],
+          "student_velocity_rmse_m_s": [
+            0.024463828428425944,
+            0.013118019944762315,
+            0.01441795450913689
+          ],
+          "mean_wz_rad_s": -0.08225341513147577,
+          "net_displacement_m": 2.498493454650978,
+          "path_length_m": 2.5151673990938836,
+          "linear_fit_speed_m_s": 0.4838673447423509,
+          "world_heading_change_deg": -22.443922739415534,
+          "cross_track_to_start_heading_m": 0.524263228777106,
+          "latent_component_rmse": 0.002571035721308529,
+          "shadow_action_component_rmse": 0.10234024373468906,
+          "mean_shadow_action_difference": [
+            -0.021925885915756227,
+            0.019445836663246154,
+            -0.006472277849912643,
+            -0.0232120920419693,
+            0.01712602984905243,
+            0.0341124941110611,
+            -0.0004934024512767792,
+            -0.004494658768177033,
+            0.19574105834960936,
+            -0.1679201488494873
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            25,
+            30
+          ],
+          "command": [
+            0.5,
+            0.0,
+            0.6000000238418579
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.5976649562120437,
+            0.012487296887440607,
+            0.008800272579566809
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.5551141402721405,
+            0.027223454535007477,
+            0.006435701154172421
+          ],
+          "student_velocity_bias_m_s": [
+            -0.04255081593990326,
+            0.01473615764756687,
+            -0.002364571425394388
+          ],
+          "student_velocity_rmse_m_s": [
+            0.052342224178366946,
+            0.023572800181830646,
+            0.01638033170876535
+          ],
+          "mean_wz_rad_s": 0.24016186968050898,
+          "net_displacement_m": 2.7659607640647783,
+          "path_length_m": 2.989479853579797,
+          "linear_fit_speed_m_s": 0.5675852977488299,
+          "world_heading_change_deg": 77.30510581697466,
+          "cross_track_to_start_heading_m": 1.6578892894224617,
+          "latent_component_rmse": 0.0024420260342777264,
+          "shadow_action_component_rmse": 0.1222677366514029,
+          "mean_shadow_action_difference": [
+            -0.06245278811454773,
+            0.014496688604354858,
+            0.0103899405002594,
+            0.04437828266620636,
+            0.009845136195421218,
+            -0.03971602661162615,
+            -0.0007822995185852051,
+            -0.009928697839379311,
+            0.17429716491699218,
+            -0.17927514934539795
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            31,
+            36
+          ],
+          "command": [
+            0.5,
+            0.0,
+            -0.6000000238418579
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.7771587209701538,
+            -0.013527814170811326,
+            0.01299571610870771
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.6793777821063995,
+            -0.021188980013132096,
+            0.021300885632634162
+          ],
+          "student_velocity_bias_m_s": [
+            -0.09778093886375427,
+            -0.00766116584232077,
+            0.008305169523926452
+          ],
+          "student_velocity_rmse_m_s": [
+            0.09851834853792088,
+            0.015941169581131537,
+            0.01900209480132236
+          ],
+          "mean_wz_rad_s": -0.22486027999187355,
+          "net_displacement_m": 3.6294429390699436,
+          "path_length_m": 3.8894695065305833,
+          "linear_fit_speed_m_s": 0.7495232848389709,
+          "world_heading_change_deg": -73.28768252627405,
+          "cross_track_to_start_heading_m": -2.143000546268623,
+          "latent_component_rmse": 0.0022203309428270286,
+          "shadow_action_component_rmse": 0.22237374394323503,
+          "mean_shadow_action_difference": [
+            -0.05663016128540039,
+            0.05280683577060699,
+            -0.02101675507426262,
+            0.04351934564113617,
+            0.05947347897291184,
+            -0.003861600399017334,
+            0.0033250190615653993,
+            -0.017006458431482314,
+            0.4779815692901611,
+            -0.49091439819335936
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        },
+        {
+          "window_seconds": [
+            37,
+            42
+          ],
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "sample_count": 250,
+          "mean_true_velocity_b_m_s": [
+            0.042618174895644186,
+            -0.0019059505756013095,
+            0.0012272334024164592
+          ],
+          "mean_student_velocity_b_m_s": [
+            0.016546163856983185,
+            0.005123314283788204,
+            0.01036250314116478
+          ],
+          "student_velocity_bias_m_s": [
+            -0.026072011038661004,
+            0.007029264859389514,
+            0.009135269738748321
+          ],
+          "student_velocity_rmse_m_s": [
+            0.026875163418284262,
+            0.014876672672728856,
+            0.011433127092529725
+          ],
+          "mean_wz_rad_s": -0.0011466604893212206,
+          "net_displacement_m": 0.21324882509134688,
+          "path_length_m": 0.22452120462524439,
+          "linear_fit_speed_m_s": 0.04650173963631057,
+          "world_heading_change_deg": 1.1021235223985137,
+          "cross_track_to_start_heading_m": -0.006816295910380701,
+          "latent_component_rmse": 0.0024582998338482714,
+          "shadow_action_component_rmse": 0.1294145981726301,
+          "mean_shadow_action_difference": [
+            -0.03716097378730774,
+            0.012327142477035523,
+            0.008851004421710967,
+            0.028436999142169954,
+            0.02460330545902252,
+            -0.015905741181224585,
+            -0.0013773931562900542,
+            -0.01097340227663517,
+            0.2643841690272093,
+            -0.27974069625139236
+          ],
+          "done_count": 0,
+          "timeout_count": 0
+        }
+      ]
+    }
+  },
+  "convergence": "indeterminate",
+  "direct_parameter_change_supported": false,
+  "limitations": [
+    "One seed and one environment per case.",
+    "Teacher uses simulator privileged information and is not a deployment policy.",
+    "Velocity and latent differences have not been independently ablated; velocity bias is not established as the sole cause.",
+    "Teacher also has motion/yaw tracking defects in this nominal-plane test."
+  ]
+}

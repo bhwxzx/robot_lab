@@ -1428,3 +1428,26 @@ Derive the archive timestamp from the selected checkpoint's training run ID and 
 - **Notes**: Renamed archive and verified JIT/ONNX byte identity.
 
 ---
+
+## [LRN-20260916-001] correction
+
+**Logged**: 2026-09-16T06:12:24Z
+**Priority**: medium
+**Status**: resolved
+**Area**: config
+
+### Summary
+Configure ROA velocity-estimation switches in the task's rsl_rl_roa_cfg.py, without adding start_roa.sh arguments.
+
+### Details
+The user explicitly requested that the velocity-estimation switch and estimated-velocity curriculum be configured in rsl_rl_roa_cfg.py instead of extending the launcher. Restored only this task's launcher edits to its verified original content. Exposed the policy switch and algorithm schedule/resume settings in the wheel and leg ROA agent configurations, including the leg Flat class's separate policy definition. Existing defaults remain enabled estimation with no curriculum.
+
+### Suggested Action
+For further changes to these ROA options, edit the task agent configuration and keep the existing launch command unchanged unless the user requests CLI support.
+
+### Metadata
+- Source: user_feedback
+- Related Files: scripts/start_roa.sh, source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py, source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/agents/rsl_rl_roa_cfg.py
+- Pattern-Key: correct.roa_options_in_agent_config
+
+---

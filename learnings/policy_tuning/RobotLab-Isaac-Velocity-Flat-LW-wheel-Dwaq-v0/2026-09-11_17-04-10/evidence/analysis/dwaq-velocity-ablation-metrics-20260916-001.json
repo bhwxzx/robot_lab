@@ -1,0 +1,888 @@
+{
+  "version": 1,
+  "created_at": "2026-09-16T03:16:36.586906+00:00",
+  "batch_manifest": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/manifest.json",
+    "sha256": "7ac3db0d92043aee89cc9e76d5912f566a0999650a0b4cba763f7b953596a387"
+  },
+  "prior_baseline_manifest": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/zero-standing-plane-20260912-001/manifest.json",
+    "sha256": "7981ab44f8a11b5467a37925fa9ebd45928e0b2c7e4a58c2a6c307724d8a6d58"
+  },
+  "preflight": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evidence/training/dwaq-velocity-ablation-preflight-20260916-001.json",
+    "sha256": "2267b32c560d1fbfe2df367fbe85fb10a9e68133672340d6b991da82f50ad4c2"
+  },
+  "figure": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evidence/analysis/dwaq-velocity-ablation-20260916-001.png",
+    "sha256": "e6a5c10abd0113b2e767ff7506beb1e4734327f811dc2fd2ef8191bde6d351c1"
+  },
+  "identity_bindings": {
+    "checkpoint": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_dwaq/2026-09-11_17-04-10/model_49999.pt",
+      "sha256": "8798c9d1f744f5795ff7c9234147b7cab033295005056c18857fe83fbdbc22b5"
+    },
+    "effective_config": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/provenance/config-5b31a80d98c92183b81556df703062b454a62b7df4091becebb2ffcb97a93730.json",
+      "sha256": "5b31a80d98c92183b81556df703062b454a62b7df4091becebb2ffcb97a93730"
+    },
+    "run_identity": {
+      "file_sha256": "2686b80cb207919f0fac07b73d48c355ae739c87b36f2a77b365851c006123ef",
+      "identity_sha256": "fda1fc9823ed6e6ae977f8a81eea143537f11301efaf373dbfa8723380b2d2f5",
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/provenance/context-2686b80cb207919f0fac07b73d48c355ae739c87b36f2a77b365851c006123ef.json"
+    }
+  },
+  "method": {
+    "conditions": "Four paired 120 s zero-command cases, pure plane, fixed initial state, no physical randomization/push/actuator delay. Noise conditions differ only in observation corruption.",
+    "intervention": "All three estimated linear velocity components replaced with simultaneous physical body velocity scaled to training units before actor normalization; fixed actor weights, original deterministic latent/current input retained.",
+    "diagnostics": "Pre-action true, label and estimated velocity; label and prediction reported in m/s after dividing observation scale. Position/quaternion fields are post-step.",
+    "windows": "Half-open seconds; primary window [40,120) excludes startup. Net displacement is endpoint XY distance; path is all consecutive XY distances; fit is linear least-squares world-XY position slope.",
+    "historical_comparison": "Both current original-controller cases reproduce all 6000 historical actions, positions, orientations, body velocities and joint velocities exactly. No historical result used as a substitute for a fresh paired baseline."
+  },
+  "baseline_replication": {
+    "clean": {
+      "prior_telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/zero-standing-plane-20260912-001/raw/nominal-no-noise-a01/telemetry.json.gz",
+        "sha256": "95223248498e7c49b901cce21f3a175bc72a3dc40ce8d17ab5668b9eaa890d3a"
+      },
+      "current_telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-clean-estimated-velocity-a01/telemetry.json.gz",
+        "sha256": "8e8fd4b59caaf98b1cc164171ee639fca639c6cffe0477f19de63aba5ffb64d2"
+      },
+      "sample_count": 6000,
+      "exact_all_samples": {
+        "action": true,
+        "root_position_w": true,
+        "root_linear_velocity_b": true,
+        "root_quaternion_w": true,
+        "joint_velocity": true
+      }
+    },
+    "noisy": {
+      "prior_telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/zero-standing-plane-20260912-001/raw/nominal-training-noise-a01/telemetry.json.gz",
+        "sha256": "734d788e74010f783ead8076f0e6c6e434011925c425a1480c248a236a32775a"
+      },
+      "current_telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-noisy-estimated-velocity-a01/telemetry.json.gz",
+        "sha256": "da2b53c303cb5109da99ab355c35973815127ee44f05b37567ed0f60324ac766"
+      },
+      "sample_count": 6000,
+      "exact_all_samples": {
+        "action": true,
+        "root_position_w": true,
+        "root_linear_velocity_b": true,
+        "root_quaternion_w": true,
+        "joint_velocity": true
+      }
+    }
+  },
+  "cases": {
+    "stand-clean-estimated-velocity-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-clean-estimated-velocity-a01/result.json",
+        "sha256": "76949355fd603bef40baa0ee4b1d33d90f1b0c06932d1b2c66cd3b4fd76f84d8"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-clean-estimated-velocity-a01/telemetry.json.gz",
+        "sha256": "8e8fd4b59caaf98b1cc164171ee639fca639c6cffe0477f19de63aba5ffb64d2"
+      },
+      "noise": "clean",
+      "controller": "estimated_velocity",
+      "diagnostics": {
+        "controller": "estimated_velocity",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "max_label_vs_physical_velocity_error_m_s": 0.0,
+      "aggregate_metrics": {
+        "action_rate_rms": 0.07807640496526329,
+        "body_roll_pitch_angular_acceleration_p95": 2.694882694455511,
+        "body_roll_pitch_angular_acceleration_rms": 2.4617502100965107,
+        "body_roll_pitch_angular_velocity_p95": 0.17020773876009818,
+        "body_roll_pitch_angular_velocity_rms": 0.07177591824084681,
+        "body_vertical_acceleration_p95": 0.4217773675918579,
+        "body_vertical_acceleration_rms": 0.37073294754939207,
+        "body_vertical_velocity_p95": 0.035079266875982285,
+        "body_vertical_velocity_rms": 0.019929275506086513,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 10.443416595458984,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 35.977752685546875,
+        "max_abs_joint_velocity": 6.898299694061279,
+        "max_joint_effort_utilization": 0.29981460571289065,
+        "max_joint_velocity_utilization": 0.20903938466852362,
+        "max_tilt": 0.08290130645036697,
+        "mean_reward": 0.20918843381603558,
+        "real_time_factor": 0.8828879059680202,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.025569135391348585,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.024299436307258553,
+        "tracking_yaw_rmse": 0.024506947302419875
+      },
+      "windows": {
+        "0-40": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 1.2061704945591154,
+          "path_length_xy_m": 1.7146015008520639,
+          "max_excursion_xy_m": 1.2184535317711558,
+          "xy_position_range_m": [
+            1.2511145919561386,
+            0.11703965440392494
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.03827629345222278,
+            0.003002433097773901
+          ],
+          "position_fit_speed_m_s": 0.03839386988761723,
+          "world_heading_change_deg": -10.18531119657622,
+          "actual_velocity_b_mean_m_s": [
+            -0.03017856533215513,
+            -0.00034004935374377964,
+            -0.0030735674758461755
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.02564955278672278,
+            0.0014909955090843142,
+            0.0017001630030572415
+          ],
+          "velocity_bias_b_m_s": [
+            0.004529012545432352,
+            0.0018310448628280937,
+            0.004773730478903417
+          ],
+          "velocity_rmse_b_m_s": [
+            0.01595403422893401,
+            0.04928313470220127,
+            0.049655631420089504
+          ]
+        },
+        "40-80": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 0.000503220370699644,
+          "path_length_xy_m": 0.025608030492019394,
+          "max_excursion_xy_m": 0.0006405166657765313,
+          "xy_position_range_m": [
+            0.0006052255630493164,
+            0.0005197450518608093
+          ],
+          "position_fit_xy_velocity_m_s": [
+            8.855719351528642e-07,
+            4.669849304045022e-07
+          ],
+          "position_fit_speed_m_s": 1.0011556210476404e-06,
+          "world_heading_change_deg": 0.00022319043815971856,
+          "actual_velocity_b_mean_m_s": [
+            9.470454971358321e-05,
+            -0.001601690430950839,
+            -0.00010287052750186376
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.002008990429341793,
+            -0.013131150024011731,
+            -0.023524289500899614
+          ],
+          "velocity_bias_b_m_s": [
+            -0.0021036949790553764,
+            -0.011529459593060893,
+            -0.02342141897339775
+          ],
+          "velocity_rmse_b_m_s": [
+            0.0021454101919616345,
+            0.011547737206972527,
+            0.02343922788582607
+          ]
+        },
+        "80-120": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 0.0004247448566766307,
+          "path_length_xy_m": 0.022762665893812605,
+          "max_excursion_xy_m": 0.0005031343483731515,
+          "xy_position_range_m": [
+            0.0004578828811645508,
+            0.0003839656710624695
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -1.0234808349439468e-07,
+            -3.595448215726007e-08
+          ],
+          "position_fit_speed_m_s": 1.0847974457092124e-07,
+          "world_heading_change_deg": -8.383108677732857e-05,
+          "actual_velocity_b_mean_m_s": [
+            0.00011184170128956338,
+            -0.001584711114759557,
+            -8.885289101728233e-05
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.001987574327737093,
+            -0.01313960784021765,
+            -0.02354874380119145
+          ],
+          "velocity_bias_b_m_s": [
+            -0.0020994160290266563,
+            -0.011554896725458093,
+            -0.023459890910174166
+          ],
+          "velocity_rmse_b_m_s": [
+            0.002132163873729018,
+            0.01156905530283237,
+            0.02347373683003079
+          ]
+        },
+        "40-120": {
+          "sample_count": 4000,
+          "net_xy_displacement_m": 0.00023686683538551683,
+          "path_length_xy_m": 0.048377711415095406,
+          "max_excursion_xy_m": 0.0006405166657765313,
+          "xy_position_range_m": [
+            0.0006052255630493164,
+            0.0005197450518608093
+          ],
+          "position_fit_xy_velocity_m_s": [
+            2.760307100633928e-07,
+            5.825862000604417e-08
+          ],
+          "position_fit_speed_m_s": 2.821117149341896e-07,
+          "world_heading_change_deg": 5.360693592889376e-05,
+          "actual_velocity_b_mean_m_s": [
+            0.0001032731255015733,
+            -0.001593200772855198,
+            -9.586170925957305e-05
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.001998282378539443,
+            -0.01313537893211469,
+            -0.02353651665104553
+          ],
+          "velocity_bias_b_m_s": [
+            -0.002101555504041016,
+            -0.011542178159259493,
+            -0.023440654941785957
+          ],
+          "velocity_rmse_b_m_s": [
+            0.0021387972877540324,
+            0.011558401169739923,
+            0.0234564887040796
+          ]
+        }
+      }
+    },
+    "stand-clean-true-velocity-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-clean-true-velocity-a01/result.json",
+        "sha256": "d1ebd535ba5f03325a897f38522230c8e40f6dd06a6b5b535e546aeb39c5e876"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-clean-true-velocity-a01/telemetry.json.gz",
+        "sha256": "46130504cd84ef0fc4168a3533564a2390fc9536bf18ee658cc167b3be37434f"
+      },
+      "noise": "clean",
+      "controller": "true_velocity",
+      "diagnostics": {
+        "controller": "true_velocity",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "max_label_vs_physical_velocity_error_m_s": 0.0,
+      "aggregate_metrics": {
+        "action_rate_rms": 0.043129876383621264,
+        "body_roll_pitch_angular_acceleration_p95": 0.4724747396420182,
+        "body_roll_pitch_angular_acceleration_rms": 1.8513033800473162,
+        "body_roll_pitch_angular_velocity_p95": 0.0683973639467774,
+        "body_roll_pitch_angular_velocity_rms": 0.05591031353763401,
+        "body_vertical_acceleration_p95": 0.08039744570851326,
+        "body_vertical_acceleration_rms": 0.3261402648008799,
+        "body_vertical_velocity_p95": 0.010989137925207615,
+        "body_vertical_velocity_rms": 0.016295953440860572,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 9.354371070861816,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 24.70648193359375,
+        "max_abs_joint_velocity": 5.812985420227051,
+        "max_joint_effort_utilization": 0.20588734944661458,
+        "max_joint_velocity_utilization": 0.17615107334021365,
+        "max_tilt": 0.07437711209058762,
+        "mean_reward": 0.2085881316040953,
+        "real_time_factor": 0.8785899666271544,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.019779115749313875,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.010001596395846532,
+        "tracking_yaw_rmse": 0.019594209586142868
+      },
+      "windows": {
+        "0-40": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 0.28967913331472717,
+          "path_length_xy_m": 0.6012034854728219,
+          "max_excursion_xy_m": 0.2899656345014001,
+          "xy_position_range_m": [
+            0.31355634331703186,
+            0.03459004499018192
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.007109704497744161,
+            6.499332379144481e-05
+          ],
+          "position_fit_speed_m_s": 0.007110001559590617,
+          "world_heading_change_deg": -0.9248803756447718,
+          "actual_velocity_b_mean_m_s": [
+            -0.007198919894260826,
+            -0.0012113462501774847,
+            -0.0016743602136677965
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.00828994769603014,
+            0.008034157760441304,
+            0.0059962730882689354
+          ],
+          "velocity_bias_b_m_s": [
+            -0.0010910278017693144,
+            0.009245504010618789,
+            0.007670633301936732
+          ],
+          "velocity_rmse_b_m_s": [
+            0.007987161955824225,
+            0.02820699201112427,
+            0.03381398194158822
+          ]
+        },
+        "40-80": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 0.0003681620249803382,
+          "path_length_xy_m": 0.23858340891837668,
+          "max_excursion_xy_m": 0.0026548557916711117,
+          "xy_position_range_m": [
+            0.002390354871749878,
+            0.003227039473131299
+          ],
+          "position_fit_xy_velocity_m_s": [
+            4.4564867767975033e-07,
+            3.384354678757823e-06
+          ],
+          "position_fit_speed_m_s": 3.4135698814507483e-06,
+          "world_heading_change_deg": -0.0005822326568922224,
+          "actual_velocity_b_mean_m_s": [
+            7.903234951390915e-05,
+            -0.0016579354801849035,
+            -3.7074909030252456e-06
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.0009181892201304435,
+            0.002108576032333076,
+            -0.0008696729708462953
+          ],
+          "velocity_bias_b_m_s": [
+            -0.0009972215696443527,
+            0.0037665115125179796,
+            -0.0008659654799432701
+          ],
+          "velocity_rmse_b_m_s": [
+            0.0022329934180275305,
+            0.010326560484313272,
+            0.005463647733528715
+          ]
+        },
+        "80-120": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 0.0007608787144999743,
+          "path_length_xy_m": 0.2376360669173449,
+          "max_excursion_xy_m": 0.0029077562838267547,
+          "xy_position_range_m": [
+            0.0023856759071350098,
+            0.003234328585676849
+          ],
+          "position_fit_xy_velocity_m_s": [
+            1.4883189103789852e-06,
+            3.6309121971091084e-06
+          ],
+          "position_fit_speed_m_s": 3.924107103801753e-06,
+          "world_heading_change_deg": -0.0010545292545415734,
+          "actual_velocity_b_mean_m_s": [
+            9.666435101166825e-05,
+            -0.001648785967992694,
+            -3.956141800003365e-06
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.0008928595073521137,
+            0.0020553671680390833,
+            -0.0008889927547425032
+          ],
+          "velocity_bias_b_m_s": [
+            -0.000989523858363782,
+            0.003704153136031778,
+            -0.0008850366129424998
+          ],
+          "velocity_rmse_b_m_s": [
+            0.0022456664189131575,
+            0.010259160194788028,
+            0.005412231120283645
+          ]
+        },
+        "40-120": {
+          "sample_count": 4000,
+          "net_xy_displacement_m": 0.0008832118578118292,
+          "path_length_xy_m": 0.47634866702778117,
+          "max_excursion_xy_m": 0.002659034997088891,
+          "xy_position_range_m": [
+            0.0023943185806274414,
+            0.0032463084207847714
+          ],
+          "position_fit_xy_velocity_m_s": [
+            5.773081533117574e-07,
+            1.2893476691774603e-06
+          ],
+          "position_fit_speed_m_s": 1.412693213650289e-06,
+          "world_heading_change_deg": -0.001482150728405679,
+          "actual_velocity_b_mean_m_s": [
+            8.784835026278869e-05,
+            -0.0016533607240887989,
+            -3.831816351514306e-06
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.0009055243637412786,
+            0.00208197160018608,
+            -0.0008793328627943992
+          ],
+          "velocity_bias_b_m_s": [
+            -0.0009933727140040674,
+            0.0037353323242748787,
+            -0.0008755010464428849
+          ],
+          "velocity_rmse_b_m_s": [
+            0.002239338883464109,
+            0.010292915508700746,
+            0.0054380001956353535
+          ]
+        }
+      }
+    },
+    "stand-noisy-estimated-velocity-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-noisy-estimated-velocity-a01/result.json",
+        "sha256": "86c7e5d54e7cd1dda36f7bd2265f6323bbf383e914bd4304940b827aeb1ba3de"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-noisy-estimated-velocity-a01/telemetry.json.gz",
+        "sha256": "da2b53c303cb5109da99ab355c35973815127ee44f05b37567ed0f60324ac766"
+      },
+      "noise": "noisy",
+      "controller": "estimated_velocity",
+      "diagnostics": {
+        "controller": "estimated_velocity",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "max_label_vs_physical_velocity_error_m_s": 0.0,
+      "aggregate_metrics": {
+        "action_rate_rms": 0.279644941157021,
+        "body_roll_pitch_angular_acceleration_p95": 16.28813023386396,
+        "body_roll_pitch_angular_acceleration_rms": 8.835939457446639,
+        "body_roll_pitch_angular_velocity_p95": 0.40302215792600254,
+        "body_roll_pitch_angular_velocity_rms": 0.2164933703530509,
+        "body_vertical_acceleration_p95": 1.8312523141503334,
+        "body_vertical_acceleration_rms": 0.9395685264523562,
+        "body_vertical_velocity_p95": 0.08720006048679352,
+        "body_vertical_velocity_rms": 0.04396408016894,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 13.775530815124512,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 42.4536247253418,
+        "max_abs_joint_velocity": 9.271599769592285,
+        "max_joint_effort_utilization": 0.353780206044515,
+        "max_joint_velocity_utilization": 0.2809575687755238,
+        "max_tilt": 0.11738574504852295,
+        "mean_reward": 0.19880769179885585,
+        "real_time_factor": 0.8398270995822197,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.0465956425686605,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.06245670623338201,
+        "tracking_yaw_rmse": 0.05441757630403769
+      },
+      "windows": {
+        "0-40": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 0.9780156804019776,
+          "path_length_xy_m": 2.317617943514336,
+          "max_excursion_xy_m": 1.0180677799804756,
+          "xy_position_range_m": [
+            1.2420963495969772,
+            0.11152624525129795
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.03220330459732242,
+            0.0018629902122067573
+          ],
+          "position_fit_speed_m_s": 0.032257147417567876,
+          "world_heading_change_deg": -11.900400861337443,
+          "actual_velocity_b_mean_m_s": [
+            -0.024501575867821885,
+            -0.00038711436485800734,
+            -0.0030714996098322443
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.022469414530321957,
+            0.0047331691589206455,
+            0.0031056009102612735
+          ],
+          "velocity_bias_b_m_s": [
+            0.002032161337499929,
+            0.005120283523778653,
+            0.006177100520093518
+          ],
+          "velocity_rmse_b_m_s": [
+            0.037318461101730566,
+            0.04905175267928513,
+            0.05182191893859473
+          ]
+        },
+        "40-80": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 1.8259154956243409,
+          "path_length_xy_m": 2.872205161934568,
+          "max_excursion_xy_m": 1.8259154956243409,
+          "xy_position_range_m": [
+            1.6513590216636658,
+            0.7800720259547234
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.04070451456180782,
+            0.019108869356337713
+          ],
+          "position_fit_speed_m_s": 0.04496672540657155,
+          "world_heading_change_deg": -24.74881164977753,
+          "actual_velocity_b_mean_m_s": [
+            -0.046006016535669915,
+            -0.0001563483952486422,
+            -0.0025667134619470743
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.04154192371480167,
+            0.017205659955739975,
+            0.013799773096106947
+          ],
+          "velocity_bias_b_m_s": [
+            0.004464092820868245,
+            0.01736200835098862,
+            0.01636648655805402
+          ],
+          "velocity_rmse_b_m_s": [
+            0.03550326925714072,
+            0.05356080030156915,
+            0.051658225804199195
+          ]
+        },
+        "80-120": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 1.9806752023242336,
+          "path_length_xy_m": 3.299632109796714,
+          "max_excursion_xy_m": 1.9806752023242336,
+          "xy_position_range_m": [
+            1.275679588317871,
+            1.5157570838928223
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.03245692717988904,
+            0.03920711175894412
+          ],
+          "position_fit_speed_m_s": 0.05089842565776425,
+          "world_heading_change_deg": -27.89924099634433,
+          "actual_velocity_b_mean_m_s": [
+            -0.050296845969205604,
+            -0.0004599367130867904,
+            -0.0029268959781275044
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.043426429761573675,
+            0.0075246568210422995,
+            0.0036743755685165525
+          ],
+          "velocity_bias_b_m_s": [
+            0.006870416207631933,
+            0.00798459353412909,
+            0.006601271546644057
+          ],
+          "velocity_rmse_b_m_s": [
+            0.04104628876128504,
+            0.05260558166634517,
+            0.05412812553312301
+          ]
+        },
+        "40-120": {
+          "sample_count": 4000,
+          "net_xy_displacement_m": 3.7219251059923213,
+          "path_length_xy_m": 6.174926859206593,
+          "max_excursion_xy_m": 3.7219251059923213,
+          "xy_position_range_m": [
+            2.9294721484184265,
+            2.2977326437830925
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.037461358227835556,
+            0.029387655950311235
+          ],
+          "position_fit_speed_m_s": 0.04761289407847506,
+          "world_heading_change_deg": -52.686765216014074,
+          "actual_velocity_b_mean_m_s": [
+            -0.04815143125243776,
+            -0.0003081425541677163,
+            -0.002746804720037289
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.04248417673818767,
+            0.012365158388391136,
+            0.00873707433231175
+          ],
+          "velocity_bias_b_m_s": [
+            0.00566725451425009,
+            0.012673300942558854,
+            0.011483879052349039
+          ],
+          "velocity_rmse_b_m_s": [
+            0.03837499152455826,
+            0.05308533955528157,
+            0.05290759050914702
+          ]
+        }
+      }
+    },
+    "stand-noisy-true-velocity-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-noisy-true-velocity-a01/result.json",
+        "sha256": "f4d7f1671214af15be0f097ba8529749101e5a98708b8701fffff0e0d7825b29"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Dwaq-v0/2026-09-11_17-04-10/evaluations/dwaq-velocity-ablation-20260916-001/raw/stand-noisy-true-velocity-a01/telemetry.json.gz",
+        "sha256": "75553a91b31475ed4d784b7f675c49e6b66e2b0cb14189157fa7307ebe937679"
+      },
+      "noise": "noisy",
+      "controller": "true_velocity",
+      "diagnostics": {
+        "controller": "true_velocity",
+        "sampling_phase": "pre_action",
+        "velocity_observation_scale": [
+          2.0
+        ],
+        "velocity_units": "m/s"
+      },
+      "telemetry_status": "complete",
+      "max_label_vs_physical_velocity_error_m_s": 0.0,
+      "aggregate_metrics": {
+        "action_rate_rms": 0.21379636274475708,
+        "body_roll_pitch_angular_acceleration_p95": 12.80517428068827,
+        "body_roll_pitch_angular_acceleration_rms": 7.1360711819085285,
+        "body_roll_pitch_angular_velocity_p95": 0.28672884794956566,
+        "body_roll_pitch_angular_velocity_rms": 0.1553129560747185,
+        "body_vertical_acceleration_p95": 1.470949687063694,
+        "body_vertical_acceleration_rms": 0.8039711474172873,
+        "body_vertical_velocity_p95": 0.06367843598127365,
+        "body_vertical_velocity_rms": 0.03325724241731707,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 12.682918548583984,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 45.31095886230469,
+        "max_abs_joint_velocity": 7.121448040008545,
+        "max_joint_effort_utilization": 0.3775913238525391,
+        "max_joint_velocity_utilization": 0.2158014557578347,
+        "max_tilt": 0.10279874503612518,
+        "mean_reward": 0.2079709362462163,
+        "real_time_factor": 0.86044206327327,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.047373420081697544,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.0334352124955048,
+        "tracking_yaw_rmse": 0.03438235694046101
+      },
+      "windows": {
+        "0-40": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 0.7164579579693932,
+          "path_length_xy_m": 1.562576910395504,
+          "max_excursion_xy_m": 0.7164579579693932,
+          "xy_position_range_m": [
+            0.8220113664865494,
+            0.19092406332492828
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.020780858172169268,
+            0.004508662137093871
+          ],
+          "position_fit_speed_m_s": 0.021264338706817997,
+          "world_heading_change_deg": -15.023036900713219,
+          "actual_velocity_b_mean_m_s": [
+            -0.017780953896277422,
+            -0.0004388769861616311,
+            -0.002788058235002609
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.01950019047036767,
+            0.0068051707250997425,
+            0.012547048918902874
+          ],
+          "velocity_bias_b_m_s": [
+            -0.001719236574090246,
+            0.007244047711261374,
+            0.015335107153905483
+          ],
+          "velocity_rmse_b_m_s": [
+            0.03245005693583004,
+            0.04879452030892647,
+            0.05157683871146263
+          ]
+        },
+        "40-80": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 0.8554167165659616,
+          "path_length_xy_m": 1.3096947476256626,
+          "max_excursion_xy_m": 0.8554167165659616,
+          "xy_position_range_m": [
+            0.821498692035675,
+            0.24535727500915527
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.01998106885739058,
+            0.00558770077218823
+          ],
+          "position_fit_speed_m_s": 0.02074766282267226,
+          "world_heading_change_deg": -0.22621899578902205,
+          "actual_velocity_b_mean_m_s": [
+            -0.021237888808562276,
+            -8.82825059852621e-05,
+            -0.000977534104948063
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.025089616410434248,
+            0.02199506981531158,
+            0.01660121160186827
+          ],
+          "velocity_bias_b_m_s": [
+            -0.003851727601871971,
+            0.022083352321296844,
+            0.017578745706816334
+          ],
+          "velocity_rmse_b_m_s": [
+            0.0308729620794617,
+            0.043258050569164465,
+            0.03652478207214812
+          ]
+        },
+        "80-120": {
+          "sample_count": 2000,
+          "net_xy_displacement_m": 1.184334228332551,
+          "path_length_xy_m": 1.7752897295898578,
+          "max_excursion_xy_m": 1.184334228332551,
+          "xy_position_range_m": [
+            1.1001883745193481,
+            0.4454178810119629
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.02608819052076794,
+            0.010501889377411306
+          ],
+          "position_fit_speed_m_s": 0.028122648615364638,
+          "world_heading_change_deg": -10.206180967230836,
+          "actual_velocity_b_mean_m_s": [
+            -0.02941560895982184,
+            -0.0003001777523459168,
+            -0.0015063528156169922
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.03296449887566268,
+            0.02175202342728153,
+            0.017455844641663134
+          ],
+          "velocity_bias_b_m_s": [
+            -0.003548889915840846,
+            0.022052201179627445,
+            0.018962197457280127
+          ],
+          "velocity_rmse_b_m_s": [
+            0.035305626094927545,
+            0.047745645520486754,
+            0.04417033800211199
+          ]
+        },
+        "40-120": {
+          "sample_count": 4000,
+          "net_xy_displacement_m": 2.0380556161680925,
+          "path_length_xy_m": 3.085631488070491,
+          "max_excursion_xy_m": 2.0380556161680925,
+          "xy_position_range_m": [
+            1.922331988811493,
+            0.6839601993560791
+          ],
+          "position_fit_xy_velocity_m_s": [
+            -0.023383045234867256,
+            0.007849273066650309
+          ],
+          "position_fit_speed_m_s": 0.024665317596388053,
+          "world_heading_change_deg": -10.44096563679615,
+          "actual_velocity_b_mean_m_s": [
+            -0.025326748884192056,
+            -0.00019423012916558945,
+            -0.0012419434602825277
+          ],
+          "estimated_velocity_b_mean_m_s": [
+            -0.029027057643048464,
+            0.021873546621296557,
+            0.017028528121765703
+          ],
+          "velocity_bias_b_m_s": [
+            -0.0037003087588564085,
+            0.022067776750462145,
+            0.01827047158204823
+          ],
+          "velocity_rmse_b_m_s": [
+            0.03316343635326948,
+            0.045557137778905625,
+            0.04052825227319048
+          ]
+        }
+      }
+    }
+  },
+  "noise_on_fractional_reductions": {
+    "net_xy_displacement_m": 0.45241896112127267,
+    "path_length_xy_m": 0.5002966742075777,
+    "position_fit_speed_m_s": 0.4819613872717978
+  },
+  "finding": "True velocity substitution reduces but does not eliminate noise-on DWAQ drift. In noise-off cases both controllers have small net displacement; substitution increases cumulative small motion.",
+  "convergence": "indeterminate",
+  "direct_parameter_change_supported": false,
+  "limitations": [
+    "One seed with nominal physical parameters, not a robustness or hardware result.",
+    "Three velocity components replaced together; cannot attribute effect exclusively to vx.",
+    "Residual drift does not prove a specific cause. Noisy current observations, inferred latent and actor adaptation to estimation errors remain unisolated explanations.",
+    "True physical velocity is an oracle intervention, not an available deployment estimator."
+  ]
+}
