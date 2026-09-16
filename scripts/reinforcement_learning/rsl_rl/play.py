@@ -130,6 +130,7 @@ class ROADeploymentWrapper(nn.Module):
         self.actor = policy_nn.actor
         self.actor_obs_normalizer = policy_nn.actor_obs_normalizer
         self.num_obs = num_obs
+        self.use_velocity_estimation = getattr(policy_nn, "use_velocity_estimation", True)
 
     def forward(self, obs_history_flat: torch.Tensor):
         # 1. 提取当前帧 (无噪声本体观测)
@@ -142,7 +143,10 @@ class ROADeploymentWrapper(nn.Module):
         hist_latent, code_vel = self.history_encoder(obs_history_flat)
         
         # 3. 拼接输入给 actor，顺序需与训练时保持一致 (current_obs, vel, latent)
-        actor_input = torch.cat((current_obs, code_vel, hist_latent), dim=-1)
+        if self.use_velocity_estimation:
+            actor_input = torch.cat((current_obs, code_vel, hist_latent), dim=-1)
+        else:
+            actor_input = torch.cat((current_obs, hist_latent), dim=-1)
             
         return self.actor(actor_input)
 

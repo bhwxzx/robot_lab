@@ -53,6 +53,75 @@ TELEMETRY_SIGNALS = (
     "action",
 )
 
+# All diagnostic values describe the SAME observation before env.step(action).
+ROA_DIAGNOSTIC_SIGNALS = (
+    "roa_true_velocity_b", "roa_teacher_velocity_b", "roa_student_velocity_b",
+    "roa_teacher_latent", "roa_student_latent",
+    "roa_teacher_action", "roa_student_action",
+)
+ROA_ABLATION_MODES = ("student_true_velocity", "student_teacher_latent")
+ROA_CONTROL_MODES = ("teacher", "student", *ROA_ABLATION_MODES)
+ROA_ABLATION_SIGNALS = tuple(f"roa_{mode}_action" for mode in ROA_ABLATION_MODES)
+def roa_diagnostic_signals(mode, use_velocity_estimation=True):
+    if mode not in ROA_CONTROL_MODES:
+        raise ValueError("unknown ROA controller")
+    if type(use_velocity_estimation) is not bool:
+        raise ValueError("ROA velocity estimation flag must be boolean")
+    if not use_velocity_estimation:
+        if mode in ROA_ABLATION_MODES:
+            raise ValueError("ROA velocity-input ablations require explicit velocity estimation")
+        return tuple(name for name in ROA_DIAGNOSTIC_SIGNALS
+                     if name not in ("roa_teacher_velocity_b", "roa_student_velocity_b"))
+    return ROA_DIAGNOSTIC_SIGNALS + (ROA_ABLATION_SIGNALS if mode in ROA_ABLATION_MODES else ())
+
+
+def capture_roa_diagnostics(policy, observations, actual_velocity, velocity_scale, *, include_ablations=False):
+    """Snapshot both deterministic branches without advancing observations/history.
+
+    The critic label and student prediction use observation-scaled units. Undo
+    that scale explicitly; never compare them to post-step physical velocity.
+    """
+    import torch
+
+    with torch.inference_mode():
+        scale = torch.as_tensor(velocity_scale, device=actual_velocity.device,
+                                dtype=actual_velocity.dtype)
+        if scale.numel() not in (1, 3) or not torch.isfinite(scale).all() or (scale <= 0).any():
+            raise ValueError("ROA velocity scale must contain one or three positive finite values")
+        scale = scale.reshape(-1)
+        velocity_enabled = getattr(policy, "use_velocity_estimation", True)
+        if include_ablations and not velocity_enabled:
+            raise ValueError("ROA velocity-input ablations require explicit velocity estimation")
+        if velocity_enabled:
+            student_latent, student_velocity = policy.infer_hist_latent(observations, return_vel=True)
+        else:
+            student_latent = policy.infer_hist_latent(observations)
+        values = {
+            "roa_true_velocity_b": actual_velocity,
+            "roa_teacher_latent": policy.infer_priv_latent(observations),
+            "roa_student_latent": student_latent,
+            "roa_teacher_action": policy.act_inference(observations, hist_encoding=False),
+            "roa_student_action": policy.act_inference(observations, hist_encoding=True),
+        }
+        if velocity_enabled:
+            values["roa_teacher_velocity_b"] = policy.get_true_vel(observations) / scale
+            values["roa_student_velocity_b"] = student_velocity / scale
+        if include_ablations:
+            current, _ = policy._process_policy_obs(observations)
+            current = policy.actor_obs_normalizer(current)
+            # Actor inputs remain in their training units. Only the diagnostic
+            # velocity fields above are converted to physical m/s.
+            values["roa_student_true_velocity_action"] = policy.actor(torch.cat(
+                [current, policy.get_true_vel(observations), student_latent], dim=-1
+            ))
+            values["roa_student_teacher_latent_action"] = policy.actor(torch.cat(
+                [current, student_velocity, values["roa_teacher_latent"]], dim=-1
+            ))
+        for name, value in values.items():
+            if value.ndim != 2 or value.shape[0] != actual_velocity.shape[0] or not torch.isfinite(value).all():
+                raise ValueError(f"invalid ROA diagnostic tensor: {name}")
+        return {name: value.detach().clone() for name, value in values.items()}
+
 
 def required_signals_for_runner(runner: str) -> frozenset[str]:
     if runner == AMP_ROA_RUNNER:
@@ -595,14 +664,16 @@ def telemetry_report(
     requested: bool,
     runner: str,
     ledger: SignalLedger | None,
+    additional_required_signals: Iterable[str] = (),
 ) -> dict[str, Any]:
-    required = sorted(required_signals_for_runner(runner))
+    additional_required_signals = tuple(additional_required_signals)
+    required = sorted(required_signals_for_runner(runner) | frozenset(additional_required_signals))
     if not requested:
         return {
             "telemetry_status": "not_requested",
             "telemetry_required_for_complete_assessment": runner_requires_complete_telemetry(
                 runner
-            ),
+            ) or bool(additional_required_signals),
             "required_signals": required,
             "missing_required_signals": required,
             "signal_status": {},
@@ -614,7 +685,7 @@ def telemetry_report(
         "telemetry_status": report["status"],
         "telemetry_required_for_complete_assessment": runner_requires_complete_telemetry(
             runner
-        ),
+        ) or bool(additional_required_signals),
         "required_signals": required,
         "missing_required_signals": report["missing_required_signals"],
         "signal_status": report["signals"],

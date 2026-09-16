@@ -11,6 +11,9 @@ from collections import deque
 import rsl_rl
 from rsl_rl.runners.on_policy_runner import OnPolicyRunner
 from rsl_rl.utils import store_code_state
+from rsl_rl.utils.velocity_diagnostics import (
+    VelocityDiagnosticConfig, GroupedVelocityDiagnostics, critic_diagnostic_layout,
+)
 
 import typing
 if typing.TYPE_CHECKING:
@@ -26,6 +29,26 @@ class OnPolicyRunnerROA(OnPolicyRunner):
     - 仅重写核心的 learn() 和 get_inference_policy() 方法，以支持 ROA 的 Teacher-Student 交替训练和 DAgger 蒸馏过程。
     """
 
+    @torch.inference_mode()
+    def _collect_velocity_diagnostics(self, diagnostic_setup):
+        if diagnostic_setup is None or not self.alg.policy.use_velocity_estimation:
+            return {}
+        config, layout = diagnostic_setup
+        accumulator = GroupedVelocityDiagnostics(config, device=self.device)
+        storage = self.alg.storage
+        observations = storage.observations[:storage.step].flatten(0, 1)
+        for start in range(0, len(observations), config.chunk_size):
+            batch = observations[start:start + config.chunk_size]
+            critic = batch["critic"]
+            command, command_clipped = layout["velocity_commands"].decode(critic)
+            actual, velocity_clipped = layout["base_lin_vel"].decode(critic)
+            angular, angular_clipped = layout["base_ang_vel"].decode(critic)
+            _, prediction = self.alg.policy.infer_hist_latent(batch, return_vel=True)
+            scale = layout["base_lin_vel"].scale.to(prediction.device)
+            accumulator.add(command, actual, prediction.to(torch.float64) / scale, angular[:, 2],
+                            clipped=command_clipped | velocity_clipped | angular_clipped)
+        return accumulator.report(distributed=self.is_distributed)
+
     def learn(self, num_learning_iterations: int, init_at_random_ep_len: bool = False):  # noqa: C901
         # 初始化记录器 (继承自父类)
         self._prepare_logging_writer()
@@ -39,6 +62,12 @@ class OnPolicyRunnerROA(OnPolicyRunner):
         # 获取环境初始观测值，并开启训练模式
         obs = self.env.get_observations().to(self.device)
         self.train_mode()  # 确保 Actor Critic 网络，包含特权编码器，均处于训练模式
+        diagnostic_config = self.cfg.get("velocity_diagnostics")
+        if not self.alg.policy.use_velocity_estimation:
+            diagnostic_config = None
+        diagnostic_setup = None if diagnostic_config is None else (
+            VelocityDiagnosticConfig(**diagnostic_config), critic_diagnostic_layout(self.env, self.alg.policy)
+        )
 
         # 初始化数据统计 Buffer
         ep_infos = []
@@ -133,6 +162,13 @@ class OnPolicyRunnerROA(OnPolicyRunner):
                 # 基于最后一步的 Critic Value 计算 GAE 优势函数与回报
                 self.alg.compute_returns(obs)
 
+            # Diagnose the frozen pre-update estimator once per original rollout sample.
+            # Never count the repeated optimizer epochs as additional observations.
+            velocity_diagnostics = self._collect_velocity_diagnostics(diagnostic_setup)
+            self.last_velocity_diagnostics = velocity_diagnostics
+            velocity_curriculum = self.alg.velocity_curriculum_report(hist_encoding)
+            self.last_velocity_curriculum = velocity_curriculum
+
             # ROA Algorithm 1: student rollouts train the history encoder only.
             # Teacher rollouts train PPO with the student-latent regularizer.
             if hist_encoding:
@@ -147,6 +183,14 @@ class OnPolicyRunnerROA(OnPolicyRunner):
             # 使用继承的强大 log 函数进行性能输出
             if self.log_dir is not None and not self.disable_logs:
                 self.log(locals())
+                controller = "student" if hist_encoding else "teacher"
+                for name, value in velocity_diagnostics.items():
+                    self.writer.add_scalar(f"VelocityDiagnostics/{controller}/{name}", value, it)
+                for name, value in velocity_curriculum.items():
+                    self.writer.add_scalar(f"VelocityCurriculum/{controller}/{name}", value, it)
+                if diagnostic_setup is not None and self.alg.hist_encoder_optimizer is not None:
+                    self.writer.add_scalar("VelocityDiagnostics/history_learning_rate",
+                                           self.alg.hist_encoder_optimizer.param_groups[0]["lr"], it)
                 if it % self.save_interval == 0:
                     self.save(os.path.join(self.log_dir, f"model_{it}.pt"))
 
@@ -191,6 +235,8 @@ class OnPolicyRunnerROA(OnPolicyRunner):
             "iteration_is_next": True,
             "algorithm_counter": self.alg.counter,
             "priv_reg_coef_schedule": list(self.alg.priv_reg_coef_schedule),
+            "use_velocity_estimation": self.alg.policy.use_velocity_estimation,
+            "estimated_velocity_schedule": self.alg.estimated_velocity_schedule,
             "infos": infos,
         }
         if self.alg.hist_encoder_optimizer is not None:
@@ -205,6 +251,15 @@ class OnPolicyRunnerROA(OnPolicyRunner):
     def load(self, path: str, load_optimizer: bool = True, map_location: str | None = None):
         """Resume ROA state; an explicit schedule override uses the restored counter."""
         loaded_dict = torch.load(path, weights_only=False, map_location=map_location)
+        checkpoint_velocity_mode = loaded_dict.get("use_velocity_estimation", True)
+        if (type(checkpoint_velocity_mode) is not bool
+                or checkpoint_velocity_mode != self.alg.policy.use_velocity_estimation):
+            raise ValueError("ROA checkpoint velocity architecture mismatch; use the matching "
+                             "policy.use_velocity_estimation configuration, or train a separate baseline")
+        velocity_schedule = self.alg_cfg.get("estimated_velocity_schedule_resume")
+        if velocity_schedule is None:
+            velocity_schedule = loaded_dict.get("estimated_velocity_schedule", self.alg.estimated_velocity_schedule)
+        velocity_schedule = self.alg.validate_velocity_schedule(velocity_schedule)
         schedule = self.alg_cfg.get("priv_reg_coef_schedule_resume")
         if schedule is None:
             schedule = loaded_dict.get("priv_reg_coef_schedule", self.alg.priv_reg_coef_schedule)
@@ -233,6 +288,7 @@ class OnPolicyRunnerROA(OnPolicyRunner):
             if "priv_reg_coef_schedule" not in loaded_dict and self.alg_cfg.get("priv_reg_coef_schedule_resume") is None:
                 warnings.warn("ROA checkpoint lacks regularization schedule; using the configured training schedule.")
             self.alg.priv_reg_coef_schedule = schedule
+            self.alg.set_estimated_velocity_schedule(velocity_schedule)
             if self.alg_cfg.get("priv_reg_coef_schedule_resume") is not None:
                 print(f"[ROA Resume] Overriding priv_reg_coef_schedule with {schedule} at counter={self.alg.counter}")
         return loaded_dict.get("infos")

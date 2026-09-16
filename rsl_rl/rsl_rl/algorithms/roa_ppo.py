@@ -17,11 +17,16 @@ class ROAPPO(PPO):
     1. Privileged Regularization Loss (在 update 阶段): 强迫特权编码器不要学得“太超前”，必须保证提取的信息是历史数据能够推断出来的。
     2. DAgger 更新 (在 update_dagger 阶段): 监督学习，让历史观测编码器去模仿特权编码器的输出。
     """
+    VELOCITY_INPUT_KEY = "_roa_actor_velocity"
+    VELOCITY_MASK_KEY = "_roa_estimated_velocity_mask"
+
     def __init__(self, policy, 
                  priv_reg_coef_schedule=[0, 0.1, 2000, 3000], 
                  dagger_update_freq=20, 
                  vel_loss_coef=1.0,
                  priv_reg_coef_schedule_resume=None,
+                 estimated_velocity_schedule=None,
+                 estimated_velocity_schedule_resume=None,
                  **kwargs):
         if isinstance(dagger_update_freq, bool) or not isinstance(dagger_update_freq, int) or dagger_update_freq <= 0:
             raise ValueError("dagger_update_freq must be a positive integer")
@@ -29,6 +34,8 @@ class ROAPPO(PPO):
         if priv_reg_coef_schedule_resume is not None:
             self.validate_priv_reg_schedule(priv_reg_coef_schedule_resume)
         super().__init__(policy=policy, **kwargs)
+        self.validate_velocity_schedule(estimated_velocity_schedule_resume)
+        self.set_estimated_velocity_schedule(estimated_velocity_schedule)
         
         # ROA 专属参数
         # priv_reg_coef_schedule: 控制正则化系数的动态调度
@@ -59,6 +66,86 @@ class ROAPPO(PPO):
             raise ValueError("priv_reg coefficients/start must be non-negative and duration must be positive")
         return list(schedule)
 
+    @staticmethod
+    def validate_velocity_schedule(schedule):
+        if schedule is None:
+            return None
+        if not isinstance(schedule, (list, tuple)) or len(schedule) != 4:
+            raise ValueError("estimated velocity schedule must be [p_start, p_end, start, duration] or None")
+        if any(isinstance(v, bool) or not isinstance(v, Real) or not math.isfinite(v) for v in schedule):
+            raise ValueError("estimated velocity schedule values must be finite numbers")
+        p_start, p_end, start, duration = schedule
+        if not 0 <= p_start <= p_end <= 1 or start < 0 or duration <= 0:
+            raise ValueError("invalid estimated velocity probabilities or iteration limits")
+        if int(start) != start or int(duration) != duration:
+            raise ValueError("estimated velocity schedule iteration limits must be integers")
+        return list(schedule)
+
+    def set_estimated_velocity_schedule(self, schedule):
+        schedule = self.validate_velocity_schedule(schedule)
+        if not self.policy.use_velocity_estimation:
+            schedule = None
+        if schedule is not None:
+            if self.policy.history_encoder is None:
+                raise ValueError("estimated velocity curriculum requires a history encoder")
+            if self.symmetry:
+                raise ValueError("estimated velocity curriculum does not support symmetry augmentation/loss")
+        self.estimated_velocity_schedule = schedule
+        self._ensure_velocity_storage()
+
+    def _ensure_velocity_storage(self):
+        if self.estimated_velocity_schedule is None or self.storage is None:
+            return
+        observations = self.storage.observations
+        if self.VELOCITY_INPUT_KEY not in observations:
+            observations[self.VELOCITY_INPUT_KEY] = observations["critic"].new_zeros(
+                *observations.batch_size, 3
+            )
+            observations[self.VELOCITY_MASK_KEY] = torch.zeros(
+                *observations.batch_size, 1, dtype=torch.bool, device=self.device
+            )
+
+    def init_storage(self, training_type, num_envs, num_transitions_per_env, obs, actions_shape):
+        if self.VELOCITY_INPUT_KEY in obs or self.VELOCITY_MASK_KEY in obs:
+            raise ValueError("environment observations contain reserved ROA storage keys")
+        super().init_storage(training_type, num_envs, num_transitions_per_env, obs, actions_shape)
+        self._ensure_velocity_storage()
+
+    def estimated_velocity_probability(self):
+        if self.estimated_velocity_schedule is None:
+            return 0.0
+        p_start, p_end, start, duration = self.estimated_velocity_schedule
+        progress = min(max((self.counter - start) / duration, 0.0), 1.0)
+        return p_start + progress * (p_end - p_start)
+
+    @torch.no_grad()
+    def _sample_actor_velocity(self, obs, hist_encoding):
+        probability = 1.0 if hist_encoding else self.estimated_velocity_probability()
+        actual = self.policy.get_true_vel(obs)
+        if probability == 0:
+            return actual.detach(), torch.zeros_like(actual[:, :1], dtype=torch.bool)
+        _, estimated = self.policy.infer_hist_latent(obs, return_vel=True)
+        if probability == 1:
+            return estimated.detach(), torch.ones_like(actual[:, :1], dtype=torch.bool)
+        mask = torch.rand_like(actual[:, :1]) < probability
+        return torch.where(mask, estimated, actual).detach(), mask
+
+    @torch.no_grad()
+    def velocity_curriculum_report(self, hist_encoding):
+        if self.estimated_velocity_schedule is None:
+            return {}
+        mask = self.storage.observations[self.VELOCITY_MASK_KEY][:self.storage.step]
+        counts = torch.stack((mask.sum(dtype=torch.float64),
+                              torch.tensor(mask.numel(), dtype=torch.float64, device=mask.device)))
+        if self.is_multi_gpu:
+            torch.distributed.all_reduce(counts, op=torch.distributed.ReduceOp.SUM)
+        estimated_count, total = counts.cpu().tolist()
+        result = {"probability": 1.0 if hist_encoding else self.estimated_velocity_probability(),
+                  "sample_count": total, "estimated_sample_count": estimated_count}
+        if total:
+            result["estimated_fraction"] = estimated_count / total
+        return result
+
     def act(self, obs, hist_encoding=False):
         """
         环境交互步骤，获取机器人当前的动作。
@@ -67,7 +154,17 @@ class ROAPPO(PPO):
         if self.policy.is_recurrent:
             self.transition.hidden_states = self.policy.get_hidden_states()
         
-        self.transition.actions = self.policy.act(obs, hist_encoding=hist_encoding).detach()
+        velocity = None
+        if self.VELOCITY_INPUT_KEY in self.storage.observations:
+            velocity, mask = self._sample_actor_velocity(obs, hist_encoding)
+            # Copy the container, leaving the environment's observation keys intact.
+            # RolloutStorage copies these tensors before the next policy update.
+            obs = obs.clone(False)
+            obs[self.VELOCITY_INPUT_KEY] = velocity
+            obs[self.VELOCITY_MASK_KEY] = mask
+        self.transition.actions = self.policy.act(
+            obs, hist_encoding=hist_encoding, velocity_override=velocity
+        ).detach()
         self.transition.values = self.policy.evaluate(obs).detach()
         self.transition.actions_log_prob = self.policy.get_actions_log_prob(self.transition.actions).detach()
         self.transition.action_mean = self.policy.action_mean.detach()
@@ -138,7 +235,9 @@ class ROAPPO(PPO):
 
             # 重新计算前向传播
             # 注意：使用 hist_encoding=False，表示使用“特权信息”来训练主强化学习策略
-            self.policy.act(obs_batch, hist_encoding=False, masks=masks_batch, hidden_states=hid_states_batch[0] if hid_states_batch else None)
+            velocity = obs_batch[self.VELOCITY_INPUT_KEY] if self.estimated_velocity_schedule is not None else None
+            self.policy.act(obs_batch, hist_encoding=False, velocity_override=velocity,
+                            masks=masks_batch, hidden_states=hid_states_batch[0] if hid_states_batch else None)
             actions_log_prob_batch = self.policy.get_actions_log_prob(actions_batch)
             value_batch = self.policy.evaluate(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[1] if hid_states_batch else None)
             
@@ -323,16 +422,21 @@ class ROAPPO(PPO):
             with torch.inference_mode():
                 # 提取出特权隐向量和真实速度，也就是我们的监督目标 (Target/Label)
                 priv_latent_batch = self.policy.infer_priv_latent(obs_batch)
-                true_vel_batch = self.policy.get_true_vel(obs_batch)
+                if self.policy.use_velocity_estimation:
+                    true_vel_batch = self.policy.get_true_vel(obs_batch)
                 
             # 2. 获取 Student 的预测输出 (因为需要学习，所以带有梯度轨迹)
-            hist_latent_batch, pred_vel_batch = self.policy.infer_hist_latent(obs_batch, return_vel=True)
+            if self.policy.use_velocity_estimation:
+                hist_latent_batch, pred_vel_batch = self.policy.infer_hist_latent(obs_batch, return_vel=True)
+            else:
+                hist_latent_batch = self.policy.infer_hist_latent(obs_batch)
             
             # 3. 计算双重 Loss: 隐向量蒸馏 + 速度显式监督
             hist_latent_loss = (priv_latent_batch.detach() - hist_latent_batch).norm(p=2, dim=1).mean()
-            vel_loss = (true_vel_batch.detach() - pred_vel_batch).pow(2).mean()
-            
-            total_dagger_loss = hist_latent_loss + self.vel_loss_coef * vel_loss
+            total_dagger_loss = hist_latent_loss
+            if self.policy.use_velocity_estimation:
+                vel_loss = (true_vel_batch.detach() - pred_vel_batch).pow(2).mean()
+                total_dagger_loss = total_dagger_loss + self.vel_loss_coef * vel_loss
             
             # 4. 仅仅对 History Encoder 的专属优化器执行反向传播和梯度下降
             self.hist_encoder_optimizer.zero_grad()
@@ -346,14 +450,18 @@ class ROAPPO(PPO):
             self.hist_encoder_optimizer.step()
             
             mean_hist_latent_loss += hist_latent_loss.item()
-            mean_vel_loss += vel_loss.item()
+            if self.policy.use_velocity_estimation:
+                mean_vel_loss += vel_loss.item()
             
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_hist_latent_loss /= num_updates
         mean_vel_loss /= num_updates
         self.storage.clear()
         self.counter += 1
-        return {"hist_latent": mean_hist_latent_loss, "vel_loss": mean_vel_loss}
+        losses = {"hist_latent": mean_hist_latent_loss}
+        if self.policy.use_velocity_estimation:
+            losses["vel_loss"] = mean_vel_loss
+        return losses
 
     def broadcast_parameters(self):
         """多GPU下同步模型参数广播"""

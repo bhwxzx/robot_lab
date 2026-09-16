@@ -14,10 +14,11 @@ class StateHistoryEncoder(nn.Module):
     用于在没有特权信息（如摩擦力、精确地形）时，通过机器人本体的一段历史观测数据（时序数据）推断出当前环境的隐藏特征。
     通常采用一维卷积网络 (1D-CNN) 处理时序特征。
     """
-    def __init__(self, activation_fn, input_size, tsteps, output_size):
+    def __init__(self, activation_fn, input_size, tsteps, output_size, use_velocity_estimation=True):
         super(StateHistoryEncoder, self).__init__()
         self.activation_fn = activation_fn
         self.tsteps = tsteps # 历史序列的步长，如过去 50 帧
+        self.use_velocity_estimation = use_velocity_estimation
         channel_size = 10
 
         # 对输入的每一帧历史数据进行初步的线性特征提取
@@ -52,7 +53,7 @@ class StateHistoryEncoder(nn.Module):
         # 测速头：新增输出线速度 (explicit velocity estimation)
         self.vel_output = nn.Sequential(
             nn.Linear(channel_size * 3, 3)
-        )
+        ) if use_velocity_estimation else nn.Identity()
 
     def forward(self, obs_flat):
         batch_size = obs_flat.shape[0]
@@ -62,7 +63,9 @@ class StateHistoryEncoder(nn.Module):
         # 把数据形状转换为 Conv1d 需要的格式 [Batch, Channels, T]，然后送入卷积网络
         output = self.conv_layers(projection.reshape([batch_size, T, -1]).permute((0, 2, 1)))
         hist_latent = self.linear_output(output)
-        code_vel = self.vel_output(output)
+        # Empty feature block keeps the export interface tensor-only; it is not
+        # a fabricated zero velocity and has no parameters or supervision.
+        code_vel = self.vel_output(output) if self.use_velocity_estimation else output[:, :0]
         return hist_latent, code_vel
 
 
@@ -87,6 +90,7 @@ class ActorCriticROA(nn.Module):
         init_noise_std=1.0,
         noise_std_type: str = "scalar",
         vel_offset=None,
+        use_velocity_estimation=True,
         **kwargs,
     ):
         if kwargs:
@@ -95,6 +99,9 @@ class ActorCriticROA(nn.Module):
                 + str([key for key in kwargs.keys()])
             )
         super().__init__()
+        if type(use_velocity_estimation) is not bool:
+            raise ValueError("use_velocity_estimation must be a boolean")
+        self.use_velocity_estimation = use_velocity_estimation
 
         self.obs_groups = obs_groups
 
@@ -161,13 +168,16 @@ class ActorCriticROA(nn.Module):
         # ====== 2. 历史编码器 (History Encoder - Student) ======
         # 处理 3D 张量展平后的 history 数据
         if self.history_len > 0:
-            self.history_encoder = StateHistoryEncoder(act_fn, self.num_prop, self.history_len, priv_out_dim)
+            self.history_encoder = StateHistoryEncoder(
+                act_fn, self.num_prop, self.history_len, priv_out_dim, use_velocity_estimation
+            )
         else:
             self.history_encoder = None
 
         # ====== 3. 策略网络主干 (Actor Backbone) ======
         # Actor 输入: 单帧本体观测 (Current Obs) + 线速度 (Vel) + Latent Code
-        self.actor = MLP(self.num_prop + 3 + priv_out_dim, num_actions, actor_hidden_dims, activation)
+        self.actor = MLP(self.num_prop + (3 if use_velocity_estimation else 0) + priv_out_dim,
+                         num_actions, actor_hidden_dims, activation)
         self.actor_obs_normalization = actor_obs_normalization
         if actor_obs_normalization:
             self.actor_obs_normalizer = EmpiricalNormalization(self.num_prop)
@@ -222,6 +232,8 @@ class ActorCriticROA(nn.Module):
 
     def infer_hist_latent(self, obs, return_vel=False):
         """推理：使用历史编码器生成隐向量"""
+        if return_vel and not self.use_velocity_estimation:
+            raise ValueError("explicit velocity estimation is disabled")
         _, hist_flat = self._process_policy_obs(obs)
         hist_latent, code_vel = self.history_encoder(hist_flat)
         if return_vel:
@@ -234,7 +246,7 @@ class ActorCriticROA(nn.Module):
         # 根据配置的偏移量截取 3 维速度
         return critic_obs[:, self.vel_offset : self.vel_offset + 3]
 
-    def update_distribution(self, obs, hist_encoding=False):
+    def update_distribution(self, obs, hist_encoding=False, velocity_override=None):
         """前向传递计算动作分布"""
         # 1. 解析观测并归一化本体感受
         current_obs, _ = self._process_policy_obs(obs)
@@ -242,14 +254,23 @@ class ActorCriticROA(nn.Module):
 
         # 2. 路由：选择对应的特征提取器获取 Latent 和 Vel
         if hist_encoding and self.history_encoder is not None:
-            latent, vel = self.infer_hist_latent(obs, return_vel=True)
+            if self.use_velocity_estimation:
+                latent, vel = self.infer_hist_latent(obs, return_vel=True)
+            else:
+                latent = self.infer_hist_latent(obs)
         else:
             latent = self.infer_priv_latent(obs)
-            vel = self.get_true_vel(obs)
+            if self.use_velocity_estimation:
+                vel = self.get_true_vel(obs)
         self._last_actor_latent = latent
 
         # 3. 拼接传入主网络
-        actor_input = torch.cat([current_obs, vel, latent], dim=-1)
+        if velocity_override is not None:
+            if not self.use_velocity_estimation or velocity_override.shape != (current_obs.shape[0], 3):
+                raise ValueError("velocity override requires enabled estimation and shape [N,3]")
+            vel = velocity_override.detach()
+        actor_input = (torch.cat([current_obs, vel, latent], dim=-1) if self.use_velocity_estimation
+                       else torch.cat([current_obs, latent], dim=-1))
         mean = self.actor(actor_input)
 
         if self.noise_std_type == "scalar":
@@ -259,9 +280,9 @@ class ActorCriticROA(nn.Module):
             
         self.distribution = Normal(mean, std)
 
-    def act(self, obs, hist_encoding=False, **kwargs):
+    def act(self, obs, hist_encoding=False, velocity_override=None, **kwargs):
         """采样获取动作"""
-        self.update_distribution(obs, hist_encoding)
+        self.update_distribution(obs, hist_encoding, velocity_override)
         return self.distribution.sample()
 
     def act_inference(self, obs, hist_encoding=False):
@@ -270,12 +291,17 @@ class ActorCriticROA(nn.Module):
         current_obs = self.actor_obs_normalizer(current_obs)
         
         if hist_encoding and self.history_encoder is not None:
-            latent, vel = self.infer_hist_latent(obs, return_vel=True)
+            if self.use_velocity_estimation:
+                latent, vel = self.infer_hist_latent(obs, return_vel=True)
+            else:
+                latent = self.infer_hist_latent(obs)
         else:
             latent = self.infer_priv_latent(obs)
-            vel = self.get_true_vel(obs)
+            if self.use_velocity_estimation:
+                vel = self.get_true_vel(obs)
             
-        actor_input = torch.cat([current_obs, vel, latent], dim=-1)
+        actor_input = (torch.cat([current_obs, vel, latent], dim=-1) if self.use_velocity_estimation
+                       else torch.cat([current_obs, latent], dim=-1))
         return self.actor(actor_input)
 
     def evaluate(self, obs, **kwargs):

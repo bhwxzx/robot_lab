@@ -37,6 +37,34 @@ class EvaluationEvidenceError(ValueError):
     """Raised when evaluation evidence is unsafe, conflicting, or incomplete."""
 
 
+def validate_roa_velocity_mode(diagnostic: dict, config_ref: dict | None) -> bool:
+    """Bind optional velocity signals to the hash-verified training configuration.
+
+    Legacy evidence omitted the flag and always had an explicit velocity head.
+    Disabled-mode evidence must supply the effective configuration, whose full
+    provenance is validated by validate_evaluation_bundle before this check.
+    """
+    enabled = diagnostic.get("use_velocity_estimation", True)
+    if type(enabled) is not bool:
+        raise EvaluationEvidenceError("ROA velocity estimation flag must be boolean")
+    if config_ref is None:
+        if not enabled:
+            raise EvaluationEvidenceError("disabled ROA velocity estimation requires effective-config evidence")
+        return enabled
+    from capture_effective_training_config import _parse_yaml, _optional_scalar
+    try:
+        reference = _validate_reference(config_ref, label="ROA effective config")
+        config = _load_json_object(Path(reference["path"]), label="ROA effective config")
+        root, _ = _parse_yaml(config["source_files"]["agent"]["content_utf8"], label="ROA agent config")
+        configured = _optional_scalar(root, ("policy", "use_velocity_estimation"), label="ROA agent config")
+        configured = True if configured is None else configured
+        if type(configured) is not bool or configured != enabled:
+            raise EvaluationEvidenceError("ROA velocity estimation mode differs from effective training config")
+    except (KeyError, TypeError, ValueError) as exc:
+        raise EvaluationEvidenceError(str(exc)) from exc
+    return enabled
+
+
 def canonical_json(value: Any) -> str:
     return json.dumps(
         value,
@@ -124,6 +152,12 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
     _validate_identifier("scenario_id", value["scenario_id"])
     if not isinstance(value["scenario_overrides"], dict):
         raise EvaluationEvidenceError("scenario_overrides must be an object")
+    for key, setting in value["scenario_overrides"].items():
+        if key.startswith("evaluation."):
+            from policy_evaluation_telemetry import ROA_CONTROL_MODES
+            modes = {"evaluation.roa_mode": ROA_CONTROL_MODES}
+            if key not in modes or setting not in modes[key]:
+                raise EvaluationEvidenceError("invalid evaluation controller or unknown evaluation option")
     if not isinstance(value["command_schedule"], list):
         raise EvaluationEvidenceError("command_schedule must be an array")
     for field in ("duration_steps", "num_envs"):
@@ -760,6 +794,43 @@ def validate_evaluation_bundle(
             raise EvaluationEvidenceError("telemetry evaluation binding mismatch")
         if telemetry.get("inputs") != inputs:
             raise EvaluationEvidenceError("telemetry input binding mismatch")
+
+    roa_mode = scenario_contract["scenario_overrides"].get("evaluation.roa_mode")
+    if roa_mode is not None:
+        from policy_evaluation_telemetry import roa_diagnostic_signals
+        if evaluation["runner"] != "OnPolicyRunnerROA" or artifact["kind"] != "native":
+            raise EvaluationEvidenceError("ROA diagnostics require native OnPolicyRunnerROA")
+        if telemetry_reference is None:
+            raise EvaluationEvidenceError("ROA diagnostics require telemetry")
+        diagnostic = result.get("roa_diagnostics", {})
+        if (diagnostic.get("controller") != roa_mode
+                or diagnostic.get("sampling_phase") != "pre_action"
+                or diagnostic.get("velocity_units") != "m/s"
+                or telemetry.get("roa_diagnostics") != diagnostic):
+            raise EvaluationEvidenceError("ROA diagnostic mode/units/timing binding mismatch")
+        scales = diagnostic.get("velocity_observation_scale")
+        if (not isinstance(scales, list) or len(scales) not in (1, 3)
+                or any(isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x) or x <= 0 for x in scales)):
+            raise EvaluationEvidenceError("invalid ROA velocity observation scale")
+        velocity_enabled = validate_roa_velocity_mode(diagnostic, inputs.get("effective_config"))
+        try:
+            required = set(roa_diagnostic_signals(roa_mode, velocity_enabled))
+        except ValueError as exc:
+            raise EvaluationEvidenceError(str(exc)) from exc
+        if not required.issubset(telemetry.get("required_signals", [])):
+            raise EvaluationEvidenceError("ROA diagnostic signals must be required")
+        for sample in telemetry.get("samples", []):
+            for name in required:
+                values = sample.get(name)
+                if not isinstance(values, list) or not values or any(not isinstance(x, (int, float)) or isinstance(x, bool) or not math.isfinite(x) for x in values):
+                    raise EvaluationEvidenceError(f"invalid or missing ROA signal {name}")
+            if sample["action"] != sample[f"roa_{roa_mode}_action"]:
+                raise EvaluationEvidenceError("executed action differs from selected ROA branch")
+        expected = len(range(0, scenario_contract["duration_steps"], resource_mode["telemetry_stride"]))
+        if len(telemetry.get("samples", [])) != expected:
+            raise EvaluationEvidenceError("ROA diagnostic sample count mismatch")
+        if any(not telemetry.get("signal_status", {}).get(name, {}).get("complete") for name in required):
+            raise EvaluationEvidenceError("incomplete ROA diagnostic signals")
 
     return {
         "status": "valid",

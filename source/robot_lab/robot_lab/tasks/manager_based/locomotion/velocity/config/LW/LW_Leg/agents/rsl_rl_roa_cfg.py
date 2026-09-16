@@ -18,6 +18,7 @@ class LWRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
         "privileged": ["privileged"]  # 专供特权编码器使用的纯物理参数组
     }
     policy = RslRlActorCriticRoaCfg(
+        use_velocity_estimation=True,  # False：关闭显式速度模块，需独立训练。
         init_noise_std=1.0,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
@@ -45,6 +46,10 @@ class LWRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
         priv_reg_coef_schedule_resume=[0.0, 0.1, 0, 1],
         dagger_update_freq=20,
         vel_loss_coef=1.0,
+        # None：原有真实速度 PPO；课程格式：[初始概率, 最终概率, 起始迭代, 渐变迭代数]。
+        # 例如 [0.0, 1.0, 2000, 3000]；关闭 use_velocity_estimation 时课程自动停用。
+        estimated_velocity_schedule=[0.0, 1.0, 2000, 3000],
+        estimated_velocity_schedule_resume=None,  # None：恢复 checkpoint 课程；列表：显式覆盖。
     )
 
 @configclass
@@ -52,6 +57,7 @@ class LWFlatRoaRunnerCfg(LWRoughRoaRunnerCfg):
     max_iterations = 50000
     experiment_name = "LW_leg_flat_roa"
     policy = RslRlActorCriticRoaCfg(
+        use_velocity_estimation=True,  # Flat 单独定义 policy，在此切换显式速度模块。
         init_noise_std=1.0,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],

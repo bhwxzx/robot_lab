@@ -36,7 +36,7 @@ class SyntheticWheelEnv:
         return self.get_observations(), torch.randn(8), torch.zeros(8, dtype=torch.long), {}
 
 
-def make_runner(**algorithm_overrides):
+def make_runner(*, policy_overrides=None, **algorithm_overrides):
     cfg = {
         "num_steps_per_env": 2,
         "save_interval": 1000,
@@ -44,6 +44,7 @@ def make_runner(**algorithm_overrides):
         "policy": {
             "class_name": "ActorCriticROA", "priv_encoder_dims": [64, 20],
             "actor_hidden_dims": [32], "critic_hidden_dims": [32], "vel_offset": 39,
+            **(policy_overrides or {}),
         },
         "algorithm": {
             "class_name": "ROAPPO", "num_learning_epochs": 2, "num_mini_batches": 2,
