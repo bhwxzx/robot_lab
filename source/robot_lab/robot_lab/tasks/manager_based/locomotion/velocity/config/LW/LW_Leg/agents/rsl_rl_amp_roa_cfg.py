@@ -19,6 +19,7 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         "privileged": ["privileged"]  # 专供特权编码器使用的纯物理参数组
     }
     policy = RslRlActorCriticAmpRoaCfg(
+        use_velocity_estimation=True,  # False：关闭显式速度模块，需独立训练。
         init_noise_std=1.0,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
@@ -43,9 +44,12 @@ class LWRoughAmpRoaRunnerCfg(RslRlOnPolicyRunnerAmpRoaCfg):
         desired_kl=0.01,
         max_grad_norm=1.0,
         priv_reg_coef_schedule=[0.0, 0.1, 2000, 3000],
-        priv_reg_coef_schedule_resume=[0.0, 0.1, 0, 1],
+        priv_reg_coef_schedule_resume=None,
         dagger_update_freq=20,
         vel_loss_coef=1.0,
+        # PPO 使用估计速度的概率：[初值, 终值, 起始迭代, 渐变迭代数]。
+        estimated_velocity_schedule=[0.0, 1.0, 2000, 3000],
+        estimated_velocity_schedule_resume=None,  # None：延续 checkpoint 课程。
     )
     amp_history_length=10
     amp_discr_hidden_dims=[1024, 512]
@@ -61,6 +65,7 @@ class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):
     max_iterations = 50000
     experiment_name = "LW_leg_flat_amp_roa"
     policy = RslRlActorCriticAmpRoaCfg(
+        use_velocity_estimation=True,  # Flat 单独定义 policy，在此切换显式速度模块。
         init_noise_std=1.0,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],

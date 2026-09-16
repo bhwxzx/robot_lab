@@ -10,13 +10,16 @@ from collections import deque
 import rsl_rl
 from rsl_rl.algorithms.amp_roa_ppo import AMPROAPPO
 from rsl_rl.runners.on_policy_runner_amp import OnPolicyRunnerAmp
+from rsl_rl.runners.on_policy_runner_roa import OnPolicyRunnerROA
 from rsl_rl.utils import store_code_state
+from rsl_rl.utils.velocity_diagnostics import VelocityDiagnosticConfig, critic_diagnostic_layout
 
 class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
     alg: AMPROAPPO
+    """On-policy runner for combining AMP (Adversarial Motion Prior) and ROA (Regularized Online Adaptation).
     """
-    On-policy runner for combining AMP (Adversarial Motion Prior) and ROA (Regularized Online Adaptation).
-    """
+
+    _collect_velocity_diagnostics = OnPolicyRunnerROA._collect_velocity_diagnostics
 
     def learn(self, num_learning_iterations: int, init_at_random_ep_len: bool = False):  # noqa: C901
         self._prepare_logging_writer()
@@ -32,6 +35,12 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
             amp_obs = amp_obs.view(amp_obs.shape[0], -1)
 
         self.train_mode()
+        diagnostic_config = self.cfg.get("velocity_diagnostics")
+        if not self.alg.policy.use_velocity_estimation:
+            diagnostic_config = None
+        diagnostic_setup = None if diagnostic_config is None else (
+            VelocityDiagnosticConfig(**diagnostic_config), critic_diagnostic_layout(self.env, self.alg.policy)
+        )
 
         ep_infos = []
         rewbuffer = deque(maxlen=100)
@@ -152,6 +161,11 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
 
                 self.alg.compute_returns(obs)
 
+            velocity_diagnostics = self._collect_velocity_diagnostics(diagnostic_setup)
+            self.last_velocity_diagnostics = velocity_diagnostics
+            velocity_curriculum = self.alg.velocity_curriculum_report(hist_encoding)
+            self.last_velocity_curriculum = velocity_curriculum
+
             # 学生策略采集的 rollout 只用于 DAgger 蒸馏，避免使用教师策略
             # 重算学生动作的 log_prob，导致 PPO importance ratio 失效。
             if hist_encoding:
@@ -167,6 +181,14 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
             
             if self.log_dir is not None and not self.disable_logs:
                 self.log(locals())
+                controller = "student" if hist_encoding else "teacher"
+                for name, value in velocity_diagnostics.items():
+                    self.writer.add_scalar(f"VelocityDiagnostics/{controller}/{name}", value, it)
+                for name, value in velocity_curriculum.items():
+                    self.writer.add_scalar(f"VelocityCurriculum/{controller}/{name}", value, it)
+                if diagnostic_setup is not None and self.alg.hist_encoder_optimizer is not None:
+                    self.writer.add_scalar("VelocityDiagnostics/history_learning_rate",
+                                           self.alg.hist_encoder_optimizer.param_groups[0]["lr"], it)
                 if it % self.save_interval == 0:
                     self.save(os.path.join(self.log_dir, f"model_{it}.pt"))
 
@@ -191,17 +213,55 @@ class OnPolicyRunnerAmpROA(OnPolicyRunnerAmp):
             
         return act_inference_wrapper
 
+    def save(self, path: str, infos=None):
+        """Save both AMP state and the same ROA continuation contract as pure ROA."""
+        saved_dict = {
+            "model_state_dict": self.alg.policy.state_dict(),
+            "optimizer_state_dict": self.alg.optimizer.state_dict(),
+            "discriminator_state_dict": self.alg.discriminator.state_dict(),
+            "amp_normalizer": self.alg.amp_normalizer,
+            "amp_optimizer_state_dict": self.alg.amp_optimizer.state_dict(),
+            "iter": self.current_learning_iteration,
+            "iteration_is_next": True,
+            "algorithm_counter": self.alg.counter,
+            "priv_reg_coef_schedule": list(self.alg.priv_reg_coef_schedule),
+            "use_velocity_estimation": self.alg.policy.use_velocity_estimation,
+            "estimated_velocity_schedule": self.alg.estimated_velocity_schedule,
+            "infos": infos,
+        }
+        if self.alg.hist_encoder_optimizer is not None:
+            saved_dict["hist_encoder_optimizer_state_dict"] = self.alg.hist_encoder_optimizer.state_dict()
+        torch.save(saved_dict, path)
+        if getattr(self, "logger_type", None) in ["neptune", "wandb"] and not self.disable_logs:
+            self.writer.save_model(path, self.current_learning_iteration)
+
     def load(self, path: str, load_optimizer: bool = True, map_location=None):
-        """
-        重写原有的 load 方法。在恢复训练 (resume) 时，检查配置中是否存在
-        'priv_reg_coef_schedule_resume'，并将其覆盖到特权正则化调度参数中，
-        从而避免 resume 之后系数突然掉回 0。
-        """
+        """Validate ROA overrides before mutating weights; preserve AMP load behavior."""
+        # A file-like checkpoint is also supported by the parent and CPU tests.
+        position = path.tell() if hasattr(path, "tell") else None
+        loaded_dict = torch.load(path, weights_only=False, map_location=map_location)
+        if position is not None:
+            path.seek(position)
+        mode = loaded_dict.get("use_velocity_estimation", True)
+        if type(mode) is not bool or mode != self.alg.policy.use_velocity_estimation:
+            raise ValueError("ROA checkpoint velocity architecture mismatch; use the matching "
+                             "policy.use_velocity_estimation configuration, or train a separate baseline")
+        schedule = self.alg_cfg.get("priv_reg_coef_schedule_resume")
+        if schedule is None:
+            schedule = loaded_dict.get("priv_reg_coef_schedule", self.alg.priv_reg_coef_schedule)
+        schedule = self.alg.validate_priv_reg_schedule(schedule)
+        velocity_schedule = self.alg_cfg.get("estimated_velocity_schedule_resume")
+        if velocity_schedule is None:
+            velocity_schedule = loaded_dict.get("estimated_velocity_schedule", self.alg.estimated_velocity_schedule)
+        velocity_schedule = self.alg.validate_velocity_schedule(velocity_schedule)
+        has_saved_schedule = "priv_reg_coef_schedule" in loaded_dict
+        # The parent restores AMP/PPO/history optimizers, iteration and counter,
+        # including the legacy completed-iteration -> next-iteration migration.
+        del loaded_dict
         infos = super().load(path, load_optimizer=load_optimizer, map_location=map_location)
-
-        if "priv_reg_coef_schedule_resume" in self.alg_cfg:
-            resume_schedule = self.alg_cfg["priv_reg_coef_schedule_resume"]
-            self.alg.priv_reg_coef_schedule = resume_schedule
-            print(f"[AMP ROA Resume] Overriding priv_reg_coef_schedule with {resume_schedule}")
-
+        if not has_saved_schedule:
+            if self.alg_cfg.get("priv_reg_coef_schedule_resume") is None:
+                warnings.warn("ROA checkpoint lacks regularization schedule; using the configured training schedule.")
+        self.alg.priv_reg_coef_schedule = schedule
+        self.alg.set_estimated_velocity_schedule(velocity_schedule)
         return infos

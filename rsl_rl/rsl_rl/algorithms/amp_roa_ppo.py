@@ -12,9 +12,10 @@ from itertools import chain
 
 from rsl_rl.modules import ActorCritic
 from rsl_rl.storage import RolloutStorage, ReplayBuffer
+from rsl_rl.algorithms.roa_ppo import ROAPPO
 
 
-class AMPROAPPO:
+class AMPROAPPO(ROAPPO):
     """Proximal Policy Optimization algorithm with AMP (Adversarial Motion Prior) and ROA (Regularized Online Adaptation)."""
 
     def __init__(
@@ -25,9 +26,12 @@ class AMPROAPPO:
         amp_data,
         amp_normalizer,
         # --- [ROA 新增参数] ---
-        priv_reg_coef_schedule=[0.0, 0.1, 1000, 2000],
-        dagger_update_freq=1,
+        priv_reg_coef_schedule=[0.0, 0.1, 2000, 3000],
+        dagger_update_freq=20,
         vel_loss_coef=1.0,
+        priv_reg_coef_schedule_resume=None,
+        estimated_velocity_schedule=None,
+        estimated_velocity_schedule_resume=None,
         # --- [PPO 通用参数] ---
         num_learning_epochs=5,
         num_mini_batches=4,
@@ -56,6 +60,12 @@ class AMPROAPPO:
         multi_gpu_cfg: dict | None = None,
         **kwargs
     ):
+        if isinstance(dagger_update_freq, bool) or not isinstance(dagger_update_freq, int) or dagger_update_freq <= 0:
+            raise ValueError("dagger_update_freq must be a positive integer")
+        priv_reg_coef_schedule = self.validate_priv_reg_schedule(priv_reg_coef_schedule)
+        if priv_reg_coef_schedule_resume is not None:
+            self.validate_priv_reg_schedule(priv_reg_coef_schedule_resume)
+        self.validate_velocity_schedule(estimated_velocity_schedule_resume)
         if kwargs:
             print(f"[AMP_ROA_PPO] 忽略了多余的配置参数: {list(kwargs.keys())}")
         
@@ -110,7 +120,7 @@ class AMPROAPPO:
         self.amp_optimizer = optim.Adam(amp_params, lr=disc_learning_rate)
 
         # --- [ROA专属历史编码器优化器] ---
-        if hasattr(self.policy, "history_encoder"):
+        if getattr(self.policy, "history_encoder", None) is not None:
             self.hist_encoder_optimizer = optim.Adam(self.policy.history_encoder.parameters(), lr=learning_rate)
         else:
             self.hist_encoder_optimizer = None
@@ -135,12 +145,19 @@ class AMPROAPPO:
         
         self.counter = 0
         self.vel_loss_coef = vel_loss_coef
+        # Share ROA's curriculum, cached actor inputs and DAgger implementation.
+        # AMP keeps its own optimizers, rollout rewards and discriminator update.
+        self.symmetry = None
+        self.set_estimated_velocity_schedule(estimated_velocity_schedule)
 
     def init_storage(self, training_type, num_envs, num_transitions_per_env, obs, actions_shape):
+        if self.VELOCITY_INPUT_KEY in obs or self.VELOCITY_MASK_KEY in obs:
+            raise ValueError("environment observations contain reserved ROA storage keys")
         storage_obs = obs.exclude("amp") if "amp" in obs else obs
         self.storage = RolloutStorage(
             training_type, num_envs, num_transitions_per_env, storage_obs, actions_shape, self.device,
         )
+        self._ensure_velocity_storage()
         amp_rollout_shape = (num_transitions_per_env, num_envs, self.amp_data.observation_dim)
         self._amp_reward_next_states = torch.empty(amp_rollout_shape, device=self.device)
         if not self.discriminator.use_history_window:
@@ -153,16 +170,11 @@ class AMPROAPPO:
         )
 
     def act(self, obs, amp_obs=None, hist_encoding=False):
-        # 注意: 训练时通常默认 hist_encoding=False, 让特权编码器指引网络。只在蒸馏时/评估时开 True
-        self.transition.actions = self.policy.act(obs, hist_encoding=hist_encoding).detach()
-        self.transition.values = self.policy.evaluate(obs).detach()
-        self.transition.actions_log_prob = self.policy.get_actions_log_prob(self.transition.actions).detach()
-        self.transition.action_mean = self.policy.action_mean.detach()
-        self.transition.action_sigma = self.policy.action_std.detach()
-        self.transition.observations = obs.exclude("amp") if "amp" in obs else obs
+        storage_obs = obs.exclude("amp") if "amp" in obs else obs
+        actions = super().act(storage_obs, hist_encoding=hist_encoding)
         if amp_obs is not None:
             self.amp_transition.observations = amp_obs
-        return self.transition.actions
+        return actions
 
     def process_env_step(
         self,
@@ -348,7 +360,9 @@ class AMPROAPPO:
                     advantages_batch = (advantages_batch - advantages_batch.mean()) / (advantages_batch.std() + 1e-8)
 
             # Recompute
-            self.policy.act(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[0])
+            velocity = obs_batch[self.VELOCITY_INPUT_KEY] if self.estimated_velocity_schedule is not None else None
+            self.policy.act(obs_batch, hist_encoding=False, velocity_override=velocity,
+                            masks=masks_batch, hidden_states=hid_states_batch[0])
             actions_log_prob_batch = self.policy.get_actions_log_prob(actions_batch)
             value_batch = self.policy.evaluate(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[1])
             mu_batch = self.policy.action_mean
@@ -519,46 +533,7 @@ class AMPROAPPO:
         }
         return loss_dict
 
-    def update_dagger(self):
-        """ ROA 的监督蒸馏阶段 (History Encoder 学习阶段) """
-        if self.hist_encoder_optimizer is None:
-            self.storage.clear()
-            self.counter += 1
-            return {}
-        
-        mean_hist_latent_loss = 0
-        mean_vel_loss = 0
-        generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
-            
-        for (obs_batch, _, _, _, _, _, _, _, hid_states_batch, masks_batch) in generator:
-            with torch.inference_mode():
-                priv_latent_batch = self.policy.infer_priv_latent(obs_batch)
-                true_vel_batch = self.policy.get_true_vel(obs_batch)
-                
-            hist_latent_batch, pred_vel_batch = self.policy.infer_hist_latent(obs_batch, return_vel=True)
-            hist_latent_loss = (priv_latent_batch.detach() - hist_latent_batch).norm(p=2, dim=1).mean()
-            vel_loss = (true_vel_batch.detach() - pred_vel_batch).pow(2).mean()
-            
-            total_dagger_loss = hist_latent_loss + self.vel_loss_coef * vel_loss
-            
-            self.hist_encoder_optimizer.zero_grad()
-            total_dagger_loss.backward()
-            
-            if self.is_multi_gpu:
-                self.reduce_history_parameters()
-                
-            nn.utils.clip_grad_norm_(self.policy.history_encoder.parameters(), self.max_grad_norm)
-            self.hist_encoder_optimizer.step()
-            
-            mean_hist_latent_loss += hist_latent_loss.item()
-            mean_vel_loss += vel_loss.item()
-            
-        num_updates = self.num_learning_epochs * self.num_mini_batches
-        mean_hist_latent_loss /= num_updates
-        mean_vel_loss /= num_updates
-        self.storage.clear()
-        self.counter += 1
-        return {"hist_latent": mean_hist_latent_loss, "vel_loss": mean_vel_loss}
+    # update_dagger is inherited from ROAPPO: student updates never touch AMP.
 
     def broadcast_parameters(self):
         model_params = [self.policy.state_dict(), self.discriminator.state_dict()]
@@ -577,20 +552,6 @@ class AMPROAPPO:
         all_params = chain(self.policy.parameters(), self.discriminator.parameters())
         offset = 0
         for param in all_params:
-            if param.grad is not None:
-                numel = param.numel()
-                param.grad.data.copy_(all_grads[offset : offset + numel].view_as(param.grad.data))
-                offset += numel
-
-    def reduce_history_parameters(self):
-        grads = [param.grad.view(-1) for param in self.policy.history_encoder.parameters() if param.grad is not None]
-        if len(grads) == 0:
-            return
-        all_grads = torch.cat(grads)
-        torch.distributed.all_reduce(all_grads, op=torch.distributed.ReduceOp.SUM)
-        all_grads /= self.gpu_world_size
-        offset = 0
-        for param in self.policy.history_encoder.parameters():
             if param.grad is not None:
                 numel = param.numel()
                 param.grad.data.copy_(all_grads[offset : offset + numel].view_as(param.grad.data))
