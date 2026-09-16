@@ -2843,6 +2843,7 @@ class LWLegRoughAmpRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.penalize_hip_roll_action.weight = -1.0
 
         self.rewards.stand_still.weight = -3.0
+        self.rewards.stand_still.params["asset_cfg"].joint_names = self.joint_names_without_wheels
 
         # self.rewards.joint_pos_penalty.weight = -0.0 # -2.0
         # self.rewards.joint_pos_penalty.params["asset_cfg"].joint_names = self.joint_names_without_wheels

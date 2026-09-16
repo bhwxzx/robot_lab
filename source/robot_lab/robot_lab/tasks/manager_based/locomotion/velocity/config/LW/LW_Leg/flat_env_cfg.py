@@ -368,6 +368,8 @@ class LWLegFlatAmpRoaEnvCfg(LWLegRoughAmpRoaEnvCfg):
         self.curriculum.action_smoothness = None
         self.curriculum.action_rate_l2 = None
 
+        self.commands.base_velocity.rel_standing_envs = 0.10
+
         # events
         self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
         self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
@@ -389,8 +391,8 @@ class LWLegFlatAmpRoaEnvCfg(LWLegRoughAmpRoaEnvCfg):
         self.rewards.track_ang_vel_z_exp.weight = 4.0
         self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)
         self.rewards.ang_vel_xy_l2.weight = -0.1 # -0.05
-        self.rewards.flat_orientation_l2.weight = -0.0  # -5.0
-        self.rewards.body_orientation_l2.weight = -5.0
+        self.rewards.flat_orientation_l2.weight = -5.0  # -5.0
+        self.rewards.body_orientation_l2.weight = -3.0
         self.rewards.stand_still.weight = -3.0
         self.rewards.joint_pos_penalty.weight = -0.0
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
@@ -405,7 +407,7 @@ class LWLegFlatAmpRoaEnvCfg(LWLegRoughAmpRoaEnvCfg):
         self.rewards.feet_air_time_variance.weight = -0.0
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.track_adaptive_swing_height.weight = 0.0
-        self.rewards.bipedal_gait_reward.weight = 3.0
+        self.rewards.bipedal_gait_reward.weight = 2.0
         self.rewards.feet_clearance.weight = 2.0
         self.rewards.feet_clearance.params["target_height"] = 0.125 + 0.071 # 0.125 + 0.071 foot_radius 
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
