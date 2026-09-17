@@ -6,6 +6,7 @@
 
 - [flat-review-20260914-001](<evaluations/flat-review-20260914-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/flat-review-20260914-001/manifest.json>)。
 - [flat-review-smoke-20260914-001](<evaluations/flat-review-smoke-20260914-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/flat-review-smoke-20260914-001/manifest.json>)。
+- [matched-plane-20260917-001](<evaluations/matched-plane-20260917-001/report.md>)：3 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/matched-plane-20260917-001/manifest.json>)。
 - [turn-com-y-ablation-20260914-001](<evaluations/turn-com-y-ablation-20260914-001/report.md>)：2 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/turn-com-y-ablation-20260914-001/manifest.json>)。
 - [turn-com-y-sign-20260914-001](<evaluations/turn-com-y-sign-20260914-001/report.md>)：4 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/turn-com-y-sign-20260914-001/manifest.json>)。
 - [turn-factor-ablation-20260914-001](<evaluations/turn-factor-ablation-20260914-001/report.md>)：4 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/turn-factor-ablation-20260914-001/manifest.json>)。
@@ -15,6 +16,9 @@
 
 - [provenance](<provenance>)
 - [events](<events>)
+- [evidence/checkpoint_selection](<evidence/checkpoint_selection>)
+- [evidence/export](<evidence/export>)
+- [evidence/source](<evidence/source>)
 
 旧版证据保持原位；本索引不会移动、压缩或重写已有结果。
 
@@ -64,3 +68,9 @@
 - [导出及重置边界校验](<evidence/export/export-50000-20260914-001/receipt.json>)。
 - [归档与推送复核](<evidence/export/export-50000-20260914-001/push-verification.json>)。
 - 归档位置：/home/young/liufengrong/policy_storage/LW/leg_loco/2026-09-12-22-03-53/；远端 master 提交 8132b5d79517f33ab33460ca649514818c5d35b0。
+
+
+## 同平面新旧策略对照
+
+- [新旧策略指标](<../2026-09-16_15-45-12/evidence/assessment/matched-plane-comparison-20260917-001.json>)
+- [新旧策略曲线](<../2026-09-16_15-45-12/evidence/assessment/matched-plane-comparison-20260917-001.png>)

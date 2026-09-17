@@ -1,0 +1,319 @@
+{
+  "export": {
+    "checkpoint_id": "model_50000",
+    "export_id": "export-50000-20260917-001",
+    "run_id": "2026-09-16_15-45-12",
+    "runner": "OnPolicyRunnerAmpROA",
+    "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0"
+  },
+  "inputs": {
+    "checkpoint": {
+      "checkpoint_id": "model_50000",
+      "iteration": 50000,
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-16_15-45-12/model_50000.pt",
+      "sha256": "f8956bb1f9b43bdc638a52dbaf0a3301b022a4f967b581f2ed40663eb797d16a",
+      "size_bytes": 13981759
+    },
+    "checkpoint_selection": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evidence/checkpoint_selection/selection-export-50000-20260917-001.json",
+      "selection_id": "export-50000-20260917-001",
+      "sha256": "da2a2a84c849cd7debc9153ef1cc1c025160d5e4a930ac61e4174f2b6f4e36a6"
+    },
+    "effective_config": {
+      "effective_config_fingerprint": "4bc201878be90c6be90293163fb171d35a48dcb79e0f0948a304375a3071561b",
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/provenance/config-636927f3c2285b54bfb199c38b5fecb129ae5862a1aec5c24e96166adcc15c9c.json",
+      "reward_fingerprint": "03f9285d7d2dd5921faacca929522744c39054372cb2d58efe8dbc471b1f4437",
+      "sha256": "636927f3c2285b54bfb199c38b5fecb129ae5862a1aec5c24e96166adcc15c9c"
+    },
+    "onnx_export_contract": {
+      "batch_contract": "static_batch_1",
+      "input_dtype": "float32",
+      "input_name": "obs",
+      "opset_version": 17,
+      "output_dtype": "float32",
+      "output_name": "actions",
+      "profile": "static_batch_1_simplified",
+      "simplified": true
+    },
+    "parity_contract": {
+      "max_abs_action_error": 1e-05,
+      "minimum_parity_samples": 8,
+      "num_envs": 1,
+      "parity_steps": 8,
+      "required_boundaries": [
+        "initial",
+        "pre_reset",
+        "post_reset",
+        "final"
+      ],
+      "reset_step": 4,
+      "seed": 42
+    },
+    "run_identity": {
+      "document": {
+        "algorithm": "AMPROAPPO",
+        "backend": "rsl_rl",
+        "config_files": [
+          {
+            "path": "rsl_rl/rsl_rl/algorithms/amp_roa_ppo.py",
+            "sha256": "05772b185a52f21603829300685dd487d2651e553f5e34259804005a71158a68"
+          },
+          {
+            "path": "rsl_rl/rsl_rl/algorithms/roa_ppo.py",
+            "sha256": "55b9ff47aafe0374af6be3d45b816d78d6c7eac78f24dca77336f17208bcabea"
+          },
+          {
+            "path": "rsl_rl/rsl_rl/modules/actor_critic_roa.py",
+            "sha256": "15dfbd940d500c67051e6112c17a159b775804804c8bd4fad2a1dce1565ae206"
+          },
+          {
+            "path": "rsl_rl/rsl_rl/modules/discriminator.py",
+            "sha256": "a893aec62209cdc0a990df4f42513b0dc19c220eb2b5887ffd97d53b9b589589"
+          },
+          {
+            "path": "rsl_rl/rsl_rl/runners/on_policy_runner_amp.py",
+            "sha256": "18afcccd4cba7368b4597ae661584826b70242b6e175f39be286f76271014db9"
+          },
+          {
+            "path": "rsl_rl/rsl_rl/runners/on_policy_runner_amp_roa.py",
+            "sha256": "bab27b739d6d4e3e2022b205b56f57bd2eca8d5c0a52a6e9e498931e7dbe31bb"
+          },
+          {
+            "path": "rsl_rl/rsl_rl/utils/motion_loader.py",
+            "sha256": "bda02a2b37499b8c98c8961323e7919312118d263e011c36355ed4c3f392e721"
+          },
+          {
+            "path": "scripts/reinforcement_learning/rsl_rl/train.py",
+            "sha256": "95a4a317d71089d9658b85a8048c857fe3990ff5fbf8a558d5e258fdd308f808"
+          },
+          {
+            "path": "scripts/start_amp_roa.sh",
+            "sha256": "1976d2b0c394453a67930732852e4ac0db09fe243879f2f09e14e08d5b7307de"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/assets/LW.py",
+            "sha256": "bf3e50239ae24fa94baf4ed608318ed880f2bc429d0113f010a2c09fba0d8905"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/__init__.py",
+            "sha256": "a76bd52a55a06092e56aee67ec47e999a8d5e475130ffc8bf66a862cb580870f"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/agents/rsl_rl_amp_roa_cfg.py",
+            "sha256": "60367ab1b8ae16c703741a06383f3953dbe1a1a11c5cf4f1ffe7e5d5a9852a97"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/flat_env_cfg.py",
+            "sha256": "a06b711fde8263588e75fdf017643c118dd26154ae5260b17995cd038708bf13"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/rough_env_cfg.py",
+            "sha256": "55d9e5b8492db3ed031e61cc07c45fb5765c00cd2929ccaf083d4c4c8e7cb6b5"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/__init__.py",
+            "sha256": "27d793de0b04c39a69d79296eea9691c00bb9460db0b42b4019bbd25be9fc4aa"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/noise.py",
+            "sha256": "fb28bee6a7afe57b63677667540f708a33f4fc9c5402bdb0045d245c9d738282"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/observations.py",
+            "sha256": "8c3c31d676dbe832110eafe7f57cd19223a9c68c4f79cab1118b9e4c14ab545e"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+            "sha256": "6d4e49de8ad941c5b2396ddc6a1187c7a90a72410853755d9e8e98590de9a726"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/terrains/terrains_cfg.py",
+            "sha256": "f21b6a5494904f6fc399fd12cc4535a98d138854400ebbe6a5b89f5ed69a9a8f"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/velocity_env_cfg.py",
+            "sha256": "ee43a2023fc80eabb3932db0a22f1940c7e095670f78ada4b61dd0b7e99e925c"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/utils/wrappers/rsl_rl/rl_amp_roa_cfg.py",
+            "sha256": "fcdf747c967591a74c902513e8e72f5e3c751aa6dd1d51d64b54edeeea55c9ae"
+          },
+          {
+            "path": "source/robot_lab/robot_lab/utils/wrappers/rsl_rl/rl_roa_cfg.py",
+            "sha256": "1723214061ce3a19e663b5acee32424645e65504dc8916262817881d9085e99d"
+          }
+        ],
+        "host_id": "younghit",
+        "identity_sha256": "330dd2d8db5a2c221813dc016dfc61dacab135ca92365c3296fa2b0aab2dba12",
+        "run_id": "2026-09-16_15-45-12",
+        "runner": "OnPolicyRunnerAmpROA",
+        "seed": 42,
+        "source": {
+          "branch": "main",
+          "diff_sha256": null,
+          "dirty": false,
+          "dirty_paths": [],
+          "head": "765b298312cfb09433a14333324bc69396b39293",
+          "patch_evidence": null,
+          "repository_root": "/home/young/liufengrong/robot_lab"
+        },
+        "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0",
+        "training": {
+          "command": [
+            "python",
+            "scripts/reinforcement_learning/rsl_rl/train.py",
+            "--task=RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0",
+            "--log_project_name=LW_leg_locomotion_amp_roa",
+            "--logger=wandb",
+            "--num_envs=4096",
+            "--headless"
+          ],
+          "hydra_overrides": []
+        },
+        "version": 2
+      },
+      "identity_sha256": "330dd2d8db5a2c221813dc016dfc61dacab135ca92365c3296fa2b0aab2dba12",
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/provenance/context-382b5ee84e17093ab3736ad910bff68706c9048456b9de6d2520f55513184e3a.json",
+      "sha256": "382b5ee84e17093ab3736ad910bff68706c9048456b9de6d2520f55513184e3a",
+      "size_bytes": 4876
+    },
+    "tensor_contract": {
+      "actor_input_order": [
+        "current_obs",
+        "code_vel",
+        "hist_latent"
+      ],
+      "history_contract": "flat_time_major_history",
+      "normalization_contract": "current_frame_only",
+      "reset_contract": "environment_history_reset"
+    }
+  },
+  "onnx_export": {
+    "contract": {
+      "batch_contract": "static_batch_1",
+      "input_dtype": "float32",
+      "input_name": "obs",
+      "opset_version": 17,
+      "output_dtype": "float32",
+      "output_name": "actions",
+      "profile": "static_batch_1_simplified",
+      "simplified": true
+    },
+    "input_shape": [
+      1,
+      410
+    ],
+    "output_shape": [
+      1,
+      10
+    ],
+    "post_simplify_node_count": 22,
+    "pre_simplify_node_count": 28,
+    "simplifier_check": true
+  },
+  "outputs": {
+    "jit": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evidence/export/export-50000-20260917-001/policy.pt",
+      "sha256": "1c95ccb2d3b424a8f0b7c338de57d028f33a5b363a6370bd8a9a2e340cade107",
+      "size_bytes": 852942
+    },
+    "onnx": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evidence/export/export-50000-20260917-001/policy.onnx",
+      "sha256": "c5d94cd109557baaf3b3a57b9e146a95555ea7c323b538fcf8830aea829f42eb",
+      "size_bytes": 820880
+    }
+  },
+  "parity": {
+    "boundaries": [
+      {
+        "input_shape": [
+          1,
+          410
+        ],
+        "label": "initial",
+        "native_output_sha256": "00431dbc90fe745679e14e335a3a03e87ba42c70de0d5aea980585fc460390d1",
+        "observation_sha256": "c8e905e1caa2532ce78fd7d4871655be90201907094954a5e025dbbc92f364d9",
+        "output_shape": [
+          1,
+          10
+        ],
+        "step": 0
+      },
+      {
+        "input_shape": [
+          1,
+          410
+        ],
+        "label": "pre_reset",
+        "native_output_sha256": "5fe842bc83ae535fbc1c9b408a7e8e78ebbe5d9bbf50463f2ead1942d02d349a",
+        "observation_sha256": "30654e168de6a83f01e67bde445fa44b55302a9264a4aebc96c3db5f5a0a17c0",
+        "output_shape": [
+          1,
+          10
+        ],
+        "step": 3
+      },
+      {
+        "input_shape": [
+          1,
+          410
+        ],
+        "label": "post_reset",
+        "native_output_sha256": "ff3106dce24c3fb9c3c3ee815485186aa59ffa32e153e262a762cee1b361c06f",
+        "observation_sha256": "f6cfc03a2141dff44a5648eb89bb67f06648e6dd87fd11c13a9f6d96c5b8b699",
+        "output_shape": [
+          1,
+          10
+        ],
+        "step": 4
+      },
+      {
+        "input_shape": [
+          1,
+          410
+        ],
+        "label": "final",
+        "native_output_sha256": "725bb44f154bbdec8b74b61c95ae0f5446633c6ea802991c4dec298dc3cbc6fa",
+        "observation_sha256": "424d38626570ba0fb9056093884bbcd4d8a4ea2c6cc3e2858ab10fab139cc17e",
+        "output_shape": [
+          1,
+          10
+        ],
+        "step": 7
+      }
+    ],
+    "history_contract": "flat_time_major_history",
+    "jit": {
+      "finite": true,
+      "input_shape": [
+        8,
+        410
+      ],
+      "max_abs_action_error": 0.0,
+      "output_shape": [
+        8,
+        10
+      ]
+    },
+    "native_device_to_cpu_max_abs_action_error": 0.00024086236953735352,
+    "native_output_sha256": "659e90c74e802561069806c6cebbe9bb7b0df51c7a4a678d9d4c61e26865e8f3",
+    "normalization_contract": "current_frame_only",
+    "observation_batch_sha256": "cdd82bae1738baec5d159a22a050bcd178e32aae9fa6a7a5a2f3514d7c2e017b",
+    "onnx": {
+      "finite": true,
+      "input_shape": [
+        8,
+        410
+      ],
+      "max_abs_action_error": 7.152557373046875e-07,
+      "output_shape": [
+        8,
+        10
+      ]
+    },
+    "sample_count": 8
+  },
+  "receipt_path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evidence/export/export-50000-20260917-001/receipt.json",
+  "status": "completed",
+  "version": 4
+}
