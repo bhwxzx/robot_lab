@@ -1,0 +1,1052 @@
+{
+  "version": 1,
+  "created_at": "2026-09-17T06:50:45.881779+00:00",
+  "batch_manifests": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/manifest.json",
+      "sha256": "520413fe9db712b0e6daff9df010f3a162f022eee226ea54f7bfe2be1259f70f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-noise-ablation-20260917-001/manifest.json",
+      "sha256": "6316b3ac65f73ee0916ae55e4ea20c61ba6a77515d7761d0ff7b1c01381fd4fc"
+    }
+  ],
+  "method": {
+    "window": "40 <= sim_time_seconds < 120; env 0; 4000 samples at 50 Hz",
+    "velocity_error": "roa_student_velocity_b minus roa_true_velocity_b; both pre-action physical m/s. Never subtract post-step root telemetry.",
+    "jitter": "Body roll/pitch angular velocity RMS is sqrt(mean(wx^2+wy^2)); action changes are per-axis pooled RMS of consecutive samples, not divided by dt.",
+    "action_groups": "First 8 raw action columns are leg joint position targets; last 2 are right/left wheel velocity targets. Order follows effective env.yaml actions; do not use articulation joint_names to index actions.",
+    "joint_groups": "Measured joint velocity groups use telemetry joint_names.",
+    "correlation": "Pearson zero-lag correlation of pre-action vx estimation error and each raw wheel action; descriptive only, no causal inference.",
+    "comparison": "Same checkpoint/seed/duration/environment conditions; each ablation zeros exactly one uniform noise term bounds. Existing student baselines reused without rerun. Diagnostic mode preserves student action."
+  },
+  "cases": {
+    "nominal-no-noise-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-no-noise-a01/result.json",
+        "sha256": "419e9bff531aafb9acce26120e76c6653d44170979b0855ef8d7e1be997f7a3c"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-no-noise-a01/telemetry.json.gz",
+        "sha256": "c60c0019e66cce24b033602b5176e5efe10ebdc142176a0daf1bd7dcb05ca146"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "nominal-no-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": false,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "telemetry_status": "complete",
+      "missing_required_signals": [],
+      "aggregate_full_120s": {
+        "action_rate_rms": 0.07687908019334232,
+        "body_roll_pitch_angular_acceleration_p95": 0.8795111002443419,
+        "body_roll_pitch_angular_acceleration_rms": 1.833310480587478,
+        "body_roll_pitch_angular_velocity_p95": 0.09434085166787178,
+        "body_roll_pitch_angular_velocity_rms": 0.05553170470857804,
+        "body_vertical_acceleration_p95": 0.21912027150392532,
+        "body_vertical_acceleration_rms": 0.40194996336866523,
+        "body_vertical_velocity_p95": 0.02293853648006916,
+        "body_vertical_velocity_rms": 0.02110165275391093,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 9.473751068115234,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 40.51089859008789,
+        "max_abs_joint_velocity": 5.110798358917236,
+        "max_joint_effort_utilization": 0.3375908215840658,
+        "max_joint_velocity_utilization": 0.1884184241294861,
+        "max_tilt": 0.07518812268972397,
+        "mean_reward": 0.20644274060428142,
+        "real_time_factor": 0.8758758261817601,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.021092327840749936,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.012788101734400918,
+        "tracking_yaw_rmse": 0.016762017744745776
+      },
+      "window_40_120s": {
+        "sample_count": 4000,
+        "done_count": 0,
+        "timeout_count": 0,
+        "xy_velocity_rmse_m_s": 0.008080587930439795,
+        "vx_mean_m_s": 8.708535408499074e-05,
+        "vx_std_m_s": 0.010430978716580776,
+        "roll_pitch_angular_velocity_rms_rad_s": 0.020701469686983446,
+        "leg_action_delta_rms": 0.0030352376248286004,
+        "wheel_action_delta_rms": 0.07755353401526112,
+        "leg_joint_velocity_rms_rad_s": 0.03369763239143266,
+        "wheel_joint_velocity_rms_rad_s": 0.06528384540720304,
+        "net_displacement_m": 0.002133810007116063,
+        "max_displacement_from_40s_m": 0.010055031268601395,
+        "path_length_m": 0.8983124062146994,
+        "world_heading_change_deg": -0.2185717879806939
+      },
+      "velocity_diagnostics": null
+    },
+    "nominal-training-noise-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-training-noise-a01/result.json",
+        "sha256": "e7f4840e8b57a57f7159a71128530f44c6e457e84a5420683236ec79c05a6b48"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-training-noise-a01/telemetry.json.gz",
+        "sha256": "36775a18dc56252bee7d2a121eb188743b48acefd92d0beac18c98cd20576cf3"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "nominal-training-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": true,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "telemetry_status": "complete",
+      "missing_required_signals": [],
+      "aggregate_full_120s": {
+        "action_rate_rms": 0.32131735381826276,
+        "body_roll_pitch_angular_acceleration_p95": 12.602531073773061,
+        "body_roll_pitch_angular_acceleration_rms": 7.295532540845353,
+        "body_roll_pitch_angular_velocity_p95": 0.35055277414944025,
+        "body_roll_pitch_angular_velocity_rms": 0.18731617254001798,
+        "body_vertical_acceleration_p95": 2.912435121834278,
+        "body_vertical_acceleration_rms": 1.495613030626331,
+        "body_vertical_velocity_p95": 0.08475232869386673,
+        "body_vertical_velocity_rms": 0.045019660192243766,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 13.538920402526855,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 40.35673904418945,
+        "max_abs_joint_velocity": 8.074758529663086,
+        "max_joint_effort_utilization": 0.33630615870157876,
+        "max_joint_velocity_utilization": 0.2446896524140329,
+        "max_tilt": 0.11632424592971802,
+        "mean_reward": 0.20545070287336906,
+        "real_time_factor": 0.865521555838368,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.03835960732919207,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.04109008866204322,
+        "tracking_yaw_rmse": 0.036512384033734704
+      },
+      "window_40_120s": {
+        "sample_count": 4000,
+        "done_count": 0,
+        "timeout_count": 0,
+        "xy_velocity_rmse_m_s": 0.0412391309869643,
+        "vx_mean_m_s": 0.0009217174176490062,
+        "vx_std_m_s": 0.05122644646656077,
+        "roll_pitch_angular_velocity_rms_rad_s": 0.18579103584503398,
+        "leg_action_delta_rms": 0.11874052279706157,
+        "wheel_action_delta_rms": 0.6805929672879094,
+        "leg_joint_velocity_rms_rad_s": 0.21402047785730358,
+        "wheel_joint_velocity_rms_rad_s": 1.43121660824177,
+        "net_displacement_m": 0.041808048721213416,
+        "max_displacement_from_40s_m": 0.18090478493741807,
+        "path_length_m": 4.0204343271733745,
+        "world_heading_change_deg": -0.1402584890001697
+      },
+      "velocity_diagnostics": null
+    },
+    "no-joint-velocity-noise-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-noise-ablation-20260917-001/raw/no-joint-velocity-noise-a01/result.json",
+        "sha256": "c65b2629f8ba28264e5ca2eb4bd6ae4df744f5fe65894942552c00859563da08"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-noise-ablation-20260917-001/raw/no-joint-velocity-noise-a01/telemetry.json.gz",
+        "sha256": "29d58eb662eb2e3529800c94505c74649af5e6af277296eee46a991742293bc6"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "no-joint-velocity-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "evaluation.roa_mode": "student",
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": true,
+          "observations.policy.joint_vel.noise.n_max": 0.0,
+          "observations.policy.joint_vel.noise.n_min": 0.0,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "telemetry_status": "complete",
+      "missing_required_signals": [],
+      "aggregate_full_120s": {
+        "action_rate_rms": 0.30757684204297975,
+        "body_roll_pitch_angular_acceleration_p95": 12.176844442581624,
+        "body_roll_pitch_angular_acceleration_rms": 6.964607302159595,
+        "body_roll_pitch_angular_velocity_p95": 0.36825152553226614,
+        "body_roll_pitch_angular_velocity_rms": 0.19202635523872527,
+        "body_vertical_acceleration_p95": 2.753498312085867,
+        "body_vertical_acceleration_rms": 1.433382010792922,
+        "body_vertical_velocity_p95": 0.08569128066301346,
+        "body_vertical_velocity_rms": 0.045867991077377594,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 12.926423072814941,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 42.205806732177734,
+        "max_abs_joint_velocity": 7.908402442932129,
+        "max_joint_effort_utilization": 0.3517150561014811,
+        "max_joint_velocity_utilization": 0.23964855887673117,
+        "max_tilt": 0.11275435984134674,
+        "mean_reward": 0.2055278865926278,
+        "real_time_factor": 0.8329642542490856,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.04004440203135826,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.04099117949567843,
+        "tracking_yaw_rmse": 0.043756320661878824
+      },
+      "window_40_120s": {
+        "sample_count": 4000,
+        "done_count": 0,
+        "timeout_count": 0,
+        "xy_velocity_rmse_m_s": 0.041729713988006886,
+        "vx_mean_m_s": 0.013048509615828152,
+        "vx_std_m_s": 0.05127243442994326,
+        "roll_pitch_angular_velocity_rms_rad_s": 0.1957487732081881,
+        "leg_action_delta_rms": 0.112233432853547,
+        "wheel_action_delta_rms": 0.6648684705482368,
+        "leg_joint_velocity_rms_rad_s": 0.21371188183315942,
+        "wheel_joint_velocity_rms_rad_s": 1.5894919434508505,
+        "net_displacement_m": 1.0041203319506409,
+        "max_displacement_from_40s_m": 1.0099009520163396,
+        "path_length_m": 4.095300329929001,
+        "world_heading_change_deg": -8.34400328902698
+      },
+      "velocity_diagnostics": {
+        "units": "m/s",
+        "phase": "pre_action",
+        "bias_xyz": [
+          -0.00842591433972666,
+          -0.001296340608218088,
+          -0.014006586598843568
+        ],
+        "rmse_xyz": [
+          0.03991682595444066,
+          0.026501115778522148,
+          0.02109792542060506
+        ],
+        "error_std_xyz": [
+          0.0390173930679215,
+          0.026469390596198468,
+          0.015777768818895456
+        ],
+        "estimate_mean_xyz": [
+          0.004619175845757127,
+          -0.0013630274287424983,
+          -0.013257355434820055
+        ],
+        "true_mean_xyz": [
+          0.013045090185483787,
+          -6.668682052440999e-05,
+          0.0007492311640235129
+        ],
+        "estimate_step_delta_rms_xyz": [
+          0.02331941113697464,
+          0.024687100067969682,
+          0.02295312383510828
+        ],
+        "latent_step_delta_rms": 0.0002996144836916408,
+        "teacher_label_max_abs_difference": 0.0,
+        "executed_action_max_abs_difference": 0.0,
+        "vx_error_wheel_action_correlation": {
+          "right_wheel_joint": -0.5318256570118257,
+          "left_wheel_joint": 0.5180851969098259
+        }
+      },
+      "change_percent_vs_all_noise": {
+        "xy_velocity_rmse_m_s": 1.1896055743697787,
+        "vx_std_m_s": 0.08977386985551394,
+        "roll_pitch_angular_velocity_rms_rad_s": 5.3596436005985515,
+        "leg_action_delta_rms": -5.480092044596918,
+        "wheel_action_delta_rms": -2.310411287723557,
+        "leg_joint_velocity_rms_rad_s": -0.1441899519306289,
+        "wheel_joint_velocity_rms_rad_s": 11.05879671166754,
+        "net_displacement_m": 2301.7392886388166,
+        "max_displacement_from_40s_m": 458.2499945292786,
+        "path_length_m": 1.8621371887515004
+      }
+    },
+    "no-gravity-noise-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-noise-ablation-20260917-001/raw/no-gravity-noise-a01/result.json",
+        "sha256": "1d832eee6b67ebfdcb56506e292e9104b883e152eca74022f1f12c85bdd5d1b0"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-noise-ablation-20260917-001/raw/no-gravity-noise-a01/telemetry.json.gz",
+        "sha256": "43e485f44ad8206d6019807ae4bdc11ea551ff5d61ce50df7b2e0d68e1722a23"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "no-gravity-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "evaluation.roa_mode": "student",
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": true,
+          "observations.policy.projected_gravity.noise.n_max": 0.0,
+          "observations.policy.projected_gravity.noise.n_min": 0.0,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "telemetry_status": "complete",
+      "missing_required_signals": [],
+      "aggregate_full_120s": {
+        "action_rate_rms": 0.26357208116100955,
+        "body_roll_pitch_angular_acceleration_p95": 10.47947548344994,
+        "body_roll_pitch_angular_acceleration_rms": 6.0777246992017755,
+        "body_roll_pitch_angular_velocity_p95": 0.3028814484967188,
+        "body_roll_pitch_angular_velocity_rms": 0.1625633568592813,
+        "body_vertical_acceleration_p95": 2.418202313128859,
+        "body_vertical_acceleration_rms": 1.2587866767229934,
+        "body_vertical_velocity_p95": 0.07487772405147552,
+        "body_vertical_velocity_rms": 0.040834267190994526,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 12.621739387512207,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 45.25505447387695,
+        "max_abs_joint_velocity": 6.75491189956665,
+        "max_joint_effort_utilization": 0.3771254539489746,
+        "max_joint_velocity_utilization": 0.24211392402648926,
+        "max_tilt": 0.09303239732980728,
+        "mean_reward": 0.209046893996497,
+        "real_time_factor": 0.8365585462587937,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.0336409594769458,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.039086573158036875,
+        "tracking_yaw_rmse": 0.03308729496029045
+      },
+      "window_40_120s": {
+        "sample_count": 4000,
+        "done_count": 0,
+        "timeout_count": 0,
+        "xy_velocity_rmse_m_s": 0.038775721650445474,
+        "vx_mean_m_s": 0.0007829717550537225,
+        "vx_std_m_s": 0.048298991357934695,
+        "roll_pitch_angular_velocity_rms_rad_s": 0.16039646670855895,
+        "leg_action_delta_rms": 0.11294271838313526,
+        "wheel_action_delta_rms": 0.5427513136125425,
+        "leg_joint_velocity_rms_rad_s": 0.19473139632814226,
+        "wheel_joint_velocity_rms_rad_s": 1.2556572246196926,
+        "net_displacement_m": 0.03443224365693111,
+        "max_displacement_from_40s_m": 0.1495129229779567,
+        "path_length_m": 3.767073506242643,
+        "world_heading_change_deg": -3.978688793140516
+      },
+      "velocity_diagnostics": {
+        "units": "m/s",
+        "phase": "pre_action",
+        "bias_xyz": [
+          -0.0029315833811758693,
+          -0.0019187282378148325,
+          -0.01803941411422238
+        ],
+        "rmse_xyz": [
+          0.04261626266763139,
+          0.027271654036532936,
+          0.023203903325940384
+        ],
+        "error_std_xyz": [
+          0.04251531092013505,
+          0.027204073147926756,
+          0.014594542403761103
+        ],
+        "estimate_mean_xyz": [
+          -0.002141921237111092,
+          -0.002006193766836077,
+          -0.017437264402396978
+        ],
+        "true_mean_xyz": [
+          0.0007896621440647778,
+          -8.74655290212445e-05,
+          0.0006021497118254047
+        ],
+        "estimate_step_delta_rms_xyz": [
+          0.0269628223835309,
+          0.025803633808762657,
+          0.021458468410410405
+        ],
+        "latent_step_delta_rms": 0.0003222184507180037,
+        "teacher_label_max_abs_difference": 0.0,
+        "executed_action_max_abs_difference": 0.0,
+        "vx_error_wheel_action_correlation": {
+          "right_wheel_joint": -0.44247825334963725,
+          "left_wheel_joint": 0.4563231846610732
+        }
+      },
+      "change_percent_vs_all_noise": {
+        "xy_velocity_rmse_m_s": -5.973475380209903,
+        "vx_std_m_s": -5.714733912954584,
+        "roll_pitch_angular_velocity_rms_rad_s": -13.66835004766125,
+        "leg_action_delta_rms": -4.882751294463549,
+        "wheel_action_delta_rms": -20.253170441159753,
+        "leg_joint_velocity_rms_rad_s": -9.012727063445835,
+        "wheel_joint_velocity_rms_rad_s": -12.26644398975706,
+        "net_displacement_m": -17.64206962507634,
+        "max_displacement_from_40s_m": -17.352698531617627,
+        "path_length_m": -6.301827123958037
+      }
+    },
+    "no-angular-velocity-noise-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-noise-ablation-20260917-001/raw/no-angular-velocity-noise-a01/result.json",
+        "sha256": "c0b7b7a36f383d942768e859634a3cdc0ffed27a583da815acea765a7d255ab0"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-noise-ablation-20260917-001/raw/no-angular-velocity-noise-a01/telemetry.json.gz",
+        "sha256": "1bd446a73ceaacc43d9ac2f0ac164c67d9d302981259bc1f8f32af5872bfa48f"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "no-angular-velocity-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "evaluation.roa_mode": "student",
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.base_ang_vel.noise.n_max": 0.0,
+          "observations.policy.base_ang_vel.noise.n_min": 0.0,
+          "observations.policy.enable_corruption": true,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "telemetry_status": "complete",
+      "missing_required_signals": [],
+      "aggregate_full_120s": {
+        "action_rate_rms": 0.29053766782393414,
+        "body_roll_pitch_angular_acceleration_p95": 10.131097624420814,
+        "body_roll_pitch_angular_acceleration_rms": 5.950348647979287,
+        "body_roll_pitch_angular_velocity_p95": 0.2825508352177458,
+        "body_roll_pitch_angular_velocity_rms": 0.15602558996728577,
+        "body_vertical_acceleration_p95": 2.9033834114670753,
+        "body_vertical_acceleration_rms": 1.5018338061970815,
+        "body_vertical_velocity_p95": 0.08128128945827484,
+        "body_vertical_velocity_rms": 0.04373041186531317,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 12.49395751953125,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 43.22113037109375,
+        "max_abs_joint_velocity": 6.601240158081055,
+        "max_joint_effort_utilization": 0.36017608642578125,
+        "max_joint_velocity_utilization": 0.20003758054791074,
+        "max_tilt": 0.09094526618719101,
+        "mean_reward": 0.20763283950090408,
+        "real_time_factor": 0.8478663300377658,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.034353381157816255,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.03345521299473441,
+        "tracking_yaw_rmse": 0.027614076474630808
+      },
+      "window_40_120s": {
+        "sample_count": 4000,
+        "done_count": 0,
+        "timeout_count": 0,
+        "xy_velocity_rmse_m_s": 0.03378846228256077,
+        "vx_mean_m_s": 0.004046083707797266,
+        "vx_std_m_s": 0.041001888661226796,
+        "roll_pitch_angular_velocity_rms_rad_s": 0.149667439448665,
+        "leg_action_delta_rms": 0.10267939543513564,
+        "wheel_action_delta_rms": 0.6078083089170617,
+        "leg_joint_velocity_rms_rad_s": 0.19340867559412195,
+        "wheel_joint_velocity_rms_rad_s": 1.1056218159455296,
+        "net_displacement_m": 0.302045652581144,
+        "max_displacement_from_40s_m": 0.302045652581144,
+        "path_length_m": 3.342199323478917,
+        "world_heading_change_deg": -2.650153635688113
+      },
+      "velocity_diagnostics": {
+        "units": "m/s",
+        "phase": "pre_action",
+        "bias_xyz": [
+          -0.004926409443343914,
+          0.00010125072883238318,
+          -0.018574347461424168
+        ],
+        "rmse_xyz": [
+          0.03554643991923186,
+          0.020768212590466528,
+          0.023662212024327518
+        ],
+        "error_std_xyz": [
+          0.035203407234642624,
+          0.020767965776472195,
+          0.014659259676617964
+        ],
+        "estimate_mean_xyz": [
+          -0.0008781205890700221,
+          -0.00020109177334234118,
+          -0.018233779234811665
+        ],
+        "true_mean_xyz": [
+          0.004048288854273892,
+          -0.00030234250217472437,
+          0.00034056822661250407
+        ],
+        "estimate_step_delta_rms_xyz": [
+          0.025344105169625777,
+          0.02244091145681763,
+          0.024662144674625325
+        ],
+        "latent_step_delta_rms": 0.0002790929907182569,
+        "teacher_label_max_abs_difference": 0.0,
+        "executed_action_max_abs_difference": 0.0,
+        "vx_error_wheel_action_correlation": {
+          "right_wheel_joint": -0.4166711943031731,
+          "left_wheel_joint": 0.4155992665916947
+        }
+      },
+      "change_percent_vs_all_noise": {
+        "xy_velocity_rmse_m_s": -18.066987654901567,
+        "vx_std_m_s": -19.959529716761214,
+        "roll_pitch_angular_velocity_rms_rad_s": -19.443132028446854,
+        "leg_action_delta_rms": -13.526239386174732,
+        "wheel_action_delta_rms": -10.694300686192337,
+        "leg_joint_velocity_rms_rad_s": -9.630761724083426,
+        "wheel_joint_velocity_rms_rad_s": -22.749511878305363,
+        "net_displacement_m": 622.458143395451,
+        "max_displacement_from_40s_m": 66.9638825118049,
+        "path_length_m": -16.869694876257324
+      }
+    }
+  },
+  "limitations": [
+    "Baseline runs did not record estimator outputs; baseline estimator error remains unavailable.",
+    "Three marginal single-term noise removals do not isolate noise interactions or distinguish current-observation, velocity-estimate and latent paths.",
+    "Fixed seed 42 and checkpoint only; no multi-seed or training performed.",
+    "Noise removal changes the input distribution seen by the trained policy; a worse ablation does not imply more noise is beneficial.",
+    "No user-approved convergence criteria; no hardware validation."
+  ],
+  "convergence": "indeterminate",
+  "direct_parameter_change_supported": false,
+  "figure": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evidence/analysis/noise-ablation-20260917-001.png",
+    "sha256": "cbedff042ccc6423b9326fb9b304b8e34b9ca21952394793e976471cfa274589"
+  },
+  "preflight": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evidence/training/preflight-roa-noise-ablation-20260917-001.json",
+    "sha256": "1c69d51955b6645f268c67c06fb5c2074d9bd8c51549e966254f90ea06b2b28c"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-09-17T06:40:49.306566+00:00",
+  "baseline_manifest": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/manifest.json",
+    "sha256": "520413fe9db712b0e6daff9df010f3a162f022eee226ea54f7bfe2be1259f70f"
+  },
+  "approved_scope": "Three fixed-checkpoint seed-42 standing noise ablations, 1 env x 6000 steps each; enable velocity telemetry. No repeated baselines or training.",
+  "implementation": "Existing evaluation.roa_mode=student captures pre-action true/student velocities in m/s, latents and deterministic candidate actions; student action controls environment. No source edit.",
+  "noise_removal": "Set selected uniform-noise n_min=n_max=0; retain noise term and RNG draw count. Other configured noise unchanged.",
+  "telemetry_phase": "Diagnostic velocity/action snapshot pre-action; ordinary root telemetry post-step. Use roa_true_velocity_b for same-time estimator error.",
+  "tests": "Six existing test_roa_evaluation.py tests passed in isaacsim-5.1, including action parity, physical scaling, snapshot immutability and required telemetry."
+}

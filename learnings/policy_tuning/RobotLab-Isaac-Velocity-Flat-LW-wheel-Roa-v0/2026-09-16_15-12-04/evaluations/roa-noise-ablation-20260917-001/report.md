@@ -1,0 +1,39 @@
+# 评估批次 roa-noise-ablation-20260917-001
+
+任务：`RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0`；训练：`2026-09-16_15-12-04`。
+
+本报告汇总已校验的用例；completed 表示证据发布完成，策略表现须结合指标和视频判断。
+
+| 用例 / 尝试 | 状态 | 场景、步数 / 环境 / seed | 遥测 | 结果与视频 |
+| --- | --- | --- | --- | --- |
+| no-joint-velocity-noise-a01 | completed | no-joint-velocity-noise，6000 / 1 / 42 | complete | [结果](<raw/no-joint-velocity-noise-a01/result.json>) / [日志](<raw/no-joint-velocity-noise-a01/console.log>) |
+| no-gravity-noise-a01 | completed | no-gravity-noise，6000 / 1 / 42 | complete | [结果](<raw/no-gravity-noise-a01/result.json>) / [日志](<raw/no-gravity-noise-a01/console.log>) |
+| no-angular-velocity-noise-a01 | completed | no-angular-velocity-noise，6000 / 1 / 42 | complete | [结果](<raw/no-angular-velocity-noise-a01/result.json>) / [日志](<raw/no-angular-velocity-noise-a01/console.log>) |
+
+## 策略与场景
+
+- checkpoint SHA-256：`6574370ca9df2dcc49a9ec0caa74172b94af2eb7d2bb66487eccc1a442fab5d8`；runner：`OnPolicyRunnerROA`。
+- [场景来源 scenario-55801b781237da0c9c624f74077bafb31ea7a7ab09ce2b69a5fceaff09616c66.json](<../../provenance/scenario-55801b781237da0c9c624f74077bafb31ea7a7ab09ce2b69a5fceaff09616c66.json>)
+- [场景来源 scenario-e090fff93cdb3e7580f94a8884ada2342e44043059e747108c2ef3a31334997e.json](<../../provenance/scenario-e090fff93cdb3e7580f94a8884ada2342e44043059e747108c2ef3a31334997e.json>)
+- [场景来源 scenario-fe34c1871a1535bf5bee41eb82a1aeae3a356a72c7a99b7aef35aacabb98142a.json](<../../provenance/scenario-fe34c1871a1535bf5bee41eb82a1aeae3a356a72c7a99b7aef35aacabb98142a.json>)
+- [训练上下文 context-3fb9bef30d90c134f0d910ec5e5307b9c4420a1fa747e09d23169e80e86218ba.json](<../../provenance/context-3fb9bef30d90c134f0d910ec5e5307b9c4420a1fa747e09d23169e80e86218ba.json>)
+- [训练有效配置 config-570cf09c96e2605c623c68f98e4fccc754dedce464b72621160d3a59dd670d6b.json](<../../provenance/config-570cf09c96e2605c623c68f98e4fccc754dedce464b72621160d3a59dd670d6b.json>)
+
+- `no-joint-velocity-noise-a01` 指标：`{"max_joint_velocity_utilization": 0.23964855887673117, "max_tilt": 0.11275435984134674, "termination_rate": 0.0, "tracking_xy_rmse": 0.04099117949567843, "tracking_yaw_rmse": 0.043756320661878824}`
+- `no-joint-velocity-noise-a01` 命令调度：`[{"command": [0, 0, 0], "end_step": 5999, "start_step": 0}]`；训练配置覆盖：`{"curriculum.terrain_levels": null, "episode_length_s": 150.0, "evaluation.roa_mode": "student", "events.add_joint_default_pos": null, "events.randomize_actuator_gains": null, "events.randomize_com_positions": null, "events.randomize_push_robot": null, "events.randomize_reset_base.params.pose_range": {"pitch": [0.0, 0.0], "roll": [0.0, 0.0], "x": [0.0, 0.0], "y": [0.0, 0.0], "yaw": [0.0, 0.0], "z": [0.0, 0.0]}, "events.randomize_reset_base.params.velocity_range": {"pitch": [0.0, 0.0], "roll": [0.0, 0.0], "x": [0.0, 0.0], "y": [0.0, 0.0], "yaw": [0.0, 0.0], "z": [0.0, 0.0]}, "events.randomize_reset_joints.params.position_range": [0.0, 0.0], "events.randomize_reset_joints.params.velocity_range": [0.0, 0.0], "events.randomize_rigid_body_mass_base": null, "events.randomize_rigid_body_mass_others": null, "events.randomize_rigid_body_material.params.dynamic_friction_range": [1.0, 1.0], "events.randomize_rigid_body_material.params.restitution_range": [0.0, 0.0], "events.randomize_rigid_body_material.params.static_friction_range": [1.0, 1.0], "observations.policy.enable_corruption": true, "observations.policy.joint_vel.noise.n_max": 0.0, "observations.policy.joint_vel.noise.n_min": 0.0, "scene.robot.actuators.foots.max_delay": 0, "scene.robot.actuators.foots.min_delay": 0, "scene.robot.actuators.legs.max_delay": 0, "scene.robot.actuators.legs.min_delay": 0, "scene.robot.actuators.wheels.max_delay": 0, "scene.robot.actuators.wheels.min_delay": 0, "scene.terrain.terrain_generator": null, "scene.terrain.terrain_type": "plane", "terminations.terrain_out_of_bounds": null}`。
+- `no-gravity-noise-a01` 指标：`{"max_joint_velocity_utilization": 0.24211392402648926, "max_tilt": 0.09303239732980728, "termination_rate": 0.0, "tracking_xy_rmse": 0.039086573158036875, "tracking_yaw_rmse": 0.03308729496029045}`
+- `no-gravity-noise-a01` 命令调度：`[{"command": [0, 0, 0], "end_step": 5999, "start_step": 0}]`；训练配置覆盖：`{"curriculum.terrain_levels": null, "episode_length_s": 150.0, "evaluation.roa_mode": "student", "events.add_joint_default_pos": null, "events.randomize_actuator_gains": null, "events.randomize_com_positions": null, "events.randomize_push_robot": null, "events.randomize_reset_base.params.pose_range": {"pitch": [0.0, 0.0], "roll": [0.0, 0.0], "x": [0.0, 0.0], "y": [0.0, 0.0], "yaw": [0.0, 0.0], "z": [0.0, 0.0]}, "events.randomize_reset_base.params.velocity_range": {"pitch": [0.0, 0.0], "roll": [0.0, 0.0], "x": [0.0, 0.0], "y": [0.0, 0.0], "yaw": [0.0, 0.0], "z": [0.0, 0.0]}, "events.randomize_reset_joints.params.position_range": [0.0, 0.0], "events.randomize_reset_joints.params.velocity_range": [0.0, 0.0], "events.randomize_rigid_body_mass_base": null, "events.randomize_rigid_body_mass_others": null, "events.randomize_rigid_body_material.params.dynamic_friction_range": [1.0, 1.0], "events.randomize_rigid_body_material.params.restitution_range": [0.0, 0.0], "events.randomize_rigid_body_material.params.static_friction_range": [1.0, 1.0], "observations.policy.enable_corruption": true, "observations.policy.projected_gravity.noise.n_max": 0.0, "observations.policy.projected_gravity.noise.n_min": 0.0, "scene.robot.actuators.foots.max_delay": 0, "scene.robot.actuators.foots.min_delay": 0, "scene.robot.actuators.legs.max_delay": 0, "scene.robot.actuators.legs.min_delay": 0, "scene.robot.actuators.wheels.max_delay": 0, "scene.robot.actuators.wheels.min_delay": 0, "scene.terrain.terrain_generator": null, "scene.terrain.terrain_type": "plane", "terminations.terrain_out_of_bounds": null}`。
+- `no-angular-velocity-noise-a01` 指标：`{"max_joint_velocity_utilization": 0.20003758054791074, "max_tilt": 0.09094526618719101, "termination_rate": 0.0, "tracking_xy_rmse": 0.03345521299473441, "tracking_yaw_rmse": 0.027614076474630808}`
+- `no-angular-velocity-noise-a01` 命令调度：`[{"command": [0, 0, 0], "end_step": 5999, "start_step": 0}]`；训练配置覆盖：`{"curriculum.terrain_levels": null, "episode_length_s": 150.0, "evaluation.roa_mode": "student", "events.add_joint_default_pos": null, "events.randomize_actuator_gains": null, "events.randomize_com_positions": null, "events.randomize_push_robot": null, "events.randomize_reset_base.params.pose_range": {"pitch": [0.0, 0.0], "roll": [0.0, 0.0], "x": [0.0, 0.0], "y": [0.0, 0.0], "yaw": [0.0, 0.0], "z": [0.0, 0.0]}, "events.randomize_reset_base.params.velocity_range": {"pitch": [0.0, 0.0], "roll": [0.0, 0.0], "x": [0.0, 0.0], "y": [0.0, 0.0], "yaw": [0.0, 0.0], "z": [0.0, 0.0]}, "events.randomize_reset_joints.params.position_range": [0.0, 0.0], "events.randomize_reset_joints.params.velocity_range": [0.0, 0.0], "events.randomize_rigid_body_mass_base": null, "events.randomize_rigid_body_mass_others": null, "events.randomize_rigid_body_material.params.dynamic_friction_range": [1.0, 1.0], "events.randomize_rigid_body_material.params.restitution_range": [0.0, 0.0], "events.randomize_rigid_body_material.params.static_friction_range": [1.0, 1.0], "observations.policy.base_ang_vel.noise.n_max": 0.0, "observations.policy.base_ang_vel.noise.n_min": 0.0, "observations.policy.enable_corruption": true, "scene.robot.actuators.foots.max_delay": 0, "scene.robot.actuators.foots.min_delay": 0, "scene.robot.actuators.legs.max_delay": 0, "scene.robot.actuators.legs.min_delay": 0, "scene.robot.actuators.wheels.max_delay": 0, "scene.robot.actuators.wheels.min_delay": 0, "scene.terrain.terrain_generator": null, "scene.terrain.terrain_type": "plane", "terminations.terrain_out_of_bounds": null}`。
+
+## 观察与限制
+
+- 未提供用户批准的收敛判据时，不作收敛判断；缺失遥测不能按零值解释。
+- 视频需经机器人持续在画面内的人工检查后才可作为动作证据。
+
+## 相关证据
+
+
+## 建议与待授权事项
+
+- 按批次报告检查失败项和动作表现；复测使用新的 batch_id 与 attempt_id。

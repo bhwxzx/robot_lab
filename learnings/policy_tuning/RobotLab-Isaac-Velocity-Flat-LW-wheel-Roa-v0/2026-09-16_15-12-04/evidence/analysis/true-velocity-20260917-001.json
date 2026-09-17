@@ -1,0 +1,591 @@
+{
+  "version": 1,
+  "created_at": "2026-09-17T06:58:57.395805+00:00",
+  "batch_manifests": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/manifest.json",
+      "sha256": "520413fe9db712b0e6daff9df010f3a162f022eee226ea54f7bfe2be1259f70f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-true-velocity-20260917-001/manifest.json",
+      "sha256": "430bbc8e08bad9f72ba27c04b1d47db955bd60df4baa74c5622bdb5ade416370"
+    }
+  ],
+  "method": {
+    "window": "40 <= sim_time_seconds < 120; env 0, 4000 samples at 50 Hz, no resets",
+    "intervention": "Replace all three actor linear-velocity inputs with true training-scaled velocity. Keep current noisy observation and student latent branches.",
+    "xy_velocity_rmse": "sqrt(mean((vx^2+vy^2)/2)) under zero command",
+    "roll_pitch_angular_velocity_rms": "sqrt(mean(wx^2+wy^2))",
+    "action_change": "Per-axis pooled RMS of consecutive raw action differences; first 8 leg targets and last 2 right/left wheel targets follow effective env.yaml actions order.",
+    "estimator_error": "Pre-action roa_student_velocity_b - roa_true_velocity_b in physical m/s; post-step root velocity is not used as estimator target.",
+    "paired_action_comparison": "Both candidate actions use identical pre-action observation and student latent on the true-velocity-controller trajectory. Hypothetical student actions are not a separate student closed-loop rollout.",
+    "comparison_scope": "Same checkpoint, seed42, duration, environment, noise and zero commands. Existing baselines reused without rerunning."
+  },
+  "cases": {
+    "nominal-no-noise-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-no-noise-a01/result.json",
+        "sha256": "419e9bff531aafb9acce26120e76c6653d44170979b0855ef8d7e1be997f7a3c"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-no-noise-a01/telemetry.json.gz",
+        "sha256": "c60c0019e66cce24b033602b5176e5efe10ebdc142176a0daf1bd7dcb05ca146"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "nominal-no-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": false,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "window_40_120s": {
+        "sample_count": 4000,
+        "done_count": 0,
+        "timeout_count": 0,
+        "xy_velocity_rmse_m_s": 0.008080587930439795,
+        "vx_mean_m_s": 8.708535408499074e-05,
+        "roll_pitch_angular_velocity_rms_rad_s": 0.020701469686983446,
+        "leg_action_delta_rms": 0.0030352376248286004,
+        "wheel_action_delta_rms": 0.07755353401526112,
+        "wheel_joint_velocity_rms_rad_s": 0.06528384540720304,
+        "leg_joint_velocity_rms_rad_s": 0.03369763239143266,
+        "net_displacement_m": 0.002133810007116063,
+        "max_displacement_from_40s_m": 0.010055031268601395,
+        "path_length_m": 0.8983124062146994
+      },
+      "aggregate_full_120s": {
+        "action_rate_rms": 0.07687908019334232,
+        "body_roll_pitch_angular_acceleration_p95": 0.8795111002443419,
+        "body_roll_pitch_angular_acceleration_rms": 1.833310480587478,
+        "body_roll_pitch_angular_velocity_p95": 0.09434085166787178,
+        "body_roll_pitch_angular_velocity_rms": 0.05553170470857804,
+        "body_vertical_acceleration_p95": 0.21912027150392532,
+        "body_vertical_acceleration_rms": 0.40194996336866523,
+        "body_vertical_velocity_p95": 0.02293853648006916,
+        "body_vertical_velocity_rms": 0.02110165275391093,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 9.473751068115234,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 40.51089859008789,
+        "max_abs_joint_velocity": 5.110798358917236,
+        "max_joint_effort_utilization": 0.3375908215840658,
+        "max_joint_velocity_utilization": 0.1884184241294861,
+        "max_tilt": 0.07518812268972397,
+        "mean_reward": 0.20644274060428142,
+        "real_time_factor": 0.8758758261817601,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.021092327840749936,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.012788101734400918,
+        "tracking_yaw_rmse": 0.016762017744745776
+      },
+      "telemetry_status": "complete",
+      "missing_required_signals": []
+    },
+    "nominal-training-noise-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-training-noise-a01/result.json",
+        "sha256": "e7f4840e8b57a57f7159a71128530f44c6e457e84a5420683236ec79c05a6b48"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-training-noise-a01/telemetry.json.gz",
+        "sha256": "36775a18dc56252bee7d2a121eb188743b48acefd92d0beac18c98cd20576cf3"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "nominal-training-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": true,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "window_40_120s": {
+        "sample_count": 4000,
+        "done_count": 0,
+        "timeout_count": 0,
+        "xy_velocity_rmse_m_s": 0.0412391309869643,
+        "vx_mean_m_s": 0.0009217174176490062,
+        "roll_pitch_angular_velocity_rms_rad_s": 0.18579103584503398,
+        "leg_action_delta_rms": 0.11874052279706157,
+        "wheel_action_delta_rms": 0.6805929672879094,
+        "wheel_joint_velocity_rms_rad_s": 1.43121660824177,
+        "leg_joint_velocity_rms_rad_s": 0.21402047785730358,
+        "net_displacement_m": 0.041808048721213416,
+        "max_displacement_from_40s_m": 0.18090478493741807,
+        "path_length_m": 4.0204343271733745
+      },
+      "aggregate_full_120s": {
+        "action_rate_rms": 0.32131735381826276,
+        "body_roll_pitch_angular_acceleration_p95": 12.602531073773061,
+        "body_roll_pitch_angular_acceleration_rms": 7.295532540845353,
+        "body_roll_pitch_angular_velocity_p95": 0.35055277414944025,
+        "body_roll_pitch_angular_velocity_rms": 0.18731617254001798,
+        "body_vertical_acceleration_p95": 2.912435121834278,
+        "body_vertical_acceleration_rms": 1.495613030626331,
+        "body_vertical_velocity_p95": 0.08475232869386673,
+        "body_vertical_velocity_rms": 0.045019660192243766,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 13.538920402526855,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 40.35673904418945,
+        "max_abs_joint_velocity": 8.074758529663086,
+        "max_joint_effort_utilization": 0.33630615870157876,
+        "max_joint_velocity_utilization": 0.2446896524140329,
+        "max_tilt": 0.11632424592971802,
+        "mean_reward": 0.20545070287336906,
+        "real_time_factor": 0.865521555838368,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.03835960732919207,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.04109008866204322,
+        "tracking_yaw_rmse": 0.036512384033734704
+      },
+      "telemetry_status": "complete",
+      "missing_required_signals": []
+    },
+    "all-noise-student-true-velocity-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-true-velocity-20260917-001/raw/all-noise-student-true-velocity-a01/result.json",
+        "sha256": "6f46ec1fc83a5b77b9e935e9394ac4a3cacf352576765861d53e8e61a71b880e"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/roa-true-velocity-20260917-001/raw/all-noise-student-true-velocity-a01/telemetry.json.gz",
+        "sha256": "47404d09ae57cd97973ba9e45649cd3083d8bc1132f8e816fb8a11386a8e78c5"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "all-noise-student-true-velocity",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "evaluation.roa_mode": "student_true_velocity",
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": true,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "window_40_120s": {
+        "sample_count": 4000,
+        "done_count": 0,
+        "timeout_count": 0,
+        "xy_velocity_rmse_m_s": 0.020173633477713566,
+        "vx_mean_m_s": -0.0004351062080172028,
+        "roll_pitch_angular_velocity_rms_rad_s": 0.11779757447962287,
+        "leg_action_delta_rms": 0.10190147073296753,
+        "wheel_action_delta_rms": 0.45752807917808813,
+        "wheel_joint_velocity_rms_rad_s": 0.26867203349419894,
+        "leg_joint_velocity_rms_rad_s": 0.1500984733265478,
+        "net_displacement_m": 0.04825642141805021,
+        "max_displacement_from_40s_m": 0.05580064454338571,
+        "path_length_m": 1.957352938972849
+      },
+      "aggregate_full_120s": {
+        "action_rate_rms": 0.22411792582213527,
+        "body_roll_pitch_angular_acceleration_p95": 9.999606152772039,
+        "body_roll_pitch_angular_acceleration_rms": 5.870947049339593,
+        "body_roll_pitch_angular_velocity_p95": 0.21202363059063153,
+        "body_roll_pitch_angular_velocity_rms": 0.12047617524393484,
+        "body_vertical_acceleration_p95": 2.6315907947719097,
+        "body_vertical_acceleration_rms": 1.3896140004502735,
+        "body_vertical_velocity_p95": 0.0617317296564579,
+        "body_vertical_velocity_rms": 0.03480079117345347,
+        "illegal_contact_rate": 0.0,
+        "joint_effort_limit_violation_rate": 0.0,
+        "joint_velocity_limit_violation_rate": 0.0,
+        "max_abs_action": 9.104423522949219,
+        "max_abs_action_error": 0.0,
+        "max_abs_applied_torque": 37.82689666748047,
+        "max_abs_joint_velocity": 4.904599189758301,
+        "max_joint_effort_utilization": 0.3152241388956706,
+        "max_joint_velocity_utilization": 0.14862421787146365,
+        "max_tilt": 0.08104713261127472,
+        "mean_reward": 0.21847211394334834,
+        "real_time_factor": 0.8236731817285006,
+        "termination_rate": 0.0,
+        "termination_term_illegal_contact_rate": 0.0,
+        "termination_term_time_out_rate": 0.0,
+        "tilt_rms": 0.03296915497504768,
+        "timeout_rate": 0.0,
+        "tracking_xy_rmse": 0.019488788731624317,
+        "tracking_yaw_rmse": 0.019807522390192272
+      },
+      "telemetry_status": "complete",
+      "missing_required_signals": []
+    }
+  },
+  "convergence": "indeterminate",
+  "direct_parameter_change_supported": false,
+  "limitations": [
+    "The oracle replacement is diagnostic, not a deployable true-velocity sensor or a no-estimator trained policy.",
+    "Changing all three velocity components together does not identify the responsible axis, separate bias from fluctuation, or quantify additive branch contributions.",
+    "Remaining motion may come from noisy direct observations, student latent, physical dynamics and their interactions; those paths were not individually isolated.",
+    "No estimator telemetry exists for the original all-noise baseline; the current estimator error is measured on the oracle-controller trajectory.",
+    "Single checkpoint and seed; no approved convergence criteria or hardware validation."
+  ],
+  "velocity_diagnostics": {
+    "rmse_xyz_m_s": [
+      0.037016565597470526,
+      0.024077208056764197,
+      0.024417150447393867
+    ],
+    "bias_xyz_m_s": [
+      -0.005790785796888997,
+      -0.0028736888525793345,
+      -0.020461843195673284
+    ],
+    "error_std_xyz_m_s": [
+      0.03656081137620416,
+      0.02390510113317389,
+      0.013323295726146121
+    ],
+    "estimated_step_delta_rms_xyz_m_s": [
+      0.027838214579880664,
+      0.023534696511565676,
+      0.023051121209072028
+    ],
+    "true_step_delta_rms_xyz_m_s": [
+      0.006287093329761275,
+      0.006824056858056887,
+      0.02663581761433312
+    ],
+    "teacher_label_max_abs_difference_m_s": 0.0,
+    "executed_vs_oracle_action_max_abs_difference": 0.0
+  },
+  "paired_actions_on_oracle_trajectory": {
+    "student_vs_oracle_rms_difference_legs": 0.0364843544423522,
+    "student_vs_oracle_rms_difference_wheels": 0.23093434087529988,
+    "student_wheel_step_delta_rms": 0.5130953889124683,
+    "oracle_wheel_step_delta_rms": 0.45752807917808813,
+    "student_leg_step_delta_rms": 0.1083279885424558,
+    "oracle_leg_step_delta_rms": 0.10190147073296753
+  },
+  "scenario_comparison_verified": true,
+  "change_percent_vs_all_noise_student": {
+    "xy_velocity_rmse_m_s": -51.081332232508835,
+    "roll_pitch_angular_velocity_rms_rad_s": -36.596739480005716,
+    "leg_action_delta_rms": -14.181386158180832,
+    "wheel_action_delta_rms": -32.77507979530131,
+    "wheel_joint_velocity_rms_rad_s": -81.22771689854417,
+    "leg_joint_velocity_rms_rad_s": -29.86723755162123,
+    "net_displacement_m": 15.423759046580177,
+    "max_displacement_from_40s_m": -69.15468843862294,
+    "path_length_m": -51.31488840040337
+  },
+  "figure": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evidence/analysis/true-velocity-20260917-001.png",
+    "sha256": "f8868108fb8cf2ab6952534f082001f7dcbb7eb566f75a1638cb30d7c1d21c1b"
+  },
+  "preflight": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evidence/training/preflight-roa-true-velocity-20260917-001.json",
+    "sha256": "e66e3a474a9be849eba00ee745102366377efba53de60475d1131ed26d25b2cd"
+  }
+}
