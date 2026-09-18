@@ -18,7 +18,7 @@ class LWWheelRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
         "privileged": ["privileged"]  # 专供特权编码器使用的纯物理参数组
     }
     policy = RslRlActorCriticRoaCfg(
-        use_velocity_estimation=False,  # False：关闭显式速度头、actor 速度输入及速度监督，需独立训练。
+        use_velocity_estimation=True,  # False：关闭显式速度头、actor 速度输入及速度监督，需独立训练。
         init_noise_std=1.0,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
