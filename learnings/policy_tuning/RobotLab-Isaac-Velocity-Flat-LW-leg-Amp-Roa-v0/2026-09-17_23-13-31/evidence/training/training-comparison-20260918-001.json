@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "window": [
+    45000,
+    50000
+  ],
+  "sources": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evidence/training/tensorboard-windows-20260917-001.json",
+      "sha256": "3279c99ac19aa2d806276ddb4a311ab41b1c0a8093bcfd03cf0bf65dcc4c824e"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-17_23-13-31/evidence/training/tensorboard-windows-20260918-001.json",
+      "sha256": "5f585458420648d5ed99fdd556ba86fa40ca51d9d7b69d667525a4cca5c3f418"
+    }
+  ],
+  "comparison": {
+    "Train/mean_reward": {
+      "with_velocity_estimation": 165.93205154418945,
+      "without_velocity_estimation": 165.518081829834,
+      "relative_change_percent": -0.24948146575841945
+    },
+    "Train/mean_episode_length": {
+      "with_velocity_estimation": 997.2348099609375,
+      "without_velocity_estimation": 997.7712722534179,
+      "relative_change_percent": 0.053794982598076815
+    },
+    "Metrics/base_velocity/error_vel_xy": {
+      "with_velocity_estimation": 0.47672868612408636,
+      "without_velocity_estimation": 0.5130553736090661,
+      "relative_change_percent": 7.619991945591527
+    },
+    "Metrics/base_velocity/error_vel_yaw": {
+      "with_velocity_estimation": 0.4458528649508953,
+      "without_velocity_estimation": 0.44695368479490283,
+      "relative_change_percent": 0.24690204561739132
+    },
+    "Episode_Termination/illegal_contact": {
+      "with_velocity_estimation": 0.006491760387993418,
+      "without_velocity_estimation": 0.005419439801922999,
+      "relative_change_percent": -16.518178767868378
+    },
+    "Episode_Reward/ang_vel_xy_l2": {
+      "with_velocity_estimation": -0.07301886960417033,
+      "without_velocity_estimation": -0.07221291810050606,
+      "relative_change_percent": 1.103757847845719
+    },
+    "Episode_Reward/flat_orientation_l2": {
+      "with_velocity_estimation": -0.04294168538376689,
+      "without_velocity_estimation": -0.04434234527722001,
+      "relative_change_percent": -3.261772054206819
+    },
+    "Episode_Reward/body_orientation_l2": {
+      "with_velocity_estimation": -0.02576501118913293,
+      "without_velocity_estimation": -0.02660540714226663,
+      "relative_change_percent": -3.2617721256343186
+    },
+    "Loss/hist_latent": {
+      "with_velocity_estimation": 0.011935234047472477,
+      "without_velocity_estimation": 0.012196048565208912,
+      "relative_change_percent": 2.1852484559502026
+    }
+  },
+  "interpretation_limit": "Training aggregate metrics over randomized 4096 environments are not equivalent to fixed-command deployment-branch performance; no convergence thresholds approved.",
+  "new_loss_tags": {
+    "Loss/hist_latent": 0.012034076265990734,
+    "Loss/learning_rate": 0.00038443360244855285,
+    "Loss/value_function": 0.029288677498698235,
+    "Loss/surrogate": -0.007256170269101858,
+    "Loss/entropy": 1.1199406385421753,
+    "Loss/priv_reg": 0.012154744006693363,
+    "Loss/amp/loss": 0.11397282779216766,
+    "Loss/amp/grad_pen": 0.14662188291549683,
+    "Loss/amp/policy_pred": -0.7320848107337952,
+    "Loss/amp/expert_pred": 0.7313989400863647
+  },
+  "no_velocity_estimator_meaning": "Explicit 3D velocity head and its actor input are disabled. History latent remains; critic privileged information remains configured."
+}

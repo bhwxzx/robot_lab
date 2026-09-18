@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "recorded_at": "2026-09-18T13:10:18.208485+00:00",
+  "checkpoint": {
+    "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-17_23-13-31/model_50000.pt",
+    "sha256": "ac3ade5cb64737ceb3daf8f7253476b533fa3309d86164ebcf9f4caeb6e331ab"
+  },
+  "checkpoint_metadata": {
+    "iter": 50000,
+    "iteration_is_next": true,
+    "algorithm_counter": 50000,
+    "use_velocity_estimation": false,
+    "estimated_velocity_schedule": null,
+    "priv_reg_coef_schedule": [
+      0.0,
+      0.1,
+      2000,
+      3000
+    ]
+  },
+  "actor_input_shape": [
+    512,
+    61
+  ],
+  "velocity_head_state_keys": [],
+  "effective_config_refs": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-17_23-13-31/params/env.yaml",
+      "sha256": "4968dc83d50ef735e03f8cd9d129fa1c7d0b679adb909a610200c0c0b77f1f59"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-17_23-13-31/params/agent.yaml",
+      "sha256": "1c9e9ce35ca35db30a1d464bd9d1e9cfffdd045b12d8a5d0a462ccb7336f21dd"
+    }
+  ],
+  "changes_from_velocity_estimation_run": [
+    {
+      "file": "env.yaml",
+      "path": "/log_dir",
+      "previous": {
+        "kind": "scalar",
+        "tag": "tag:yaml.org,2002:str",
+        "value": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-16_15-45-12"
+      },
+      "current": {
+        "kind": "scalar",
+        "tag": "tag:yaml.org,2002:str",
+        "value": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-17_23-13-31"
+      }
+    },
+    {
+      "file": "agent.yaml",
+      "path": "/policy/use_velocity_estimation",
+      "previous": {
+        "kind": "scalar",
+        "tag": "tag:yaml.org,2002:bool",
+        "value": true
+      },
+      "current": {
+        "kind": "scalar",
+        "tag": "tag:yaml.org,2002:bool",
+        "value": false
+      }
+    }
+  ],
+  "training_saved_diff": {
+    "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-17_23-13-31/git/robot_lab.diff",
+    "sha256": "72e34c7913cbf09174620326a9ead2c421ca578c38517449c514b671a16429b0"
+  },
+  "current_source_diff": "diff --git a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/agents/rsl_rl_amp_roa_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/agents/rsl_rl_amp_roa_cfg.py\nindex 20be039..001ac6f 100644\n--- a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/agents/rsl_rl_amp_roa_cfg.py\n+++ b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/agents/rsl_rl_amp_roa_cfg.py\n@@ -65,7 +65,7 @@ class LWFlatAmpRoaRunnerCfg(LWRoughAmpRoaRunnerCfg):\n     max_iterations = 50000\n     experiment_name = \"LW_leg_flat_amp_roa\"\n     policy = RslRlActorCriticAmpRoaCfg(\n-        use_velocity_estimation=True,  # Flat 单独定义 policy，在此切换显式速度模块。\n+        use_velocity_estimation=False,  # Flat 单独定义 policy，在此切换显式速度\n         init_noise_std=1.0,\n         actor_hidden_dims=[512, 256, 128],\n         critic_hidden_dims=[512, 256, 128],\n",
+  "source_head": "70a931e5e730e7af56cce4b30507f22dec0052f7",
+  "existing_unreviewed_exports": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-17_23-13-31/exported/policy.onnx",
+      "sha256": "a7e27e7cb2dd8be5fe117e2eae1312c5ce7d9fb29a2c492cd5e37b420aabf443"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-17_23-13-31/exported/policy.pt",
+      "sha256": "45dd15b726189a79f82f164248d0ac9eebfd4956e5c45eecab56e1929649562e"
+    }
+  ],
+  "assessment_criteria_status": "insufficient_evidence",
+  "convergence": "indeterminate"
+}
