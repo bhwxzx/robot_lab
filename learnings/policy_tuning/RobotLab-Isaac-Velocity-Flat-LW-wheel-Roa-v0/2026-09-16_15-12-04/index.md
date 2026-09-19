@@ -45,3 +45,12 @@
 - 归档目录：`/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-16-15-12-04`；原始 student 策略，速度估计开启。
 - policy_storage 提交：`2830956`。
 - [提交与推送记录](<evidence/export/deploy-20260917-001/git-publication.json>)：已推送 `origin/master`。
+
+## 实机记录的训练侧离线分析（2026-09-19）
+
+原始数据来自 `/home/server/sim2real_test/experiments/wheel/20260918-163736-oscillation/`；该仓库保留原始 bag、CSV 和既有现场分析。本项目产生的两轮派生分析归档于下列目录，输入路径与 SHA-256 保留在 metrics.json 中。
+
+- ROA 训练端回放与通道敏感性：[指标与方法](<evidence/analysis/training-side-review-20260919/metrics.json>)、[曲线](<evidence/analysis/training-side-review-20260919/review.png>)、[逐帧回放](<evidence/analysis/training-side-review-20260919/replay.csv>)。
+- DWAQ / ROA 同实机观测对比：[指标与方法](<evidence/analysis/dwaq-roa-same-observation-20260919/metrics.json>)、[曲线](<evidence/analysis/dwaq-roa-same-observation-20260919/comparison.png>)、[逐帧输出与敏感度](<evidence/analysis/dwaq-roa-same-observation-20260919/replay_and_sensitivity.csv>)。
+
+两轮均为 CPU 离线开环分析，不是 Native 仿真或实机闭环测试；保留记录中的 ROA 上一动作，不能据此认定 DWAQ 闭环失稳或确定唯一根因。

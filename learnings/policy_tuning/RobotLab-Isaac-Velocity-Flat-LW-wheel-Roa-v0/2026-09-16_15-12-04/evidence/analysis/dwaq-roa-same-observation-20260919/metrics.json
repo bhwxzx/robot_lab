@@ -1,0 +1,685 @@
+{
+  "schema_version": 1,
+  "analysis_kind": "same-recorded-trajectory model output and local sensitivity comparison",
+  "data": {
+    "path": "/home/server/sim2real_test/experiments/wheel/20260918-163736-oscillation/exports/joint_states.csv",
+    "sha256": "33642ddb628e12ceed6966e659ee5eea0b36148cba3a2352184df325d88da529"
+  },
+  "models": {
+    "DWAQ": {
+      "artifacts": {
+        "jit": {
+          "path": "/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-06-03-17-15/policy.pt",
+          "sha256": "754d2ee2d0b523b655bb6ec75ddf42128353e75c3fee6d48ce2d01e46c802aa4"
+        },
+        "onnx": {
+          "path": "/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-06-03-17-15/policy.onnx",
+          "sha256": "7591dbb9cc0e055129f190c02ff1f4859535eb035a425da0f9ebe0f946555543"
+        },
+        "env": {
+          "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_dwaq/2026-06-03_17-15-17/params/env.yaml",
+          "sha256": "9719d7eb525a915b957fa9393885d89e6b650d9894132de4426f5fc9b49272a7"
+        },
+        "agent": {
+          "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_dwaq/2026-06-03_17-15-17/params/agent.yaml",
+          "sha256": "7950e8395350c5a73a1d5036a2b2c57df25463a4019a035a3d77d6682eeecddd"
+        }
+      },
+      "history_frames": 5,
+      "jit_onnx_max_abs_raw_action_error": 3.814697265625e-06,
+      "windows": {
+        "first_300ms": {
+          "outputs": {
+            "baseline": {
+              "hip_target_absmax_rad": 0.7623079419136047,
+              "hip_target_step_rms_rad": 0.40153061732668577,
+              "difference_from_baseline_rms_rad": 0.0
+            },
+            "freeze_current_hip": {
+              "hip_target_absmax_rad": 0.26665669679641724,
+              "hip_target_step_rms_rad": 0.11550850624112913,
+              "difference_from_baseline_rms_rad": 0.35164088959104767
+            },
+            "freeze_all_history_hip": {
+              "hip_target_absmax_rad": 0.266620010137558,
+              "hip_target_step_rms_rad": 0.11546911679145053,
+              "difference_from_baseline_rms_rad": 0.3516259654579895
+            },
+            "zero_velocity_code": {
+              "hip_target_absmax_rad": 0.7400367856025696,
+              "hip_target_step_rms_rad": 0.394802553184364,
+              "difference_from_baseline_rms_rad": 0.009652526301055935
+            }
+          },
+          "sensitivity": {
+            "full_model_current_q": {
+              "spectral_norm_median": 3.538393974304199,
+              "spectral_norm_max": 5.308063983917236
+            },
+            "full_model_current_dq": {
+              "spectral_norm_median": 0.1020742803812027,
+              "spectral_norm_max": 0.1941939741373062
+            },
+            "actor_direct_q": {
+              "spectral_norm_median": 3.539296865463257,
+              "spectral_norm_max": 5.308842658996582
+            },
+            "actor_direct_dq": {
+              "spectral_norm_median": 0.1020960658788681,
+              "spectral_norm_max": 0.1941927671432495
+            }
+          }
+        },
+        "common_history_filled_200_300ms": {
+          "outputs": {
+            "baseline": {
+              "hip_target_absmax_rad": 0.7623079419136047,
+              "hip_target_step_rms_rad": 0.6616381446335176,
+              "difference_from_baseline_rms_rad": 0.0
+            },
+            "freeze_current_hip": {
+              "hip_target_absmax_rad": 0.26665669679641724,
+              "hip_target_step_rms_rad": 0.18818490513763783,
+              "difference_from_baseline_rms_rad": 0.5375662943284027
+            },
+            "freeze_all_history_hip": {
+              "hip_target_absmax_rad": 0.266620010137558,
+              "hip_target_step_rms_rad": 0.18810651882717486,
+              "difference_from_baseline_rms_rad": 0.5375317571127516
+            },
+            "zero_velocity_code": {
+              "hip_target_absmax_rad": 0.7400367856025696,
+              "hip_target_step_rms_rad": 0.6505512024810605,
+              "difference_from_baseline_rms_rad": 0.015202368294370092
+            }
+          },
+          "sensitivity": {
+            "full_model_current_q": {
+              "spectral_norm_median": 2.7459821701049805,
+              "spectral_norm_max": 5.308063983917236
+            },
+            "full_model_current_dq": {
+              "spectral_norm_median": 0.10942341387271881,
+              "spectral_norm_max": 0.1941939741373062
+            },
+            "actor_direct_q": {
+              "spectral_norm_median": 2.744306802749634,
+              "spectral_norm_max": 5.308842658996582
+            },
+            "actor_direct_dq": {
+              "spectral_norm_median": 0.10948978364467621,
+              "spectral_norm_max": 0.1941927671432495
+            }
+          }
+        },
+        "common_history_filled_200_560ms": {
+          "outputs": {
+            "baseline": {
+              "hip_target_absmax_rad": 2.9012653827667236,
+              "hip_target_step_rms_rad": 1.881536688382571,
+              "difference_from_baseline_rms_rad": 0.0
+            },
+            "freeze_current_hip": {
+              "hip_target_absmax_rad": 0.8226945400238037,
+              "hip_target_step_rms_rad": 0.35020609562528715,
+              "difference_from_baseline_rms_rad": 1.2036930393259182
+            },
+            "freeze_all_history_hip": {
+              "hip_target_absmax_rad": 0.8235605359077454,
+              "hip_target_step_rms_rad": 0.3498423226521488,
+              "difference_from_baseline_rms_rad": 1.203743293858023
+            },
+            "zero_velocity_code": {
+              "hip_target_absmax_rad": 2.8336286544799805,
+              "hip_target_step_rms_rad": 1.8577737286330462,
+              "difference_from_baseline_rms_rad": 0.028256708073595455
+            }
+          },
+          "sensitivity": {
+            "full_model_current_q": {
+              "spectral_norm_median": 2.1444146633148193,
+              "spectral_norm_max": 5.308063983917236
+            },
+            "full_model_current_dq": {
+              "spectral_norm_median": 0.09837799519300461,
+              "spectral_norm_max": 0.1941939741373062
+            },
+            "actor_direct_q": {
+              "spectral_norm_median": 2.143111228942871,
+              "spectral_norm_max": 5.308842658996582
+            },
+            "actor_direct_dq": {
+              "spectral_norm_median": 0.09846771508455276,
+              "spectral_norm_max": 0.1941927671432495
+            }
+          }
+        },
+        "full_0_560ms": {
+          "outputs": {
+            "baseline": {
+              "hip_target_absmax_rad": 2.9012653827667236,
+              "hip_target_step_rms_rad": 1.5113005628162566,
+              "difference_from_baseline_rms_rad": 0.0
+            },
+            "freeze_current_hip": {
+              "hip_target_absmax_rad": 0.8226945400238037,
+              "hip_target_step_rms_rad": 0.282252609885345,
+              "difference_from_baseline_rms_rad": 0.9786200284856076
+            },
+            "freeze_all_history_hip": {
+              "hip_target_absmax_rad": 0.8235605359077454,
+              "hip_target_step_rms_rad": 0.28196315329174515,
+              "difference_from_baseline_rms_rad": 0.9786614927890553
+            },
+            "zero_velocity_code": {
+              "hip_target_absmax_rad": 2.8336286544799805,
+              "hip_target_step_rms_rad": 1.4921912170068887,
+              "difference_from_baseline_rms_rad": 0.022950063996084395
+            }
+          },
+          "sensitivity": {
+            "full_model_current_q": {
+              "spectral_norm_median": 2.8101396560668945,
+              "spectral_norm_max": 5.308063983917236
+            },
+            "full_model_current_dq": {
+              "spectral_norm_median": 0.09837799519300461,
+              "spectral_norm_max": 0.1941939741373062
+            },
+            "actor_direct_q": {
+              "spectral_norm_median": 2.805131196975708,
+              "spectral_norm_max": 5.308842658996582
+            },
+            "actor_direct_dq": {
+              "spectral_norm_median": 0.09846771508455276,
+              "spectral_norm_max": 0.1941927671432495
+            }
+          }
+        }
+      },
+      "first_target_hip_rad": [
+        0.05879843235015869,
+        -0.05893789976835251
+      ],
+      "first_same_state_nominal_pd_Nm": [
+        8.14267373085022,
+        -8.255922362208366
+      ],
+      "entry_sensitivity": {
+        "full_model_current_q": {
+          "physical_input_plus": [
+            0.01,
+            -0.01
+          ],
+          "hip_target_change_plus_rad": [
+            -0.03199639543890953,
+            0.0315089225769043
+          ],
+          "hip_target_change_minus_rad": [
+            0.03156466782093048,
+            -0.032401032745838165
+          ]
+        },
+        "full_model_current_dq": {
+          "physical_input_plus": [
+            0.1,
+            -0.1
+          ],
+          "hip_target_change_plus_rad": [
+            -0.005937404930591583,
+            0.00637730211019516
+          ],
+          "hip_target_change_minus_rad": [
+            0.005902022123336792,
+            -0.006419748067855835
+          ]
+        },
+        "actor_direct_q": {
+          "physical_input_plus": [
+            0.01,
+            -0.01
+          ],
+          "hip_target_change_plus_rad": [
+            -0.03199350833892822,
+            0.031507037580013275
+          ],
+          "hip_target_change_minus_rad": [
+            0.03155899792909622,
+            -0.03239700198173523
+          ]
+        },
+        "actor_direct_dq": {
+          "physical_input_plus": [
+            0.1,
+            -0.1
+          ],
+          "hip_target_change_plus_rad": [
+            -0.005936931818723679,
+            0.006376840174198151
+          ],
+          "hip_target_change_minus_rad": [
+            0.0059015750885009766,
+            -0.006419382989406586
+          ]
+        }
+      },
+      "first_jacobians": {
+        "full_model_current_q": [
+          [
+            -1.4824717044830322,
+            1.7014163732528687
+          ],
+          [
+            1.7532258033752441,
+            -1.4456472396850586
+          ]
+        ],
+        "full_model_current_dq": [
+          [
+            -0.03501884639263153,
+            0.02411752939224243
+          ],
+          [
+            0.019201822578907013,
+            -0.04471242427825928
+          ]
+        ],
+        "actor_direct_q": [
+          [
+            -1.4815646409988403,
+            1.7019155025482178
+          ],
+          [
+            1.7526856660842896,
+            -1.445919156074524
+          ]
+        ],
+        "actor_direct_dq": [
+          [
+            -0.03495924174785614,
+            0.02417098730802536
+          ],
+          [
+            0.019169040024280548,
+            -0.04474148154258728
+          ]
+        ]
+      },
+      "finite_difference_relative_frobenius_change": {
+        "full_model_current_q": {
+          "median": 7.726281910436228e-05,
+          "max": 0.001490899594500661
+        },
+        "full_model_current_dq": {
+          "median": 6.031879092915915e-05,
+          "max": 0.0003591381246224046
+        },
+        "actor_direct_q": {
+          "median": 7.01878743711859e-05,
+          "max": 0.00148763379547745
+        },
+        "actor_direct_dq": {
+          "median": 6.938674778211862e-05,
+          "max": 0.00036298978375270963
+        }
+      }
+    },
+    "ROA": {
+      "artifacts": {
+        "jit": {
+          "path": "/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-16-15-12-04/policy.pt",
+          "sha256": "6efac377c368b8c705727042fb6048dd5917404c4de79211467f2c9bc88bc0c7"
+        },
+        "onnx": {
+          "path": "/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-16-15-12-04/policy.onnx",
+          "sha256": "b5f71d83ce6b8f9acdf73b8e7c4093fefc747db8ec9a08ae6bce72cdb5e9626e"
+        },
+        "env": {
+          "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-16_15-12-04/params/env.yaml",
+          "sha256": "227a14a79f07ee9565924e090d2bff27931ca6d915afb2d11144cf069be0457e"
+        },
+        "agent": {
+          "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-16_15-12-04/params/agent.yaml",
+          "sha256": "27fe0f99bb26255da8a3514849e3aa540219ce7db2a4b27d39333f2b264bb5e1"
+        }
+      },
+      "history_frames": 10,
+      "jit_onnx_max_abs_raw_action_error": 3.814697265625e-06,
+      "windows": {
+        "first_300ms": {
+          "outputs": {
+            "baseline": {
+              "hip_target_absmax_rad": 0.9968375563621521,
+              "hip_target_step_rms_rad": 0.4537472327492075,
+              "difference_from_baseline_rms_rad": 0.0
+            },
+            "freeze_current_hip": {
+              "hip_target_absmax_rad": 0.25555023550987244,
+              "hip_target_step_rms_rad": 0.11320233258660704,
+              "difference_from_baseline_rms_rad": 0.37585485545216646
+            },
+            "freeze_all_history_hip": {
+              "hip_target_absmax_rad": 0.25889652967453003,
+              "hip_target_step_rms_rad": 0.11408169305287397,
+              "difference_from_baseline_rms_rad": 0.37610107442826496
+            },
+            "zero_velocity_code": {
+              "hip_target_absmax_rad": 0.980945885181427,
+              "hip_target_step_rms_rad": 0.47202388876261503,
+              "difference_from_baseline_rms_rad": 0.020061920719849254
+            }
+          },
+          "sensitivity": {
+            "full_model_current_q": {
+              "spectral_norm_median": 5.386503219604492,
+              "spectral_norm_max": 10.552785873413086
+            },
+            "full_model_current_dq": {
+              "spectral_norm_median": 0.035424910485744476,
+              "spectral_norm_max": 0.1298106163740158
+            },
+            "actor_direct_q": {
+              "spectral_norm_median": 5.34575080871582,
+              "spectral_norm_max": 10.232213020324707
+            },
+            "actor_direct_dq": {
+              "spectral_norm_median": 0.03523963689804077,
+              "spectral_norm_max": 0.12880514562129974
+            }
+          }
+        },
+        "common_history_filled_200_300ms": {
+          "outputs": {
+            "baseline": {
+              "hip_target_absmax_rad": 0.9968375563621521,
+              "hip_target_step_rms_rad": 0.766763533438519,
+              "difference_from_baseline_rms_rad": 0.0
+            },
+            "freeze_current_hip": {
+              "hip_target_absmax_rad": 0.25555023550987244,
+              "hip_target_step_rms_rad": 0.16645367901672767,
+              "difference_from_baseline_rms_rad": 0.5857256396862217
+            },
+            "freeze_all_history_hip": {
+              "hip_target_absmax_rad": 0.25889652967453003,
+              "hip_target_step_rms_rad": 0.16800774308368413,
+              "difference_from_baseline_rms_rad": 0.5860364975166279
+            },
+            "zero_velocity_code": {
+              "hip_target_absmax_rad": 0.980945885181427,
+              "hip_target_step_rms_rad": 0.7991123519971324,
+              "difference_from_baseline_rms_rad": 0.03104893081365307
+            }
+          },
+          "sensitivity": {
+            "full_model_current_q": {
+              "spectral_norm_median": 4.208282470703125,
+              "spectral_norm_max": 10.552785873413086
+            },
+            "full_model_current_dq": {
+              "spectral_norm_median": 0.08960659801959991,
+              "spectral_norm_max": 0.1298106163740158
+            },
+            "actor_direct_q": {
+              "spectral_norm_median": 4.181394100189209,
+              "spectral_norm_max": 10.232213020324707
+            },
+            "actor_direct_dq": {
+              "spectral_norm_median": 0.0890226811170578,
+              "spectral_norm_max": 0.12880514562129974
+            }
+          }
+        },
+        "common_history_filled_200_560ms": {
+          "outputs": {
+            "baseline": {
+              "hip_target_absmax_rad": 3.678147077560425,
+              "hip_target_step_rms_rad": 2.3433035861886684,
+              "difference_from_baseline_rms_rad": 0.0
+            },
+            "freeze_current_hip": {
+              "hip_target_absmax_rad": 1.2114753723144531,
+              "hip_target_step_rms_rad": 0.6843778732853978,
+              "difference_from_baseline_rms_rad": 1.54450742108833
+            },
+            "freeze_all_history_hip": {
+              "hip_target_absmax_rad": 1.3953355550765991,
+              "hip_target_step_rms_rad": 0.6773380268987426,
+              "difference_from_baseline_rms_rad": 1.5371876260646773
+            },
+            "zero_velocity_code": {
+              "hip_target_absmax_rad": 3.5361392498016357,
+              "hip_target_step_rms_rad": 2.188633024293742,
+              "difference_from_baseline_rms_rad": 0.24310417400181047
+            }
+          },
+          "sensitivity": {
+            "full_model_current_q": {
+              "spectral_norm_median": 3.930903911590576,
+              "spectral_norm_max": 10.78789234161377
+            },
+            "full_model_current_dq": {
+              "spectral_norm_median": 0.09666335582733154,
+              "spectral_norm_max": 0.1585063636302948
+            },
+            "actor_direct_q": {
+              "spectral_norm_median": 3.8661720752716064,
+              "spectral_norm_max": 10.565768241882324
+            },
+            "actor_direct_dq": {
+              "spectral_norm_median": 0.097396619617939,
+              "spectral_norm_max": 0.15837864577770233
+            }
+          }
+        },
+        "full_0_560ms": {
+          "outputs": {
+            "baseline": {
+              "hip_target_absmax_rad": 3.678147077560425,
+              "hip_target_step_rms_rad": 1.8802351413943832,
+              "difference_from_baseline_rms_rad": 0.0
+            },
+            "freeze_current_hip": {
+              "hip_target_absmax_rad": 1.2114753723144531,
+              "hip_target_step_rms_rad": 0.5504674217433732,
+              "difference_from_baseline_rms_rad": 1.2529466387913548
+            },
+            "freeze_all_history_hip": {
+              "hip_target_absmax_rad": 1.3953355550765991,
+              "hip_target_step_rms_rad": 0.5448541393923128,
+              "difference_from_baseline_rms_rad": 1.2470457474290988
+            },
+            "zero_velocity_code": {
+              "hip_target_absmax_rad": 3.5361392498016357,
+              "hip_target_step_rms_rad": 1.75632791426959,
+              "difference_from_baseline_rms_rad": 0.1968325581864491
+            }
+          },
+          "sensitivity": {
+            "full_model_current_q": {
+              "spectral_norm_median": 4.936318874359131,
+              "spectral_norm_max": 10.78789234161377
+            },
+            "full_model_current_dq": {
+              "spectral_norm_median": 0.08099570870399475,
+              "spectral_norm_max": 0.1585063636302948
+            },
+            "actor_direct_q": {
+              "spectral_norm_median": 4.906745910644531,
+              "spectral_norm_max": 10.565768241882324
+            },
+            "actor_direct_dq": {
+              "spectral_norm_median": 0.0781264528632164,
+              "spectral_norm_max": 0.15837864577770233
+            }
+          }
+        }
+      },
+      "first_target_hip_rad": [
+        0.11507164686918259,
+        -0.09568426012992859
+      ],
+      "first_same_state_nominal_pd_Nm": [
+        13.20726303756237,
+        -11.563094794750214
+      ],
+      "entry_sensitivity": {
+        "full_model_current_q": {
+          "physical_input_plus": [
+            0.01,
+            -0.01
+          ],
+          "hip_target_change_plus_rad": [
+            -0.05205158144235611,
+            0.04182139039039612
+          ],
+          "hip_target_change_minus_rad": [
+            0.027308516204357147,
+            -0.016364306211471558
+          ]
+        },
+        "full_model_current_dq": {
+          "physical_input_plus": [
+            0.1,
+            -0.1
+          ],
+          "hip_target_change_plus_rad": [
+            -0.0023399144411087036,
+            0.0024369433522224426
+          ],
+          "hip_target_change_minus_rad": [
+            0.0021579712629318237,
+            -0.0022507086396217346
+          ]
+        },
+        "actor_direct_q": {
+          "physical_input_plus": [
+            0.01,
+            -0.01
+          ],
+          "hip_target_change_plus_rad": [
+            -0.052397824823856354,
+            0.041738346219062805
+          ],
+          "hip_target_change_minus_rad": [
+            0.02689146250486374,
+            -0.015578404068946838
+          ]
+        },
+        "actor_direct_dq": {
+          "physical_input_plus": [
+            0.1,
+            -0.1
+          ],
+          "hip_target_change_plus_rad": [
+            -0.002319440245628357,
+            0.002425283193588257
+          ],
+          "hip_target_change_minus_rad": [
+            0.0021408945322036743,
+            -0.0022438541054725647
+          ]
+        }
+      },
+      "first_jacobians": {
+        "full_model_current_q": [
+          [
+            -1.9873603582382202,
+            2.095080852508545
+          ],
+          [
+            1.150585651397705,
+            -1.8161758184432983
+          ]
+        ],
+        "full_model_current_dq": [
+          [
+            -0.008971244096755981,
+            0.01344233751296997
+          ],
+          [
+            0.00822022557258606,
+            -0.015140324831008911
+          ]
+        ],
+        "actor_direct_q": [
+          [
+            -1.8699392080307007,
+            2.172257661819458
+          ],
+          [
+            1.5202610492706299,
+            -1.3652666807174683
+          ]
+        ],
+        "actor_direct_dq": [
+          [
+            -0.008706748485565186,
+            0.013520941138267517
+          ],
+          [
+            0.009521842002868652,
+            -0.01374855637550354
+          ]
+        ]
+      },
+      "finite_difference_relative_frobenius_change": {
+        "full_model_current_q": {
+          "median": 0.0002929974580183625,
+          "max": 0.022881601005792618
+        },
+        "full_model_current_dq": {
+          "median": 0.00012062247697031125,
+          "max": 0.00047123798867687583
+        },
+        "actor_direct_q": {
+          "median": 0.000320836843457073,
+          "max": 0.00922416988760233
+        },
+        "actor_direct_dq": {
+          "median": 9.826129098655656e-05,
+          "max": 0.0005922274431213737
+        }
+      },
+      "recorded_target_replay_error_after10": {
+        "leg_rad": 9.5367431640625e-07,
+        "wheel_rad_s": 3.814697265625e-06
+      }
+    }
+  },
+  "method": {
+    "rows": [
+      3200,
+      3229
+    ],
+    "row_end_exclusive": true,
+    "first_300ms_rows": 16,
+    "time_base": "CSV relative bag timestamps, no resampling or filtering",
+    "state_alignment": "Previous debug row; reconstruct gyro*0.25, projected gravity from raw quaternion, commands, q-default, dq*0.05, previous raw action from recorded targets",
+    "history": "Oldest-first; first reconstructed observation repeated N times; DWAQ N=5 and ROA N=10",
+    "shared_previous_actions": "Both models receive the original ROA recorded actions. Neither model output is fed back. Late DWAQ states and action history may be out of its normal distribution.",
+    "local_sensitivity": "Centered differences of hip target angles with respect to physical current-frame hip position or velocity. Full_model_current perturbs current frame in both encoder and actor; actor_direct holds encoder outputs fixed. Older frames are unchanged.",
+    "finite_difference_steps": {
+      "q_rad": [
+        0.001,
+        0.002
+      ],
+      "dq_rad_s": [
+        0.01,
+        0.02
+      ]
+    },
+    "summary_gain": "Largest singular value of 2x2 Jacobian, summarized by median over window; position gain rad/rad, velocity gain rad/(rad/s). This is not a physical closed-loop gain or damping ratio.",
+    "freeze_current_hip": "Only actor current q,dq fixed at pre-entry values, encoder outputs preserved",
+    "freeze_all_history_hip": "Both hip q,dq replaced by pre-entry values in all history frames",
+    "zero_velocity_code": "Explicit velocity code set to zero, other codes and current inputs preserved"
+  },
+  "limitations": [
+    "Only 29 samples from a failing ROA run; not an independent DWAQ hardware rollout",
+    "Inferred FSM boundaries and approximate startup history; compare rows 10 onward separately to avoid repeated-history padding",
+    "Joint feedback/model output sensitivity does not identify actual gains, damping, stability margins, hardware delays, or sole root cause",
+    "User reports DWAQ stable startup; old deployment configuration/firmware equality not established",
+    "No physical dynamics, simulator, training, deployment or configuration changes"
+  ],
+  "direct_parameter_change_supported": false
+}

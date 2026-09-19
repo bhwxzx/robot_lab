@@ -240,6 +240,12 @@ class LWWheelRewardsCfg(RewardsCfg):
 
     action_smoothness = RewTerm(func=mdp.ActionSmoothnessPenalty, weight=0.0)
 
+    penalize_hip_roll_action = RewTerm(
+        func=mdp.specific_joint_action_penalty,
+        weight=0.0,
+        params={"action_term_name": "joint_pos", "joint_regex": ".*_hip_joint"},
+    )
+
     feet_distance_penalize = RewTerm(
         func=mdp.feet_distance_penalize,
         weight=0.0,

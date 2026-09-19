@@ -138,6 +138,7 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):
         self.rewards.stop_motion.weight = -5.0
         self.rewards.action_rate_l2.weight = -0.2
         self.rewards.action_smoothness.weight = -0.075
+        self.rewards.penalize_hip_roll_action.weight = -0.5
         self.rewards.feet_stumble.weight = 0.0
         self.rewards.leg_symmetry.weight = 0.5
         self.rewards.lazy_penalty.weight = -0.0

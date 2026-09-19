@@ -1451,3 +1451,26 @@ For further changes to these ROA options, edit the task agent configuration and 
 - Pattern-Key: correct.roa_options_in_agent_config
 
 ---
+
+## [LRN-20260919-001] correction
+
+**Logged**: 2026-09-19T03:25:11.723260+00:00
+**Priority**: medium
+**Status**: resolved
+**Area**: docs
+
+### Summary
+Archive robot_lab training-side analyses in robot_lab, keeping sim2real_test as the original hardware evidence source.
+
+### Details
+The user corrected the location of two newly generated hardware-record replay analyses. Moved the two untracked analysis directories from sim2real_test into the associated ROA run's evidence/analysis directory in robot_lab. All six files retained identical SHA-256 values and input references. Updated the run index; original hardware evidence was unchanged.
+
+### Suggested Action
+Store future training-side replay, sensitivity and policy comparison results under robot_lab/learnings/policy_tuning/<task>/<run>/evidence/analysis, with path/hash references to original data in sim2real_test. Do not add derived results to the source repository without explicit user instruction.
+
+### Metadata
+- Source: user_feedback
+- Pattern-Key: correct.training_analysis_repository
+- Related Files: learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/index.md
+
+---

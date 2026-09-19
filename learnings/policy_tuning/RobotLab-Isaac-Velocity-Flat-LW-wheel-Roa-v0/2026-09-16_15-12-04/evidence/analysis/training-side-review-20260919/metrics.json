@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "analysis_kind": "offline_reconstruction_and_open_loop_input_substitution",
+  "source_refs": {
+    "/home/server/sim2real_test/experiments/wheel/20260918-163736-oscillation/exports/joint_states.csv": {
+      "sha256": "33642ddb628e12ceed6966e659ee5eea0b36148cba3a2352184df325d88da529"
+    },
+    "/home/server/sim2real_test/experiments/wheel/20260918-163736-oscillation/analysis/incident_metrics.json": {
+      "sha256": "de496087e0c26f8072e6df5f8cc8ba40e9d489bb6d5f61dbf9016c4cceae0360"
+    },
+    "/home/server/sim2real_test/experiments/wheel/20260918-163736-oscillation/analysis/oscillation_onset_review.json": {
+      "sha256": "a0ed9d531693c3c7071511034deadf15a9b5b03cb12eef0b789b75c8371aa624"
+    },
+    "/home/server/sim2real_test/experiments/wheel/20260918-163736-oscillation/analysis/friction_reconstruction.json": {
+      "sha256": "34f495ee4be98b9c30a5be319fd2ea2d7412d2a707e559e90c6736dce7c1c69f"
+    },
+    "/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-16-15-12-04/policy.onnx": {
+      "sha256": "b5f71d83ce6b8f9acdf73b8e7c4093fefc747db8ec9a08ae6bce72cdb5e9626e"
+    },
+    "/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-16-15-12-04/policy.pt": {
+      "sha256": "6efac377c368b8c705727042fb6048dd5917404c4de79211467f2c9bc88bc0c7"
+    },
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-16_15-12-04/params/env.yaml": {
+      "sha256": "227a14a79f07ee9565924e090d2bff27931ca6d915afb2d11144cf069be0457e"
+    }
+  },
+  "policy_binding": {
+    "user_reported_training_run": "2026-09-16_15-12-04",
+    "archived_onnx_matches_incident_report_hash": true,
+    "actual_deployed_bundle_not_archived": true
+  },
+  "method": {
+    "state_alignment": "previous debug row; initial observation repeated 10 times; subsequent last actions inferred from recorded targets; no resampling/no filtering",
+    "observation_layout": "gyro*0.25, inverse-rotated gravity, zero commands, joint_position-default, joint_velocity*0.05, last raw action; 39 dims x 10 oldest-first",
+    "velocity_code_physical_scale": 2.0,
+    "substitutions": "At each recorded history, replace only stated actor inputs; all other inputs and recorded previous actions retained. Frozen hip/IMU observations replaced throughout the history; current-only hip replacement leaves history encoder outputs untouched. Fixed codes use first reconstructed policy row.",
+    "policy_window": "rows [3200,3229), inferred from target transitions; first_300ms is first 16 rows, last at 299.99090100000103 ms using CSV bag time",
+    "raw_quaternion_used_for_model_input": true,
+    "normalized_quaternion_used_for_roll_pitch": true,
+    "csv_npz_crosscheck": "All 78 numeric channels, bag timestamps and header timestamps match archived NPZ exactly",
+    "timestamp_note": "This review uses time_s from CSV (bag timestamps); older reports use 64.003259295 s for entry, which matches relative header time. No mixing of timestamp bases in calculations."
+  },
+  "caveats": [
+    "29 samples only; boundaries inferred, not recorded FSM",
+    "No measured base linear velocity; estimated velocity is reconstructed, not directly logged; cannot calculate real estimator error",
+    "Open-loop substitutions are not physically consistent closed-loop experiments or causal contribution percentages",
+    "Same-row target and feedback are not proven synchronous; device torque is reported, not externally calibrated",
+    "No code, reward, gain, scale, push, model, or robot runtime changes; no new simulation or training"
+  ],
+  "windows": {
+    "first_300ms": {
+      "baseline": {
+        "hip_target_absmax_rad": 0.9968375563621521,
+        "hip_target_step_rms_rad": 0.4537472327492075,
+        "hip_difference_from_baseline_rms_rad": 0.0
+      },
+      "zero_velocity_code": {
+        "hip_target_absmax_rad": 0.980945885181427,
+        "hip_target_step_rms_rad": 0.47202388876261503,
+        "hip_difference_from_baseline_rms_rad": 0.020061920719849254
+      },
+      "fixed_initial_velocity_code": {
+        "hip_target_absmax_rad": 0.9865564703941345,
+        "hip_target_step_rms_rad": 0.4564168241903551,
+        "hip_difference_from_baseline_rms_rad": 0.01911074116072609
+      },
+      "freeze_hip_observations": {
+        "hip_target_absmax_rad": 0.25889652967453003,
+        "hip_target_step_rms_rad": 0.11408169305287397,
+        "hip_difference_from_baseline_rms_rad": 0.37610107442826496
+      },
+      "freeze_imu_observations": {
+        "hip_target_absmax_rad": 1.010576844215393,
+        "hip_target_step_rms_rad": 0.4572724391749884,
+        "hip_difference_from_baseline_rms_rad": 0.01197668959418728
+      },
+      "freeze_current_hip_only": {
+        "hip_target_absmax_rad": 0.25555023550987244,
+        "hip_target_step_rms_rad": 0.11320233258660704,
+        "hip_difference_from_baseline_rms_rad": 0.37585485545216646
+      },
+      "fixed_initial_latent_code": {
+        "hip_target_absmax_rad": 1.0007760524749756,
+        "hip_target_step_rms_rad": 0.454553980106159,
+        "hip_difference_from_baseline_rms_rad": 0.006847951413666756
+      }
+    },
+    "full_policy_window": {
+      "baseline": {
+        "hip_target_absmax_rad": 3.678147077560425,
+        "hip_target_step_rms_rad": 1.8802351413943832,
+        "hip_difference_from_baseline_rms_rad": 0.0
+      },
+      "zero_velocity_code": {
+        "hip_target_absmax_rad": 3.5361392498016357,
+        "hip_target_step_rms_rad": 1.75632791426959,
+        "hip_difference_from_baseline_rms_rad": 0.1968325581864491
+      },
+      "fixed_initial_velocity_code": {
+        "hip_target_absmax_rad": 3.503890037536621,
+        "hip_target_step_rms_rad": 1.752512987158006,
+        "hip_difference_from_baseline_rms_rad": 0.19045604310993147
+      },
+      "freeze_hip_observations": {
+        "hip_target_absmax_rad": 1.3953355550765991,
+        "hip_target_step_rms_rad": 0.5448541393923128,
+        "hip_difference_from_baseline_rms_rad": 1.2470457474290988
+      },
+      "freeze_imu_observations": {
+        "hip_target_absmax_rad": 3.712813138961792,
+        "hip_target_step_rms_rad": 1.9072728227774152,
+        "hip_difference_from_baseline_rms_rad": 0.07643063434641514
+      },
+      "freeze_current_hip_only": {
+        "hip_target_absmax_rad": 1.2114753723144531,
+        "hip_target_step_rms_rad": 0.5504674217433732,
+        "hip_difference_from_baseline_rms_rad": 1.2529466387913548
+      },
+      "fixed_initial_latent_code": {
+        "hip_target_absmax_rad": 3.6956422328948975,
+        "hip_target_step_rms_rad": 1.8867500335662004,
+        "hip_difference_from_baseline_rms_rad": 0.03533098823724315
+      }
+    }
+  },
+  "replay": {
+    "all_targets_max_abs_error_first10_mixed_units": 0.0019308924674987793,
+    "leg_positions_max_abs_error_after10_rad": 9.5367431640625e-07,
+    "wheel_velocities_max_abs_error_after10_rad_s": 3.814697265625e-06,
+    "jit_onnx_raw_action_max_abs_difference": 3.814697265625e-06
+  },
+  "timing": {
+    "rows": 3613,
+    "policy_rows": 29,
+    "policy_start_bag_s": 64.003172979,
+    "inferred_stop_bag_s": 64.583331986,
+    "policy_bag_dt_ms_min_median_max": [
+      19.925395000001345,
+      20.00010449999934,
+      20.06924600000559
+    ],
+    "policy_header_dt_ms_min_median_max": [
+      19.953269,
+      20.0029855,
+      20.037884
+    ]
+  },
+  "observations": {
+    "command_absmax": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hip_feedback_absmax_rad": [
+      0.2618827819824219,
+      0.3797588348388672
+    ],
+    "hip_velocity_absmax_rad_s": [
+      17.429792404174805,
+      21.10500717163086
+    ],
+    "hip_target_absmax_rad": [
+      3.3725662231445312,
+      3.678147315979004
+    ],
+    "hip_device_reported_torque_absmax_Nm": [
+      138.26617431640625,
+      131.037841796875
+    ],
+    "hip_pd_demand_absmax_Nm": [
+      301.29471015930176,
+      376.7683296203613
+    ],
+    "hip_pd_reconstruction_error_Nm": 1.2636184692382812e-05,
+    "first_target_rad": [
+      0.11503993719816208,
+      -0.09573007375001907
+    ],
+    "first_feedback_rad": [
+      -0.031472206115722656,
+      0.032998085021972656
+    ],
+    "first_nominal_pd_Nm": [
+      13.204409167170525,
+      -11.567218020558357
+    ],
+    "hip_target_raw_coordinate_correlation": -0.9950831439848691,
+    "preentry_1s_roll_range_deg": [
+      0.7821484317815957,
+      0.8304574272686733
+    ],
+    "first_200ms_roll_range_deg": [
+      0.8103397114613968,
+      1.0496584224669006
+    ],
+    "reconstructed_estimated_velocity_absmax_m_s": [
+      0.7552582025527954,
+      1.4009202718734741,
+      0.9565381407737732
+    ]
+  },
+  "torque_lag_exploratory_first16_equal_15_pairs": {
+    "right_hip": {
+      "same_row_pd_vs_reported": -0.26999791356776026,
+      "previous_row_pd_vs_reported": 0.9638778908610651
+    },
+    "left_hip": {
+      "same_row_pd_vs_reported": -0.21156994631495357,
+      "previous_row_pd_vs_reported": 0.9720933078449062
+    }
+  },
+  "direct_parameter_change_supported": false,
+  "repository_heads": {
+    "/home/server/liufengrong/robot_lab": "59adebdb128251866804255da7086c2cc8e08f21",
+    "/home/server/sim2real_test": "df2eecd44a46d4f97d9be339e3c5917a4331e515",
+    "/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-16-15-12-04": "28309563401f6a868dcb58d2db952245f345fc27"
+  }
+}
