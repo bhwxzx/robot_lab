@@ -34,3 +34,10 @@
 - [逐帧输出与 2×2 雅可比](evidence/analysis/roa-hip-penalty-same-observation-20260921/replay_and_sensitivity.csv)
 
 固定使用旧策略实机事故的 29 帧观测与记录动作历史，CPU 离线推理；不是新版的实机闭环轨迹。新版早期髋目标有所降低，但历史填满后的 200–300 ms 位置敏感度接近旧版，整段目标仍被放大至约 3.41 rad；不能判定实机振荡已解决。
+
+## 导出归档 20260921
+
+- 用户选定本轮 model_49999.pt，已完成 JIT/ONNX 导出及8个时序样本（含reset）一致性校验。
+- [选择记录](evidence/checkpoint_selection/selection-deploy-20260921-001.json)、[导出校验](evidence/export/deploy-20260921-001/receipt.json)、[归档记录](evidence/export/deploy-20260921-001/archive-receipt.json)。
+- 归档目录：`/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-19-11-41-48`，按训练开始时间命名。包含 policy.pt、policy.onnx、策略说明.txt、archive_manifest.json；说明保留站立漂移退步及实机回放限制。
+- 仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。

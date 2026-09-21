@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "archive_authorized": true,
+  "storage_root": "/home/server/liufengrong/policy_storage",
+  "collection": "LW/wheel_loco",
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+  "algorithm": "ROAPPO",
+  "runner": "OnPolicyRunnerROA",
+  "selected_checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-19_11-41-48/model_49999.pt",
+    "sha256": "fed8b88dc1bf7f0805cb039595233b1d49128739bc8888a434da70785740b053",
+    "iteration": 49999
+  },
+  "source": {
+    "commit": "3e90155c24c56279fe41ae6c751b77987481d422",
+    "dirty": false
+  },
+  "parameters": {
+    "training_run": "2026-09-19_11-41-48",
+    "actual_training_commit": "59adebdb128251866804255da7086c2cc8e08f21",
+    "actual_training_dirty": true,
+    "completed_iterations": 50000,
+    "use_velocity_estimation": true,
+    "hip_action_L1_penalty_weight": -0.5,
+    "history_length": 10,
+    "single_frame_observation_dim": 39,
+    "control_period_s": 0.02,
+    "seed": 42
+  },
+  "artifacts": {
+    "jit": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evidence/export/deploy-20260921-001/policy.pt",
+      "sha256": "7f3bb5fde53b317e28d694d6da54c7af37573904d4068f12b3288ed42fe68b6f"
+    },
+    "onnx": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evidence/export/deploy-20260921-001/policy.onnx",
+      "sha256": "689395ee03276cb3b2dcaa37db58c2b4921069df56c8b884007ce3abbafcbfcf"
+    }
+  },
+  "evaluation": {
+    "results": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/baseline-no-push-a01/result.json",
+        "sha256": "286651109149b7f750e880f0734f121c42976b465d496193dcdede4e6f61aaca"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/current-push-a01/result.json",
+        "sha256": "f6a63088e2e8948bfcb4ee1d07238ddf3ac7d34d38272284e60e305bba0b12bd"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/nominal-no-noise-a01/result.json",
+        "sha256": "043180135f2f60092c39d6e8d0969206bace9caa367a40c9f8e8345abad35d53"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/nominal-training-noise-a01/result.json",
+        "sha256": "cb297cdf376f70b27bffd4e0d04fa3f0186d71ac5eda62c9b4f486799bccfcb1"
+      }
+    ]
+  },
+  "export_receipt": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evidence/export/deploy-20260921-001/receipt.json",
+    "sha256": "74064e2a8ecded2136c99bbdd051312a3262352f30c6f3847120cb959d9511fd"
+  },
+  "description_notes": "本策略为 2026-09-19_11-41-48 训练的 wheel flat ROA，checkpoint model_49999.pt，内部下一轮迭代计数 50000。显式速度估计开启，新增双髋原始动作 L1 幅度惩罚权重 -0.5。其他训练配置与 2026-09-16_15-12-04 有速度估计版本相同（忽略 log_dir）。\n归档目录按训练开始时间命名：2026-09-19-11-41-48；不是导出时间。\n来源说明：清单 source 是评估上下文 3e90155c24c56279fe41ae6c751b77987481d422，并非实际训练提交。W&B 记录训练 commit 59adebdb128251866804255da7086c2cc8e08f21，训练时包含未提交的双髋奖励修改；已将保存的 git diff 与当前相关源码逐文件比对，内容一致。执行导出时项目 HEAD 为 07109e1；其较评估上下文仅新增评估证据。\n输入 float32 [1,390]，10 帧 × 39 维，历史从旧到新展平；输出 float32 [1,10]。单帧顺序：机身角速度 ×0.25、投影重力、指令、相对关节位置（含轮位置零占位）、关节速度 ×0.05、上一帧原始动作。关节顺序：右髋、左髋、右大腿、左大腿、右小腿、左小腿、右踝、左踝、右轮、左轮。前8维为位置动作 scale=0.25，后2维轮速度 scale=1；控制周期20ms。Actor 观测归一化关闭，actor 输入为 [current_obs, code_vel, hist_latent]，环境负责历史重置。\n导出原始 student 策略，包含历史编码器和速度估计；诊断中的冻结髋输入、清零估计速度均未写入模型。ONNX 为 static_batch_1_simplified、opset17。Native/CPU/JIT/ONNX 8个时序样本含中途reset通过，JIT误差0、ONNX误差2.384185791015625e-6，阈值1e-5。\n固定seed42四场景Native评估均无跌倒或重置；运动4环境42秒，无推力/有推力XY速度RMSE为0.14932/0.18747m/s，yaw RMSE为0.23613/0.25881rad/s。\n重要限制：纯平面、标称动力学、无延迟/无推扰、零指令站立1环境120秒，第40–120秒净漂移无观测噪声0.881m、有训练观测噪声2.014m，较旧版0.0021m/0.0418m明显退步。新旧有噪声髋目标RMS为0.0343/0.2493rad，但实际髋角速度RMS为0.1403/0.1018rad/s，动作目标减小不代表实际运动更平稳。\n同实机观测开环回放：新版前300ms髋目标峰值0.791rad，旧ROA0.997rad；历史填满200–300ms位置敏感度中位数4.146，旧ROA4.208，旧DWAQ2.746；新版仍有较强反馈敏感度。使用旧事故的29帧状态与动作历史，不能代替新版实机闭环测试，不能判定已解决实机启动振荡。\n仅固定seed仿真与开环回放证据，无新版实机验证，无已批准收敛判据。训练时髋Kp/Kd标称90/3，不代表部署时可忽略时延、标定、观测尺度和历史初始化契约。\n仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+}
