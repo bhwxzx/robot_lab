@@ -1,0 +1,281 @@
+{"argv": ["/home/young/miniconda3/envs/isaacsim-5.1/bin/python", "/home/young/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", "--task", "RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0", "--run_id", "2026-09-16_15-45-12", "--batch_id", "restitution-ablation-20260919-001", "--evaluation_id", "r050-turn-right-a01", "--candidate_id", "model_50000", "--checkpoint", "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-16_15-45-12/model_50000.pt", "--checkpoint_sha256", "f8956bb1f9b43bdc638a52dbaf0a3301b022a4f967b581f2ed40663eb797d16a", "--artifact_kind", "native", "--artifact_path", "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-16_15-45-12/model_50000.pt", "--artifact_sha256", "f8956bb1f9b43bdc638a52dbaf0a3301b022a4f967b581f2ed40663eb797d16a", "--run_identity_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/provenance/context-8cf8f15f947d54068f7288642447bb4246948d3a2ca91dac15d47ec25f5645ac.json", "--run_identity_file_sha256", "8cf8f15f947d54068f7288642447bb4246948d3a2ca91dac15d47ec25f5645ac", "--effective_config_reference_json", "{\"path\": \"/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/provenance/config-636927f3c2285b54bfb199c38b5fecb129ae5862a1aec5c24e96166adcc15c9c.json\", \"sha256\": \"636927f3c2285b54bfb199c38b5fecb129ae5862a1aec5c24e96166adcc15c9c\"}", "--scenario_evidence_reference_json", "{\"path\": \"/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/provenance/scenario-7a5d0031b0d1f112268fb1288f193ebc679925493a319fb416015127d598ebcf.json\", \"sha256\": \"7a5d0031b0d1f112268fb1288f193ebc679925493a319fb416015127d598ebcf\"}", "--scenario_id", "turn-right", "--scenario_overrides_json", "{\"curriculum.terrain_levels\": null, \"episode_length_s\": 65.0, \"events.randomize_push_robot\": null, \"scene.terrain.terrain_generator\": null, \"scene.terrain.terrain_type\": \"plane\", \"events.randomize_rigid_body_material.params.restitution_range\": [0.0, 0.5]}", "--command_schedule_json", "[{\"command\": [0, 0, 0], \"end_step\": 99, \"start_step\": 0}, {\"command\": [0, 0, -0.5], \"end_step\": 749, \"start_step\": 100}, {\"command\": [0, 0, 0], \"end_step\": 999, \"start_step\": 750}]", "--duration_steps", "1000", "--num_envs", "1", "--seed", "42", "--result_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/restitution-ablation-20260919-001/raw/r050-turn-right-a01/result.json", "--telemetry_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/restitution-ablation-20260919-001/raw/r050-turn-right-a01/telemetry.json.gz", "--telemetry_stride", "1", "--headless", "--device", "cuda:0", "--require_idle_gpu", "--no_video"]}
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/young/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Leg.flat_env_cfg:LWLegFlatAmpRoaEnvCfg
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Leg.agents.rsl_rl_amp_roa_cfg:LWFlatAmpRoaRunnerCfg
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-09-19_15-31-57.log[0m
+[36m======================================================================================[0m
+
+[33m15:31:57 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m15:31:57 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[INFO]: Time taken for scene creation : 2.224593 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 1
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[INFO]: Time taken for simulation start : 0.416561 seconds
+[33m15:32:00 [velocity_command.py] WARNING: The velocity command has the 'ranges.heading' attribute set to '(-0.5235987755982988, 0.5235987755982988)' but the heading command is not active. Consider setting the flag for the heading command to True.[0m
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++------------------------------------------------+
+|              Active Command Terms              |
++-------+---------------+------------------------+
+| Index | Name          |          Type          |
++-------+---------------+------------------------+
+|   0   | base_velocity | UniformVelocityCommand |
++-------+---------------+------------------------+
+
+[INFO] Event Manager:  <EventManager> contains 2 active terms.
++------------------------------------------+
+|  Active Event Terms in Mode: 'startup'   |
++-------+----------------------------------+
+| Index | Name                             |
++-------+----------------------------------+
+|   0   | randomize_rigid_body_material    |
+|   1   | randomize_rigid_body_mass_base   |
+|   2   | randomize_rigid_body_mass_others |
+|   3   | randomize_com_positions          |
+|   4   | add_joint_default_pos            |
++-------+----------------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++--------+-----------------------------+
+| Index  | Name                        |
++--------+-----------------------------+
+|   0    | randomize_reset_joints      |
+|   1    | randomize_actuator_gains    |
+|   2    | randomize_reset_base        |
++--------+-----------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 2 active terms.
++------------------------------------+
+|  Active Action Terms (shape: 10)   |
++--------+-------------+-------------+
+| Index  | Name        |   Dimension |
++--------+-------------+-------------+
+|   0    | joint_pos   |           8 |
+|   1    | joint_vel   |           2 |
++--------+-------------+-------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 4 groups.
++-------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (10, 41)) |
++-----------+--------------------------------+----------------+
+|   Index   | Name                           |     Shape      |
++-----------+--------------------------------+----------------+
+|     0     | base_ang_vel                   |    (10, 3)     |
+|     1     | projected_gravity              |    (10, 3)     |
+|     2     | velocity_commands              |    (10, 3)     |
+|     3     | joint_pos                      |    (10, 10)    |
+|     4     | joint_vel                      |    (10, 10)    |
+|     5     | actions                        |    (10, 10)    |
+|     6     | gait_phase                     |    (10, 2)     |
++-----------+--------------------------------+----------------+
++---------------------------------------------------------+
+| Active Observation Terms in Group: 'critic' (shape: (74,)) |
++-----------+---------------------------------+-----------+
+|   Index   | Name                            |   Shape   |
++-----------+---------------------------------+-----------+
+|     0     | base_ang_vel                    |    (3,)   |
+|     1     | projected_gravity               |    (3,)   |
+|     2     | velocity_commands               |    (3,)   |
+|     3     | joint_pos                       |   (10,)   |
+|     4     | joint_vel                       |   (10,)   |
+|     5     | actions                         |   (10,)   |
+|     6     | gait_phase                      |    (2,)   |
+|     7     | base_lin_vel                    |    (3,)   |
+|     8     | base_mass                       |    (1,)   |
+|     9     | feet_material                   |    (6,)   |
+|     10    | actuator_gains                  |   (20,)   |
+|     11    | base_com                        |    (3,)   |
++-----------+---------------------------------+-----------+
++---------------------------------------------------------+
+| Active Observation Terms in Group: 'amp' (shape: (10, 22)) |
++------------+----------------------------+---------------+
+|   Index    | Name                       |     Shape     |
++------------+----------------------------+---------------+
+|     0      | joint_pos                  |    (10, 8)    |
+|     1      | joint_vel                  |    (10, 8)    |
+|     2      | end_effort_pos             |    (10, 6)    |
++------------+----------------------------+---------------+
++-----------------------------------------------------------+
+| Active Observation Terms in Group: 'privileged' (shape: (30,)) |
++-------------+-------------------------------+-------------+
+|    Index    | Name                          |    Shape    |
++-------------+-------------------------------+-------------+
+|      0      | base_mass                     |     (1,)    |
+|      1      | feet_material                 |     (6,)    |
+|      2      | actuator_gains                |    (20,)    |
+|      3      | base_com                      |     (3,)    |
++-------------+-------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 3 active terms.
++------------------------------------------+
+|         Active Termination Terms         |
++-------+-----------------------+----------+
+| Index | Name                  | Time Out |
++-------+-----------------------+----------+
+|   0   | time_out              |   True   |
+|   1   | terrain_out_of_bounds |   True   |
+|   2   | illegal_contact       |  False   |
++-------+-----------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 37 active terms.
++----------------------------------------------+
+|             Active Reward Terms              |
++-------+--------------------------+-----------+
+| Index | Name                     |    Weight |
++-------+--------------------------+-----------+
+|   0   | is_terminated            |    -200.0 |
+|   1   | lin_vel_z_l2             |      -2.0 |
+|   2   | ang_vel_xy_l2            |      -0.1 |
+|   3   | flat_orientation_l2      |      -5.0 |
+|   4   | base_height_l2           |     -10.0 |
+|   5   | joint_torques_l2         | -1.25e-05 |
+|   6   | joint_vel_l2             |    -5e-05 |
+|   7   | joint_acc_l2             |  -2.5e-07 |
+|   8   | joint_pos_limits         |      -2.0 |
+|   9   | joint_power              |    -2e-05 |
+|   10  | stand_still              |      -3.0 |
+|   11  | action_rate_l2           |      -0.2 |
+|   12  | undesired_contacts       |      -5.0 |
+|   13  | track_lin_vel_xy_exp     |       5.0 |
+|   14  | track_ang_vel_z_exp      |       4.0 |
+|   15  | feet_air_time            |       1.0 |
+|   16  | feet_slide               |     -0.25 |
+|   17  | feet_clearance           |       2.0 |
+|   18  | feet_distance_y_exp      |       3.0 |
+|   19  | feet_landing_vel         |     -0.25 |
+|   20  | joint_vel_wheel_l2       |    -0.005 |
+|   21  | joint_acc_wheel_l2       |  -1.5e-07 |
+|   22  | joint_torques_wheel_l2   |  -0.00016 |
+|   23  | bipedal_gait_reward      |       2.0 |
+|   24  | feet_distance_penalize   |    -100.0 |
+|   25  | stop_motion              |      -3.0 |
+|   26  | action_smoothness        |    -0.075 |
+|   27  | keep_alive               |      0.15 |
+|   28  | joint_deviation_hip      |      -0.3 |
+|   29  | joint_deviation_ankle    |      -0.2 |
+|   30  | joint_deviation_legs     |     -0.02 |
+|   31  | body_orientation_l2      |      -3.0 |
+|   32  | ankle_torque             |    -0.001 |
+|   33  | ankle_torque_limit       |     -0.01 |
+|   34  | ankle_action             |    -0.002 |
+|   35  | penalize_hip_roll_action |      -1.0 |
+|   36  | feet_impact_reduction    |   -0.0025 |
++-------+--------------------------+-----------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 policy :  ['policy']
+	 critic :  ['critic']
+	 amp :  ['amp']
+	 privileged :  ['privileged']
+--------------------------------------------------------------------------------
+ActorCriticROA.__init__ 收到未知参数，将被忽略: ['state_dependent_std']
+[AMP] Time between frames (step_dt) set to: 0.02s
+traj_len:9.966000000000001
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.35_vy0.00_wz-0.15.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.35_vy0.00_wz0.00.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.35_vy0.00_wz0.00.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.35_vy0.00_wz0.15.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.35_vy0.00_wz0.15.txt.
+traj_len:9.966000000000001
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.70_vy0.00_wz-0.15.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.70_vy0.00_wz0.00.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.70_vy0.00_wz0.00.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.70_vy0.00_wz0.15.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx-0.70_vy0.00_wz0.15.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz-0.15.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz-0.15.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz0.00.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz0.00.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz0.15.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.00_vy0.00_wz0.15.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz-0.15.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz-0.15.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz0.00.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz0.00.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz0.15.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.35_vy0.00_wz0.15.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz-0.15.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz-0.15.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz0.00.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz0.00.txt.
+traj_len:9.966000000000001
+[Warning] LoopMode=Wrap ignored for non-continuous motion: source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz0.15.txt. History boundaries will be clamped instead.
+Loaded 9.966000000000001s. motion from source/robot_lab/robot_lab/datasets/LW/motion_amp_expert/motion_vx0.70_vy0.00_wz0.15.txt.
+Preloading 200000 transitions
+Finished preloading
+AMP Observation Dim: 220
+AMP Frame Dim for Normalizer: 22
+[AMP_ROA_PPO] 忽略了多余的配置参数: ['rnd_cfg', 'symmetry_cfg']
+[INFO] Evaluation result: /home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/restitution-ablation-20260919-001/raw/r050-turn-right-a01/result.json
+Loading user config located at: '/home/young/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/young/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20260919_153151.log
+2026-09-19T07:31:51Z [111ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-09-19T07:31:52Z [402ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-09-19T07:31:52Z [407ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4080 SUPER    | Yes: 0 |     | 16376   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2702      | eb541e47.. |
+|     |                                  |        |     |            | 1         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-138-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: Intel(R) Core(TM) i7-14700KF
+| Cores: 20 | Logical Cores: 28
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 64085 | Free Memory: 57208
+| Total Page/Swap (MB): 2047 | Free Page/Swap: 2047
+|---------------------------------------------------------------------------------------------|
+2026-09-19T07:31:55Z [3,403ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-09-19T07:31:55Z [3,411ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-09-19T07:32:00Z [9,124ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_goal.
+2026-09-19T07:32:00Z [9,124ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_current.

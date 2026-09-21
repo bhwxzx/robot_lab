@@ -7,6 +7,7 @@
 - [flat-review-20260917-001](<evaluations/flat-review-20260917-001/report.md>)：7 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/flat-review-20260917-001/manifest.json>)。
 - [flat-review-smoke-20260917-001](<evaluations/flat-review-smoke-20260917-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/flat-review-smoke-20260917-001/manifest.json>)。
 - [matched-plane-20260917-001](<evaluations/matched-plane-20260917-001/report.md>)：3 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/matched-plane-20260917-001/manifest.json>)。
+- [restitution-ablation-20260919-001](<evaluations/restitution-ablation-20260919-001/report.md>)：9 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/restitution-ablation-20260919-001/manifest.json>)。
 
 ## 原始记录与生命周期
 
@@ -39,3 +40,11 @@
 - [推送复核](<evidence/export/export-50000-20260917-001/push-verification.json>)。
 - 归档位置：/home/young/liufengrong/policy_storage/LW/leg_loco/2026-09-16-15-45-12/；远端 master 提交 724c8a0c5afb15af377e23ca1514ceaf79a8429b。
 - 仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。
+
+## 恢复系数单变量对照（2026-09-19）
+
+- [九场景批次报告](<evaluations/restitution-ablation-20260919-001/report.md>)：有速度估计版，三种恢复系数 × 三个转向场景，共 180 秒。
+- [逐窗口指标与差异核算](<evidence/assessment/restitution-comparison-20260919-001.json>)
+- [指标对比图](<evidence/assessment/restitution-metrics-20260919-001.png>)
+- [姿态与转速时序图](<evidence/assessment/restitution-traces-20260919-001.png>)
+- [收尾校验](<evidence/assessment/restitution-verification-20260919-001.json>)
