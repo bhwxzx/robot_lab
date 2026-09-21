@@ -90,7 +90,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.joint_acc_wheel_l2.weight = -1.5e-5
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
         # terminations
-        self.terminations.ee_body_pos.params["body_names"] = [self.foot_link_name]
+        self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands
         self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/wheel_to_leg_transform_60hz.npz"
         self.commands.motion.anchor_body_name = "base_link"

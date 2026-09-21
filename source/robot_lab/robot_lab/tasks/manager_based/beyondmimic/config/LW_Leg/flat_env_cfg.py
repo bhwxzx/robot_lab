@@ -79,14 +79,20 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         # events
         self.events.add_joint_default_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.events.base_com.params["asset_cfg"].body_names = self.base_link_name
+        self.events.randomize_rigid_body_mass_base.params["asset_cfg"].body_names = [self.base_link_name]
+        self.events.randomize_rigid_body_mass_others.params["asset_cfg"].body_names = [
+            "right_.*", "left_.*",
+        ]
         # rewards
         self.rewards.action_rate_l2.weight = -0.02
         self.rewards.action_smoothness.weight = -0.02
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
-        self.rewards.torque_limit.weight = -1.0
+        self.rewards.torque_limit.weight = -0.2
+        self.rewards.joint_vel_wheel_l2 = None
+        self.rewards.joint_acc_wheel_l2 = None
         # terminations
-        self.terminations.ee_body_pos.params["body_names"] = [self.foot_link_name]
+        self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands
         self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/leg_to_wheel_transform_60hz.npz"
         self.commands.motion.anchor_body_name = "base_link"

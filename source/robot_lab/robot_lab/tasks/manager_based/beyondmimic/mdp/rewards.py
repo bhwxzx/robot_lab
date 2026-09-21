@@ -151,9 +151,13 @@ def soft_torque_limit_penalty(
     """
     asset: Articulation = env.scene[asset_cfg.name]
     
-    effort_limits = asset.data.joint_effort_limits[:, asset_cfg.joint_ids]
+    # Explicit actuators use a large solver limit to avoid double-clipping.
+    # Resolve their actual limits in native joint order before selecting joints.
+    effort_limits = asset.data.joint_effort_limits.clone()
+    for actuator in asset.actuators.values():
+        effort_limits[:, actuator.joint_indices] = actuator.effort_limit
     
-    threshold = effort_limits * ratio
+    threshold = effort_limits[:, asset_cfg.joint_ids] * ratio
     
     torques = asset.data.applied_torque[:, asset_cfg.joint_ids]
     

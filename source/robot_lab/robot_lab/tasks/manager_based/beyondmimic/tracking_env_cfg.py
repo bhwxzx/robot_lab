@@ -183,12 +183,46 @@ class EventCfg:
         },
     )
 
+    randomize_rigid_body_mass_base = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=""),
+            "mass_distribution_params": (-1.0, 3.0),  # (-1.0, 3.0)
+            "operation": "add",
+            "recompute_inertia": True,
+        },
+    )
+
+    randomize_rigid_body_mass_others = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
+            "mass_distribution_params": (0.8, 1.2),
+            "operation": "scale",
+            "recompute_inertia": True,
+        },
+    )
+
     base_com = EventTerm(
         func=mdp.randomize_rigid_body_com,
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
-            "com_range": {"x": (-0.025, 0.025), "y": (-0.05, 0.05), "z": (-0.05, 0.05)},
+            "com_range": {"x": (-0.075, 0.075), "y": (-0.075, 0.075), "z": (-0.075, 0.075)},
+        },
+    )
+
+    randomize_actuator_gains = EventTerm(
+        func=mdp.randomize_actuator_gains,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
+            "stiffness_distribution_params": (0.8, 1.2), # (0.5, 2.0)
+            "damping_distribution_params": (0.8, 1.2), # (0.5, 2.0)
+            "operation": "scale",
+            "distribution": "uniform", 
         },
     )
 
