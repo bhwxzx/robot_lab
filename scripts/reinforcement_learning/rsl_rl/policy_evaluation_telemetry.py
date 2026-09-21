@@ -68,6 +68,82 @@ DWAQ_DIAGNOSTIC_SIGNALS = (
     "dwaq_latent", "dwaq_estimated_velocity_action", "dwaq_true_velocity_action",
 )
 
+ROA_SENSOR_DELAY_OPTION = "evaluation.roa_sensor_delay_steps"
+ROA_SENSOR_DELAY_SIGNALS = (
+    "roa_sensor_source_step", "roa_sensor_age_s",
+    "roa_fresh_policy_frame", "roa_delayed_policy_frame",
+)
+ROA_SENSOR_COLUMNS = (*range(6), *range(9, 29))
+ROA_CURRENT_COLUMNS = (*range(6, 9), *range(29, 39))
+
+
+class RoaSensorDelay:
+    """One policy-tick sensor delay, after corruption/scaling, before history.
+
+    This evaluation-only adapter leaves commands, previous raw actions, critic
+    labels and privileged inputs unchanged. Each call consumes one pre-action
+    frame. Startup and each reset fill with the first available new frame.
+    Zero delay is an exact bypass, including the environment's full history.
+    """
+
+    def __init__(self, delay_steps, step_dt):
+        if type(delay_steps) is not int or delay_steps not in (0, 1):
+            raise ValueError("ROA sensor delay supports only zero or one policy step")
+        if not math.isclose(step_dt, 0.02, rel_tol=0, abs_tol=1e-9):
+            raise ValueError("ROA sensor delay requires the 20 ms control contract")
+        self.delay_steps = delay_steps
+        self.step_dt = step_dt
+        self.last_step = -1
+        self.frames = self.sources = self.history = self.initialized = None
+
+    def reset(self, dones):
+        import torch
+        if self.initialized is not None:
+            mask = torch.as_tensor(dones, device=self.initialized.device, dtype=torch.bool)
+            if mask.shape != self.initialized.shape:
+                raise ValueError("ROA sensor delay reset mask shape mismatch")
+            self.initialized[mask] = False
+
+    def advance(self, observations, step):
+        import torch
+        if type(step) is not int or step != self.last_step + 1:
+            raise ValueError("ROA sensor delay must advance exactly once per policy step")
+        original = observations["policy"]
+        if original.ndim != 3 or tuple(original.shape[1:]) != (10, 39):
+            raise ValueError("ROA sensor delay requires time-major [N,10,39] history")
+        if not torch.isfinite(original).all():
+            raise ValueError("nonfinite ROA sensor delay input")
+        fresh = original[:, -1].detach().clone()
+        if self.frames is None:
+            self.frames = fresh[:, None].repeat(1, self.delay_steps + 1, 1)
+            self.sources = torch.full(self.frames.shape[:2], step, device=fresh.device, dtype=torch.long)
+            self.history = original.detach().clone()
+            self.initialized = torch.zeros(fresh.shape[0], device=fresh.device, dtype=torch.bool)
+        if fresh.shape != self.frames[:, 0].shape:
+            raise ValueError("ROA sensor delay batch shape changed")
+        self.frames = torch.cat((self.frames[:, 1:], fresh[:, None]), dim=1)
+        self.sources = torch.cat((self.sources[:, 1:], torch.full_like(self.sources[:, :1], step)), dim=1)
+        first = ~self.initialized
+        self.frames[first] = fresh[first, None]
+        self.sources[first] = step
+        delayed = fresh.clone()
+        delayed[:, ROA_SENSOR_COLUMNS] = self.frames[:, 0, ROA_SENSOR_COLUMNS]
+        self.history = torch.cat((self.history[:, 1:], delayed[:, None]), dim=1)
+        self.history[first] = delayed[first, None]
+        self.initialized[:] = True
+        self.last_step = step
+        result = observations
+        if self.delay_steps:
+            result = observations.clone()
+            result["policy"] = self.history.clone()
+        snapshot = {
+            "roa_sensor_source_step": self.sources[:, :1].clone(),
+            "roa_sensor_age_s": (step - self.sources[:, :1]).to(torch.float64) * self.step_dt,
+            "roa_fresh_policy_frame": fresh,
+            "roa_delayed_policy_frame": delayed,
+        }
+        return result, snapshot
+
 
 def capture_dwaq_diagnostics(policy, observations, actual_velocity, velocity_scale):
     """Replace only deterministic DWAQ velocity before actor normalization.

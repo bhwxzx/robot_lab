@@ -143,6 +143,47 @@ def _load_json_object(path: Path, *, label: str) -> dict[str, Any]:
     return value
 
 
+def validate_roa_sensor_delay(telemetry: dict, delay_steps: int) -> None:
+    """Recheck the recorded temporal contract from lossless frames, including resets."""
+    from policy_evaluation_telemetry import ROA_SENSOR_COLUMNS, ROA_CURRENT_COLUMNS
+    dt = telemetry.get("step_dt_seconds")
+    if (type(delay_steps) is not int or delay_steps not in (0, 1)
+            or isinstance(dt, bool) or not isinstance(dt, (int, float))
+            or not math.isclose(dt, 0.02, rel_tol=0, abs_tol=1e-9)
+            or telemetry.get("stride") != 1
+            or telemetry.get("inputs", {}).get("resource_mode", {}).get("telemetry_stride") != 1):
+        raise EvaluationEvidenceError("invalid ROA sensor delay period or telemetry stride")
+    samples = telemetry.get("samples", [])
+    if not samples:
+        raise EvaluationEvidenceError("ROA sensor delay requires samples")
+    reset_step = 0
+    for step, sample in enumerate(samples):
+        if sample.get("step") != step or type(sample.get("done")) is not bool:
+            raise EvaluationEvidenceError("ROA sensor delay requires consecutive steps and reset flags")
+        source = max(reset_step, step - delay_steps)
+        source_values = sample.get("roa_sensor_source_step")
+        ages = sample.get("roa_sensor_age_s")
+        if (not isinstance(source_values, list) or len(source_values) != 1
+                or isinstance(source_values[0], bool) or source_values[0] != source
+                or not isinstance(ages, list) or len(ages) != 1
+                or isinstance(ages[0], bool) or not isinstance(ages[0], (int, float))
+                or not math.isclose(ages[0], (step - source) * dt, rel_tol=0, abs_tol=1e-9)):
+            raise EvaluationEvidenceError("ROA sensor source step/age mismatch")
+        for name in ("roa_fresh_policy_frame", "roa_delayed_policy_frame"):
+            values = sample.get(name)
+            if (not isinstance(values, list) or len(values) != 39
+                    or any(isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x) for x in values)):
+                raise EvaluationEvidenceError("invalid ROA sensor frame")
+        fresh = sample["roa_fresh_policy_frame"]
+        delayed = sample["roa_delayed_policy_frame"]
+        source_frame = samples[source]["roa_fresh_policy_frame"]
+        if (any(delayed[i] != source_frame[i] for i in ROA_SENSOR_COLUMNS)
+                or any(delayed[i] != fresh[i] for i in ROA_CURRENT_COLUMNS)):
+            raise EvaluationEvidenceError("ROA sensor frame does not match source/current channels")
+        if sample["done"]:
+            reset_step = step + 1
+
+
 def validate_scenario_contract(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict) or set(value) != SCENARIO_FIELDS:
         raise EvaluationEvidenceError(
@@ -154,7 +195,12 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
         raise EvaluationEvidenceError("scenario_overrides must be an object")
     for key, setting in value["scenario_overrides"].items():
         if key.startswith("evaluation."):
-            from policy_evaluation_telemetry import ROA_CONTROL_MODES, DWAQ_CONTROL_MODES
+            from policy_evaluation_telemetry import ROA_CONTROL_MODES, DWAQ_CONTROL_MODES, ROA_SENSOR_DELAY_OPTION
+            if key == ROA_SENSOR_DELAY_OPTION:
+                if (type(setting) is not int or setting not in (0, 1)
+                        or value["scenario_overrides"].get("evaluation.roa_mode") != "student"):
+                    raise EvaluationEvidenceError("ROA sensor delay requires student control and zero or one step")
+                continue
             modes = {"evaluation.roa_mode": ROA_CONTROL_MODES,
                      "evaluation.dwaq_mode": DWAQ_CONTROL_MODES}
             if key not in modes or setting not in modes[key]:
@@ -818,6 +864,9 @@ def validate_evaluation_bundle(
         velocity_enabled = validate_roa_velocity_mode(diagnostic, inputs.get("effective_config"))
         try:
             required = set(roa_diagnostic_signals(roa_mode, velocity_enabled))
+            from policy_evaluation_telemetry import ROA_SENSOR_DELAY_OPTION, ROA_SENSOR_DELAY_SIGNALS
+            if ROA_SENSOR_DELAY_OPTION in scenario_contract["scenario_overrides"]:
+                required.update(ROA_SENSOR_DELAY_SIGNALS)
         except ValueError as exc:
             raise EvaluationEvidenceError(str(exc)) from exc
         if not required.issubset(telemetry.get("required_signals", [])):
@@ -834,6 +883,8 @@ def validate_evaluation_bundle(
             raise EvaluationEvidenceError("ROA diagnostic sample count mismatch")
         if any(not telemetry.get("signal_status", {}).get(name, {}).get("complete") for name in required):
             raise EvaluationEvidenceError("incomplete ROA diagnostic signals")
+        if ROA_SENSOR_DELAY_OPTION in scenario_contract["scenario_overrides"]:
+            validate_roa_sensor_delay(telemetry, scenario_contract["scenario_overrides"][ROA_SENSOR_DELAY_OPTION])
 
     dwaq_mode = scenario_contract["scenario_overrides"].get("evaluation.dwaq_mode")
     if dwaq_mode is not None:

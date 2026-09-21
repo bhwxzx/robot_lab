@@ -20,6 +20,9 @@ from policy_evaluation_telemetry import (
     ROA_ABLATION_MODES,
     roa_diagnostic_signals,
     capture_roa_diagnostics,
+    RoaSensorDelay,
+    ROA_SENSOR_DELAY_OPTION,
+    ROA_SENSOR_DELAY_SIGNALS,
     DWAQ_DIAGNOSTIC_SIGNALS,
     capture_dwaq_diagnostics,
     BodyJitterTracker,
@@ -571,6 +574,11 @@ def _evaluate(
     dwaq_mode = evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.dwaq_mode")
     roa_velocity_enabled = getattr(agent_cfg.policy, "use_velocity_estimation", True)
     diagnostic_signals = roa_diagnostic_signals(roa_mode, roa_velocity_enabled) if roa_mode else ()
+    sensor_delay_steps = evaluation_plan.scenario_contract["scenario_overrides"].get(ROA_SENSOR_DELAY_OPTION)
+    if sensor_delay_steps is not None:
+        if args_cli.telemetry_stride != 1:
+            raise ValueError("ROA sensor delay requires lossless per-step telemetry")
+        diagnostic_signals += ROA_SENSOR_DELAY_SIGNALS
     if dwaq_mode is not None:
         diagnostic_signals = DWAQ_DIAGNOSTIC_SIGNALS
         if (agent_cfg.class_name != "OnPolicyRunnerDwaq" or args_cli.artifact_kind != "native"
@@ -584,7 +592,7 @@ def _evaluate(
     for dotted_path, value in evaluation_plan.scenario_contract[
         "scenario_overrides"
     ].items():
-        if dotted_path in ("evaluation.roa_mode", "evaluation.dwaq_mode"):
+        if dotted_path in ("evaluation.roa_mode", "evaluation.dwaq_mode", ROA_SENSOR_DELAY_OPTION):
             continue
         _set_dotted(env_cfg, dotted_path, value)
     if command_schedule:
@@ -646,6 +654,15 @@ def _evaluate(
                 "base_velocity command term does not support deterministic scheduling"
             )
     observations = env.get_observations()
+    sensor_delay = None
+    if sensor_delay_steps is not None:
+        manager = env.unwrapped.observation_manager
+        if (manager.active_terms["policy"] != ["base_ang_vel", "projected_gravity", "velocity_commands",
+                                               "joint_pos", "joint_vel", "actions"]
+                or [tuple(shape) for shape in manager.group_obs_term_dim["policy"]]
+                != [(10, 3), (10, 3), (10, 3), (10, 10), (10, 10), (10, 10)]):
+            raise ValueError("ROA sensor delay observation layout differs from the approved wheel contract")
+        sensor_delay = RoaSensorDelay(sensor_delay_steps, float(env.unwrapped.step_dt))
     camera_offset = _parse_camera_offset(args_cli.follow_camera_offset_json)
     if args_cli.follow_robot_camera:
         _update_follow_camera(env, args_cli.telemetry_env_index, camera_offset)
@@ -825,11 +842,17 @@ def _evaluate(
         with torch.inference_mode():
             roa_snapshot = None
             dwaq_snapshot = None
+            inference_observations = observations
+            sensor_snapshot = None
+            if sensor_delay is not None:
+                inference_observations, sensor_snapshot = sensor_delay.advance(observations, step)
             if roa_mode is not None:
                 roa_snapshot = capture_roa_diagnostics(
-                    policy_module, observations, robot.data.root_lin_vel_b, velocity_scale,
+                    policy_module, inference_observations, robot.data.root_lin_vel_b, velocity_scale,
                     include_ablations=roa_mode in ROA_ABLATION_MODES,
                 )
+                if sensor_snapshot is not None:
+                    roa_snapshot.update(sensor_snapshot)
                 native_actions = roa_snapshot[f"roa_{roa_mode}_action"]
             elif dwaq_mode is not None:
                 dwaq_snapshot = capture_dwaq_diagnostics(
@@ -853,6 +876,8 @@ def _evaluate(
             if not torch.isfinite(actions).all():
                 raise FloatingPointError("policy produced non-finite actions")
             observations, rewards, dones, extras = env.step(actions)
+            if sensor_delay is not None:
+                sensor_delay.reset(dones)
             if hasattr(policy_module, "reset"):
                 policy_module.reset(dones)
 

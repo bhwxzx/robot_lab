@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "observed_at": "2026-09-21T11:21:16.519119+00:00",
+  "host": "server-System-Product-Name",
+  "head": "34981339c0bd75188ffecf380a750437e0fcecdf",
+  "authorization": "User approved four-file sensor-delay implementation and two finite Native simulations; no training, hardware, package, commit or push actions.",
+  "cases": 2,
+  "total_steps": 9000,
+  "max_seconds_per_case": 600,
+  "gpu_compute_apps": "",
+  "training_or_evaluation_processes": [],
+  "baseline_manifest": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/turning-after-straight-20260921-001/manifest.json",
+    "sha256": "5f7b6ecf33ca6e2d93d5e9ef758f8eae7ae4c63d8a495f14c828749957a2709b"
+  },
+  "source_hashes": {
+    "scripts/reinforcement_learning/rsl_rl/evaluate_policy.py": "9964ad31a783b493a5ffe810371fd3d7e5b07945366ea726823b36a445b146a6",
+    "scripts/reinforcement_learning/rsl_rl/policy_evaluation_evidence.py": "c9b32a7cefbf261a3444c2f4fedabbe16740f1f5090e773d342e3000a6d23f74",
+    "scripts/reinforcement_learning/rsl_rl/policy_evaluation_telemetry.py": "1085c75582f9910b04e09981b50ac823d54370a70be4fd7f49a8e3e9b9e2515e",
+    "scripts/tests/test_roa_evaluation.py": "ea0edec3b6e3b22e7763f34964f8084e8b2c79d8fe9bcfaaa8f15bbffa513252"
+  },
+  "checks": {
+    "roa_cpu_tests": 10,
+    "evaluation_evidence_and_telemetry_tests": 27,
+    "all_passed": true,
+    "legacy_batch_revalidated": true,
+    "training_source_hashes_match": true
+  },
+  "temporal_contract": {
+    "delay_policy_steps": 1,
+    "step_dt_seconds": 0.02,
+    "sensor_columns": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28
+    ],
+    "undelayed_columns": [
+      6,
+      7,
+      8,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38
+    ],
+    "location": "after environment corruption/scaling; sensor-only delay before rebuilding ten-frame policy history",
+    "initialization": "repeat first available observation on startup and each environment reset",
+    "critic_and_privileged": "fresh and unmodified",
+    "teacher_action": "diagnostic only; uses delayed policy current frame and fresh privileged information",
+    "no_claim": "This 20 ms value is a controlled hypothesis, not measured physical latency."
+  }
+}

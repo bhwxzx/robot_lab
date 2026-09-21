@@ -14,8 +14,12 @@ from policy_evaluation_telemetry import (
     BASE_REQUIRED_SIGNALS, ROA_DIAGNOSTIC_SIGNALS, ROA_ABLATION_SIGNALS,
     roa_diagnostic_signals, SignalLedger,
     capture_roa_diagnostics, telemetry_report,
+    RoaSensorDelay, ROA_SENSOR_DELAY_OPTION, ROA_SENSOR_COLUMNS,
+    ROA_CURRENT_COLUMNS,
 )
-from policy_evaluation_evidence import build_scenario_contract, EvaluationEvidenceError, scenario_sha256
+from policy_evaluation_evidence import (
+    build_scenario_contract, EvaluationEvidenceError, scenario_sha256, validate_roa_sensor_delay,
+)
 
 
 class RoaEvaluationTests(unittest.TestCase):
@@ -116,6 +120,108 @@ class RoaEvaluationTests(unittest.TestCase):
                           {"evaluation.typo": "student"}]:
             with self.assertRaises(EvaluationEvidenceError):
                 scenario(overrides)
+
+    def test_zero_sensor_delay_preserves_history_actions_inputs_and_rng(self):
+        adapter = RoaSensorDelay(0, .02)
+        before = self.obs.clone()
+        rng = torch.get_rng_state().clone()
+        state = {k: v.clone() for k, v in self.policy.state_dict().items()}
+        with torch.inference_mode():
+            for step in range(12):
+                if step == 5:
+                    adapter.reset(torch.tensor([True, False]))
+                delayed, snapshot = adapter.advance(self.obs, step)
+                self.assertIs(delayed, self.obs)
+                torch.testing.assert_close(self.policy.act_inference(delayed, hist_encoding=True),
+                                           self.policy.act_inference(self.obs, hist_encoding=True), rtol=0, atol=0)
+                torch.testing.assert_close(snapshot['roa_sensor_age_s'], torch.zeros(2, 1, dtype=torch.float64))
+        for key in before.keys():
+            torch.testing.assert_close(before[key], self.obs[key], rtol=0, atol=0)
+        torch.testing.assert_close(torch.get_rng_state(), rng, rtol=0, atol=0)
+        for key, value in state.items():
+            torch.testing.assert_close(value, self.policy.state_dict()[key], rtol=0, atol=0)
+
+    def test_one_step_delay_full_history_and_per_environment_reset(self):
+        adapter = RoaSensorDelay(1, .02)
+        expected = [[], []]
+        previous = None
+        for step in range(14):
+            frame = torch.arange(78, dtype=torch.float32).reshape(2, 39) + step * 1000
+            self.obs['policy'] = frame[:, None].repeat(1, 10, 1)
+            untouched = self.obs.clone()
+            reset = [step in (0, 6), step == 0]
+            if step == 6:
+                adapter.reset(torch.tensor([True, False]))
+            result, snapshot = adapter.advance(self.obs, step)
+            for env in range(2):
+                target = frame[env].clone()
+                source = frame[env] if reset[env] else previous[env]
+                target[list(ROA_SENSOR_COLUMNS)] = source[list(ROA_SENSOR_COLUMNS)]
+                expected[env] = [target.clone()] * 10 if reset[env] else (expected[env] + [target])[-10:]
+                torch.testing.assert_close(result['policy'][env], torch.stack(expected[env]), rtol=0, atol=0)
+                torch.testing.assert_close(snapshot['roa_delayed_policy_frame'][env, list(ROA_CURRENT_COLUMNS)],
+                                           frame[env, list(ROA_CURRENT_COLUMNS)], rtol=0, atol=0)
+                self.assertEqual(snapshot['roa_sensor_source_step'][env].item(), step if reset[env] else step - 1)
+            for key in untouched.keys():
+                torch.testing.assert_close(self.obs[key], untouched[key], rtol=0, atol=0)
+            for key in ('critic', 'privileged'):
+                torch.testing.assert_close(result[key], self.obs[key], rtol=0, atol=0)
+            previous = frame.clone()
+            self.obs['policy'].fill_(-999)  # caller mutation cannot corrupt retained frames
+
+    def test_sensor_delay_rejects_duplicate_advance_and_wrong_contract(self):
+        for steps in (True, -1, 2, 1.0):
+            with self.assertRaises(ValueError):
+                RoaSensorDelay(steps, .02)
+        with self.assertRaises(ValueError):
+            RoaSensorDelay(1, .01)
+        adapter = RoaSensorDelay(1, .02)
+        adapter.advance(self.obs, 0)
+        for step in (0, 2):
+            with self.assertRaises(ValueError):
+                adapter.advance(self.obs, step)
+        with self.assertRaises(ValueError):
+            adapter.reset(torch.tensor([True]))
+        malformed = self.obs.clone()
+        malformed['policy'] = torch.zeros(2, 5, 39)
+        with self.assertRaises(ValueError):
+            adapter.advance(malformed, 1)
+
+    def test_sensor_delay_contract_and_lossless_evidence_validation(self):
+        import copy
+        import json
+        def contract(overrides):
+            return build_scenario_contract(scenario_id='age', scenario_overrides_json=json.dumps(overrides),
+                                           command_schedule_json='[]', duration_steps=5, num_envs=1, seed=42)
+        cases = [contract({'evaluation.roa_mode': 'student', ROA_SENSOR_DELAY_OPTION: n}) for n in (0, 1)]
+        self.assertNotEqual(scenario_sha256(cases[0]), scenario_sha256(cases[1]))
+        for overrides in ({ROA_SENSOR_DELAY_OPTION: 1},
+                          {'evaluation.roa_mode': 'teacher', ROA_SENSOR_DELAY_OPTION: 1},
+                          *({'evaluation.roa_mode': 'student', ROA_SENSOR_DELAY_OPTION: n} for n in (True, 2, 1.0, -1))):
+            with self.assertRaises(EvaluationEvidenceError):
+                contract(overrides)
+        adapter = RoaSensorDelay(1, .02)
+        samples = []
+        for step in range(5):
+            self.obs['policy'].fill_(float(step))
+            _, snapshot = adapter.advance(self.obs, step)
+            samples.append({'step': step, 'done': step == 2,
+                            **{k: v[0].tolist() for k, v in snapshot.items()}})
+            if step == 2:
+                adapter.reset(torch.tensor([True, False]))
+        telemetry = {'step_dt_seconds': .02, 'stride': 1,
+                     'inputs': {'resource_mode': {'telemetry_stride': 1}}, 'samples': samples}
+        validate_roa_sensor_delay(telemetry, 1)
+        for field, value in [('roa_sensor_source_step', [1]), ('roa_sensor_age_s', [.04]),
+                             ('roa_delayed_policy_frame', [999.] * 39), ('step', 9), ('done', None)]:
+            broken = copy.deepcopy(telemetry)
+            broken['samples'][1][field] = value
+            with self.assertRaises(EvaluationEvidenceError):
+                validate_roa_sensor_delay(broken, 1)
+        broken = copy.deepcopy(telemetry)
+        broken['samples'][3]['roa_sensor_source_step'] = [2]
+        with self.assertRaises(EvaluationEvidenceError):
+            validate_roa_sensor_delay(broken, 1)
 
 
 if __name__ == "__main__":
