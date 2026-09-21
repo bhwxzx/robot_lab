@@ -1,0 +1,3329 @@
+{
+  "version": 1,
+  "question": "Effect of adding raw hip action L1 penalty -0.5 to wheel flat ROA",
+  "method": {
+    "seed": 42,
+    "motion": "2100 steps, 4 environments, 0-42s; official metrics use all environments; detailed telemetry metrics use env0",
+    "standing": "6000 steps, 1 environment, zero command, nominal plant, no pushes, corruption false/true; steady window steps 2000:6000 = 40-120s",
+    "startup": "steps 0:50 = 0-1s, includes reset transient",
+    "hip_action_order": [
+      "right_hip_joint",
+      "left_hip_joint"
+    ],
+    "hip_target_conversion": "clip(raw_action, -100, 100)*0.25 + default_hip_position(0); target change is per 20ms, not divided by dt",
+    "body_ang_rms": "sqrt(mean(roll_rate^2 + pitch_rate^2))",
+    "xy_rmse": "sqrt(mean across samples and x,y axes of squared velocity error)",
+    "drift": "last minus first XY position inside each stated window; no resets allowed",
+    "limits": [
+      "One seed per policy; no statistical reliability claim.",
+      "No physical deployment readiness or cause of real oscillation established.",
+      "Nominal standing disables delay and gain/mass/COM randomization; motion retains training randomization.",
+      "This batch does not record estimated-velocity telemetry; velocity-estimator comparison uses training scalars.",
+      "Different reward definitions make total reward not directly comparable."
+    ]
+  },
+  "runs": {
+    "old": {
+      "run": "2026-09-16_15-12-04",
+      "manifest": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/manifest.json",
+        "sha256": "520413fe9db712b0e6daff9df010f3a162f022eee226ea54f7bfe2be1259f70f"
+      },
+      "cases": {
+        "baseline-no-push": {
+          "result": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/baseline-no-push-a01/result.json",
+            "sha256": "50638125cf31217c1eb11b4c21f9fa59330f4fa366662056ac6d67cc69fafe29"
+          },
+          "telemetry": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/baseline-no-push-a01/telemetry.json.gz",
+            "sha256": "088599b646863a088a92c5e1fd2f625364a7b94a6095239660417973853b33e7"
+          },
+          "telemetry_status": "complete",
+          "missing_required_signals": [],
+          "official_metrics": {
+            "action_rate_rms": 0.33434369947305237,
+            "body_roll_pitch_angular_acceleration_p95": 29.693375959186643,
+            "body_roll_pitch_angular_acceleration_rms": 14.980623630152083,
+            "body_roll_pitch_angular_velocity_p95": 0.5287717445890551,
+            "body_roll_pitch_angular_velocity_rms": 0.30045861702042675,
+            "body_vertical_acceleration_p95": 2.8776747174561024,
+            "body_vertical_acceleration_rms": 1.587651828717787,
+            "body_vertical_velocity_p95": 0.10177424550056458,
+            "body_vertical_velocity_rms": 0.06121299730822087,
+            "illegal_contact_rate": 0.0,
+            "joint_effort_limit_violation_rate": 0.0,
+            "joint_velocity_limit_violation_rate": 0.0,
+            "max_abs_action": 26.876676559448242,
+            "max_abs_action_error": 0.0,
+            "max_abs_applied_torque": 62.741302490234375,
+            "max_abs_joint_velocity": 19.866209030151367,
+            "max_joint_effort_utilization": 0.5228441874186198,
+            "max_joint_velocity_utilization": 0.6020063342470111,
+            "max_tilt": 0.3558371663093567,
+            "mean_reward": 0.18133671665852447,
+            "real_time_factor": 0.7948193720768336,
+            "termination_rate": 0.0,
+            "termination_term_illegal_contact_rate": 0.0,
+            "termination_term_terrain_out_of_bounds_rate": 0.0,
+            "termination_term_time_out_rate": 0.0,
+            "tilt_rms": 0.045859968099584786,
+            "timeout_rate": 0.0,
+            "tracking_xy_rmse": 0.14945728622706902,
+            "tracking_yaw_rmse": 0.22420607202442266
+          },
+          "windows_env0": {
+            "full": {
+              "step_range_half_open": [
+                0,
+                2100
+              ],
+              "sample_count": 2100,
+              "tracking_xy_rmse_m_s": 0.15099396378263594,
+              "tracking_yaw_rmse_rad_s": 0.21426374395055994,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.27440992074088855,
+              "hip_target_rms_rad": 0.12261028250411186,
+              "hip_target_abs_peak_rad": 0.3795458972454071,
+              "hip_target_mean_R_L_rad": [
+                -0.10475555752681213,
+                0.09801508111435743
+              ],
+              "hip_target_step_change_rms_rad": 0.028960045678769863,
+              "hip_target_second_difference_rms_rad": 0.04495106726202274,
+              "hip_actual_position_rms_rad": 0.03216873082353163,
+              "hip_actual_velocity_rms_rad_s": 0.17481750056636858,
+              "hip_applied_torque_rms_Nm": 10.73900216737008,
+              "leg_target_step_change_rms_rad": 0.029866267509278073,
+              "wheel_target_step_change_rms_rad_s": 0.7262258288206095,
+              "wheel_actual_velocity_rms_rad_s": 5.288816715662645,
+              "net_displacement_m": 4.71538546040716,
+              "max_displacement_m": 8.294092859074125,
+              "path_length_m": 17.132133542357764,
+              "mean_body_velocity_xyz_m_s": [
+                0.26357468948688445,
+                0.00252419596465881,
+                -0.003992589872879242
+              ]
+            },
+            "startup_0_1s": {
+              "step_range_half_open": [
+                0,
+                50
+              ],
+              "sample_count": 50,
+              "tracking_xy_rmse_m_s": 0.164914106553182,
+              "tracking_yaw_rmse_rad_s": 0.3124745448696958,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.5672089130202583,
+              "hip_target_rms_rad": 0.06643464382124876,
+              "hip_target_abs_peak_rad": 0.23398949205875397,
+              "hip_target_mean_R_L_rad": [
+                -0.0327213879302144,
+                0.04324700770899653
+              ],
+              "hip_target_step_change_rms_rad": 0.0552151502938947,
+              "hip_target_second_difference_rms_rad": 0.09126588424082684,
+              "hip_actual_position_rms_rad": 0.05850940055563551,
+              "hip_actual_velocity_rms_rad_s": 0.4575757328978354,
+              "hip_applied_torque_rms_Nm": 7.0792905763415,
+              "leg_target_step_change_rms_rad": 0.051860213928273016,
+              "wheel_target_step_change_rms_rad_s": 1.3120053851424847,
+              "wheel_actual_velocity_rms_rad_s": 2.790747576886718,
+              "net_displacement_m": 0.10990735246675375,
+              "max_displacement_m": 0.11327749190655868,
+              "path_length_m": 0.1563465897908112,
+              "mean_body_velocity_xyz_m_s": [
+                -0.08609645243734121,
+                0.08132958656176925,
+                -0.0578979652794078
+              ]
+            },
+            "command_segments_env0": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  0,
+                  300
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    50,
+                    300
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.03677691729901461,
+                  "tracking_yaw_rmse_rad_s": 0.09654413462195098,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.18840912380087887,
+                  "hip_target_rms_rad": 0.08620744152462734,
+                  "hip_target_abs_peak_rad": 0.16917787492275238,
+                  "hip_target_mean_R_L_rad": [
+                    -0.07423708345368504,
+                    0.08413358142226934
+                  ],
+                  "hip_target_step_change_rms_rad": 0.02170594114750739,
+                  "hip_target_second_difference_rms_rad": 0.03371188807680042,
+                  "hip_actual_position_rms_rad": 0.04152723926979607,
+                  "hip_actual_velocity_rms_rad_s": 0.11153217683693362,
+                  "hip_applied_torque_rms_Nm": 7.273974270760393,
+                  "leg_target_step_change_rms_rad": 0.026800673541282564,
+                  "wheel_target_step_change_rms_rad_s": 0.7133144909240376,
+                  "wheel_actual_velocity_rms_rad_s": 1.5633264025158757,
+                  "net_displacement_m": 0.10640478784940416,
+                  "max_displacement_m": 0.11279007460176295,
+                  "path_length_m": 0.20662938536026632,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.019545928860083224,
+                    -0.010596228883136063,
+                    -0.002261145269498229
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.01736728012629707,
+                "world_heading_change_full_rad": -0.10116455955319748
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  300,
+                  600
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    350,
+                    600
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.05374842577634972,
+                  "tracking_yaw_rmse_rad_s": 0.20896662733938454,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.25784446851471116,
+                  "hip_target_rms_rad": 0.06139120833554769,
+                  "hip_target_abs_peak_rad": 0.15193963050842285,
+                  "hip_target_mean_R_L_rad": [
+                    -0.0506060409154743,
+                    0.04810428317636251
+                  ],
+                  "hip_target_step_change_rms_rad": 0.02681926580818553,
+                  "hip_target_second_difference_rms_rad": 0.041276461025254584,
+                  "hip_actual_position_rms_rad": 0.029980744927727163,
+                  "hip_actual_velocity_rms_rad_s": 0.15053712296079366,
+                  "hip_applied_torque_rms_Nm": 5.179967358569272,
+                  "leg_target_step_change_rms_rad": 0.029019022258267007,
+                  "wheel_target_step_change_rms_rad_s": 0.6935051538567999,
+                  "wheel_actual_velocity_rms_rad_s": 4.660189261431156,
+                  "net_displacement_m": 2.2788686527576587,
+                  "max_displacement_m": 2.2788686527576587,
+                  "path_length_m": 2.287255955019868,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.4567469301223755,
+                    -0.005629436403512955,
+                    -0.0063086619556415825
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.0026763743454163583,
+                "world_heading_change_full_rad": -0.001959564793352575
+              },
+              {
+                "command": [
+                  1.0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  600,
+                  900
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    650,
+                    900
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.06355475122156203,
+                  "tracking_yaw_rmse_rad_s": 0.2820464983579828,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.32643262381194493,
+                  "hip_target_rms_rad": 0.12027662869203794,
+                  "hip_target_abs_peak_rad": 0.31144678592681885,
+                  "hip_target_mean_R_L_rad": [
+                    -0.11367177736386656,
+                    0.10650591006875038
+                  ],
+                  "hip_target_step_change_rms_rad": 0.03305498716663295,
+                  "hip_target_second_difference_rms_rad": 0.05142816064147981,
+                  "hip_actual_position_rms_rad": 0.02857810960739113,
+                  "hip_actual_velocity_rms_rad_s": 0.1957603535775179,
+                  "hip_applied_torque_rms_Nm": 10.568706691394597,
+                  "leg_target_step_change_rms_rad": 0.031177731010364668,
+                  "wheel_target_step_change_rms_rad_s": 0.49020563759861563,
+                  "wheel_actual_velocity_rms_rad_s": 9.365704846628683,
+                  "net_displacement_m": 4.782786600960961,
+                  "max_displacement_m": 4.782786600960961,
+                  "path_length_m": 4.797193645905931,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.9605140159130097,
+                    -0.0003392798900604248,
+                    -0.024960296376608314
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.017361465316886704,
+                "world_heading_change_full_rad": 0.08029629659810233
+              },
+              {
+                "command": [
+                  -0.5,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  900,
+                  1200
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    950,
+                    1200
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.04724354698045475,
+                  "tracking_yaw_rmse_rad_s": 0.15330670140617134,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.2480779692423867,
+                  "hip_target_rms_rad": 0.22065072975023667,
+                  "hip_target_abs_peak_rad": 0.3795458972454071,
+                  "hip_target_mean_R_L_rad": [
+                    -0.23337311258912086,
+                    0.19457545176148414
+                  ],
+                  "hip_target_step_change_rms_rad": 0.03425312555906122,
+                  "hip_target_second_difference_rms_rad": 0.05291364809565978,
+                  "hip_actual_position_rms_rad": 0.018782534854965102,
+                  "hip_actual_velocity_rms_rad_s": 0.16216637533288053,
+                  "hip_applied_torque_rms_Nm": 19.528447919018777,
+                  "leg_target_step_change_rms_rad": 0.03188473487161001,
+                  "wheel_target_step_change_rms_rad_s": 0.7465848114800655,
+                  "wheel_actual_velocity_rms_rad_s": 4.977026434836217,
+                  "net_displacement_m": 2.2985603866596644,
+                  "max_displacement_m": 2.2985603866596644,
+                  "path_length_m": 2.307126571653141,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.463135418176651,
+                    -0.0014218236207962035,
+                    0.013196594638284296
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.020628652861729886,
+                "world_heading_change_full_rad": 0.123679940231612
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0.6
+                ],
+                "full_segment_steps": [
+                  1200,
+                  1500
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1250,
+                    1500
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.056311620915587154,
+                  "tracking_yaw_rmse_rad_s": 0.24181369934020636,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.27024183742410757,
+                  "hip_target_rms_rad": 0.13926341025719988,
+                  "hip_target_abs_peak_rad": 0.29189741611480713,
+                  "hip_target_mean_R_L_rad": [
+                    -0.1340267929136753,
+                    0.12513098984956741
+                  ],
+                  "hip_target_step_change_rms_rad": 0.026466391893414428,
+                  "hip_target_second_difference_rms_rad": 0.04181608683557506,
+                  "hip_actual_position_rms_rad": 0.020310350517775813,
+                  "hip_actual_velocity_rms_rad_s": 0.15191541264073433,
+                  "hip_applied_torque_rms_Nm": 12.08883808810644,
+                  "leg_target_step_change_rms_rad": 0.02995910130466848,
+                  "wheel_target_step_change_rms_rad_s": 0.6703457085916242,
+                  "wheel_actual_velocity_rms_rad_s": 4.991272892422178,
+                  "net_displacement_m": 1.5105523366222533,
+                  "max_displacement_m": 1.5105523366222533,
+                  "path_length_m": 2.283631778629965,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.48301367890834807,
+                    0.028591561064124107,
+                    -0.004093289777170867
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.5876816380086044,
+                "world_heading_change_full_rad": 3.5582215936224424
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  -0.6
+                ],
+                "full_segment_steps": [
+                  1500,
+                  1800
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1550,
+                    1800
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.054663010000871,
+                  "tracking_yaw_rmse_rad_s": 0.24398894967574533,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.2713792525088038,
+                  "hip_target_rms_rad": 0.07199977515849017,
+                  "hip_target_abs_peak_rad": 0.15799866616725922,
+                  "hip_target_mean_R_L_rad": [
+                    -0.057453671467490496,
+                    0.05641620695218444
+                  ],
+                  "hip_target_step_change_rms_rad": 0.026779625847748192,
+                  "hip_target_second_difference_rms_rad": 0.04239767574769142,
+                  "hip_actual_position_rms_rad": 0.0363384129480647,
+                  "hip_actual_velocity_rms_rad_s": 0.19388133484061706,
+                  "hip_applied_torque_rms_Nm": 6.248293970859375,
+                  "leg_target_step_change_rms_rad": 0.028766719654676365,
+                  "wheel_target_step_change_rms_rad_s": 0.6505487646143691,
+                  "wheel_actual_velocity_rms_rad_s": 5.189639632654688,
+                  "net_displacement_m": 1.6778735552927968,
+                  "max_displacement_m": 1.6778735552927968,
+                  "path_length_m": 2.4424049888626294,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.46135384809970853,
+                    -0.02106154653429985,
+                    -0.009479523756541312
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.5577506410020093,
+                "world_heading_change_full_rad": -3.413807510036043
+              },
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  1800,
+                  2100
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1850,
+                    2100
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.02508256697761133,
+                  "tracking_yaw_rmse_rad_s": 0.05085313205864934,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.14348701286265883,
+                  "hip_target_rms_rad": 0.08874161213924966,
+                  "hip_target_abs_peak_rad": 0.18832120299339294,
+                  "hip_target_mean_R_L_rad": [
+                    -0.07811984599754214,
+                    0.08458190470933914
+                  ],
+                  "hip_target_step_change_rms_rad": 0.022966837131625804,
+                  "hip_target_second_difference_rms_rad": 0.034967833661473186,
+                  "hip_actual_position_rms_rad": 0.037531447084620806,
+                  "hip_actual_velocity_rms_rad_s": 0.07854501351431736,
+                  "hip_applied_torque_rms_Nm": 7.613549280906826,
+                  "leg_target_step_change_rms_rad": 0.0245986214533271,
+                  "wheel_target_step_change_rms_rad_s": 0.593908812721834,
+                  "wheel_actual_velocity_rms_rad_s": 0.7706012359280273,
+                  "net_displacement_m": 0.11249253033865625,
+                  "max_displacement_m": 0.11338121299880326,
+                  "path_length_m": 0.16173085200247245,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.022118508432991804,
+                    0.0031926697548478843,
+                    -0.0015906596251297742
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.0031724116352658408,
+                "world_heading_change_full_rad": -0.051467394991352444
+              }
+            ]
+          },
+          "scenario": {
+            "command_schedule": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 299,
+                "start_step": 0
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0
+                ],
+                "end_step": 599,
+                "start_step": 300
+              },
+              {
+                "command": [
+                  1.0,
+                  0,
+                  0
+                ],
+                "end_step": 899,
+                "start_step": 600
+              },
+              {
+                "command": [
+                  -0.5,
+                  0,
+                  0
+                ],
+                "end_step": 1199,
+                "start_step": 900
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0.6
+                ],
+                "end_step": 1499,
+                "start_step": 1200
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  -0.6
+                ],
+                "end_step": 1799,
+                "start_step": 1500
+              },
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 2099,
+                "start_step": 1800
+              }
+            ],
+            "duration_steps": 2100,
+            "num_envs": 4,
+            "scenario_id": "baseline-no-push",
+            "scenario_overrides": {
+              "episode_length_s": 60.0,
+              "events.randomize_push_robot": null
+            },
+            "seed": 42
+          }
+        },
+        "current-push": {
+          "result": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/current-push-a01/result.json",
+            "sha256": "5e62c2252d18729e9b8fa65d1408841c422dc4aa1d8705b688b41421af61ddc5"
+          },
+          "telemetry": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/current-push-a01/telemetry.json.gz",
+            "sha256": "abac9299591ee14b4845d970d865a536a10c70a0a0a9e48652e034c9013e6cb3"
+          },
+          "telemetry_status": "complete",
+          "missing_required_signals": [],
+          "official_metrics": {
+            "action_rate_rms": 0.3916698288524189,
+            "body_roll_pitch_angular_acceleration_p95": 31.811014473644036,
+            "body_roll_pitch_angular_acceleration_rms": 16.48154130879485,
+            "body_roll_pitch_angular_velocity_p95": 0.6147193703514428,
+            "body_roll_pitch_angular_velocity_rms": 0.33992063698077285,
+            "body_vertical_acceleration_p95": 3.305620886385441,
+            "body_vertical_acceleration_rms": 1.8186989567226644,
+            "body_vertical_velocity_p95": 0.13371722400188446,
+            "body_vertical_velocity_rms": 0.0705750589036211,
+            "illegal_contact_rate": 0.0,
+            "joint_effort_limit_violation_rate": 0.0,
+            "joint_velocity_limit_violation_rate": 0.0,
+            "max_abs_action": 50.84532165527344,
+            "max_abs_action_error": 0.0,
+            "max_abs_applied_torque": 73.26253509521484,
+            "max_abs_joint_velocity": 27.91511344909668,
+            "max_joint_effort_utilization": 0.6105211257934571,
+            "max_joint_velocity_utilization": 0.8459125287605055,
+            "max_tilt": 0.26239126920700073,
+            "mean_reward": 0.17190269410831943,
+            "real_time_factor": 0.7938211141239059,
+            "termination_rate": 0.0,
+            "termination_term_illegal_contact_rate": 0.0,
+            "termination_term_terrain_out_of_bounds_rate": 0.0,
+            "termination_term_time_out_rate": 0.0,
+            "tilt_rms": 0.05182340095432663,
+            "timeout_rate": 0.0,
+            "tracking_xy_rmse": 0.1935542135370593,
+            "tracking_yaw_rmse": 0.24904715364005592
+          },
+          "windows_env0": {
+            "full": {
+              "step_range_half_open": [
+                0,
+                2100
+              ],
+              "sample_count": 2100,
+              "tracking_xy_rmse_m_s": 0.19497670223765284,
+              "tracking_yaw_rmse_rad_s": 0.23109877710345386,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.3032425584915334,
+              "hip_target_rms_rad": 0.13420307778304716,
+              "hip_target_abs_peak_rad": 0.36035779118537903,
+              "hip_target_mean_R_L_rad": [
+                -0.12341985646524423,
+                0.11492240297741124
+              ],
+              "hip_target_step_change_rms_rad": 0.029406507915793408,
+              "hip_target_second_difference_rms_rad": 0.043496629206608815,
+              "hip_actual_position_rms_rad": 0.022460971783789353,
+              "hip_actual_velocity_rms_rad_s": 0.22409574671796106,
+              "hip_applied_torque_rms_Nm": 11.829751467542607,
+              "leg_target_step_change_rms_rad": 0.03206174210202196,
+              "wheel_target_step_change_rms_rad_s": 0.8717259753414793,
+              "wheel_actual_velocity_rms_rad_s": 5.972259002475244,
+              "net_displacement_m": 6.114091347399929,
+              "max_displacement_m": 7.996149513893507,
+              "path_length_m": 18.009925113559294,
+              "mean_body_velocity_xyz_m_s": [
+                0.2157556695663204,
+                0.0016680130126353885,
+                -0.001481379961824998
+              ]
+            },
+            "startup_0_1s": {
+              "step_range_half_open": [
+                0,
+                50
+              ],
+              "sample_count": 50,
+              "tracking_xy_rmse_m_s": 0.15372943689535618,
+              "tracking_yaw_rmse_rad_s": 0.37000709632428547,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.628319863417515,
+              "hip_target_rms_rad": 0.10448726968542282,
+              "hip_target_abs_peak_rad": 0.1799030900001526,
+              "hip_target_mean_R_L_rad": [
+                -0.10367815680801869,
+                0.08149760905653239
+              ],
+              "hip_target_step_change_rms_rad": 0.03213969261237222,
+              "hip_target_second_difference_rms_rad": 0.04807281917572173,
+              "hip_actual_position_rms_rad": 0.02839731583857103,
+              "hip_actual_velocity_rms_rad_s": 0.6495236671072336,
+              "hip_applied_torque_rms_Nm": 9.084029644120843,
+              "leg_target_step_change_rms_rad": 0.039022968557786884,
+              "wheel_target_step_change_rms_rad_s": 1.2009224444119502,
+              "wheel_actual_velocity_rms_rad_s": 3.829324043319994,
+              "net_displacement_m": 0.14988544139768703,
+              "max_displacement_m": 0.1699464626232636,
+              "path_length_m": 0.19648600853115591,
+              "mean_body_velocity_xyz_m_s": [
+                0.1508508689608425,
+                0.013384884237311781,
+                -0.054507984463125464
+              ]
+            },
+            "command_segments_env0": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  0,
+                  300
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    50,
+                    300
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.04532768477473308,
+                  "tracking_yaw_rmse_rad_s": 0.10692506819046539,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.1970866521990806,
+                  "hip_target_rms_rad": 0.15615593764231095,
+                  "hip_target_abs_peak_rad": 0.2670823633670807,
+                  "hip_target_mean_R_L_rad": [
+                    -0.1528703509941697,
+                    0.1516656732559204
+                  ],
+                  "hip_target_step_change_rms_rad": 0.024044989192742172,
+                  "hip_target_second_difference_rms_rad": 0.036760525954612905,
+                  "hip_actual_position_rms_rad": 0.01663633372451293,
+                  "hip_actual_velocity_rms_rad_s": 0.13828265479577628,
+                  "hip_applied_torque_rms_Nm": 13.63485757713577,
+                  "leg_target_step_change_rms_rad": 0.028887760898988816,
+                  "wheel_target_step_change_rms_rad_s": 0.7606207419108941,
+                  "wheel_actual_velocity_rms_rad_s": 1.760922232095586,
+                  "net_displacement_m": 0.1265377570720676,
+                  "max_displacement_m": 0.1265377570720676,
+                  "path_length_m": 0.2568649866387589,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.026500408225459977,
+                    0.003980380770750344,
+                    -0.0005085720357601531
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.04279460992392463,
+                "world_heading_change_full_rad": -0.23567130896864358
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  300,
+                  600
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    350,
+                    600
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.060089652720700194,
+                  "tracking_yaw_rmse_rad_s": 0.22628419669862193,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.25080593641711046,
+                  "hip_target_rms_rad": 0.1240188241518793,
+                  "hip_target_abs_peak_rad": 0.2815701365470886,
+                  "hip_target_mean_R_L_rad": [
+                    -0.12133381838351488,
+                    0.1099742680862546
+                  ],
+                  "hip_target_step_change_rms_rad": 0.02742090424029617,
+                  "hip_target_second_difference_rms_rad": 0.0418557683830328,
+                  "hip_actual_position_rms_rad": 0.01441270559067826,
+                  "hip_actual_velocity_rms_rad_s": 0.1690785629449999,
+                  "hip_applied_torque_rms_Nm": 10.910775911015516,
+                  "leg_target_step_change_rms_rad": 0.029884555792748905,
+                  "wheel_target_step_change_rms_rad_s": 0.6603213464932391,
+                  "wheel_actual_velocity_rms_rad_s": 5.15276125533969,
+                  "net_displacement_m": 2.377436058134907,
+                  "max_displacement_m": 2.377436058134907,
+                  "path_length_m": 2.388046340780683,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.4755576227903366,
+                    -0.0016472138836979866,
+                    -0.001473725870018825
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.022805928291927558,
+                "world_heading_change_full_rad": -0.1203442972820391
+              },
+              {
+                "command": [
+                  1.0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  600,
+                  900
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    650,
+                    900
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.1379614615298713,
+                  "tracking_yaw_rmse_rad_s": 0.2860944281724869,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.3449659211955319,
+                  "hip_target_rms_rad": 0.11542595642024149,
+                  "hip_target_abs_peak_rad": 0.30021658539772034,
+                  "hip_target_mean_R_L_rad": [
+                    -0.10116129251848906,
+                    0.09546311151981354
+                  ],
+                  "hip_target_step_change_rms_rad": 0.0344388941869488,
+                  "hip_target_second_difference_rms_rad": 0.051421896990552406,
+                  "hip_actual_position_rms_rad": 0.025535998093986115,
+                  "hip_actual_velocity_rms_rad_s": 0.28433783096945553,
+                  "hip_applied_torque_rms_Nm": 10.37353983814199,
+                  "leg_target_step_change_rms_rad": 0.03345776544056724,
+                  "wheel_target_step_change_rms_rad_s": 0.6511860820895906,
+                  "wheel_actual_velocity_rms_rad_s": 9.660520267787644,
+                  "net_displacement_m": 4.764933775518785,
+                  "max_displacement_m": 4.764933775518785,
+                  "path_length_m": 4.783558181626999,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.9550680477619171,
+                    0.021836961340159177,
+                    -0.022470984994550237
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.017334773366649944,
+                "world_heading_change_full_rad": -0.10204662969006595
+              },
+              {
+                "command": [
+                  -0.5,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  900,
+                  1200
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    950,
+                    1200
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.19460972976565516,
+                  "tracking_yaw_rmse_rad_s": 0.264091075673689,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.3722391826372144,
+                  "hip_target_rms_rad": 0.1764278118327955,
+                  "hip_target_abs_peak_rad": 0.36035779118537903,
+                  "hip_target_mean_R_L_rad": [
+                    -0.17296293018385767,
+                    0.14512506978213788
+                  ],
+                  "hip_target_step_change_rms_rad": 0.03725860718609852,
+                  "hip_target_second_difference_rms_rad": 0.05242152268581969,
+                  "hip_actual_position_rms_rad": 0.01992846759151733,
+                  "hip_actual_velocity_rms_rad_s": 0.23527230998200557,
+                  "hip_applied_torque_rms_Nm": 15.614526674469214,
+                  "leg_target_step_change_rms_rad": 0.03694264054679354,
+                  "wheel_target_step_change_rms_rad_s": 1.2293256936628425,
+                  "wheel_actual_velocity_rms_rad_s": 7.722452448272898,
+                  "net_displacement_m": 2.9495240574658843,
+                  "max_displacement_m": 2.9495240574658843,
+                  "path_length_m": 2.9739132577195364,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.5956548409461975,
+                    -0.022942374829901382,
+                    0.013316825296438765
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.00669089492255201,
+                "world_heading_change_full_rad": -0.019678348398138312
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0.6
+                ],
+                "full_segment_steps": [
+                  1200,
+                  1500
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1250,
+                    1500
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.07807327454906715,
+                  "tracking_yaw_rmse_rad_s": 0.20063277088749557,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.23398315041045697,
+                  "hip_target_rms_rad": 0.14237936939063758,
+                  "hip_target_abs_peak_rad": 0.29033008217811584,
+                  "hip_target_mean_R_L_rad": [
+                    -0.1426263993419707,
+                    0.1299887654930353
+                  ],
+                  "hip_target_step_change_rms_rad": 0.026618455847387867,
+                  "hip_target_second_difference_rms_rad": 0.040209158573862286,
+                  "hip_actual_position_rms_rad": 0.013288654516335407,
+                  "hip_actual_velocity_rms_rad_s": 0.14108131668979113,
+                  "hip_applied_torque_rms_Nm": 12.372372052438822,
+                  "leg_target_step_change_rms_rad": 0.03008193998120018,
+                  "wheel_target_step_change_rms_rad_s": 0.6502876351952183,
+                  "wheel_actual_velocity_rms_rad_s": 4.413164453529035,
+                  "net_displacement_m": 1.494846901377815,
+                  "max_displacement_m": 1.494846901377815,
+                  "path_length_m": 2.0039647408477763,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.42424190080165863,
+                    0.01754687212407589,
+                    -0.00025959300342947244
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.5271574418743451,
+                "world_heading_change_full_rad": 3.2074942095581975
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  -0.6
+                ],
+                "full_segment_steps": [
+                  1500,
+                  1800
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1550,
+                    1800
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.07427899356114977,
+                  "tracking_yaw_rmse_rad_s": 0.22390843736734914,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.2489904325619521,
+                  "hip_target_rms_rad": 0.0844715708800607,
+                  "hip_target_abs_peak_rad": 0.19576917588710785,
+                  "hip_target_mean_R_L_rad": [
+                    -0.06758166897017509,
+                    0.06672408980131149
+                  ],
+                  "hip_target_step_change_rms_rad": 0.026516219805711314,
+                  "hip_target_second_difference_rms_rad": 0.038517897470165846,
+                  "hip_actual_position_rms_rad": 0.02763002425288402,
+                  "hip_actual_velocity_rms_rad_s": 0.19402559703948358,
+                  "hip_applied_torque_rms_Nm": 7.489137749196969,
+                  "leg_target_step_change_rms_rad": 0.029258021817788308,
+                  "wheel_target_step_change_rms_rad_s": 0.6072236647283606,
+                  "wheel_actual_velocity_rms_rad_s": 5.045267995057654,
+                  "net_displacement_m": 1.453317632908684,
+                  "max_displacement_m": 1.4676710290642483,
+                  "path_length_m": 2.309137781320601,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.432797213435173,
+                    -0.02620584764145315,
+                    -0.006260146447573788
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.6108822711991767,
+                "world_heading_change_full_rad": -3.728228774221115
+              },
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  1800,
+                  2100
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1850,
+                    2100
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.1375068703909578,
+                  "tracking_yaw_rmse_rad_s": 0.1516386483816945,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.23972866482423646,
+                  "hip_target_rms_rad": 0.15409161706004793,
+                  "hip_target_abs_peak_rad": 0.2790740430355072,
+                  "hip_target_mean_R_L_rad": [
+                    -0.1468036651611328,
+                    0.1462503862157464
+                  ],
+                  "hip_target_step_change_rms_rad": 0.026535220629030062,
+                  "hip_target_second_difference_rms_rad": 0.04012910219079205,
+                  "hip_actual_position_rms_rad": 0.021709012972698467,
+                  "hip_actual_velocity_rms_rad_s": 0.14345476047110714,
+                  "hip_applied_torque_rms_Nm": 13.602856731479617,
+                  "leg_target_step_change_rms_rad": 0.029640089042834963,
+                  "wheel_target_step_change_rms_rad_s": 0.9504833390057541,
+                  "wheel_actual_velocity_rms_rad_s": 3.1023726686464075,
+                  "net_displacement_m": 0.39246916007471583,
+                  "max_displacement_m": 0.39246916007471583,
+                  "path_length_m": 0.4796856515481251,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.08098765222541988,
+                    -0.0007248168990481645,
+                    0.0004149297175463289
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.022194775231570627,
+                "world_heading_change_full_rad": -0.16614802529866313
+              }
+            ]
+          },
+          "scenario": {
+            "command_schedule": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 299,
+                "start_step": 0
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0
+                ],
+                "end_step": 599,
+                "start_step": 300
+              },
+              {
+                "command": [
+                  1.0,
+                  0,
+                  0
+                ],
+                "end_step": 899,
+                "start_step": 600
+              },
+              {
+                "command": [
+                  -0.5,
+                  0,
+                  0
+                ],
+                "end_step": 1199,
+                "start_step": 900
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0.6
+                ],
+                "end_step": 1499,
+                "start_step": 1200
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  -0.6
+                ],
+                "end_step": 1799,
+                "start_step": 1500
+              },
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 2099,
+                "start_step": 1800
+              }
+            ],
+            "duration_steps": 2100,
+            "num_envs": 4,
+            "scenario_id": "current-push",
+            "scenario_overrides": {
+              "episode_length_s": 60.0,
+              "events.randomize_push_robot.params.velocity_range": {
+                "x": [
+                  -1.0,
+                  1.0
+                ],
+                "y": [
+                  -1.0,
+                  1.0
+                ]
+              }
+            },
+            "seed": 42
+          }
+        },
+        "nominal-no-noise": {
+          "result": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-no-noise-a01/result.json",
+            "sha256": "419e9bff531aafb9acce26120e76c6653d44170979b0855ef8d7e1be997f7a3c"
+          },
+          "telemetry": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-no-noise-a01/telemetry.json.gz",
+            "sha256": "c60c0019e66cce24b033602b5176e5efe10ebdc142176a0daf1bd7dcb05ca146"
+          },
+          "telemetry_status": "complete",
+          "missing_required_signals": [],
+          "official_metrics": {
+            "action_rate_rms": 0.07687908019334232,
+            "body_roll_pitch_angular_acceleration_p95": 0.8795111002443419,
+            "body_roll_pitch_angular_acceleration_rms": 1.833310480587478,
+            "body_roll_pitch_angular_velocity_p95": 0.09434085166787178,
+            "body_roll_pitch_angular_velocity_rms": 0.05553170470857804,
+            "body_vertical_acceleration_p95": 0.21912027150392532,
+            "body_vertical_acceleration_rms": 0.40194996336866523,
+            "body_vertical_velocity_p95": 0.02293853648006916,
+            "body_vertical_velocity_rms": 0.02110165275391093,
+            "illegal_contact_rate": 0.0,
+            "joint_effort_limit_violation_rate": 0.0,
+            "joint_velocity_limit_violation_rate": 0.0,
+            "max_abs_action": 9.473751068115234,
+            "max_abs_action_error": 0.0,
+            "max_abs_applied_torque": 40.51089859008789,
+            "max_abs_joint_velocity": 5.110798358917236,
+            "max_joint_effort_utilization": 0.3375908215840658,
+            "max_joint_velocity_utilization": 0.1884184241294861,
+            "max_tilt": 0.07518812268972397,
+            "mean_reward": 0.20644274060428142,
+            "real_time_factor": 0.8758758261817601,
+            "termination_rate": 0.0,
+            "termination_term_illegal_contact_rate": 0.0,
+            "termination_term_time_out_rate": 0.0,
+            "tilt_rms": 0.021092327840749936,
+            "timeout_rate": 0.0,
+            "tracking_xy_rmse": 0.012788101734400918,
+            "tracking_yaw_rmse": 0.016762017744745776
+          },
+          "windows_env0": {
+            "full": {
+              "step_range_half_open": [
+                0,
+                6000
+              ],
+              "sample_count": 6000,
+              "tracking_xy_rmse_m_s": 0.012788101726828637,
+              "tracking_yaw_rmse_rad_s": 0.016762017751434294,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.05553170470857805,
+              "hip_target_rms_rad": 0.4050981617459169,
+              "hip_target_abs_peak_rad": 0.44679516553878784,
+              "hip_target_mean_R_L_rad": [
+                -0.4096781260164765,
+                0.39867299868973594
+              ],
+              "hip_target_step_change_rms_rad": 0.00293692781398667,
+              "hip_target_second_difference_rms_rad": 0.0021469411207586785,
+              "hip_actual_position_rms_rad": 0.00914849287513465,
+              "hip_actual_velocity_rms_rad_s": 0.02641177237348271,
+              "hip_applied_torque_rms_Nm": 37.05265844383377,
+              "leg_target_step_change_rms_rad": 0.0025079145186161626,
+              "wheel_target_step_change_rms_rad_s": 0.1707320357899508,
+              "wheel_actual_velocity_rms_rad_s": 0.38290039025511136,
+              "net_displacement_m": 0.12054474975765928,
+              "max_displacement_m": 0.1513429000111463,
+              "path_length_m": 1.7025898462016944,
+              "mean_body_velocity_xyz_m_s": [
+                0.0010867878938128873,
+                0.0009012954871892873,
+                -0.000600773193661638
+              ]
+            },
+            "startup_0_1s": {
+              "step_range_half_open": [
+                0,
+                50
+              ],
+              "sample_count": 50,
+              "tracking_xy_rmse_m_s": 0.027307019435563473,
+              "tracking_yaw_rmse_rad_s": 0.04337082380168638,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.4049195768849745,
+              "hip_target_rms_rad": 0.3262902257063211,
+              "hip_target_abs_peak_rad": 0.41746729612350464,
+              "hip_target_mean_R_L_rad": [
+                -0.30434969952329993,
+                0.3072283486276865
+              ],
+              "hip_target_step_change_rms_rad": 0.024757798428767918,
+              "hip_target_second_difference_rms_rad": 0.02183735519992589,
+              "hip_actual_position_rms_rad": 0.010995228369227467,
+              "hip_actual_velocity_rms_rad_s": 0.13578242900160953,
+              "hip_applied_torque_rms_Nm": 29.854419151762045,
+              "leg_target_step_change_rms_rad": 0.018231438214541866,
+              "wheel_target_step_change_rms_rad_s": 0.621153109778799,
+              "wheel_actual_velocity_rms_rad_s": 1.6515618355511783,
+              "net_displacement_m": 0.004225528988231762,
+              "max_displacement_m": 0.011423974905187111,
+              "path_length_m": 0.034032581126477404,
+              "mean_body_velocity_xyz_m_s": [
+                -0.0017409133655019104,
+                -0.0034521040049730802,
+                -0.05911770224105567
+              ]
+            },
+            "steady_40_120s": {
+              "step_range_half_open": [
+                2000,
+                6000
+              ],
+              "sample_count": 4000,
+              "tracking_xy_rmse_m_s": 0.008080587930439795,
+              "tracking_yaw_rmse_rad_s": 0.01514023161589694,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.020701469686983446,
+              "hip_target_rms_rad": 0.4138337915581511,
+              "hip_target_abs_peak_rad": 0.42955535650253296,
+              "hip_target_mean_R_L_rad": [
+                -0.42103856896609065,
+                0.4064451118707657
+              ],
+              "hip_target_step_change_rms_rad": 0.00036112999884987506,
+              "hip_target_second_difference_rms_rad": 0.00012637472739509637,
+              "hip_actual_position_rms_rad": 0.008985193619336156,
+              "hip_actual_velocity_rms_rad_s": 0.008439719224191181,
+              "hip_applied_torque_rms_Nm": 37.86307605055689,
+              "leg_target_step_change_rms_rad": 0.0007588094062071501,
+              "wheel_target_step_change_rms_rad_s": 0.07755353401526112,
+              "wheel_actual_velocity_rms_rad_s": 0.06528384540720304,
+              "net_displacement_m": 0.002133810007116063,
+              "max_displacement_m": 0.010055031268601395,
+              "path_length_m": 0.8983124062146994,
+              "mean_body_velocity_xyz_m_s": [
+                8.708535408499074e-05,
+                0.0011201462004142826,
+                -7.504068334085901e-05
+              ]
+            }
+          },
+          "scenario": {
+            "command_schedule": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 5999,
+                "start_step": 0
+              }
+            ],
+            "duration_steps": 6000,
+            "num_envs": 1,
+            "scenario_id": "nominal-no-noise",
+            "scenario_overrides": {
+              "curriculum.terrain_levels": null,
+              "episode_length_s": 150.0,
+              "events.add_joint_default_pos": null,
+              "events.randomize_actuator_gains": null,
+              "events.randomize_com_positions": null,
+              "events.randomize_push_robot": null,
+              "events.randomize_reset_base.params.pose_range": {
+                "pitch": [
+                  0.0,
+                  0.0
+                ],
+                "roll": [
+                  0.0,
+                  0.0
+                ],
+                "x": [
+                  0.0,
+                  0.0
+                ],
+                "y": [
+                  0.0,
+                  0.0
+                ],
+                "yaw": [
+                  0.0,
+                  0.0
+                ],
+                "z": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "events.randomize_reset_base.params.velocity_range": {
+                "pitch": [
+                  0.0,
+                  0.0
+                ],
+                "roll": [
+                  0.0,
+                  0.0
+                ],
+                "x": [
+                  0.0,
+                  0.0
+                ],
+                "y": [
+                  0.0,
+                  0.0
+                ],
+                "yaw": [
+                  0.0,
+                  0.0
+                ],
+                "z": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "events.randomize_reset_joints.params.position_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_reset_joints.params.velocity_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_rigid_body_mass_base": null,
+              "events.randomize_rigid_body_mass_others": null,
+              "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+                1.0,
+                1.0
+              ],
+              "events.randomize_rigid_body_material.params.restitution_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_rigid_body_material.params.static_friction_range": [
+                1.0,
+                1.0
+              ],
+              "observations.policy.enable_corruption": false,
+              "scene.robot.actuators.foots.max_delay": 0,
+              "scene.robot.actuators.foots.min_delay": 0,
+              "scene.robot.actuators.legs.max_delay": 0,
+              "scene.robot.actuators.legs.min_delay": 0,
+              "scene.robot.actuators.wheels.max_delay": 0,
+              "scene.robot.actuators.wheels.min_delay": 0,
+              "scene.terrain.terrain_generator": null,
+              "scene.terrain.terrain_type": "plane",
+              "terminations.terrain_out_of_bounds": null
+            },
+            "seed": 42
+          }
+        },
+        "nominal-training-noise": {
+          "result": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-training-noise-a01/result.json",
+            "sha256": "e7f4840e8b57a57f7159a71128530f44c6e457e84a5420683236ec79c05a6b48"
+          },
+          "telemetry": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/evaluations/native-assess-20260917-001/raw/nominal-training-noise-a01/telemetry.json.gz",
+            "sha256": "36775a18dc56252bee7d2a121eb188743b48acefd92d0beac18c98cd20576cf3"
+          },
+          "telemetry_status": "complete",
+          "missing_required_signals": [],
+          "official_metrics": {
+            "action_rate_rms": 0.32131735381826276,
+            "body_roll_pitch_angular_acceleration_p95": 12.602531073773061,
+            "body_roll_pitch_angular_acceleration_rms": 7.295532540845353,
+            "body_roll_pitch_angular_velocity_p95": 0.35055277414944025,
+            "body_roll_pitch_angular_velocity_rms": 0.18731617254001798,
+            "body_vertical_acceleration_p95": 2.912435121834278,
+            "body_vertical_acceleration_rms": 1.495613030626331,
+            "body_vertical_velocity_p95": 0.08475232869386673,
+            "body_vertical_velocity_rms": 0.045019660192243766,
+            "illegal_contact_rate": 0.0,
+            "joint_effort_limit_violation_rate": 0.0,
+            "joint_velocity_limit_violation_rate": 0.0,
+            "max_abs_action": 13.538920402526855,
+            "max_abs_action_error": 0.0,
+            "max_abs_applied_torque": 40.35673904418945,
+            "max_abs_joint_velocity": 8.074758529663086,
+            "max_joint_effort_utilization": 0.33630615870157876,
+            "max_joint_velocity_utilization": 0.2446896524140329,
+            "max_tilt": 0.11632424592971802,
+            "mean_reward": 0.20545070287336906,
+            "real_time_factor": 0.865521555838368,
+            "termination_rate": 0.0,
+            "termination_term_illegal_contact_rate": 0.0,
+            "termination_term_time_out_rate": 0.0,
+            "tilt_rms": 0.03835960732919207,
+            "timeout_rate": 0.0,
+            "tracking_xy_rmse": 0.04109008866204322,
+            "tracking_yaw_rmse": 0.036512384033734704
+          },
+          "windows_env0": {
+            "full": {
+              "step_range_half_open": [
+                0,
+                6000
+              ],
+              "sample_count": 6000,
+              "tracking_xy_rmse_m_s": 0.04109008865513833,
+              "tracking_yaw_rmse_rad_s": 0.03651238405226068,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.18731617254001773,
+              "hip_target_rms_rad": 0.24956174256033384,
+              "hip_target_abs_peak_rad": 0.4391223192214966,
+              "hip_target_mean_R_L_rad": [
+                -0.23821843484696,
+                0.24725646696363887
+              ],
+              "hip_target_step_change_rms_rad": 0.031242875749123673,
+              "hip_target_second_difference_rms_rad": 0.04703771068103839,
+              "hip_actual_position_rms_rad": 0.010716407491293505,
+              "hip_actual_velocity_rms_rad_s": 0.1043417387144187,
+              "hip_applied_torque_rms_Nm": 22.653383033996057,
+              "leg_target_step_change_rms_rad": 0.029747887528767874,
+              "wheel_target_step_change_rms_rad_s": 0.6779293870678046,
+              "wheel_actual_velocity_rms_rad_s": 1.4468536576953965,
+              "net_displacement_m": 0.35570229646625795,
+              "max_displacement_m": 0.4963661335204534,
+              "path_length_m": 6.009411196435112,
+              "mean_body_velocity_xyz_m_s": [
+                0.0033484976633560565,
+                -0.00010295867726184345,
+                0.00028338800803612686
+              ]
+            },
+            "startup_0_1s": {
+              "step_range_half_open": [
+                0,
+                50
+              ],
+              "sample_count": 50,
+              "tracking_xy_rmse_m_s": 0.04933344324974023,
+              "tracking_yaw_rmse_rad_s": 0.06809202589823941,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.4316025397715236,
+              "hip_target_rms_rad": 0.12326614604321892,
+              "hip_target_abs_peak_rad": 0.20046697556972504,
+              "hip_target_mean_R_L_rad": [
+                -0.11056836266070605,
+                0.11690024584531784
+              ],
+              "hip_target_step_change_rms_rad": 0.042870538939807,
+              "hip_target_second_difference_rms_rad": 0.068829615843023,
+              "hip_actual_position_rms_rad": 0.010133438366596258,
+              "hip_actual_velocity_rms_rad_s": 0.20347193231380956,
+              "hip_applied_torque_rms_Nm": 10.815866216339026,
+              "leg_target_step_change_rms_rad": 0.03305922775115838,
+              "wheel_target_step_change_rms_rad_s": 0.8594081481738735,
+              "wheel_actual_velocity_rms_rad_s": 2.136512052876576,
+              "net_displacement_m": 0.05029603795415644,
+              "max_displacement_m": 0.05029603795415644,
+              "path_length_m": 0.05797613391268755,
+              "mean_body_velocity_xyz_m_s": [
+                0.04926823945250362,
+                -0.009841030579991639,
+                -0.04742751484271139
+              ]
+            },
+            "steady_40_120s": {
+              "step_range_half_open": [
+                2000,
+                6000
+              ],
+              "sample_count": 4000,
+              "tracking_xy_rmse_m_s": 0.0412391309869643,
+              "tracking_yaw_rmse_rad_s": 0.036111905877634375,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.18579103584503398,
+              "hip_target_rms_rad": 0.24925561438940835,
+              "hip_target_abs_peak_rad": 0.43671420216560364,
+              "hip_target_mean_R_L_rad": [
+                -0.23857838955707847,
+                0.24797529456950723
+              ],
+              "hip_target_step_change_rms_rad": 0.030882449089808237,
+              "hip_target_second_difference_rms_rad": 0.04631155347155509,
+              "hip_actual_position_rms_rad": 0.010603450112324641,
+              "hip_actual_velocity_rms_rad_s": 0.1017647308034024,
+              "hip_applied_torque_rms_Nm": 22.628789979907744,
+              "leg_target_step_change_rms_rad": 0.029685130699265393,
+              "wheel_target_step_change_rms_rad_s": 0.6805929672879094,
+              "wheel_actual_velocity_rms_rad_s": 1.43121660824177,
+              "net_displacement_m": 0.041808048721213416,
+              "max_displacement_m": 0.18090478493741807,
+              "path_length_m": 4.0204343271733745,
+              "mean_body_velocity_xyz_m_s": [
+                0.0009217174176490062,
+                0.00011339201015107393,
+                0.0008582250373515307
+              ]
+            }
+          },
+          "scenario": {
+            "command_schedule": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 5999,
+                "start_step": 0
+              }
+            ],
+            "duration_steps": 6000,
+            "num_envs": 1,
+            "scenario_id": "nominal-training-noise",
+            "scenario_overrides": {
+              "curriculum.terrain_levels": null,
+              "episode_length_s": 150.0,
+              "events.add_joint_default_pos": null,
+              "events.randomize_actuator_gains": null,
+              "events.randomize_com_positions": null,
+              "events.randomize_push_robot": null,
+              "events.randomize_reset_base.params.pose_range": {
+                "pitch": [
+                  0.0,
+                  0.0
+                ],
+                "roll": [
+                  0.0,
+                  0.0
+                ],
+                "x": [
+                  0.0,
+                  0.0
+                ],
+                "y": [
+                  0.0,
+                  0.0
+                ],
+                "yaw": [
+                  0.0,
+                  0.0
+                ],
+                "z": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "events.randomize_reset_base.params.velocity_range": {
+                "pitch": [
+                  0.0,
+                  0.0
+                ],
+                "roll": [
+                  0.0,
+                  0.0
+                ],
+                "x": [
+                  0.0,
+                  0.0
+                ],
+                "y": [
+                  0.0,
+                  0.0
+                ],
+                "yaw": [
+                  0.0,
+                  0.0
+                ],
+                "z": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "events.randomize_reset_joints.params.position_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_reset_joints.params.velocity_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_rigid_body_mass_base": null,
+              "events.randomize_rigid_body_mass_others": null,
+              "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+                1.0,
+                1.0
+              ],
+              "events.randomize_rigid_body_material.params.restitution_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_rigid_body_material.params.static_friction_range": [
+                1.0,
+                1.0
+              ],
+              "observations.policy.enable_corruption": true,
+              "scene.robot.actuators.foots.max_delay": 0,
+              "scene.robot.actuators.foots.min_delay": 0,
+              "scene.robot.actuators.legs.max_delay": 0,
+              "scene.robot.actuators.legs.min_delay": 0,
+              "scene.robot.actuators.wheels.max_delay": 0,
+              "scene.robot.actuators.wheels.min_delay": 0,
+              "scene.terrain.terrain_generator": null,
+              "scene.terrain.terrain_type": "plane",
+              "terminations.terrain_out_of_bounds": null
+            },
+            "seed": 42
+          }
+        }
+      }
+    },
+    "new": {
+      "run": "2026-09-19_11-41-48",
+      "manifest": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/manifest.json",
+        "sha256": "6146cf53c3ff4a6b0a463d8bb9b4c58b83a54b254b79b71f9b9fc2a21aca11f0"
+      },
+      "cases": {
+        "baseline-no-push": {
+          "result": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/baseline-no-push-a01/result.json",
+            "sha256": "286651109149b7f750e880f0734f121c42976b465d496193dcdede4e6f61aaca"
+          },
+          "telemetry": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/baseline-no-push-a01/telemetry.json.gz",
+            "sha256": "f12c71d9a583742716712f14bc89aa839ed3ebc9e5d3fa6318e7ee01b4e71494"
+          },
+          "telemetry_status": "complete",
+          "missing_required_signals": [],
+          "official_metrics": {
+            "action_rate_rms": 0.35143967562586287,
+            "body_roll_pitch_angular_acceleration_p95": 30.56131338505451,
+            "body_roll_pitch_angular_acceleration_rms": 15.700438312184447,
+            "body_roll_pitch_angular_velocity_p95": 0.5868262842753935,
+            "body_roll_pitch_angular_velocity_rms": 0.3290325766116088,
+            "body_vertical_acceleration_p95": 3.1713612377643585,
+            "body_vertical_acceleration_rms": 1.683765231673208,
+            "body_vertical_velocity_p95": 0.10453128069639206,
+            "body_vertical_velocity_rms": 0.06390488618393851,
+            "illegal_contact_rate": 0.0,
+            "joint_effort_limit_violation_rate": 0.0,
+            "joint_velocity_limit_violation_rate": 0.0,
+            "max_abs_action": 29.07977867126465,
+            "max_abs_action_error": 0.0,
+            "max_abs_applied_torque": 67.39163970947266,
+            "max_abs_joint_velocity": 18.62896156311035,
+            "max_joint_effort_utilization": 0.5615969975789388,
+            "max_joint_velocity_utilization": 0.7422674179077149,
+            "max_tilt": 0.3382332921028137,
+            "mean_reward": 0.1712466920699392,
+            "real_time_factor": 0.785673398724839,
+            "termination_rate": 0.0,
+            "termination_term_illegal_contact_rate": 0.0,
+            "termination_term_terrain_out_of_bounds_rate": 0.0,
+            "termination_term_time_out_rate": 0.0,
+            "tilt_rms": 0.053594224402174526,
+            "timeout_rate": 0.0,
+            "tracking_xy_rmse": 0.1493196955933111,
+            "tracking_yaw_rmse": 0.2361335177221036
+          },
+          "windows_env0": {
+            "full": {
+              "step_range_half_open": [
+                0,
+                2100
+              ],
+              "sample_count": 2100,
+              "tracking_xy_rmse_m_s": 0.1557106406668583,
+              "tracking_yaw_rmse_rad_s": 0.22541031332819791,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.2954159300567576,
+              "hip_target_rms_rad": 0.05974516392131804,
+              "hip_target_abs_peak_rad": 0.3400386869907379,
+              "hip_target_mean_R_L_rad": [
+                -0.06347303917010626,
+                0.02063542411840033
+              ],
+              "hip_target_step_change_rms_rad": 0.024784871522253706,
+              "hip_target_second_difference_rms_rad": 0.03980769945078098,
+              "hip_actual_position_rms_rad": 0.020686752468902805,
+              "hip_actual_velocity_rms_rad_s": 0.20514706628389004,
+              "hip_applied_torque_rms_Nm": 5.148595250327914,
+              "leg_target_step_change_rms_rad": 0.03067876873093428,
+              "wheel_target_step_change_rms_rad_s": 0.7564287366091964,
+              "wheel_actual_velocity_rms_rad_s": 5.2731483636845695,
+              "net_displacement_m": 5.192353635079905,
+              "max_displacement_m": 7.984814098578119,
+              "path_length_m": 16.93548372055291,
+              "mean_body_velocity_xyz_m_s": [
+                0.25614964539952956,
+                0.003764215622185951,
+                5.576065766425537e-05
+              ]
+            },
+            "startup_0_1s": {
+              "step_range_half_open": [
+                0,
+                50
+              ],
+              "sample_count": 50,
+              "tracking_xy_rmse_m_s": 0.1981063108118462,
+              "tracking_yaw_rmse_rad_s": 0.36366386735373935,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.5651682964620779,
+              "hip_target_rms_rad": 0.054845544026529136,
+              "hip_target_abs_peak_rad": 0.29606541991233826,
+              "hip_target_mean_R_L_rad": [
+                -0.04254615373909473,
+                0.015582108497619629
+              ],
+              "hip_target_step_change_rms_rad": 0.05820192840445478,
+              "hip_target_second_difference_rms_rad": 0.10243416193515023,
+              "hip_actual_position_rms_rad": 0.04694625358071912,
+              "hip_actual_velocity_rms_rad_s": 0.46085640029927033,
+              "hip_applied_torque_rms_Nm": 6.012974573182292,
+              "leg_target_step_change_rms_rad": 0.057487520625760326,
+              "wheel_target_step_change_rms_rad_s": 1.4305894845453353,
+              "wheel_actual_velocity_rms_rad_s": 4.391580723464626,
+              "net_displacement_m": 0.15570382015436582,
+              "max_displacement_m": 0.16044038044738543,
+              "path_length_m": 0.22416978425525713,
+              "mean_body_velocity_xyz_m_s": [
+                -0.14198633214458822,
+                0.07767190715298057,
+                -0.042556183063425124
+              ]
+            },
+            "command_segments_env0": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  0,
+                  300
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    50,
+                    300
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.04381137933969839,
+                  "tracking_yaw_rmse_rad_s": 0.10034160098252701,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.18449473420339296,
+                  "hip_target_rms_rad": 0.042622780050932965,
+                  "hip_target_abs_peak_rad": 0.11466152966022491,
+                  "hip_target_mean_R_L_rad": [
+                    -0.047559330210089686,
+                    0.009142616376280785
+                  ],
+                  "hip_target_step_change_rms_rad": 0.01710887754091339,
+                  "hip_target_second_difference_rms_rad": 0.027761134750782627,
+                  "hip_actual_position_rms_rad": 0.023346590311732557,
+                  "hip_actual_velocity_rms_rad_s": 0.1433974184677604,
+                  "hip_applied_torque_rms_Nm": 3.7479849475689013,
+                  "leg_target_step_change_rms_rad": 0.02627146675423896,
+                  "wheel_target_step_change_rms_rad_s": 0.728525534984422,
+                  "wheel_actual_velocity_rms_rad_s": 1.3397213992420511,
+                  "net_displacement_m": 0.07989583814608121,
+                  "max_displacement_m": 0.08539388621298663,
+                  "path_length_m": 0.2721500323399466,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.015481942671351135,
+                    -0.0031190701611340044,
+                    -0.0022907287285197525
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.014240760613465681,
+                "world_heading_change_full_rad": -0.10077494457523539
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  300,
+                  600
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    350,
+                    600
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.06663958873338639,
+                  "tracking_yaw_rmse_rad_s": 0.2503953653756796,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.27353028582971217,
+                  "hip_target_rms_rad": 0.04770992940698334,
+                  "hip_target_abs_peak_rad": 0.1244334727525711,
+                  "hip_target_mean_R_L_rad": [
+                    -0.057359479978680614,
+                    0.016188597254455088
+                  ],
+                  "hip_target_step_change_rms_rad": 0.020691557252668667,
+                  "hip_target_second_difference_rms_rad": 0.03338069991049265,
+                  "hip_actual_position_rms_rad": 0.013447673657970881,
+                  "hip_actual_velocity_rms_rad_s": 0.21081003370184423,
+                  "hip_applied_torque_rms_Nm": 4.138645738338962,
+                  "leg_target_step_change_rms_rad": 0.028689975736269874,
+                  "wheel_target_step_change_rms_rad_s": 0.6613290166826008,
+                  "wheel_actual_velocity_rms_rad_s": 4.385519577395807,
+                  "net_displacement_m": 2.141044577107288,
+                  "max_displacement_m": 2.141044577107288,
+                  "path_length_m": 2.153404605872014,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.4299434903860092,
+                    0.004626249015331268,
+                    0.00014460390293970704
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.032421372383444884,
+                "world_heading_change_full_rad": 0.15527164106534386
+              },
+              {
+                "command": [
+                  1.0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  600,
+                  900
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    650,
+                    900
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.08493495538534629,
+                  "tracking_yaw_rmse_rad_s": 0.28713520528697056,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.3456162213701116,
+                  "hip_target_rms_rad": 0.07729512310773856,
+                  "hip_target_abs_peak_rad": 0.160501629114151,
+                  "hip_target_mean_R_L_rad": [
+                    -0.09113481165841222,
+                    0.04269947355240583
+                  ],
+                  "hip_target_step_change_rms_rad": 0.02484139042634993,
+                  "hip_target_second_difference_rms_rad": 0.04116630686411385,
+                  "hip_actual_position_rms_rad": 0.016245808227280344,
+                  "hip_actual_velocity_rms_rad_s": 0.2189267167725239,
+                  "hip_applied_torque_rms_Nm": 6.439231583762058,
+                  "leg_target_step_change_rms_rad": 0.029553665007874073,
+                  "wheel_target_step_change_rms_rad_s": 0.5391082932461687,
+                  "wheel_actual_velocity_rms_rad_s": 9.287938156601642,
+                  "net_displacement_m": 4.622877059578073,
+                  "max_displacement_m": 4.622877059578073,
+                  "path_length_m": 4.628828032055004,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.924998486995697,
+                    -0.001957440495491028,
+                    -0.017140717251226307
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.03511150541172053,
+                "world_heading_change_full_rad": -0.17789547924041804
+              },
+              {
+                "command": [
+                  -0.5,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  900,
+                  1200
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    950,
+                    1200
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.07875785245696759,
+                  "tracking_yaw_rmse_rad_s": 0.1500887036320259,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.272633449480514,
+                  "hip_target_rms_rad": 0.06661509499972278,
+                  "hip_target_abs_peak_rad": 0.24343016743659973,
+                  "hip_target_mean_R_L_rad": [
+                    -0.07371564282476901,
+                    0.020773296661674975
+                  ],
+                  "hip_target_step_change_rms_rad": 0.030379121136543542,
+                  "hip_target_second_difference_rms_rad": 0.04551626275833793,
+                  "hip_actual_position_rms_rad": 0.02069234794928279,
+                  "hip_actual_velocity_rms_rad_s": 0.21724805373524572,
+                  "hip_applied_torque_rms_Nm": 5.4426521762826034,
+                  "leg_target_step_change_rms_rad": 0.03518147773722682,
+                  "wheel_target_step_change_rms_rad_s": 0.7621232819755728,
+                  "wheel_actual_velocity_rms_rad_s": 5.167532666495238,
+                  "net_displacement_m": 2.448581417528338,
+                  "max_displacement_m": 2.448581417528338,
+                  "path_length_m": 2.457978573443684,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.49236443638801575,
+                    0.0020746057331562043,
+                    0.02405469236243516
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.005456850196157272,
+                "world_heading_change_full_rad": 0.045572589980617306
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0.6
+                ],
+                "full_segment_steps": [
+                  1200,
+                  1500
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1250,
+                    1500
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.06866913219922381,
+                  "tracking_yaw_rmse_rad_s": 0.23548974238787904,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.3082079717841234,
+                  "hip_target_rms_rad": 0.04601328451285226,
+                  "hip_target_abs_peak_rad": 0.1778729408979416,
+                  "hip_target_mean_R_L_rad": [
+                    -0.0493495252430439,
+                    0.016141720872372388
+                  ],
+                  "hip_target_step_change_rms_rad": 0.022984546142476706,
+                  "hip_target_second_difference_rms_rad": 0.03568771642609221,
+                  "hip_actual_position_rms_rad": 0.01806085920034623,
+                  "hip_actual_velocity_rms_rad_s": 0.20738314226531712,
+                  "hip_applied_torque_rms_Nm": 3.863594261458562,
+                  "leg_target_step_change_rms_rad": 0.03122864261177425,
+                  "wheel_target_step_change_rms_rad_s": 0.6898434885059974,
+                  "wheel_actual_velocity_rms_rad_s": 4.986946606738403,
+                  "net_displacement_m": 1.392783700928055,
+                  "max_displacement_m": 1.393776920134608,
+                  "path_length_m": 2.1829029702173113,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.46377196633815765,
+                    0.03245458622276783,
+                    0.0028444510651752354
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.6063399405979241,
+                "world_heading_change_full_rad": 3.712924793533279
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  -0.6
+                ],
+                "full_segment_steps": [
+                  1500,
+                  1800
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1550,
+                    1800
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.057751742237280426,
+                  "tracking_yaw_rmse_rad_s": 0.23101470768301016,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.2876983259174841,
+                  "hip_target_rms_rad": 0.05257533102079177,
+                  "hip_target_abs_peak_rad": 0.18544083833694458,
+                  "hip_target_mean_R_L_rad": [
+                    -0.06293364348635078,
+                    0.019443149745464326
+                  ],
+                  "hip_target_step_change_rms_rad": 0.021521994396045716,
+                  "hip_target_second_difference_rms_rad": 0.03560116874128601,
+                  "hip_actual_position_rms_rad": 0.016768284918917076,
+                  "hip_actual_velocity_rms_rad_s": 0.18929628460917208,
+                  "hip_applied_torque_rms_Nm": 4.607558049591138,
+                  "leg_target_step_change_rms_rad": 0.027665989715540452,
+                  "wheel_target_step_change_rms_rad_s": 0.6971822235043507,
+                  "wheel_actual_velocity_rms_rad_s": 5.077175332379291,
+                  "net_displacement_m": 1.640896083073417,
+                  "max_displacement_m": 1.640896083073417,
+                  "path_length_m": 2.385809303711061,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.4502850008010864,
+                    -0.023811968713998793,
+                    0.00023905043210834263
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.5403659755239884,
+                "world_heading_change_full_rad": -3.3235948758423772
+              },
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  1800,
+                  2100
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1850,
+                    2100
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.035527189878651784,
+                  "tracking_yaw_rmse_rad_s": 0.0923509651664649,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.16727805090063524,
+                  "hip_target_rms_rad": 0.02781142706061634,
+                  "hip_target_abs_peak_rad": 0.0727529227733612,
+                  "hip_target_mean_R_L_rad": [
+                    -0.030904082994908093,
+                    8.857906982302665e-05
+                  ],
+                  "hip_target_step_change_rms_rad": 0.016732279625782383,
+                  "hip_target_second_difference_rms_rad": 0.02735711071474287,
+                  "hip_actual_position_rms_rad": 0.0247464190368239,
+                  "hip_actual_velocity_rms_rad_s": 0.10764861073028066,
+                  "hip_applied_torque_rms_Nm": 3.0561067348154247,
+                  "leg_target_step_change_rms_rad": 0.024224372341932626,
+                  "wheel_target_step_change_rms_rad_s": 0.5805834519245648,
+                  "wheel_actual_velocity_rms_rad_s": 0.9408287649302142,
+                  "net_displacement_m": 0.1921508905996048,
+                  "max_displacement_m": 0.1921508905996048,
+                  "path_length_m": 0.23719799060107002,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.03710679927305319,
+                    0.004133826999925077,
+                    0.0004163509770296514
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.013928848050321296,
+                "world_heading_change_full_rad": -0.06380262818932181
+              }
+            ]
+          },
+          "scenario": {
+            "command_schedule": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 299,
+                "start_step": 0
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0
+                ],
+                "end_step": 599,
+                "start_step": 300
+              },
+              {
+                "command": [
+                  1.0,
+                  0,
+                  0
+                ],
+                "end_step": 899,
+                "start_step": 600
+              },
+              {
+                "command": [
+                  -0.5,
+                  0,
+                  0
+                ],
+                "end_step": 1199,
+                "start_step": 900
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0.6
+                ],
+                "end_step": 1499,
+                "start_step": 1200
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  -0.6
+                ],
+                "end_step": 1799,
+                "start_step": 1500
+              },
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 2099,
+                "start_step": 1800
+              }
+            ],
+            "duration_steps": 2100,
+            "num_envs": 4,
+            "scenario_id": "baseline-no-push",
+            "scenario_overrides": {
+              "episode_length_s": 60.0,
+              "events.randomize_push_robot": null
+            },
+            "seed": 42
+          }
+        },
+        "current-push": {
+          "result": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/current-push-a01/result.json",
+            "sha256": "f6a63088e2e8948bfcb4ee1d07238ddf3ac7d34d38272284e60e305bba0b12bd"
+          },
+          "telemetry": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/current-push-a01/telemetry.json.gz",
+            "sha256": "510a60e3b81bd0f97b6c1e9bff5093c6bd5aefb922ac4272743fe1d7023f30aa"
+          },
+          "telemetry_status": "complete",
+          "missing_required_signals": [],
+          "official_metrics": {
+            "action_rate_rms": 0.39254954705001655,
+            "body_roll_pitch_angular_acceleration_p95": 33.21943996409386,
+            "body_roll_pitch_angular_acceleration_rms": 17.02267121073887,
+            "body_roll_pitch_angular_velocity_p95": 0.6850945404588242,
+            "body_roll_pitch_angular_velocity_rms": 0.3714039441105361,
+            "body_vertical_acceleration_p95": 3.4549671225249767,
+            "body_vertical_acceleration_rms": 1.890148231157856,
+            "body_vertical_velocity_p95": 0.12572894990444183,
+            "body_vertical_velocity_rms": 0.06791430653627978,
+            "illegal_contact_rate": 0.0,
+            "joint_effort_limit_violation_rate": 0.0,
+            "joint_velocity_limit_violation_rate": 0.0,
+            "max_abs_action": 44.66126251220703,
+            "max_abs_action_error": 0.0,
+            "max_abs_applied_torque": 54.21084213256836,
+            "max_abs_joint_velocity": 26.714975357055664,
+            "max_joint_effort_utilization": 0.451757017771403,
+            "max_joint_velocity_utilization": 0.8095447077895656,
+            "max_tilt": 0.2743893265724182,
+            "mean_reward": 0.1671100611124365,
+            "real_time_factor": 0.8025417631915496,
+            "termination_rate": 0.0,
+            "termination_term_illegal_contact_rate": 0.0,
+            "termination_term_terrain_out_of_bounds_rate": 0.0,
+            "termination_term_time_out_rate": 0.0,
+            "tilt_rms": 0.05988465026099977,
+            "timeout_rate": 0.0,
+            "tracking_xy_rmse": 0.18746733786636124,
+            "tracking_yaw_rmse": 0.25880684978328017
+          },
+          "windows_env0": {
+            "full": {
+              "step_range_half_open": [
+                0,
+                2100
+              ],
+              "sample_count": 2100,
+              "tracking_xy_rmse_m_s": 0.1966350633060638,
+              "tracking_yaw_rmse_rad_s": 0.2460238122167744,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.33481770542865436,
+              "hip_target_rms_rad": 0.06154523821583911,
+              "hip_target_abs_peak_rad": 0.2364039272069931,
+              "hip_target_mean_R_L_rad": [
+                -0.06494828239881567,
+                0.017839313972120484
+              ],
+              "hip_target_step_change_rms_rad": 0.024112202951897223,
+              "hip_target_second_difference_rms_rad": 0.03751875611872419,
+              "hip_actual_position_rms_rad": 0.024859826748574093,
+              "hip_actual_velocity_rms_rad_s": 0.2633903973083964,
+              "hip_applied_torque_rms_Nm": 5.274879940035565,
+              "leg_target_step_change_rms_rad": 0.03147965614398866,
+              "wheel_target_step_change_rms_rad_s": 0.8244463640041955,
+              "wheel_actual_velocity_rms_rad_s": 5.862880298433397,
+              "net_displacement_m": 6.085763551523069,
+              "max_displacement_m": 7.826806404507125,
+              "path_length_m": 18.12549731312405,
+              "mean_body_velocity_xyz_m_s": [
+                0.21059502094429697,
+                0.003597832983879406,
+                0.0015002855683685214
+              ]
+            },
+            "startup_0_1s": {
+              "step_range_half_open": [
+                0,
+                50
+              ],
+              "sample_count": 50,
+              "tracking_xy_rmse_m_s": 0.17760245682924428,
+              "tracking_yaw_rmse_rad_s": 0.38011299023179956,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.6822082099589694,
+              "hip_target_rms_rad": 0.04332902779736883,
+              "hip_target_abs_peak_rad": 0.09887393563985825,
+              "hip_target_mean_R_L_rad": [
+                -0.04027362272143364,
+                0.023179127536714077
+              ],
+              "hip_target_step_change_rms_rad": 0.025125159834634227,
+              "hip_target_second_difference_rms_rad": 0.03906646094630261,
+              "hip_actual_position_rms_rad": 0.024537468010924247,
+              "hip_actual_velocity_rms_rad_s": 0.7102544416598072,
+              "hip_applied_torque_rms_Nm": 3.9733336079228336,
+              "leg_target_step_change_rms_rad": 0.036786740028793764,
+              "wheel_target_step_change_rms_rad_s": 1.2494897106825293,
+              "wheel_actual_velocity_rms_rad_s": 4.4182612837673645,
+              "net_displacement_m": 0.20687265907443525,
+              "max_displacement_m": 0.2098309160147619,
+              "path_length_m": 0.22279464788263995,
+              "mean_body_velocity_xyz_m_s": [
+                0.2038739736098796,
+                0.03221564747393131,
+                -0.05845348821952939
+              ]
+            },
+            "command_segments_env0": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  0,
+                  300
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    50,
+                    300
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.04821323141535951,
+                  "tracking_yaw_rmse_rad_s": 0.09119923157739196,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.2092132307989602,
+                  "hip_target_rms_rad": 0.03821202075628391,
+                  "hip_target_abs_peak_rad": 0.09325292706489563,
+                  "hip_target_mean_R_L_rad": [
+                    -0.04410555588454008,
+                    -0.007183221474289894
+                  ],
+                  "hip_target_step_change_rms_rad": 0.01831772296920571,
+                  "hip_target_second_difference_rms_rad": 0.027987501707743816,
+                  "hip_actual_position_rms_rad": 0.021029482320172606,
+                  "hip_actual_velocity_rms_rad_s": 0.17853520804181283,
+                  "hip_applied_torque_rms_Nm": 2.7854473544706178,
+                  "leg_target_step_change_rms_rad": 0.027479443717938114,
+                  "wheel_target_step_change_rms_rad_s": 0.7606546650018439,
+                  "wheel_actual_velocity_rms_rad_s": 1.462252070847623,
+                  "net_displacement_m": 0.12476091767720482,
+                  "max_displacement_m": 0.12811776757762325,
+                  "path_length_m": 0.29618612449414483,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.02581467693601735,
+                    0.0020990257235243915,
+                    0.0021401439951587234
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.04171731444172717,
+                "world_heading_change_full_rad": -0.21508333170717597
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  300,
+                  600
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    350,
+                    600
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.08194305873171294,
+                  "tracking_yaw_rmse_rad_s": 0.24758701487359086,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.28882855973454163,
+                  "hip_target_rms_rad": 0.0552674728561822,
+                  "hip_target_abs_peak_rad": 0.195083886384964,
+                  "hip_target_mean_R_L_rad": [
+                    -0.064745118111372,
+                    0.021718229375779628
+                  ],
+                  "hip_target_step_change_rms_rad": 0.021489675441132738,
+                  "hip_target_second_difference_rms_rad": 0.03452466504283062,
+                  "hip_actual_position_rms_rad": 0.013093501618424147,
+                  "hip_actual_velocity_rms_rad_s": 0.20635160898117527,
+                  "hip_applied_torque_rms_Nm": 4.868592203849873,
+                  "leg_target_step_change_rms_rad": 0.028984589458513177,
+                  "wheel_target_step_change_rms_rad_s": 0.6856069327760117,
+                  "wheel_actual_velocity_rms_rad_s": 5.224937304373555,
+                  "net_displacement_m": 2.2803820030930506,
+                  "max_displacement_m": 2.2803820030930506,
+                  "path_length_m": 2.2992086463975783,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.45701499009132385,
+                    -0.0016313895024359225,
+                    0.005815814746310935
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.0056553682855640846,
+                "world_heading_change_full_rad": 0.01373820035474338
+              },
+              {
+                "command": [
+                  1.0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  600,
+                  900
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    650,
+                    900
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.14628692644235938,
+                  "tracking_yaw_rmse_rad_s": 0.3305056621386705,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.3839194295739456,
+                  "hip_target_rms_rad": 0.07949767588874541,
+                  "hip_target_abs_peak_rad": 0.17387327551841736,
+                  "hip_target_mean_R_L_rad": [
+                    -0.0940278410166502,
+                    0.04726544005051255
+                  ],
+                  "hip_target_step_change_rms_rad": 0.02234667990294117,
+                  "hip_target_second_difference_rms_rad": 0.03531280911809881,
+                  "hip_actual_position_rms_rad": 0.016900355897006687,
+                  "hip_actual_velocity_rms_rad_s": 0.2798593770605309,
+                  "hip_applied_torque_rms_Nm": 6.9218879142805205,
+                  "leg_target_step_change_rms_rad": 0.030139334731123762,
+                  "wheel_target_step_change_rms_rad_s": 0.6572774222311804,
+                  "wheel_actual_velocity_rms_rad_s": 9.683540738403476,
+                  "net_displacement_m": 4.666770179123565,
+                  "max_displacement_m": 4.666770179123565,
+                  "path_length_m": 4.695394211236499,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.9359587140083313,
+                    0.021017451231367886,
+                    -0.013297636945659178
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.05715126957705555,
+                "world_heading_change_full_rad": -0.3407179785130633
+              },
+              {
+                "command": [
+                  -0.5,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  900,
+                  1200
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    950,
+                    1200
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.17700755349762662,
+                  "tracking_yaw_rmse_rad_s": 0.23546037844495754,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.35879588403911494,
+                  "hip_target_rms_rad": 0.07354469664973468,
+                  "hip_target_abs_peak_rad": 0.2364039272069931,
+                  "hip_target_mean_R_L_rad": [
+                    -0.07947221726179123,
+                    0.015305670846253634
+                  ],
+                  "hip_target_step_change_rms_rad": 0.029725838023649427,
+                  "hip_target_second_difference_rms_rad": 0.04521893648063158,
+                  "hip_actual_position_rms_rad": 0.038492459689273006,
+                  "hip_actual_velocity_rms_rad_s": 0.3100383094127013,
+                  "hip_applied_torque_rms_Nm": 5.774566694417037,
+                  "leg_target_step_change_rms_rad": 0.03563133777393984,
+                  "wheel_target_step_change_rms_rad_s": 0.9763987415898617,
+                  "wheel_actual_velocity_rms_rad_s": 6.8811854808241755,
+                  "net_displacement_m": 2.979107095381599,
+                  "max_displacement_m": 2.979107095381599,
+                  "path_length_m": 3.010359192721535,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.6010025734901429,
+                    -0.01970763429137878,
+                    0.023609444547560997
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.014623537712420026,
+                "world_heading_change_full_rad": -0.0501255878221345
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0.6
+                ],
+                "full_segment_steps": [
+                  1200,
+                  1500
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1250,
+                    1500
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.11434711940329009,
+                  "tracking_yaw_rmse_rad_s": 0.24895655350183804,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.27841706719213766,
+                  "hip_target_rms_rad": 0.057379736394598556,
+                  "hip_target_abs_peak_rad": 0.20443718135356903,
+                  "hip_target_mean_R_L_rad": [
+                    -0.06541389165073633,
+                    0.02436598985642195
+                  ],
+                  "hip_target_step_change_rms_rad": 0.025084406488296056,
+                  "hip_target_second_difference_rms_rad": 0.03808685649718525,
+                  "hip_actual_position_rms_rad": 0.0171501125854551,
+                  "hip_actual_velocity_rms_rad_s": 0.20538716622665168,
+                  "hip_applied_torque_rms_Nm": 4.955816852922715,
+                  "leg_target_step_change_rms_rad": 0.03324035376655414,
+                  "wheel_target_step_change_rms_rad_s": 0.6416322712471563,
+                  "wheel_actual_velocity_rms_rad_s": 4.46880868366637,
+                  "net_displacement_m": 1.4055243944954408,
+                  "max_displacement_m": 1.4055243944954408,
+                  "path_length_m": 1.9582661927575984,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.41468935149908065,
+                    0.028405182488262654,
+                    -0.0029894488868303596
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": 0.5368147136596962,
+                "world_heading_change_full_rad": 3.322661420045052
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  -0.6
+                ],
+                "full_segment_steps": [
+                  1500,
+                  1800
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1550,
+                    1800
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.07261276543756384,
+                  "tracking_yaw_rmse_rad_s": 0.2683532501973876,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.2988990891748874,
+                  "hip_target_rms_rad": 0.046632462972417625,
+                  "hip_target_abs_peak_rad": 0.23616833984851837,
+                  "hip_target_mean_R_L_rad": [
+                    -0.04345461421459913,
+                    0.007597947843372822
+                  ],
+                  "hip_target_step_change_rms_rad": 0.023097057061851535,
+                  "hip_target_second_difference_rms_rad": 0.03633236527446512,
+                  "hip_actual_position_rms_rad": 0.024059023534612298,
+                  "hip_actual_velocity_rms_rad_s": 0.2209102131980297,
+                  "hip_applied_torque_rms_Nm": 4.733967486917693,
+                  "leg_target_step_change_rms_rad": 0.02885935208323075,
+                  "wheel_target_step_change_rms_rad_s": 0.712830801986976,
+                  "wheel_actual_velocity_rms_rad_s": 5.034244680064822,
+                  "net_displacement_m": 1.5273201560135121,
+                  "max_displacement_m": 1.5454564033318554,
+                  "path_length_m": 2.3387152713521906,
+                  "mean_body_velocity_xyz_m_s": [
+                    0.43652229535579684,
+                    -0.03387125821760856,
+                    0.003014117127051577
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.5874494271352887,
+                "world_heading_change_full_rad": -3.6036444337204885
+              },
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "full_segment_steps": [
+                  1800,
+                  2100
+                ],
+                "steady_after_1s": {
+                  "step_range_half_open": [
+                    1850,
+                    2100
+                  ],
+                  "sample_count": 250,
+                  "tracking_xy_rmse_m_s": 0.1870442550340869,
+                  "tracking_yaw_rmse_rad_s": 0.11128299694235258,
+                  "body_roll_pitch_angular_velocity_rms_rad_s": 0.2681323243995637,
+                  "hip_target_rms_rad": 0.053088995603877545,
+                  "hip_target_abs_peak_rad": 0.2199309766292572,
+                  "hip_target_mean_R_L_rad": [
+                    -0.057029958374798295,
+                    0.0015795528031885624
+                  ],
+                  "hip_target_step_change_rms_rad": 0.02144647720527984,
+                  "hip_target_second_difference_rms_rad": 0.033150146758973084,
+                  "hip_actual_position_rms_rad": 0.021296416874960672,
+                  "hip_actual_velocity_rms_rad_s": 0.16820661874766513,
+                  "hip_applied_torque_rms_Nm": 4.0874619672308565,
+                  "leg_target_step_change_rms_rad": 0.030075684199270532,
+                  "wheel_target_step_change_rms_rad_s": 0.7920466393929496,
+                  "wheel_actual_velocity_rms_rad_s": 3.671150644656996,
+                  "net_displacement_m": 0.5698536318903018,
+                  "max_displacement_m": 0.5700034745085463,
+                  "path_length_m": 0.6730161619003278,
+                  "mean_body_velocity_xyz_m_s": [
+                    -0.11604606946813874,
+                    -0.0038175608113524503,
+                    0.004702681008842774
+                  ]
+                },
+                "mean_body_yaw_rate_full_rad_s": -0.005194014660889176,
+                "world_heading_change_full_rad": -0.031102427485373813
+              }
+            ]
+          },
+          "scenario": {
+            "command_schedule": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 299,
+                "start_step": 0
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0
+                ],
+                "end_step": 599,
+                "start_step": 300
+              },
+              {
+                "command": [
+                  1.0,
+                  0,
+                  0
+                ],
+                "end_step": 899,
+                "start_step": 600
+              },
+              {
+                "command": [
+                  -0.5,
+                  0,
+                  0
+                ],
+                "end_step": 1199,
+                "start_step": 900
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  0.6
+                ],
+                "end_step": 1499,
+                "start_step": 1200
+              },
+              {
+                "command": [
+                  0.5,
+                  0,
+                  -0.6
+                ],
+                "end_step": 1799,
+                "start_step": 1500
+              },
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 2099,
+                "start_step": 1800
+              }
+            ],
+            "duration_steps": 2100,
+            "num_envs": 4,
+            "scenario_id": "current-push",
+            "scenario_overrides": {
+              "episode_length_s": 60.0,
+              "events.randomize_push_robot.params.velocity_range": {
+                "x": [
+                  -1.0,
+                  1.0
+                ],
+                "y": [
+                  -1.0,
+                  1.0
+                ]
+              }
+            },
+            "seed": 42
+          }
+        },
+        "nominal-no-noise": {
+          "result": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/nominal-no-noise-a01/result.json",
+            "sha256": "043180135f2f60092c39d6e8d0969206bace9caa367a40c9f8e8345abad35d53"
+          },
+          "telemetry": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/nominal-no-noise-a01/telemetry.json.gz",
+            "sha256": "65b8c83597f24f56b0a8aaced501ef9d3820a1b10d80d0f1053e4fec45f5fbba"
+          },
+          "telemetry_status": "complete",
+          "missing_required_signals": [],
+          "official_metrics": {
+            "action_rate_rms": 0.14605710709186365,
+            "body_roll_pitch_angular_acceleration_p95": 3.9147583447853194,
+            "body_roll_pitch_angular_acceleration_rms": 2.731053934569027,
+            "body_roll_pitch_angular_velocity_p95": 0.19680403375412525,
+            "body_roll_pitch_angular_velocity_rms": 0.11148493639899967,
+            "body_vertical_acceleration_p95": 0.608578696846962,
+            "body_vertical_acceleration_rms": 0.4608308796463038,
+            "body_vertical_velocity_p95": 0.032290421426296234,
+            "body_vertical_velocity_rms": 0.021558841961146925,
+            "illegal_contact_rate": 0.0,
+            "joint_effort_limit_violation_rate": 0.0,
+            "joint_velocity_limit_violation_rate": 0.0,
+            "max_abs_action": 10.408117294311523,
+            "max_abs_action_error": 0.0,
+            "max_abs_applied_torque": 26.458452224731445,
+            "max_abs_joint_velocity": 5.935183525085449,
+            "max_joint_effort_utilization": 0.22048710187276205,
+            "max_joint_velocity_utilization": 0.17985404621471057,
+            "max_tilt": 0.061622440814971924,
+            "mean_reward": 0.2062117022573948,
+            "real_time_factor": 0.8668012816549091,
+            "termination_rate": 0.0,
+            "termination_term_illegal_contact_rate": 0.0,
+            "termination_term_time_out_rate": 0.0,
+            "tilt_rms": 0.03317496677945487,
+            "timeout_rate": 0.0,
+            "tracking_xy_rmse": 0.030253627061265848,
+            "tracking_yaw_rmse": 0.02297503685105529
+          },
+          "windows_env0": {
+            "full": {
+              "step_range_half_open": [
+                0,
+                6000
+              ],
+              "sample_count": 6000,
+              "tracking_xy_rmse_m_s": 0.03025362706527724,
+              "tracking_yaw_rmse_rad_s": 0.022975036845354884,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.11148493639899944,
+              "hip_target_rms_rad": 0.0330150411291477,
+              "hip_target_abs_peak_rad": 0.17661304771900177,
+              "hip_target_mean_R_L_rad": [
+                -0.04013576439240327,
+                0.012227614460823436
+              ],
+              "hip_target_step_change_rms_rad": 0.004753156082000346,
+              "hip_target_second_difference_rms_rad": 0.0049015001010353,
+              "hip_actual_position_rms_rad": 0.016969707605357143,
+              "hip_actual_velocity_rms_rad_s": 0.05727782495004963,
+              "hip_applied_torque_rms_Nm": 2.864559535819155,
+              "leg_target_step_change_rms_rad": 0.006491239101387687,
+              "wheel_target_step_change_rms_rad_s": 0.32243864051546095,
+              "wheel_actual_velocity_rms_rad_s": 0.7363740423081222,
+              "net_displacement_m": 1.7024659566869533,
+              "max_displacement_m": 1.745190320311489,
+              "path_length_m": 4.575648464005652,
+              "mean_body_velocity_xyz_m_s": [
+                0.014223448209499414,
+                -0.00012715763088128065,
+                -0.0003744754769507684
+              ]
+            },
+            "startup_0_1s": {
+              "step_range_half_open": [
+                0,
+                50
+              ],
+              "sample_count": 50,
+              "tracking_xy_rmse_m_s": 0.021297657999673727,
+              "tracking_yaw_rmse_rad_s": 0.04835213208028584,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.4079798299800555,
+              "hip_target_rms_rad": 0.032399348366203555,
+              "hip_target_abs_peak_rad": 0.09397142380475998,
+              "hip_target_mean_R_L_rad": [
+                -0.040097206607460974,
+                0.01594125486910343
+              ],
+              "hip_target_step_change_rms_rad": 0.007579726945908482,
+              "hip_target_second_difference_rms_rad": 0.00828233981785828,
+              "hip_actual_position_rms_rad": 0.01260658775395934,
+              "hip_actual_velocity_rms_rad_s": 0.10053785924171729,
+              "hip_applied_torque_rms_Nm": 2.8928371931130887,
+              "leg_target_step_change_rms_rad": 0.012421915786677229,
+              "wheel_target_step_change_rms_rad_s": 0.5050654158039857,
+              "wheel_actual_velocity_rms_rad_s": 1.2314173754039517,
+              "net_displacement_m": 0.015421627779764554,
+              "max_displacement_m": 0.01682581154075648,
+              "path_length_m": 0.02371876894388698,
+              "mean_body_velocity_xyz_m_s": [
+                0.011166374246240594,
+                0.010268696352977714,
+                -0.04692896731314249
+              ]
+            },
+            "steady_40_120s": {
+              "step_range_half_open": [
+                2000,
+                6000
+              ],
+              "sample_count": 4000,
+              "tracking_xy_rmse_m_s": 0.03023169911828211,
+              "tracking_yaw_rmse_rad_s": 0.022663924707694846,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.10278379270360555,
+              "hip_target_rms_rad": 0.03264833813922703,
+              "hip_target_abs_peak_rad": 0.1700182408094406,
+              "hip_target_mean_R_L_rad": [
+                -0.039992580723483113,
+                0.011660013120155781
+              ],
+              "hip_target_step_change_rms_rad": 0.004329353091457238,
+              "hip_target_second_difference_rms_rad": 0.004425450439300719,
+              "hip_actual_position_rms_rad": 0.017074652433947502,
+              "hip_actual_velocity_rms_rad_s": 0.05449514220193793,
+              "hip_applied_torque_rms_Nm": 2.8183499684088877,
+              "leg_target_step_change_rms_rad": 0.005891960193493476,
+              "wheel_target_step_change_rms_rad_s": 0.31604351038442996,
+              "wheel_actual_velocity_rms_rad_s": 0.6981575980693289,
+              "net_displacement_m": 0.8812683792660138,
+              "max_displacement_m": 0.9244559946843472,
+              "path_length_m": 3.078772325388404,
+              "mean_body_velocity_xyz_m_s": [
+                0.010990175366761832,
+                -6.148210853098135e-05,
+                7.234154909656354e-05
+              ]
+            }
+          },
+          "scenario": {
+            "command_schedule": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 5999,
+                "start_step": 0
+              }
+            ],
+            "duration_steps": 6000,
+            "num_envs": 1,
+            "scenario_id": "nominal-no-noise",
+            "scenario_overrides": {
+              "curriculum.terrain_levels": null,
+              "episode_length_s": 150.0,
+              "events.add_joint_default_pos": null,
+              "events.randomize_actuator_gains": null,
+              "events.randomize_com_positions": null,
+              "events.randomize_push_robot": null,
+              "events.randomize_reset_base.params.pose_range": {
+                "pitch": [
+                  0.0,
+                  0.0
+                ],
+                "roll": [
+                  0.0,
+                  0.0
+                ],
+                "x": [
+                  0.0,
+                  0.0
+                ],
+                "y": [
+                  0.0,
+                  0.0
+                ],
+                "yaw": [
+                  0.0,
+                  0.0
+                ],
+                "z": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "events.randomize_reset_base.params.velocity_range": {
+                "pitch": [
+                  0.0,
+                  0.0
+                ],
+                "roll": [
+                  0.0,
+                  0.0
+                ],
+                "x": [
+                  0.0,
+                  0.0
+                ],
+                "y": [
+                  0.0,
+                  0.0
+                ],
+                "yaw": [
+                  0.0,
+                  0.0
+                ],
+                "z": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "events.randomize_reset_joints.params.position_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_reset_joints.params.velocity_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_rigid_body_mass_base": null,
+              "events.randomize_rigid_body_mass_others": null,
+              "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+                1.0,
+                1.0
+              ],
+              "events.randomize_rigid_body_material.params.restitution_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_rigid_body_material.params.static_friction_range": [
+                1.0,
+                1.0
+              ],
+              "observations.policy.enable_corruption": false,
+              "scene.robot.actuators.foots.max_delay": 0,
+              "scene.robot.actuators.foots.min_delay": 0,
+              "scene.robot.actuators.legs.max_delay": 0,
+              "scene.robot.actuators.legs.min_delay": 0,
+              "scene.robot.actuators.wheels.max_delay": 0,
+              "scene.robot.actuators.wheels.min_delay": 0,
+              "scene.terrain.terrain_generator": null,
+              "scene.terrain.terrain_type": "plane",
+              "terminations.terrain_out_of_bounds": null
+            },
+            "seed": 42
+          }
+        },
+        "nominal-training-noise": {
+          "result": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/nominal-training-noise-a01/result.json",
+            "sha256": "cb297cdf376f70b27bffd4e0d04fa3f0186d71ac5eda62c9b4f486799bccfcb1"
+          },
+          "telemetry": {
+            "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evaluations/native-assess-20260921-001/raw/nominal-training-noise-a01/telemetry.json.gz",
+            "sha256": "03d4a51d718b9646644d159ca397e499ec85326a9fd939a606216c7f29d4ee82"
+          },
+          "telemetry_status": "complete",
+          "missing_required_signals": [],
+          "official_metrics": {
+            "action_rate_rms": 0.32322472702225413,
+            "body_roll_pitch_angular_acceleration_p95": 13.862992145969013,
+            "body_roll_pitch_angular_acceleration_rms": 7.935981267998959,
+            "body_roll_pitch_angular_velocity_p95": 0.35340616529643765,
+            "body_roll_pitch_angular_velocity_rms": 0.1984957263032587,
+            "body_vertical_acceleration_p95": 2.309502800926566,
+            "body_vertical_acceleration_rms": 1.205738721882148,
+            "body_vertical_velocity_p95": 0.06481598317623138,
+            "body_vertical_velocity_rms": 0.03603398154904398,
+            "illegal_contact_rate": 0.0,
+            "joint_effort_limit_violation_rate": 0.0,
+            "joint_velocity_limit_violation_rate": 0.0,
+            "max_abs_action": 13.35190486907959,
+            "max_abs_action_error": 0.0,
+            "max_abs_applied_torque": 30.610593795776367,
+            "max_abs_joint_velocity": 8.553282737731934,
+            "max_joint_effort_utilization": 0.25508828163146974,
+            "max_joint_velocity_utilization": 0.25919038599187677,
+            "max_tilt": 0.09446866065263748,
+            "mean_reward": 0.20017891852681835,
+            "real_time_factor": 0.8359994195725182,
+            "termination_rate": 0.0,
+            "termination_term_illegal_contact_rate": 0.0,
+            "termination_term_time_out_rate": 0.0,
+            "tilt_rms": 0.038111874338669006,
+            "timeout_rate": 0.0,
+            "tracking_xy_rmse": 0.046708820019205156,
+            "tracking_yaw_rmse": 0.04272800232421806
+          },
+          "windows_env0": {
+            "full": {
+              "step_range_half_open": [
+                0,
+                6000
+              ],
+              "sample_count": 6000,
+              "tracking_xy_rmse_m_s": 0.04670882000348827,
+              "tracking_yaw_rmse_rad_s": 0.04272800234190188,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.19849572630325873,
+              "hip_target_rms_rad": 0.03471156166929608,
+              "hip_target_abs_peak_rad": 0.274223655462265,
+              "hip_target_mean_R_L_rad": [
+                -0.035556470308064796,
+                0.014706714837346226
+              ],
+              "hip_target_step_change_rms_rad": 0.020339677475270213,
+              "hip_target_second_difference_rms_rad": 0.03190775163167522,
+              "hip_actual_position_rms_rad": 0.01392244340451737,
+              "hip_actual_velocity_rms_rad_s": 0.14392218868809944,
+              "hip_applied_torque_rms_Nm": 2.9919483140935847,
+              "leg_target_step_change_rms_rad": 0.027861212330745032,
+              "wheel_target_step_change_rms_rad_s": 0.6875254928472008,
+              "wheel_actual_velocity_rms_rad_s": 1.3170787588061632,
+              "net_displacement_m": 3.0648758197128028,
+              "max_displacement_m": 3.0648758197128028,
+              "path_length_m": 6.80095972475387,
+              "mean_body_velocity_xyz_m_s": [
+                0.025734455687886414,
+                0.0004203225165930841,
+                4.148353583457265e-05
+              ]
+            },
+            "startup_0_1s": {
+              "step_range_half_open": [
+                0,
+                50
+              ],
+              "sample_count": 50,
+              "tracking_xy_rmse_m_s": 0.07265548009239706,
+              "tracking_yaw_rmse_rad_s": 0.10158354030503301,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.4749724202664278,
+              "hip_target_rms_rad": 0.07003244132336821,
+              "hip_target_abs_peak_rad": 0.274223655462265,
+              "hip_target_mean_R_L_rad": [
+                -0.05874855952337384,
+                0.03187026560306549
+              ],
+              "hip_target_step_change_rms_rad": 0.04190818784393257,
+              "hip_target_second_difference_rms_rad": 0.06078416750317122,
+              "hip_actual_position_rms_rad": 0.013748626167653544,
+              "hip_actual_velocity_rms_rad_s": 0.3051221049303994,
+              "hip_applied_torque_rms_Nm": 6.519035307744598,
+              "leg_target_step_change_rms_rad": 0.04699675693660774,
+              "wheel_target_step_change_rms_rad_s": 0.9542087029392937,
+              "wheel_actual_velocity_rms_rad_s": 2.416892670361023,
+              "net_displacement_m": 0.08071673490191203,
+              "max_displacement_m": 0.08071673490191203,
+              "path_length_m": 0.08892044053540776,
+              "mean_body_velocity_xyz_m_s": [
+                0.0792148603044916,
+                -0.006680693037051242,
+                -0.05063704056898132
+              ]
+            },
+            "steady_40_120s": {
+              "step_range_half_open": [
+                2000,
+                6000
+              ],
+              "sample_count": 4000,
+              "tracking_xy_rmse_m_s": 0.04681375255693982,
+              "tracking_yaw_rmse_rad_s": 0.04331697340845735,
+              "body_roll_pitch_angular_velocity_rms_rad_s": 0.19540301340101612,
+              "hip_target_rms_rad": 0.03430389029423681,
+              "hip_target_abs_peak_rad": 0.2050747573375702,
+              "hip_target_mean_R_L_rad": [
+                -0.03557595128950197,
+                0.014850740152643994
+              ],
+              "hip_target_step_change_rms_rad": 0.02008347488703713,
+              "hip_target_second_difference_rms_rad": 0.03166037605905898,
+              "hip_actual_position_rms_rad": 0.013775546550715315,
+              "hip_actual_velocity_rms_rad_s": 0.14030891152251568,
+              "hip_applied_torque_rms_Nm": 2.9375820752643667,
+              "leg_target_step_change_rms_rad": 0.027830329865474363,
+              "wheel_target_step_change_rms_rad_s": 0.6877233528452129,
+              "wheel_actual_velocity_rms_rad_s": 1.3434826234679889,
+              "net_displacement_m": 2.014375131326899,
+              "max_displacement_m": 2.014375131326899,
+              "path_length_m": 4.505359983717872,
+              "mean_body_velocity_xyz_m_s": [
+                0.02542664442897785,
+                0.0004384904875062148,
+                0.0005137985232549909
+              ]
+            }
+          },
+          "scenario": {
+            "command_schedule": [
+              {
+                "command": [
+                  0,
+                  0,
+                  0
+                ],
+                "end_step": 5999,
+                "start_step": 0
+              }
+            ],
+            "duration_steps": 6000,
+            "num_envs": 1,
+            "scenario_id": "nominal-training-noise",
+            "scenario_overrides": {
+              "curriculum.terrain_levels": null,
+              "episode_length_s": 150.0,
+              "events.add_joint_default_pos": null,
+              "events.randomize_actuator_gains": null,
+              "events.randomize_com_positions": null,
+              "events.randomize_push_robot": null,
+              "events.randomize_reset_base.params.pose_range": {
+                "pitch": [
+                  0.0,
+                  0.0
+                ],
+                "roll": [
+                  0.0,
+                  0.0
+                ],
+                "x": [
+                  0.0,
+                  0.0
+                ],
+                "y": [
+                  0.0,
+                  0.0
+                ],
+                "yaw": [
+                  0.0,
+                  0.0
+                ],
+                "z": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "events.randomize_reset_base.params.velocity_range": {
+                "pitch": [
+                  0.0,
+                  0.0
+                ],
+                "roll": [
+                  0.0,
+                  0.0
+                ],
+                "x": [
+                  0.0,
+                  0.0
+                ],
+                "y": [
+                  0.0,
+                  0.0
+                ],
+                "yaw": [
+                  0.0,
+                  0.0
+                ],
+                "z": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "events.randomize_reset_joints.params.position_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_reset_joints.params.velocity_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_rigid_body_mass_base": null,
+              "events.randomize_rigid_body_mass_others": null,
+              "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+                1.0,
+                1.0
+              ],
+              "events.randomize_rigid_body_material.params.restitution_range": [
+                0.0,
+                0.0
+              ],
+              "events.randomize_rigid_body_material.params.static_friction_range": [
+                1.0,
+                1.0
+              ],
+              "observations.policy.enable_corruption": true,
+              "scene.robot.actuators.foots.max_delay": 0,
+              "scene.robot.actuators.foots.min_delay": 0,
+              "scene.robot.actuators.legs.max_delay": 0,
+              "scene.robot.actuators.legs.min_delay": 0,
+              "scene.robot.actuators.wheels.max_delay": 0,
+              "scene.robot.actuators.wheels.min_delay": 0,
+              "scene.terrain.terrain_generator": null,
+              "scene.terrain.terrain_type": "plane",
+              "terminations.terrain_out_of_bounds": null
+            },
+            "seed": 42
+          }
+        }
+      }
+    }
+  },
+  "changes_percent": {
+    "baseline-no-push": {
+      "official/action_rate_rms": 5.113293948638753,
+      "official/body_roll_pitch_angular_acceleration_p95": 2.9230001568728348,
+      "official/body_roll_pitch_angular_acceleration_rms": 4.8049714070885985,
+      "official/body_roll_pitch_angular_velocity_p95": 10.979130462323905,
+      "official/body_roll_pitch_angular_velocity_rms": 9.510114861921037,
+      "official/body_vertical_acceleration_p95": 10.205688590400452,
+      "official/body_vertical_acceleration_rms": 6.053808600657962,
+      "official/body_vertical_velocity_p95": 2.7089713927795023,
+      "official/body_vertical_velocity_rms": 4.397577302355238,
+      "official/max_abs_action": 8.19707788998163,
+      "official/max_abs_applied_torque": 7.411923301978152,
+      "official/max_abs_joint_velocity": -6.227899168700068,
+      "official/max_joint_effort_utilization": 7.411923301978152,
+      "official/max_joint_velocity_utilization": 23.298938180798736,
+      "official/max_tilt": -4.947171311284149,
+      "official/mean_reward": -5.564247977195825,
+      "official/real_time_factor": -1.150698343964185,
+      "official/tilt_rms": 16.864940433004282,
+      "official/tracking_xy_rmse": -0.09206017132472599,
+      "official/tracking_yaw_rmse": 5.319858463236304,
+      "full/sample_count": 0.0,
+      "full/tracking_xy_rmse_m_s": 3.123751947470077,
+      "full/tracking_yaw_rmse_rad_s": 5.20226575533469,
+      "full/body_roll_pitch_angular_velocity_rms_rad_s": 7.654974448137386,
+      "full/hip_target_rms_rad": -51.27230546971913,
+      "full/hip_target_abs_peak_rad": -10.409073195467734,
+      "full/hip_target_step_change_rms_rad": -14.417015093235541,
+      "full/hip_target_second_difference_rms_rad": -11.442148372719906,
+      "full/hip_actual_position_rms_rad": -35.692979053527615,
+      "full/hip_actual_velocity_rms_rad_s": 17.34927316730912,
+      "full/hip_applied_torque_rms_Nm": -52.057042450632295,
+      "full/leg_target_step_change_rms_rad": 2.720464555551838,
+      "full/wheel_target_step_change_rms_rad_s": 4.158886477176993,
+      "full/wheel_actual_velocity_rms_rad_s": -0.2962543952728547,
+      "full/net_displacement_m": 10.115147079228603,
+      "full/max_displacement_m": -3.7289040013295804,
+      "full/path_length_m": -1.1478419854634825,
+      "startup_0_1s/sample_count": 0.0,
+      "startup_0_1s/tracking_xy_rmse_m_s": 20.12696485000831,
+      "startup_0_1s/tracking_yaw_rmse_rad_s": 16.381917607205377,
+      "startup_0_1s/body_roll_pitch_angular_velocity_rms_rad_s": -0.3597645437753427,
+      "startup_0_1s/hip_target_rms_rad": -17.4443620498691,
+      "startup_0_1s/hip_target_abs_peak_rad": 26.529365616981316,
+      "startup_0_1s/hip_target_step_change_rms_rad": 5.409345251551989,
+      "startup_0_1s/hip_target_second_difference_rms_rad": 12.23707827653675,
+      "startup_0_1s/hip_actual_position_rms_rad": -19.76288744220035,
+      "startup_0_1s/hip_actual_velocity_rms_rad_s": 0.7169670866631117,
+      "startup_0_1s/hip_applied_torque_rms_Nm": -15.062469772363386,
+      "startup_0_1s/leg_target_step_change_rms_rad": 10.850913004852503,
+      "startup_0_1s/wheel_target_step_change_rms_rad_s": 9.038385112266312,
+      "startup_0_1s/wheel_actual_velocity_rms_rad_s": 57.36216201838484,
+      "startup_0_1s/net_displacement_m": 41.6682475373658,
+      "startup_0_1s/max_displacement_m": 41.63482766702751,
+      "startup_0_1s/path_length_m": 43.380028023119706
+    },
+    "current-push": {
+      "official/action_rate_rms": 0.22460708811173902,
+      "official/body_roll_pitch_angular_acceleration_p95": 4.427477443753736,
+      "official/body_roll_pitch_angular_acceleration_rms": 3.2832481611126063,
+      "official/body_roll_pitch_angular_velocity_p95": 11.448341064500234,
+      "official/body_roll_pitch_angular_velocity_rms": 9.26195814687889,
+      "official/body_vertical_acceleration_p95": 4.517948103324088,
+      "official/body_vertical_acceleration_rms": 3.9285926992526976,
+      "official/body_vertical_velocity_p95": -5.974005336313326,
+      "official/body_vertical_velocity_rms": -3.7701029353371274,
+      "official/max_abs_action": -12.162493896673043,
+      "official/max_abs_applied_torque": -26.00468703121748,
+      "official/max_abs_joint_velocity": -4.299241320403269,
+      "official/max_joint_effort_utilization": -26.00468703121748,
+      "official/max_joint_velocity_utilization": -4.299241320403279,
+      "official/max_tilt": 4.572582541209558,
+      "official/mean_reward": -2.787991788460853,
+      "official/real_time_factor": 1.098566026083625,
+      "official/tilt_rms": 15.555230182167579,
+      "official/tracking_xy_rmse": -3.1447910946834523,
+      "official/tracking_yaw_rmse": 3.9188145700832955,
+      "full/sample_count": 0.0,
+      "full/tracking_xy_rmse_m_s": 0.85054319279112,
+      "full/tracking_yaw_rmse_rad_s": 6.458292553681155,
+      "full/body_roll_pitch_angular_velocity_rms_rad_s": 10.41250512269456,
+      "full/hip_target_rms_rad": -54.14021851620034,
+      "full/hip_target_abs_peak_rad": -34.39744248921214,
+      "full/hip_target_step_change_rms_rad": -18.00385472173921,
+      "full/hip_target_second_difference_rms_rad": -13.743301945283514,
+      "full/hip_actual_position_rms_rad": 10.68010319355841,
+      "full/hip_actual_velocity_rms_rad_s": 17.53475965783955,
+      "full/hip_applied_torque_rms_Nm": -55.410052742796,
+      "full/leg_target_step_change_rms_rad": -1.8155156890136248,
+      "full/wheel_target_step_change_rms_rad_s": -5.423678159729395,
+      "full/wheel_actual_velocity_rms_rad_s": -1.8314460909433894,
+      "full/net_displacement_m": -0.4633198012147344,
+      "full/max_displacement_m": -2.117808191206838,
+      "full/path_length_m": 0.6417139373763536,
+      "startup_0_1s/sample_count": 0.0,
+      "startup_0_1s/tracking_xy_rmse_m_s": 15.529244376363982,
+      "startup_0_1s/tracking_yaw_rmse_rad_s": 2.73127029397755,
+      "startup_0_1s/body_roll_pitch_angular_velocity_rms_rad_s": 8.576578535707679,
+      "startup_0_1s/hip_target_rms_rad": -58.53176379494034,
+      "startup_0_1s/hip_target_abs_peak_rad": -45.040446142545754,
+      "startup_0_1s/hip_target_step_change_rms_rad": -21.825139594016342,
+      "startup_0_1s/hip_target_second_difference_rms_rad": -18.734824343248857,
+      "startup_0_1s/hip_actual_position_rms_rad": -13.592298122782765,
+      "startup_0_1s/hip_actual_velocity_rms_rad_s": 9.350047985633637,
+      "startup_0_1s/hip_applied_torque_rms_Nm": -56.260230717164575,
+      "startup_0_1s/leg_target_step_change_rms_rad": -5.73054437332623,
+      "startup_0_1s/wheel_target_step_change_rms_rad_s": 4.044163425920555,
+      "startup_0_1s/wheel_actual_velocity_rms_rad_s": 15.37966580484964,
+      "startup_0_1s/net_displacement_m": 38.0205156320323,
+      "startup_0_1s/max_displacement_m": 23.468834111548365,
+      "startup_0_1s/path_length_m": 13.38957391834461
+    },
+    "nominal-no-noise": {
+      "official/action_rate_rms": 89.98290136217331,
+      "official/body_roll_pitch_angular_acceleration_p95": 345.1061895293577,
+      "official/body_roll_pitch_angular_acceleration_rms": 48.96843516074103,
+      "official/body_roll_pitch_angular_velocity_p95": 108.60955808092179,
+      "official/body_roll_pitch_angular_velocity_rms": 100.75907444955222,
+      "official/body_vertical_acceleration_p95": 177.73728677406274,
+      "official/body_vertical_acceleration_rms": 14.648817425972371,
+      "official/body_vertical_velocity_p95": 40.76931827953689,
+      "official/body_vertical_velocity_rms": 2.1666037848682818,
+      "official/max_abs_action": 9.862685007008288,
+      "official/max_abs_applied_torque": -34.68806384066426,
+      "official/max_abs_joint_velocity": 16.13026201141039,
+      "official/max_joint_effort_utilization": -34.68806384066426,
+      "official/max_joint_velocity_utilization": -4.54540364316488,
+      "official/max_tilt": -18.042320235515174,
+      "official/mean_reward": -0.11191400879989599,
+      "official/real_time_factor": -1.0360537710476625,
+      "official/tilt_rms": 57.28452084535463,
+      "official/tracking_xy_rmse": 136.5763714553615,
+      "official/tracking_yaw_rmse": 37.06605732628488,
+      "full/sample_count": 0.0,
+      "full/tracking_xy_rmse_m_s": 136.57637162681482,
+      "full/tracking_yaw_rmse_rad_s": 37.066057237583784,
+      "full/body_roll_pitch_angular_velocity_rms_rad_s": 100.75907444955172,
+      "full/hip_target_rms_rad": -91.85011331898978,
+      "full/hip_target_abs_peak_rad": -60.471137259055816,
+      "full/hip_target_step_change_rms_rad": 61.84109324594791,
+      "full/hip_target_second_difference_rms_rad": 128.30156140021322,
+      "full/hip_actual_position_rms_rad": 85.49183824015797,
+      "full/hip_actual_velocity_rms_rad_s": 116.86475311121596,
+      "full/hip_applied_torque_rms_Nm": -92.26895003995085,
+      "full/leg_target_step_change_rms_rad": 158.83015761515966,
+      "full/wheel_target_step_change_rms_rad_s": 88.85655467269929,
+      "full/wheel_actual_velocity_rms_rad_s": 92.31477978319775,
+      "full/net_displacement_m": 1312.3103329755602,
+      "full/max_displacement_m": 1053.1365661573532,
+      "full/path_length_m": 168.7463733096647,
+      "startup_0_1s/sample_count": 0.0,
+      "startup_0_1s/tracking_xy_rmse_m_s": -22.00665455294405,
+      "startup_0_1s/tracking_yaw_rmse_rad_s": 11.4853900432617,
+      "startup_0_1s/body_roll_pitch_angular_velocity_rms_rad_s": 0.7557681252715387,
+      "startup_0_1s/hip_target_rms_rad": -90.07038954474697,
+      "startup_0_1s/hip_target_abs_peak_rad": -77.49011127881039,
+      "startup_0_1s/hip_target_step_change_rms_rad": -69.38448720423769,
+      "startup_0_1s/hip_target_second_difference_rms_rad": -62.07260567027646,
+      "startup_0_1s/hip_actual_position_rms_rad": 14.655078827117517,
+      "startup_0_1s/hip_actual_velocity_rms_rad_s": -25.956649928154153,
+      "startup_0_1s/hip_applied_torque_rms_Nm": -90.31018765293128,
+      "startup_0_1s/leg_target_step_change_rms_rad": -31.86540940709116,
+      "startup_0_1s/wheel_target_step_change_rms_rad_s": -18.68906267186744,
+      "startup_0_1s/wheel_actual_velocity_rms_rad_s": -25.43922068815614,
+      "startup_0_1s/net_displacement_m": 264.96324655952657,
+      "startup_0_1s/max_displacement_m": 47.28508842501606,
+      "startup_0_1s/path_length_m": -30.305700717381857,
+      "steady_40_120s/sample_count": 0.0,
+      "steady_40_120s/tracking_xy_rmse_m_s": 274.12746917088145,
+      "steady_40_120s/tracking_yaw_rmse_rad_s": 49.69338173068751,
+      "steady_40_120s/body_roll_pitch_angular_velocity_rms_rad_s": 396.50480984078814,
+      "steady_40_120s/hip_target_rms_rad": -92.11076069542297,
+      "steady_40_120s/hip_target_abs_peak_rad": -60.41994629196573,
+      "steady_40_120s/hip_target_step_change_rms_rad": 1098.8350746948022,
+      "steady_40_120s/hip_target_second_difference_rms_rad": 3401.847664102211,
+      "steady_40_120s/hip_actual_position_rms_rad": 90.03099050868325,
+      "steady_40_120s/hip_actual_velocity_rms_rad_s": 545.6985209381827,
+      "steady_40_120s/hip_applied_torque_rms_Nm": -92.55646856413445,
+      "steady_40_120s/leg_target_step_change_rms_rad": 676.4743221811103,
+      "steady_40_120s/wheel_target_step_change_rms_rad_s": 307.51658115571934,
+      "steady_40_120s/wheel_actual_velocity_rms_rad_s": 969.4186191310021,
+      "steady_40_120s/net_displacement_m": 41200.2271208338,
+      "steady_40_120s/max_displacement_m": 9093.9643944333,
+      "steady_40_120s/path_length_m": 242.72846551921802
+    },
+    "nominal-training-noise": {
+      "official/action_rate_rms": 0.5936103921328151,
+      "official/body_roll_pitch_angular_acceleration_p95": 10.001650182946808,
+      "official/body_roll_pitch_angular_acceleration_rms": 8.778642594874864,
+      "official/body_roll_pitch_angular_velocity_p95": 0.8139690675450284,
+      "official/body_roll_pitch_angular_velocity_rms": 5.968280053796393,
+      "official/body_vertical_acceleration_p95": -20.70200006817593,
+      "official/body_vertical_acceleration_rms": -19.38163835218726,
+      "official/body_vertical_velocity_p95": -23.523065176943124,
+      "official/body_vertical_velocity_rms": -19.959454613448834,
+      "official/max_abs_action": -1.381317918172864,
+      "official/max_abs_applied_torque": -24.149982082896592,
+      "official/max_abs_joint_velocity": 5.926173597773388,
+      "official/max_joint_effort_utilization": -24.14998208289658,
+      "official/max_joint_velocity_utilization": 5.926173597773388,
+      "official/max_tilt": -18.788503722848514,
+      "official/mean_reward": -2.5659607257707995,
+      "official/real_time_factor": -3.4109071075940856,
+      "official/tilt_rms": -0.6458173265359246,
+      "official/tracking_xy_rmse": 13.67417676650624,
+      "official/tracking_yaw_rmse": 17.023315390034767,
+      "full/sample_count": 0.0,
+      "full/tracking_xy_rmse_m_s": 13.674176747358558,
+      "full/tracking_yaw_rmse_rad_s": 17.023315379090853,
+      "full/body_roll_pitch_angular_velocity_rms_rad_s": 5.968280053796549,
+      "full/hip_target_rms_rad": -86.09099242809452,
+      "full/hip_target_abs_peak_rad": -37.551874851538905,
+      "full/hip_target_step_change_rms_rad": -34.898190427170526,
+      "full/hip_target_second_difference_rms_rad": -32.16559401021676,
+      "full/hip_actual_position_rms_rad": 29.917077302525065,
+      "full/hip_actual_velocity_rms_rad_s": 37.93347749553193,
+      "full/hip_applied_torque_rms_Nm": -86.7924878610689,
+      "full/leg_target_step_change_rms_rad": -6.3422157159842785,
+      "full/wheel_target_step_change_rms_rad_s": 1.4155022576763487,
+      "full/wheel_actual_velocity_rms_rad_s": -8.969455770388258,
+      "full/net_displacement_m": 761.6407175778629,
+      "full/max_displacement_m": 517.4627180898333,
+      "full/path_length_m": 13.171815048840706,
+      "startup_0_1s/sample_count": 0.0,
+      "startup_0_1s/tracking_xy_rmse_m_s": 47.27429367659155,
+      "startup_0_1s/tracking_yaw_rmse_rad_s": 49.185663027334826,
+      "startup_0_1s/body_roll_pitch_angular_velocity_rms_rad_s": 10.048569342956792,
+      "startup_0_1s/hip_target_rms_rad": -43.185989364173196,
+      "startup_0_1s/hip_target_abs_peak_rad": 36.79243410687685,
+      "startup_0_1s/hip_target_step_change_rms_rad": -2.244784226355623,
+      "startup_0_1s/hip_target_second_difference_rms_rad": -11.688933958603975,
+      "startup_0_1s/hip_actual_position_rms_rad": 35.67582562079173,
+      "startup_0_1s/hip_actual_velocity_rms_rad_s": 49.95783519656036,
+      "startup_0_1s/hip_applied_torque_rms_Nm": -39.72710851492786,
+      "startup_0_1s/leg_target_step_change_rms_rad": 42.15927029620647,
+      "startup_0_1s/wheel_target_step_change_rms_rad_s": 11.030911792826114,
+      "startup_0_1s/wheel_actual_velocity_rms_rad_s": 13.123287421053643,
+      "startup_0_1s/net_displacement_m": 60.48328692507206,
+      "startup_0_1s/max_displacement_m": 60.48328692507206,
+      "startup_0_1s/path_length_m": 53.374215447553894,
+      "steady_40_120s/sample_count": 0.0,
+      "steady_40_120s/tracking_xy_rmse_m_s": 13.517795929641817,
+      "steady_40_120s/tracking_yaw_rmse_rad_s": 19.952055577563364,
+      "steady_40_120s/body_roll_pitch_angular_velocity_rms_rad_s": 5.173542153023658,
+      "steady_40_120s/hip_target_rms_rad": -86.23746535127415,
+      "steady_40_120s/hip_target_abs_peak_rad": -53.0414270200892,
+      "steady_40_120s/hip_target_step_change_rms_rad": -34.967998073491394,
+      "steady_40_120s/hip_target_second_difference_rms_rad": -31.636117370787353,
+      "steady_40_120s/hip_actual_position_rms_rad": 29.915701066992064,
+      "steady_40_120s/hip_actual_velocity_rms_rad_s": 37.87577524631411,
+      "steady_40_120s/hip_applied_torque_rms_Nm": -87.01838641008793,
+      "steady_40_120s/leg_target_step_change_rms_rad": -6.248248837378134,
+      "steady_40_120s/wheel_target_step_change_rms_rad_s": 1.0476725296938216,
+      "steady_40_120s/wheel_actual_velocity_rms_rad_s": -6.130028415584221,
+      "steady_40_120s/net_displacement_m": 4718.151511349546,
+      "steady_40_120s/max_displacement_m": 1013.5001940516657,
+      "steady_40_120s/path_length_m": 12.061524131036649
+    }
+  },
+  "plots": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evidence/analysis/hip-penalty-comparison-20260921-001.png",
+      "sha256": "f12dd5e0fb042b54473520180275e96b739915025cf929ddb3777d0e3d319546"
+    }
+  ]
+}

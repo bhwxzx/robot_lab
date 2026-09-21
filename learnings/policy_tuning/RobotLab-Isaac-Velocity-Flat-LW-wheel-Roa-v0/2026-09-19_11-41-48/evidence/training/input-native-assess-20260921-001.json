@@ -1,0 +1,415 @@
+{
+  "batch_id": "native-assess-20260921-001",
+  "cases": [
+    {
+      "attempt_id": "baseline-no-push-a01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 299,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.5,
+              0,
+              0
+            ],
+            "end_step": 599,
+            "start_step": 300
+          },
+          {
+            "command": [
+              1.0,
+              0,
+              0
+            ],
+            "end_step": 899,
+            "start_step": 600
+          },
+          {
+            "command": [
+              -0.5,
+              0,
+              0
+            ],
+            "end_step": 1199,
+            "start_step": 900
+          },
+          {
+            "command": [
+              0.5,
+              0,
+              0.6
+            ],
+            "end_step": 1499,
+            "start_step": 1200
+          },
+          {
+            "command": [
+              0.5,
+              0,
+              -0.6
+            ],
+            "end_step": 1799,
+            "start_step": 1500
+          },
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 2099,
+            "start_step": 1800
+          }
+        ],
+        "duration_steps": 2100,
+        "num_envs": 4,
+        "scenario_id": "baseline-no-push",
+        "scenario_overrides": {
+          "episode_length_s": 60.0,
+          "events.randomize_push_robot": null
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 600,
+      "video": false
+    },
+    {
+      "attempt_id": "current-push-a01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 299,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.5,
+              0,
+              0
+            ],
+            "end_step": 599,
+            "start_step": 300
+          },
+          {
+            "command": [
+              1.0,
+              0,
+              0
+            ],
+            "end_step": 899,
+            "start_step": 600
+          },
+          {
+            "command": [
+              -0.5,
+              0,
+              0
+            ],
+            "end_step": 1199,
+            "start_step": 900
+          },
+          {
+            "command": [
+              0.5,
+              0,
+              0.6
+            ],
+            "end_step": 1499,
+            "start_step": 1200
+          },
+          {
+            "command": [
+              0.5,
+              0,
+              -0.6
+            ],
+            "end_step": 1799,
+            "start_step": 1500
+          },
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 2099,
+            "start_step": 1800
+          }
+        ],
+        "duration_steps": 2100,
+        "num_envs": 4,
+        "scenario_id": "current-push",
+        "scenario_overrides": {
+          "episode_length_s": 60.0,
+          "events.randomize_push_robot.params.velocity_range": {
+            "x": [
+              -1.0,
+              1.0
+            ],
+            "y": [
+              -1.0,
+              1.0
+            ]
+          }
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 600,
+      "video": false
+    },
+    {
+      "attempt_id": "nominal-no-noise-a01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "nominal-no-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": false,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 600,
+      "video": false
+    },
+    {
+      "attempt_id": "nominal-training-noise-a01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 5999,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 6000,
+        "num_envs": 1,
+        "scenario_id": "nominal-training-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 150.0,
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": true,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 600,
+      "video": false
+    }
+  ],
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-19_11-41-48/model_49999.pt",
+    "sha256": "fed8b88dc1bf7f0805cb039595233b1d49128739bc8888a434da70785740b053"
+  },
+  "effective_config": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/provenance/config-6ce9efb3c41a46b97f81db9ebc4cd58002ecd7700f583e35d36f192d6a5b10c7.json",
+    "sha256": "6ce9efb3c41a46b97f81db9ebc4cd58002ecd7700f583e35d36f192d6a5b10c7"
+  },
+  "run_identity": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/provenance/context-6845bc84870812911aae13eec72d4f3da566a70614b66c198d21247c97f1e6d0.json",
+    "sha256": "6845bc84870812911aae13eec72d4f3da566a70614b66c198d21247c97f1e6d0"
+  },
+  "version": 1
+}
