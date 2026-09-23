@@ -1,0 +1,116 @@
+{
+  "comparisons": [
+    {
+      "baseline": "2026-09-16_15-12-04",
+      "file": "env.yaml",
+      "baseline_source": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-16_15-12-04/params/env.yaml",
+        "sha256": "227a14a79f07ee9565924e090d2bff27931ca6d915afb2d11144cf069be0457e"
+      },
+      "current_source": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-21_20-20-10/params/env.yaml",
+        "sha256": "4d54b7797b8975cd1982874cbc425649177b5f69d62531d9021589ffb340895a"
+      },
+      "diff": [
+        {
+          "path": "/log_dir",
+          "old": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-16_15-12-04",
+          "new": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-21_20-20-10"
+        },
+        {
+          "path": "/rewards/penalize_hip_roll_action",
+          "old_absent": true,
+          "new": null
+        },
+        {
+          "path": "/scene/robot/actuators/foots/max_delay",
+          "old": "3",
+          "new": "6"
+        },
+        {
+          "path": "/scene/robot/actuators/legs/max_delay",
+          "old": "3",
+          "new": "6"
+        },
+        {
+          "path": "/scene/robot/actuators/wheels/max_delay",
+          "old": "3",
+          "new": "6"
+        }
+      ]
+    },
+    {
+      "baseline": "2026-09-16_15-12-04",
+      "file": "agent.yaml",
+      "baseline_source": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-16_15-12-04/params/agent.yaml",
+        "sha256": "27fe0f99bb26255da8a3514849e3aa540219ce7db2a4b27d39333f2b264bb5e1"
+      },
+      "current_source": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-21_20-20-10/params/agent.yaml",
+        "sha256": "27fe0f99bb26255da8a3514849e3aa540219ce7db2a4b27d39333f2b264bb5e1"
+      },
+      "diff": []
+    },
+    {
+      "baseline": "2026-09-19_11-41-48",
+      "file": "env.yaml",
+      "baseline_source": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-19_11-41-48/params/env.yaml",
+        "sha256": "11406fc11876157be48fa4a09d3195eaa3ad1bf5dfc5861a88b75d89b36426c4"
+      },
+      "current_source": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-21_20-20-10/params/env.yaml",
+        "sha256": "4d54b7797b8975cd1982874cbc425649177b5f69d62531d9021589ffb340895a"
+      },
+      "diff": [
+        {
+          "path": "/log_dir",
+          "old": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-19_11-41-48",
+          "new": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-21_20-20-10"
+        },
+        {
+          "path": "/rewards/penalize_hip_roll_action",
+          "old": {
+            "func": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.rewards:specific_joint_action_penalty",
+            "params": {
+              "action_term_name": "joint_pos",
+              "joint_regex": ".*_hip_joint"
+            },
+            "weight": "-0.5"
+          },
+          "new": null
+        },
+        {
+          "path": "/scene/robot/actuators/foots/max_delay",
+          "old": "3",
+          "new": "6"
+        },
+        {
+          "path": "/scene/robot/actuators/legs/max_delay",
+          "old": "3",
+          "new": "6"
+        },
+        {
+          "path": "/scene/robot/actuators/wheels/max_delay",
+          "old": "3",
+          "new": "6"
+        }
+      ]
+    },
+    {
+      "baseline": "2026-09-19_11-41-48",
+      "file": "agent.yaml",
+      "baseline_source": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-19_11-41-48/params/agent.yaml",
+        "sha256": "27fe0f99bb26255da8a3514849e3aa540219ce7db2a4b27d39333f2b264bb5e1"
+      },
+      "current_source": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-21_20-20-10/params/agent.yaml",
+        "sha256": "27fe0f99bb26255da8a3514849e3aa540219ce7db2a4b27d39333f2b264bb5e1"
+      },
+      "diff": []
+    }
+  ],
+  "interpretation": "Relative to Sep19 both hip reward removal and delay expansion changed. Relative to Sep16 the active config changes are delay bounds; missing versus null hip reward is inactive in both. No causal isolation beyond these finite comparisons."
+}
