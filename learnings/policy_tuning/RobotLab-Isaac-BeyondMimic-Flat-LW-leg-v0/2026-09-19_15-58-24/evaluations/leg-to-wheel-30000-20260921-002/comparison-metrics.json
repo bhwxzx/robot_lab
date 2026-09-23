@@ -1,0 +1,280 @@
+{
+  "kind": "paired_checkpoint_comparison",
+  "baseline_manifest": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-native-20260921-001/manifest.json",
+    "sha256": "39bd69e367f2372151d3176d93999483a6e1d8c60c9644909f5d39c02d00a145"
+  },
+  "definitions": {
+    "unloaded": "per-wheel measured force vector norm == 0; exact control-step sample",
+    "transition_frames_inclusive": [
+      46,
+      91
+    ],
+    "tail_frames_inclusive": [
+      112,
+      138
+    ],
+    "rms": "sqrt(mean(square(error))); equal weights over available samples and selected bodies/joints",
+    "forces": "final physics substep per control step; Euclidean norm N, not impulse"
+  },
+  "comparisons": [
+    {
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 2000,
+        "num_envs": 1,
+        "scenario_id": "nominal-start",
+        "scenario_overrides": {
+          "evaluation.motion_mode": "nominal_start",
+          "evaluation.motion_sha256": "85e53dc37459b295a4a3f06dd56044eb96b661caf01461ccceb1908cf52fa75d"
+        },
+        "seed": 42
+      },
+      "model_30000": {
+        "result": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/nominal-start-30000-a01/result.json",
+          "sha256": "7cd77497260218cbb66cf69b535aaaacb81534cab1247609928f4335874d8572"
+        },
+        "telemetry": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/nominal-start-30000-a01/telemetry.json.gz",
+          "sha256": "efb8b2390172cb462f66f60706aef2da0c340065f36b4f11e93c208bc85d40cf"
+        },
+        "metrics": {
+          "unloaded_wheel_tracking_rmse_rad_s": 5.969779086651384,
+          "unloaded_wheel_speed_rms_rad_s": 5.949493687104956,
+          "unloaded_right_peak_abs_speed_rad_s": 10.427417755126953,
+          "unloaded_samples_per_wheel": [
+            1118,
+            1118
+          ],
+          "wheel_contact_force_max_N": 399.68988037109733,
+          "transition_wheel_contact_force_p95_N": 296.0262756347683,
+          "tail_body_position_rmse_m": 0.010017737723901953,
+          "tail_body_orientation_rmse_rad": 0.03967115397122306,
+          "tail_anchor_position_rmse_m": 0.0268503664484106,
+          "tail_wheel_velocity_rmse_rad_s": 0.3625517847908226,
+          "tail_samples": 378,
+          "all_four_zero_force_samples": 196,
+          "longest_all_four_zero_force_run_steps": 14,
+          "ended_episodes": 14,
+          "successful_episodes": 14,
+          "failed_episodes": 0,
+          "censored_episodes": 1
+        }
+      },
+      "model_49999": {
+        "result": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-native-20260921-001/raw/nominal-start-a01/result.json",
+          "sha256": "e1b6a20626ab07048523ce73e6e83afb8a37eefb20000e8ecb5e7fdfcd3c02dc"
+        },
+        "telemetry": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-native-20260921-001/raw/nominal-start-a01/telemetry.json.gz",
+          "sha256": "cedf4a3127882c8f9985df7ef0be8fc2783e212a45185e0c053e6e12d6173c54"
+        },
+        "metrics": {
+          "unloaded_wheel_tracking_rmse_rad_s": 8.074754182506387,
+          "unloaded_wheel_speed_rms_rad_s": 8.090512262899761,
+          "unloaded_right_peak_abs_speed_rad_s": 18.01869010925293,
+          "unloaded_samples_per_wheel": [
+            1118,
+            1118
+          ],
+          "wheel_contact_force_max_N": 2812.0458984375255,
+          "transition_wheel_contact_force_p95_N": 378.6658935546909,
+          "tail_body_position_rmse_m": 0.02983147289059245,
+          "tail_body_orientation_rmse_rad": 0.0984809322296186,
+          "tail_anchor_position_rmse_m": 0.03229700919643264,
+          "tail_wheel_velocity_rmse_rad_s": 0.5295360170449652,
+          "tail_samples": 378,
+          "all_four_zero_force_samples": 196,
+          "longest_all_four_zero_force_run_steps": 14,
+          "ended_episodes": 14,
+          "successful_episodes": 14,
+          "failed_episodes": 0,
+          "censored_episodes": 1
+        }
+      },
+      "compatibility": {
+        "run_identity": true,
+        "effective_config": true,
+        "scenario": true,
+        "scenario_evidence": true,
+        "resource_mode": true,
+        "initial_runtime_equal": true
+      }
+    },
+    {
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 2000,
+        "num_envs": 1,
+        "scenario_id": "randomized-start",
+        "scenario_overrides": {
+          "evaluation.motion_mode": "randomized_start",
+          "evaluation.motion_sha256": "85e53dc37459b295a4a3f06dd56044eb96b661caf01461ccceb1908cf52fa75d"
+        },
+        "seed": 42
+      },
+      "model_30000": {
+        "result": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/randomized-start-30000-a01/result.json",
+          "sha256": "af2c613a922328b193d0d43841a4fed55ba5f7f5eb6ed97e87245a2caf63dee5"
+        },
+        "telemetry": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/randomized-start-30000-a01/telemetry.json.gz",
+          "sha256": "b942e3c7d54d997ab7d99e850e5088043c64e4a88f513897f53e6496a56238bf"
+        },
+        "metrics": {
+          "unloaded_wheel_tracking_rmse_rad_s": 6.1797177286998135,
+          "unloaded_wheel_speed_rms_rad_s": 6.154190923074213,
+          "unloaded_right_peak_abs_speed_rad_s": 16.683317184448242,
+          "unloaded_samples_per_wheel": [
+            1142,
+            1142
+          ],
+          "wheel_contact_force_max_N": 3119.082519531278,
+          "transition_wheel_contact_force_p95_N": 430.31834564209345,
+          "tail_body_position_rmse_m": 0.021881983192812763,
+          "tail_body_orientation_rmse_rad": 0.1090161826005958,
+          "tail_anchor_position_rmse_m": 0.2074688731826817,
+          "tail_wheel_velocity_rmse_rad_s": 4.1491093157540515,
+          "tail_samples": 378,
+          "all_four_zero_force_samples": 212,
+          "longest_all_four_zero_force_run_steps": 15,
+          "ended_episodes": 14,
+          "successful_episodes": 14,
+          "failed_episodes": 0,
+          "censored_episodes": 1
+        }
+      },
+      "model_49999": {
+        "result": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-native-20260921-001/raw/randomized-start-a01/result.json",
+          "sha256": "88ffc72713ab259c43a2479024176787a44939741b4646bd9074ec723d233343"
+        },
+        "telemetry": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-native-20260921-001/raw/randomized-start-a01/telemetry.json.gz",
+          "sha256": "65b359ea744c6dd5c31609fc0c3bdb6a2f2490d51832a88dd51136997735e05c"
+        },
+        "metrics": {
+          "unloaded_wheel_tracking_rmse_rad_s": 7.7273787044229545,
+          "unloaded_wheel_speed_rms_rad_s": 7.737318589253595,
+          "unloaded_right_peak_abs_speed_rad_s": 20.55691909790039,
+          "unloaded_samples_per_wheel": [
+            1143,
+            1137
+          ],
+          "wheel_contact_force_max_N": 2916.5024414062764,
+          "transition_wheel_contact_force_p95_N": 429.07913970947584,
+          "tail_body_position_rmse_m": 0.030155449249571222,
+          "tail_body_orientation_rmse_rad": 0.12727266143925262,
+          "tail_anchor_position_rmse_m": 0.16252131724584665,
+          "tail_wheel_velocity_rmse_rad_s": 4.664685323154538,
+          "tail_samples": 378,
+          "all_four_zero_force_samples": 208,
+          "longest_all_four_zero_force_run_steps": 15,
+          "ended_episodes": 14,
+          "successful_episodes": 14,
+          "failed_episodes": 0,
+          "censored_episodes": 1
+        }
+      },
+      "compatibility": {
+        "run_identity": true,
+        "effective_config": true,
+        "scenario": true,
+        "scenario_evidence": true,
+        "resource_mode": true,
+        "initial_runtime_equal": true
+      }
+    },
+    {
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 2000,
+        "num_envs": 1,
+        "scenario_id": "randomized-phase",
+        "scenario_overrides": {
+          "evaluation.motion_mode": "randomized_phase",
+          "evaluation.motion_sha256": "85e53dc37459b295a4a3f06dd56044eb96b661caf01461ccceb1908cf52fa75d"
+        },
+        "seed": 42
+      },
+      "model_30000": {
+        "result": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/randomized-phase-30000-a01/result.json",
+          "sha256": "9b8e5d2d4662d802c28981feb8c128797585dfa33fe976f69cfd0bf2d21ea00d"
+        },
+        "telemetry": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/randomized-phase-30000-a01/telemetry.json.gz",
+          "sha256": "5946dd0dfe9e3adbeca3f858d6cf0480175dc783cf20aa32ab884d58f8c2626b"
+        },
+        "metrics": {
+          "unloaded_wheel_tracking_rmse_rad_s": 7.183309176497519,
+          "unloaded_wheel_speed_rms_rad_s": 7.1639488783778225,
+          "unloaded_right_peak_abs_speed_rad_s": 18.593589782714844,
+          "unloaded_samples_per_wheel": [
+            671,
+            679
+          ],
+          "wheel_contact_force_max_N": 2986.065917968777,
+          "transition_wheel_contact_force_p95_N": 510.58102722168405,
+          "tail_body_position_rmse_m": 0.024551609813738592,
+          "tail_body_orientation_rmse_rad": 0.10679147110852598,
+          "tail_anchor_position_rmse_m": 0.1703576077733692,
+          "tail_wheel_velocity_rmse_rad_s": 4.519947163748404,
+          "tail_samples": 653,
+          "all_four_zero_force_samples": 234,
+          "longest_all_four_zero_force_run_steps": 15,
+          "ended_episodes": 29,
+          "successful_episodes": 29,
+          "failed_episodes": 0,
+          "censored_episodes": 1
+        }
+      },
+      "model_49999": {
+        "result": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-native-20260921-001/raw/randomized-phase-a01/result.json",
+          "sha256": "929bdb32eb0f61b19aa299fca2fdbdc22ab857c486d6276a02e4111a7c786a3e"
+        },
+        "telemetry": {
+          "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-native-20260921-001/raw/randomized-phase-a01/telemetry.json.gz",
+          "sha256": "d8b177fc74ea8ee8de7c780427ff18b2d586268a2bfc8c573fb9209db1bca6c9"
+        },
+        "metrics": {
+          "unloaded_wheel_tracking_rmse_rad_s": 8.756607871634484,
+          "unloaded_wheel_speed_rms_rad_s": 8.746919872527757,
+          "unloaded_right_peak_abs_speed_rad_s": 22.84148597717285,
+          "unloaded_samples_per_wheel": [
+            693,
+            676
+          ],
+          "wheel_contact_force_max_N": 2670.285888671899,
+          "transition_wheel_contact_force_p95_N": 463.65346679687883,
+          "tail_body_position_rmse_m": 0.029544051759970106,
+          "tail_body_orientation_rmse_rad": 0.1281321513211652,
+          "tail_anchor_position_rmse_m": 0.14775062622858667,
+          "tail_wheel_velocity_rmse_rad_s": 4.605090283689288,
+          "tail_samples": 653,
+          "all_four_zero_force_samples": 236,
+          "longest_all_four_zero_force_run_steps": 15,
+          "ended_episodes": 29,
+          "successful_episodes": 29,
+          "failed_episodes": 0,
+          "censored_episodes": 1
+        }
+      },
+      "compatibility": {
+        "run_identity": true,
+        "effective_config": true,
+        "scenario": true,
+        "scenario_evidence": true,
+        "resource_mode": true,
+        "initial_runtime_equal": true
+      }
+    }
+  ],
+  "direct_parameter_change_supported": false,
+  "convergence": "indeterminate",
+  "criteria": "No approved convergence or checkpoint selection thresholds"
+}

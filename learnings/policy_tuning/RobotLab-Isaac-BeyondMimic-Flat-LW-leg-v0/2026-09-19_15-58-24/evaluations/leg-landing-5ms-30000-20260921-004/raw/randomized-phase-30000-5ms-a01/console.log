@@ -1,0 +1,209 @@
+{"argv": ["/home/young/miniconda3/envs/isaacsim-5.1/bin/python", "/home/young/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", "--task", "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0", "--run_id", "2026-09-19_15-58-24", "--batch_id", "leg-landing-5ms-30000-20260921-004", "--evaluation_id", "randomized-phase-30000-5ms-a01", "--candidate_id", "model_30000", "--checkpoint", "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-09-19_15-58-24/model_30000.pt", "--checkpoint_sha256", "6924df9721d7676efe6f424c89655313c15afc949b289085da8c03fbc8b4792b", "--artifact_kind", "native", "--artifact_path", "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-09-19_15-58-24/model_30000.pt", "--artifact_sha256", "6924df9721d7676efe6f424c89655313c15afc949b289085da8c03fbc8b4792b", "--run_identity_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/provenance/context-e0894100a88eb499433cf09bf722da3fa9fbfb2a9e3ff7bf00a0a0af0c4dbb3d.json", "--run_identity_file_sha256", "e0894100a88eb499433cf09bf722da3fa9fbfb2a9e3ff7bf00a0a0af0c4dbb3d", "--effective_config_reference_json", "{\"path\": \"/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/provenance/config-7d4e603b42fa6e9aa9d1ffc8a61b4311bbbc55bf67dec4de3e0563efb562e20c.json\", \"sha256\": \"7d4e603b42fa6e9aa9d1ffc8a61b4311bbbc55bf67dec4de3e0563efb562e20c\"}", "--scenario_evidence_reference_json", "{\"path\": \"/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/provenance/scenario-fe4b70abce81a4f8899553cf7cb6e0246dab2f3494e238de2ac0efdcf4a5aed0.json\", \"sha256\": \"fe4b70abce81a4f8899553cf7cb6e0246dab2f3494e238de2ac0efdcf4a5aed0\"}", "--scenario_id", "randomized-phase", "--scenario_overrides_json", "{\"evaluation.motion_mode\": \"randomized_phase\", \"evaluation.motion_sha256\": \"85e53dc37459b295a4a3f06dd56044eb96b661caf01461ccceb1908cf52fa75d\", \"evaluation.motion_physics_window\": [46, 91], \"rewards.joint_vel_wheel_l2\": null, \"rewards.joint_acc_wheel_l2\": null}", "--command_schedule_json", "[]", "--duration_steps", "2000", "--num_envs", "1", "--seed", "42", "--result_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-landing-5ms-30000-20260921-004/raw/randomized-phase-30000-5ms-a01/result.json", "--telemetry_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-landing-5ms-30000-20260921-004/raw/randomized-phase-30000-5ms-a01/telemetry.json.gz", "--telemetry_stride", "1", "--headless", "--device", "cuda:0", "--require_idle_gpu", "--no_video"]}
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/young/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.beyondmimic.config.LW_Leg.flat_env_cfg:LWLegBeyondMimicFlatEnvCfg
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.beyondmimic.config.LW_Leg.agents.rsl_rl_ppo_cfg:LWBeyondMimicFlatPPORunnerCfg
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-09-21_13-37-13.log[0m
+[36m======================================================================================[0m
+
+[33m13:37:13 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m13:37:14 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+/home/young/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/utils.py:338: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'policy' key. As an observation group with the name 'policy' was found, this is assumed to be the observation set. Consider adding the 'policy' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+/home/young/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/utils.py:376: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'critic' key. As an observation group with the name 'critic' was found, this is assumed to be the observation set. Consider adding the 'critic' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+[INFO]: Time taken for scene creation : 7.674708 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 1
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[INFO]: Time taken for simulation start : 0.420910 seconds
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++--------------------------------+
+|      Active Command Terms      |
++-------+--------+---------------+
+| Index | Name   |      Type     |
++-------+--------+---------------+
+|   0   | motion | MotionCommand |
++-------+--------+---------------+
+
+[INFO] Event Manager:  <EventManager> contains 3 active terms.
++------------------------------------------+
+|  Active Event Terms in Mode: 'startup'   |
++-------+----------------------------------+
+| Index | Name                             |
++-------+----------------------------------+
+|   0   | physics_material                 |
+|   1   | add_joint_default_pos            |
+|   2   | randomize_rigid_body_mass_base   |
+|   3   | randomize_rigid_body_mass_others |
+|   4   | base_com                         |
++-------+----------------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++--------+-----------------------------+
+| Index  | Name                        |
++--------+-----------------------------+
+|   0    | randomize_actuator_gains    |
++--------+-----------------------------+
++----------------------------------------------+
+|    Active Event Terms in Mode: 'interval'    |
++-------+------------+-------------------------+
+| Index | Name       | Interval time range (s) |
++-------+------------+-------------------------+
+|   0   | push_robot |        (1.0, 3.0)       |
++-------+------------+-------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 2 active terms.
++------------------------------------+
+|  Active Action Terms (shape: 10)   |
++--------+-------------+-------------+
+| Index  | Name        |   Dimension |
++--------+-------------+-------------+
+|   0    | joint_pos   |           8 |
+|   1    | joint_vel   |           2 |
++--------+-------------+-------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 2 groups.
++----------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (59,)) |
++-----------+----------------------------------+-----------+
+|   Index   | Name                             |   Shape   |
++-----------+----------------------------------+-----------+
+|     0     | command                          |   (20,)   |
+|     1     | motion_anchor_ori_b              |    (6,)   |
+|     2     | base_ang_vel                     |    (3,)   |
+|     3     | joint_pos                        |   (10,)   |
+|     4     | joint_vel                        |   (10,)   |
+|     5     | actions                          |   (10,)   |
++-----------+----------------------------------+-----------+
++-----------------------------------------------------------+
+| Active Observation Terms in Group: 'critic' (shape: (146,)) |
++-----------+-----------------------------------+-----------+
+|   Index   | Name                              |   Shape   |
++-----------+-----------------------------------+-----------+
+|     0     | command                           |   (20,)   |
+|     1     | motion_anchor_pos_b               |    (3,)   |
+|     2     | motion_anchor_ori_b               |    (6,)   |
+|     3     | body_pos                          |   (27,)   |
+|     4     | body_ori                          |   (54,)   |
+|     5     | base_lin_vel                      |    (3,)   |
+|     6     | base_ang_vel                      |    (3,)   |
+|     7     | joint_pos                         |   (10,)   |
+|     8     | joint_vel                         |   (10,)   |
+|     9     | actions                           |   (10,)   |
++-----------+-----------------------------------+-----------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 5 active terms.
++------------------------------------+
+|      Active Termination Terms      |
++-------+-----------------+----------+
+| Index | Name            | Time Out |
++-------+-----------------+----------+
+|   0   | time_out        |   True   |
+|   1   | motion_finished |   True   |
+|   2   | anchor_pos      |  False   |
+|   3   | anchor_ori      |  False   |
+|   4   | ee_body_pos     |  False   |
++-------+-----------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 11 active terms.
++-------------------------------------------+
+|            Active Reward Terms            |
++-------+--------------------------+--------+
+| Index | Name                     | Weight |
++-------+--------------------------+--------+
+|   0   | motion_global_anchor_pos |    0.5 |
+|   1   | motion_global_anchor_ori |    0.5 |
+|   2   | motion_body_pos          |    1.0 |
+|   3   | motion_body_ori          |    1.0 |
+|   4   | motion_body_lin_vel      |    1.0 |
+|   5   | motion_body_ang_vel      |    1.0 |
+|   6   | action_rate_l2           |  -0.02 |
+|   7   | action_smoothness        |  -0.02 |
+|   8   | joint_limit              |  -10.0 |
+|   9   | undesired_contacts       |   -0.1 |
+|   10  | torque_limit             |   -0.2 |
++-------+--------------------------+--------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 policy :  ['policy']
+	 critic :  ['critic']
+--------------------------------------------------------------------------------
+ActorCritic.__init__ got unexpected arguments, which will be ignored: ['state_dependent_std']
+Actor MLP: MLP(
+  (0): Linear(in_features=59, out_features=512, bias=True)
+  (1): ELU(alpha=1.0)
+  (2): Linear(in_features=512, out_features=256, bias=True)
+  (3): ELU(alpha=1.0)
+  (4): Linear(in_features=256, out_features=128, bias=True)
+  (5): ELU(alpha=1.0)
+  (6): Linear(in_features=128, out_features=10, bias=True)
+)
+Critic MLP: MLP(
+  (0): Linear(in_features=146, out_features=512, bias=True)
+  (1): ELU(alpha=1.0)
+  (2): Linear(in_features=512, out_features=256, bias=True)
+  (3): ELU(alpha=1.0)
+  (4): Linear(in_features=256, out_features=128, bias=True)
+  (5): ELU(alpha=1.0)
+  (6): Linear(in_features=128, out_features=1, bias=True)
+)
+[INFO] Motion evaluation result: /home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-landing-5ms-30000-20260921-004/raw/randomized-phase-30000-5ms-a01/result.json
+Loading user config located at: '/home/young/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/young/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20260921_133708.log
+2026-09-21T05:37:09Z [117ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-09-21T05:37:09Z [409ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-09-21T05:37:09Z [414ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4080 SUPER    | Yes: 0 |     | 16376   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2702      | eb541e47.. |
+|     |                                  |        |     |            | 1         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-138-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: Intel(R) Core(TM) i7-14700KF
+| Cores: 20 | Logical Cores: 28
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 64085 | Free Memory: 56765
+| Total Page/Swap (MB): 2047 | Free Page/Swap: 2047
+|---------------------------------------------------------------------------------------------|
+2026-09-21T05:37:12Z [3,420ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-09-21T05:37:12Z [3,430ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-09-21T05:37:22Z [13,091ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/ContactSensor.

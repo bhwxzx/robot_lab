@@ -1,0 +1,116 @@
+{
+  "batch_id": "leg-to-wheel-30000-20260921-002",
+  "cases": [
+    {
+      "attempt_id": "nominal-start-30000-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/nominal-start-30000-a01/console.log",
+        "sha256": "31b8a20e4b64c9a2cb0505e39c2802e60f7f84d349ce1fdeb1addab4a949bec7"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/nominal-start-30000-a01/result.json",
+        "sha256": "7cd77497260218cbb66cf69b535aaaacb81534cab1247609928f4335874d8572"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 2000,
+        "num_envs": 1,
+        "scenario_id": "nominal-start",
+        "scenario_overrides": {
+          "evaluation.motion_mode": "nominal_start",
+          "evaluation.motion_sha256": "85e53dc37459b295a4a3f06dd56044eb96b661caf01461ccceb1908cf52fa75d"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    },
+    {
+      "attempt_id": "randomized-start-30000-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/randomized-start-30000-a01/console.log",
+        "sha256": "a3852953f7d720f611d8f786065fe6b9c6c743459aa1656c2b0809d95a3deac9"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/randomized-start-30000-a01/result.json",
+        "sha256": "af2c613a922328b193d0d43841a4fed55ba5f7f5eb6ed97e87245a2caf63dee5"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 2000,
+        "num_envs": 1,
+        "scenario_id": "randomized-start",
+        "scenario_overrides": {
+          "evaluation.motion_mode": "randomized_start",
+          "evaluation.motion_sha256": "85e53dc37459b295a4a3f06dd56044eb96b661caf01461ccceb1908cf52fa75d"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    },
+    {
+      "attempt_id": "randomized-phase-30000-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/randomized-phase-30000-a01/console.log",
+        "sha256": "43419214102ecbebec18d8638437964d1a67c39180e3cdee029a92752531a354"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/raw/randomized-phase-30000-a01/result.json",
+        "sha256": "9b8e5d2d4662d802c28981feb8c128797585dfa33fe976f69cfd0bf2d21ea00d"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 2000,
+        "num_envs": 1,
+        "scenario_id": "randomized-phase",
+        "scenario_overrides": {
+          "evaluation.motion_mode": "randomized_phase",
+          "evaluation.motion_sha256": "85e53dc37459b295a4a3f06dd56044eb96b661caf01461ccceb1908cf52fa75d"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/contract.json",
+    "sha256": "cfecb231410bbc73ae8244692ee925368f9c510e08cfe5945fd7f5590815e7fa"
+  },
+  "layout_version": 2,
+  "notes": [
+    "对比对象为同一训练 run 的 model_30000.pt 与 model_49999.pt；每个场景同为 Native、seed42、1环境、2000控制步、无视频。",
+    "空转口径：对应轮接触力向量范数恰为零的控制采样点，按右/左轮分别筛选后合并计算速度误差 RMS。它不证明控制步内所有物理子步均无接触。",
+    "转换窗口为参考帧46–91；末段固定为112–138（最后约20%）。误差为逐控制步、逐身体/关节等权统计，包含末尾被预算截断片段已观测到的采样，不将截断片段计作成功。",
+    "接触力最大值取每个控制步末物理子步的单轮接触力范数；转换P95取窗口内两轮较大值的95分位。它不是完整物理频率峰值，也不是冲量。",
+    "nominal-start：30k→49999，已结束片段正常结束 14/14→14/14；无接触轮速误差 5.9698→8.0748 rad/s；单轮最大接触力 399.7→2812.0 N；末段身体位置 RMSE 1.002→2.983 cm；末段身体姿态 RMSE 0.0397→0.0985 rad。",
+    "randomized-start：30k→49999，已结束片段正常结束 14/14→14/14；无接触轮速误差 6.1797→7.7274 rad/s；单轮最大接触力 3119.1→2916.5 N；末段身体位置 RMSE 2.188→3.016 cm；末段身体姿态 RMSE 0.1090→0.1273 rad。",
+    "randomized-phase：30k→49999，已结束片段正常结束 29/29→29/29；无接触轮速误差 7.1833→8.7566 rad/s；单轮最大接触力 2986.1→2670.3 N；末段身体位置 RMSE 2.455→2.954 cm；末段身体姿态 RMSE 0.1068→0.1281 rad。",
+    "相同seed和相同初始物性已核对，但随机相位采样/失败重置会导致后续随机数及状态轨迹分岔；这不是逐步完全配对的反事实试验。单环境的startup质量/材质仍只有一个样本。",
+    "奖励与参数在两个checkpoint之间保持一致；checkpoint差异不能证明某项奖励调整有效。direct_parameter_change_supported=false；本次没有修改奖励或启动训练。",
+    "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "先依据空转、接触力、末段误差的共同趋势决定下一项单变量奖励实验；不自动选择或导出checkpoint。",
+    "当前LW Leg的joint_vel_wheel_l2与joint_acc_wheel_l2均关闭，body跟踪列表不包含轮link。若两checkpoint均出现空转，可先考虑弱轮速参考跟踪项；新增权重没有因果验证，需要另行批准训练对照。",
+    "冲击和末段误差需联合查看逐帧曲线；不得为降低冲击而直接强制全程足/轮接触，先核对参考动作是否含预期腾空。"
+  ],
+  "report": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/report.md",
+    "sha256": "bf92eb5efe9c4030b70c93b5f4f66ada8727e4705e06b4cb7ce57323d6f92cf9"
+  },
+  "repository_root": "/home/young/liufengrong/robot_lab",
+  "run_id": "2026-09-19_15-58-24",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-native-20260921-001/manifest.json",
+      "sha256": "39bd69e367f2372151d3176d93999483a6e1d8c60c9644909f5d39c02d00a145"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-19_15-58-24/evaluations/leg-to-wheel-30000-20260921-002/comparison-metrics.json",
+      "sha256": "944768451fad04050414bcec5ff64f8ffbe4635009753ad6200d54b24506dd40"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0",
+  "version": 1
+}
