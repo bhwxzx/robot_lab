@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import atexit
+import hashlib
 import json
 import math
 import re
@@ -16,6 +17,9 @@ from pathlib import Path
 from typing import Any
 
 from policy_evaluation_telemetry import (
+    MOTION_REQUIRED_SIGNALS,
+    summarize_motion_samples,
+    summarize_motion_physics,
     TELEMETRY_SIGNALS,
     ROA_ABLATION_MODES,
     roa_diagnostic_signals,
@@ -552,6 +556,263 @@ def _review_windows(
     return windows
 
 
+def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
+    """One-env Native motion evaluation with terminal state captured before reset."""
+    from isaaclab.utils.math import quat_apply, quat_error_magnitude, quat_inv, quat_mul, yaw_quat
+
+    raw = env.unwrapped
+    cmd = raw.command_manager.get_term("motion")
+    robot = raw.scene["robot"]
+    sensor = raw.scene["contact_forces"]
+    contact_names = ["right_foot_link", "left_foot_link", "right_wheel_link", "left_wheel_link"]
+    contact_ids, found = sensor.find_bodies(contact_names, preserve_order=True)
+    if list(found) != contact_names:
+        raise ValueError("motion evaluation requires named foot and wheel contact sensors")
+    joint_names = list(robot.joint_names)
+    limits = _actuator_limit_tensor(robot, "effort_limit", "joint_effort_limits",
+                                   environment_count=1, joint_count=len(joint_names))
+    policy = runner.get_inference_policy(device=raw.device)
+    policy_module = getattr(runner.alg, "policy", None)
+    if policy_module is None:
+        policy_module = runner.alg.actor_critic
+
+    def aligned_reference():
+        rotation = yaw_quat(quat_mul(cmd.robot_anchor_quat_w, quat_inv(cmd.anchor_quat_w)))
+        rotation = rotation[:, None, :].expand(-1, len(cmd.cfg.body_names), -1)
+        origin = cmd.robot_anchor_pos_w.clone()
+        origin[:, 2] = cmd.anchor_pos_w[:, 2]
+        return (origin[:, None, :] + quat_apply(rotation, cmd.body_pos_w - cmd.anchor_pos_w[:, None, :]),
+                quat_mul(rotation, cmd.body_quat_w))
+
+    if mode != "randomized_phase":
+        # Set the sampler BEFORE reset so physical state and reference both start at zero.
+        def zero_start(env_ids):
+            cmd.time_steps[env_ids] = 0
+        cmd._adaptive_sampling = zero_start
+    observations, _ = env.reset()
+    cmd.body_pos_relative_w, cmd.body_quat_relative_w = aligned_reference()
+    observations = env.get_observations()
+    initial_runtime = {
+        "body_names": list(robot.body_names),
+        "masses_kg": robot.root_physx_view.get_masses()[0].tolist(),
+        "coms": robot.root_physx_view.get_coms()[0].tolist(),
+        "material_properties": robot.root_physx_view.get_material_properties()[0].tolist(),
+        "joint_stiffness": robot.data.joint_stiffness[0].tolist(),
+        "joint_damping": robot.data.joint_damping[0].tolist(),
+    }
+    motion_file = Path(cmd.cfg.motion_file).resolve()
+    motion_hash = hashlib.sha256(motion_file.read_bytes()).hexdigest()
+    expected_hash = plan.scenario_contract["scenario_overrides"]["evaluation.motion_sha256"]
+    if motion_hash != expected_hash:
+        raise ValueError("reference motion hash mismatch")
+    if not math.isclose(float(cmd.motion.fps.item()) * raw.step_dt, 1.0, abs_tol=1e-6):
+        raise ValueError("motion fps differs from control frequency")
+    diagnostic = {
+        "mode": mode, "sampling_phase": "post_physics_pre_reset",
+        "reference_timing": "frame commanded for this action; not next observation frame",
+        "motion_file": {"path": str(motion_file), "sha256": motion_hash},
+        "frame_count": cmd.motion.time_step_total, "fps": float(cmd.motion.fps.item()),
+        "body_names": list(cmd.cfg.body_names), "contact_body_names": contact_names,
+        "position_joint_names": [n for n in joint_names if "wheel" not in n],
+        "wheel_joint_names": [n for n in joint_names if "wheel" in n],
+        "units": {"position": "m", "rotation": "rad", "joint_position": "rad",
+                  "joint_velocity": "rad/s", "torque": "N*m", "contact_force": "N"},
+        "torque_sampling": "final physics substep of each control step",
+        "initial_runtime": initial_runtime,
+    }
+    samples = []
+    physics_window = plan.scenario_contract["scenario_overrides"].get("evaluation.motion_physics_window")
+    physics_samples = []
+    wheel_names = ["right_wheel_link", "left_wheel_link"]
+    wheel_ids, found_wheels = robot.find_bodies(wheel_names, preserve_order=True)
+    if physics_window is not None:
+        if list(found_wheels) != wheel_names or not math.isclose(raw.physics_dt, 0.005, abs_tol=1e-12):
+            raise ValueError("physics-window capture requires named wheels and 5 ms simulation steps")
+        diagnostic["physics_window"] = {
+            "frame_range_inclusive": physics_window, "physics_dt_seconds": float(raw.physics_dt),
+            "decimation": raw.cfg.decimation, "wheel_body_names": wheel_names,
+            "sampling_phase": "after_scene_update_before_reset",
+            "force_semantics": "net normal contact force averaged over the just-completed physics step; excludes friction",
+            "velocity_semantics": "wheel link origin (axle center) velocity in world frame; negative z means descending",
+            "torque_semantics": "PD computed/applied drive torque for the just-completed physics step; excludes passive impact load",
+        }
+    ledger = SignalLedger({name: args_cli.duration_steps for name in MOTION_REQUIRED_SIGNALS},
+                          required_signals=MOTION_REQUIRED_SIGNALS)
+    pending = {}
+    original_compute = raw.reward_manager.compute
+    original_scene_update = raw.scene.update
+    physics_active = False
+    substep_count = 0
+    previous_wheel_velocity = None
+
+    def capture_physics_update(dt):
+        nonlocal substep_count, previous_wheel_velocity
+        original_scene_update(dt)
+        if not physics_active or dt == 0:
+            return
+        if not math.isclose(dt, raw.physics_dt, abs_tol=1e-12) or substep_count >= raw.cfg.decimation:
+            raise RuntimeError("unexpected scene update during physics-window capture")
+        substep_count += 1
+        if not physics_window[0] <= frame_before_action <= physics_window[1]:
+            return
+        if int(cmd.time_steps[0].item()) != frame_before_action:
+            raise RuntimeError("motion frame changed within physics substeps")
+        # body_lin_vel_w is COM velocity. Use link velocity so randomized COM
+        # offsets and wheel spin do not contaminate the axle-center speed.
+        velocity = robot.data.body_link_vel_w[:, wheel_ids, :3]
+        tensors = {
+            "contact_forces_w": sensor.data.net_forces_w[:, contact_ids],
+            "wheel_center_position_w": robot.data.body_link_pos_w[:, wheel_ids],
+            "wheel_center_velocity_w": velocity,
+            "wheel_center_velocity_before_w": previous_wheel_velocity,
+            "joint_velocity": robot.data.joint_vel, "joint_acceleration": robot.data.joint_acc,
+            "computed_torque": robot.data.computed_torque, "applied_torque": robot.data.applied_torque,
+        }
+        record = {"control_step": step, "substep": substep_count - 1,
+                  "physics_step": step * raw.cfg.decimation + substep_count - 1,
+                  "sim_time_seconds": (step * raw.cfg.decimation + substep_count) * raw.physics_dt,
+                  "frame_index": frame_before_action, "episode_id": episode_id,
+                  "episode_start_frame": start_frame}
+        for name, value in tensors.items():
+            record[name] = _tensor_row(value.reshape(1, -1), 0)
+        physics_samples.append(record)
+        previous_wheel_velocity = velocity.clone()
+
+    def capture_before_reset(dt):
+        reward = original_compute(dt)
+        relative_pos, relative_quat = aligned_reference()
+        tensors = {
+            "command": cmd.command,
+            "root_position_w": robot.data.root_pos_w,
+            "root_quaternion_w": robot.data.root_quat_w,
+            "root_linear_velocity_b": robot.data.root_lin_vel_b,
+            "root_angular_velocity_b": robot.data.root_ang_vel_b,
+            "projected_gravity_b": robot.data.projected_gravity_b,
+            "joint_position": robot.data.joint_pos, "joint_velocity": robot.data.joint_vel,
+            "reference_joint_position": cmd.joint_pos, "reference_joint_velocity": cmd.joint_vel,
+            "joint_position_error": cmd.joint_pos - robot.data.joint_pos,
+            "joint_velocity_error": cmd.joint_vel - robot.data.joint_vel,
+            "applied_torque": robot.data.applied_torque, "computed_torque": robot.data.computed_torque,
+            "body_position_w": cmd.robot_body_pos_w, "body_quaternion_w": cmd.robot_body_quat_w,
+            "reference_body_position_w": cmd.body_pos_w, "reference_body_quaternion_w": cmd.body_quat_w,
+            "anchor_position_error": cmd.anchor_pos_w - cmd.robot_anchor_pos_w,
+            "anchor_orientation_error": quat_error_magnitude(cmd.anchor_quat_w, cmd.robot_anchor_quat_w)[:, None],
+            "body_position_error": torch.linalg.vector_norm(relative_pos - cmd.robot_body_pos_w, dim=-1),
+            "body_orientation_error": quat_error_magnitude(relative_quat, cmd.robot_body_quat_w),
+            "contact_forces_w": sensor.data.net_forces_w[:, contact_ids],
+            "action": raw.action_manager.action,
+        }
+        for name, value in tensors.items():
+            pending[name] = ledger.capture(name, lambda value=value: _tensor_row(value.reshape(1, -1), 0))
+        pending["frame_index"] = ledger.capture("frame_index", lambda: int(cmd.time_steps[0].item()))
+        pending["reward"] = ledger.capture("reward", lambda: _finite_scalar(reward[0].item(), "reward"))
+        pending["done"] = ledger.capture("done", lambda: bool(raw.reset_buf[0].item()))
+        pending["timeout"] = ledger.capture("timeout", lambda: bool(raw.termination_manager.time_outs[0].item()))
+        pending["termination_terms"] = ledger.capture("termination_terms", lambda: {
+            name: bool(raw.termination_manager.get_term(name)[0].item())
+            for name in raw.termination_manager.active_terms
+        })
+        return reward
+
+    raw.reward_manager.compute = capture_before_reset
+    if physics_window is not None:
+        raw.scene.update = capture_physics_update
+    episode_id = 0
+    start_frame = int(cmd.time_steps[0].item())
+    started = time.monotonic()
+    try:
+        for step in range(args_cli.duration_steps):
+            pending.clear()
+            frame_before_action = int(cmd.time_steps[0].item())
+            substep_count = 0
+            if physics_window is not None and physics_window[0] <= frame_before_action <= physics_window[1]:
+                previous_wheel_velocity = robot.data.body_link_vel_w[:, wheel_ids, :3].clone()
+            with torch.inference_mode():
+                actions = policy(observations)
+                if not torch.isfinite(actions).all():
+                    raise FloatingPointError("nonfinite motion action")
+                physics_active = physics_window is not None
+                observations, rewards, dones, _ = env.step(actions)
+                physics_active = False
+                policy_module.reset(dones)
+            if physics_window is not None and substep_count != raw.cfg.decimation:
+                raise RuntimeError("missing physics substeps")
+            if pending.get("frame_index") != frame_before_action:
+                raise RuntimeError("motion reference advanced before terminal-state capture")
+            if bool(dones[0].item()) != pending.get("done"):
+                raise RuntimeError("pre-reset done differs from returned done")
+            sample = {"step": step, "sim_time_seconds": (step + 1) * raw.step_dt,
+                      **pending,
+                      "episode_id": ledger.capture("episode_id", lambda: episode_id),
+                      "episode_start_frame": ledger.capture("episode_start_frame", lambda: start_frame)}
+            samples.append(sample)
+            if sample["done"]:
+                if mode != "randomized_phase":
+                    # IsaacLab advances commands after auto-reset. Restore the zero reference
+                    # before recomputing the next observation; physical reset already used zero.
+                    cmd.time_steps[:] = 0
+                    cmd.body_pos_relative_w, cmd.body_quat_relative_w = aligned_reference()
+                    observations = env.get_observations()
+                episode_id += 1
+                start_frame = int(cmd.time_steps[0].item())
+    finally:
+        physics_active = False
+        raw.scene.update = original_scene_update
+        raw.reward_manager.compute = original_compute
+    elapsed = time.monotonic() - started
+    if hashlib.sha256(motion_file.read_bytes()).hexdigest() != motion_hash:
+        raise ValueError("reference motion changed during evaluation")
+    evidence = telemetry_report(requested=True, runner=agent_runner_name(runner), ledger=ledger,
+                                additional_required_signals=MOTION_REQUIRED_SIGNALS)
+    if evidence["telemetry_status"] != "complete":
+        raise RuntimeError(f"incomplete motion telemetry: {evidence['missing_required_signals']}")
+    metrics = summarize_motion_samples(samples, joint_names, limits[0].cpu().tolist())
+    metrics["real_time_factor"] = args_cli.duration_steps * raw.step_dt / max(elapsed, 1e-12)
+    availability = metric_availability_report(evidence["signal_status"],
+                                              {name: sorted(MOTION_REQUIRED_SIGNALS) for name in metrics})
+    binding = {"task": plan.task, "run_id": plan.run_id, "evaluation_id": plan.evaluation_id,
+               "candidate_id": args_cli.candidate_id, "runner": agent_runner_name(runner), "batch_id": plan.batch_id}
+    inputs = {
+        "checkpoint": plan.checkpoint, "artifact": {"kind": plan.artifact_kind, **plan.artifact},
+        "run_identity": plan.run_identity,
+        "scenario": {"contract": plan.scenario_contract, "sha256": plan.scenario_sha256},
+        "effective_config": plan.effective_config, "scenario_evidence": plan.scenario_evidence,
+        "resource_mode": {"training_overlap": False, "idle_gpu_required": True,
+                          "device": str(env_cfg.sim.device), "num_envs": 1, "video_requested": False,
+                          "telemetry_requested": True, "telemetry_env_index": 0, "telemetry_stride": 1,
+                          "follow_robot_camera": False},
+    }
+    telemetry = {"version": 4, "evaluation": binding, "inputs": inputs, "environment_index": 0,
+                 "stride": 1, "step_dt_seconds": float(raw.step_dt), "joint_names": joint_names,
+                 "joint_effort_limits": limits[0].cpu().tolist(), "motion_diagnostics": diagnostic,
+                 **evidence, "samples": samples}
+    result = {
+        "version": 3, "layout_version": 2, "run_id": plan.run_id, "status": "completed",
+        "evaluation": binding, "inputs": inputs, "candidate_id": args_cli.candidate_id,
+        "runner": binding["runner"], "artifact": "native", "scenario_id": args_cli.scenario_id,
+        "seed": args_cli.seed, "duration_steps": args_cli.duration_steps,
+        "checkpoint_path": plan.checkpoint["path"], "checkpoint_sha256": plan.checkpoint["sha256"],
+        "artifact_path": plan.artifact["path"], "artifact_sha256": plan.artifact["sha256"],
+        "run_identity_sha256": plan.run_identity["identity_sha256"], "scenario_sha256": plan.scenario_sha256,
+        "video_path": "", "telemetry_path": str(plan.telemetry_path),
+        **{key: evidence[key] for key in ("telemetry_status", "missing_required_signals",
+                                         "telemetry_required_for_complete_assessment")},
+        "telemetry": evidence, "training_overlap": False, "metrics": metrics,
+        "metric_availability": availability, "motion_diagnostics": diagnostic,
+    }
+    if physics_window is not None:
+        telemetry["physics_samples"] = physics_samples
+        result["physics_window_metrics"] = summarize_motion_physics(
+            physics_samples, telemetry["joint_effort_limits"], float(raw.physics_dt))
+    env.close()
+    publisher.publish(result, telemetry=telemetry, video_source=None)
+    print(f"[INFO] Motion evaluation result: {plan.result_path}")
+
+
+def agent_runner_name(runner):
+    return type(runner).__name__
+
+
 def _evaluate(
     env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg,
     agent_cfg: RslRlBaseRunnerCfg,
@@ -570,6 +831,15 @@ def _evaluate(
         args_cli.device if args_cli.device is not None else env_cfg.sim.device
     )
     command_schedule = evaluation_plan.scenario_contract["command_schedule"]
+    motion_mode = evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.motion_mode")
+    if hasattr(env_cfg.commands, "motion") and motion_mode is None:
+        raise ValueError("motion tasks require an explicit evaluation.motion_mode")
+    if motion_mode is not None:
+        if (args_cli.artifact_kind != "native" or args_cli.num_envs != 1
+                or args_cli.telemetry_stride != 1 or evaluation_plan.telemetry_path is None
+                or evaluation_plan.batch_id is None or not args_cli.require_idle_gpu
+                or not args_cli.no_video or command_schedule or not hasattr(env_cfg.commands, "motion")):
+            raise ValueError("motion evaluation requires a Native idle-GPU batch, one env, stride 1, telemetry, no video/schedule")
     roa_mode = evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.roa_mode")
     dwaq_mode = evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.dwaq_mode")
     roa_velocity_enabled = getattr(agent_cfg.policy, "use_velocity_estimation", True)
@@ -592,9 +862,27 @@ def _evaluate(
     for dotted_path, value in evaluation_plan.scenario_contract[
         "scenario_overrides"
     ].items():
-        if dotted_path in ("evaluation.roa_mode", "evaluation.dwaq_mode", ROA_SENSOR_DELAY_OPTION):
+        if dotted_path in (
+            "evaluation.roa_mode", "evaluation.dwaq_mode", ROA_SENSOR_DELAY_OPTION,
+            "evaluation.motion_mode", "evaluation.motion_sha256", "evaluation.motion_physics_window",
+        ):
             continue
         _set_dotted(env_cfg, dotted_path, value)
+    if motion_mode is not None:
+        env_cfg.commands.motion.debug_vis = False
+        if motion_mode == "nominal_start":
+            env_cfg.observations.policy.enable_corruption = False
+            for name in ("physics_material", "add_joint_default_pos", "base_com", "push_robot",
+                         "randomize_rigid_body_mass_base", "randomize_rigid_body_mass_others",
+                         "randomize_actuator_gains", "randomize_apply_external_force_torque"):
+                if hasattr(env_cfg.events, name):
+                    setattr(env_cfg.events, name, None)
+            env_cfg.commands.motion.pose_range = {}
+            env_cfg.commands.motion.velocity_range = {}
+            env_cfg.commands.motion.joint_position_range = (0.0, 0.0)
+            for actuator in env_cfg.scene.robot.actuators.values():
+                if hasattr(actuator, "min_delay"):
+                    actuator.min_delay = actuator.max_delay = 0
     if command_schedule:
         command_cfg = env_cfg.commands.base_velocity
         command_cfg.resampling_time_range = (1.0e9, 1.0e9)
@@ -632,6 +920,9 @@ def _evaluate(
     runner_name = agent_cfg.class_name
     runner = _make_runner(env, agent_cfg)
     runner.load(str(checkpoint_path))
+    if motion_mode is not None:
+        _evaluate_motion(env, runner, env_cfg, evaluation_plan, publisher, motion_mode)
+        return
     native_policy = runner.get_inference_policy(device=env.unwrapped.device)
     try:
         policy_module = runner.alg.policy

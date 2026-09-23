@@ -49,7 +49,7 @@ from rsl_rl.runners import OnPolicyRunner, DistillationRunner
 from isaaclab.envs import ManagerBasedRLEnvCfg, multi_agent_to_single_agent
 from isaaclab.utils.assets import retrieve_file_path
 from isaaclab.utils.dict import print_dict
-from isaaclab.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
+from isaaclab_rl.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
 # 引入导出用的官方标准库
 from isaaclab_rl.rsl_rl import (
     RslRlBaseRunnerCfg, 
@@ -88,6 +88,13 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
         env_cfg.events.base_com = None
         if hasattr(env_cfg.events, "physics_material"):
             env_cfg.events.physics_material = None
+        for event_name in (
+            "randomize_rigid_body_mass_base",
+            "randomize_rigid_body_mass_others",
+            "randomize_actuator_gains",
+        ):
+            if hasattr(env_cfg.events, event_name):
+                setattr(env_cfg.events, event_name, None)
 
     # 3. 开启参考动作可视化 & 取消起始位姿噪声
     if hasattr(env_cfg.commands, "motion"):
@@ -106,6 +113,9 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
     
     if args_cli.use_pretrained_checkpoint:
         resume_path = get_published_pretrained_checkpoint("rsl_rl", task_name)
+        if not resume_path:
+            print(f"[INFO] No published pretrained checkpoint is available for task: {task_name}")
+            return
     elif args_cli.checkpoint:
         resume_path = retrieve_file_path(args_cli.checkpoint)
     else:

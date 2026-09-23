@@ -195,16 +195,37 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
         raise EvaluationEvidenceError("scenario_overrides must be an object")
     for key, setting in value["scenario_overrides"].items():
         if key.startswith("evaluation."):
-            from policy_evaluation_telemetry import ROA_CONTROL_MODES, DWAQ_CONTROL_MODES, ROA_SENSOR_DELAY_OPTION
+            from policy_evaluation_telemetry import (
+                ROA_CONTROL_MODES, DWAQ_CONTROL_MODES, ROA_SENSOR_DELAY_OPTION, MOTION_MODES,
+            )
             if key == ROA_SENSOR_DELAY_OPTION:
                 if (type(setting) is not int or setting not in (0, 1)
                         or value["scenario_overrides"].get("evaluation.roa_mode") != "student"):
                     raise EvaluationEvidenceError("ROA sensor delay requires student control and zero or one step")
                 continue
+            if key == "evaluation.motion_sha256":
+                if not isinstance(setting, str) or not re.fullmatch(r"[0-9a-f]{64}", setting):
+                    raise EvaluationEvidenceError("invalid reference motion SHA-256")
+                continue
+            if key == "evaluation.motion_physics_window":
+                if (not isinstance(setting, list) or len(setting) != 2
+                        or any(type(v) is not int for v in setting) or not 0 <= setting[0] <= setting[1]):
+                    raise EvaluationEvidenceError("invalid motion physics frame window")
+                continue
             modes = {"evaluation.roa_mode": ROA_CONTROL_MODES,
-                     "evaluation.dwaq_mode": DWAQ_CONTROL_MODES}
+                     "evaluation.dwaq_mode": DWAQ_CONTROL_MODES,
+                     "evaluation.motion_mode": MOTION_MODES}
             if key not in modes or setting not in modes[key]:
                 raise EvaluationEvidenceError("invalid evaluation controller or unknown evaluation option")
+    overrides = value["scenario_overrides"]
+    if "evaluation.motion_physics_window" in overrides and "evaluation.motion_mode" not in overrides:
+        raise EvaluationEvidenceError("physics window requires motion diagnostics")
+    if ("evaluation.motion_mode" in overrides) != ("evaluation.motion_sha256" in overrides):
+        raise EvaluationEvidenceError("motion mode and reference SHA-256 must be supplied together")
+    if "evaluation.motion_mode" in overrides and any(
+        key in overrides for key in ("evaluation.roa_mode", "evaluation.dwaq_mode")
+    ):
+        raise EvaluationEvidenceError("motion and velocity diagnostic modes are mutually exclusive")
     if all(key in value["scenario_overrides"] for key in ("evaluation.roa_mode", "evaluation.dwaq_mode")):
         raise EvaluationEvidenceError("ROA and DWAQ diagnostic modes are mutually exclusive")
     if not isinstance(value["command_schedule"], list):
@@ -919,6 +940,11 @@ def validate_evaluation_bundle(
         if any(not telemetry.get("signal_status", {}).get(name, {}).get("complete") for name in required):
             raise EvaluationEvidenceError("incomplete DWAQ diagnostic signals")
 
+    if "evaluation.motion_mode" in scenario_contract["scenario_overrides"]:
+        if telemetry_reference is None:
+            raise EvaluationEvidenceError("motion diagnostics require telemetry")
+        validate_motion_telemetry(result, telemetry, scenario_contract)
+
     return {
         "status": "valid",
         "result": result_reference,
@@ -928,3 +954,161 @@ def validate_evaluation_bundle(
         "scenario_sha256": scenario["sha256"],
         "outputs": output_references,
     }
+
+
+def validate_motion_telemetry(result, telemetry, scenario):
+    """Recompute motion metrics and verify timing/completeness beyond output hashes."""
+    from policy_evaluation_telemetry import (
+        MOTION_REQUIRED_SIGNALS, MOTION_VECTOR_WIDTHS, MOTION_JOINT_SIGNALS,
+        MOTION_BODY_SIGNALS, summarize_motion_samples,
+    )
+    diagnostic = result.get("motion_diagnostics", {})
+    resource = result["inputs"]["resource_mode"]
+    if (result.get("artifact") != "native" or result.get("runner") != "OnPolicyRunner"
+            or scenario["num_envs"] != 1 or scenario["command_schedule"]
+            or resource.get("telemetry_stride") != 1 or resource.get("video_requested")
+            or not resource.get("idle_gpu_required") or resource.get("training_overlap")):
+        raise EvaluationEvidenceError("invalid motion evaluation resource contract")
+    if (diagnostic != telemetry.get("motion_diagnostics")
+            or diagnostic.get("mode") != scenario["scenario_overrides"]["evaluation.motion_mode"]
+            or diagnostic.get("sampling_phase") != "post_physics_pre_reset"):
+        raise EvaluationEvidenceError("motion diagnostic binding/timing mismatch")
+    motion = _validate_reference(diagnostic.get("motion_file"), label="reference motion")
+    if motion["sha256"] != scenario["scenario_overrides"]["evaluation.motion_sha256"]:
+        raise EvaluationEvidenceError("motion data SHA-256 differs from scenario")
+    count = diagnostic.get("frame_count")
+    if type(count) is not int or count < 2:
+        raise EvaluationEvidenceError("invalid motion frame count")
+    import numpy as np
+    with np.load(motion["path"], allow_pickle=False) as reference:
+        if count != len(reference["joint_pos"]) or diagnostic.get("fps") != float(reference["fps"].item()):
+            raise EvaluationEvidenceError("motion frame count/fps differs from bound data")
+    dt = telemetry.get("step_dt_seconds")
+    if type(dt) not in (int, float) or not math.isclose(dt * diagnostic["fps"], 1.0, abs_tol=1e-6):
+        raise EvaluationEvidenceError("motion fps/control timestep mismatch")
+    samples = telemetry.get("samples", [])
+    if len(samples) != scenario["duration_steps"]:
+        raise EvaluationEvidenceError("motion sample count mismatch")
+    if (telemetry.get("telemetry_status") != "complete"
+            or result.get("telemetry_status") != "complete"
+            or not MOTION_REQUIRED_SIGNALS.issubset(telemetry.get("required_signals", []))):
+        raise EvaluationEvidenceError("incomplete motion telemetry")
+    for name in MOTION_REQUIRED_SIGNALS:
+        status = telemetry.get("signal_status", {}).get(name, {})
+        if (not status.get("complete") or not status.get("required")
+                or status.get("sample_count") != len(samples)
+                or status.get("expected_sample_count") != len(samples) or status.get("error_count") != 0):
+            raise EvaluationEvidenceError(f"incomplete motion signal: {name}")
+    names = telemetry.get("joint_names", [])
+    bodies = diagnostic.get("body_names", [])
+    contacts = diagnostic.get("contact_body_names", [])
+    if (not names or len(set(names)) != len(names) or not bodies or
+            contacts != ["right_foot_link", "left_foot_link", "right_wheel_link", "left_wheel_link"]):
+        raise EvaluationEvidenceError("invalid motion joint/body/contact names")
+    widths = {**MOTION_VECTOR_WIDTHS, **{name: len(names) for name in MOTION_JOINT_SIGNALS},
+              **{name: len(bodies) * width for name, width in MOTION_BODY_SIGNALS.items()},
+              "command": 2 * len(names), "action": len(names), "contact_forces_w": 3 * len(contacts)}
+    previous = None
+    for i, sample in enumerate(samples):
+        if sample.get("step") != i or not MOTION_REQUIRED_SIGNALS.issubset(sample):
+            raise EvaluationEvidenceError("missing/out-of-order motion sample")
+        stamp = sample.get("sim_time_seconds")
+        if type(stamp) not in (int, float) or not math.isclose(stamp, (i + 1) * dt, abs_tol=1e-9):
+            raise EvaluationEvidenceError("motion sample time mismatch")
+        for name, width in widths.items():
+            values = sample.get(name)
+            if (not isinstance(values, list) or len(values) != width or
+                    any(type(v) not in (float, int) or not math.isfinite(v) for v in values)):
+                raise EvaluationEvidenceError(f"invalid motion vector: {name}")
+        for name in ("frame_index", "episode_start_frame", "episode_id"):
+            if type(sample[name]) is not int or sample[name] < 0:
+                raise EvaluationEvidenceError("invalid motion episode/frame index")
+        if not sample["episode_start_frame"] <= sample["frame_index"] < count:
+            raise EvaluationEvidenceError("motion frame outside episode range")
+        if diagnostic["mode"] != "randomized_phase" and sample["episode_start_frame"] != 0:
+            raise EvaluationEvidenceError("fixed-start motion episode did not start at zero")
+        terms = sample["termination_terms"]
+        if (not isinstance(terms, dict) or "motion_finished" not in terms
+                or any(type(v) is not bool for v in terms.values())
+                or type(sample["done"]) is not bool or type(sample["timeout"]) is not bool
+                or sample["done"] != any(terms.values())
+                or sample["timeout"] != (terms.get("time_out", False) or terms["motion_finished"])):
+            raise EvaluationEvidenceError("inconsistent motion termination signals")
+        if terms["motion_finished"] != (sample["frame_index"] == count - 1):
+            raise EvaluationEvidenceError("motion end does not match final reference frame")
+        if type(sample["reward"]) not in (float, int) or not math.isfinite(sample["reward"]):
+            raise EvaluationEvidenceError("nonfinite motion reward")
+        if previous is None or previous["done"]:
+            if (sample["frame_index"] != sample["episode_start_frame"] or
+                    sample["episode_id"] != (0 if previous is None else previous["episode_id"] + 1)):
+                raise EvaluationEvidenceError("inconsistent motion episode start")
+        elif (sample["frame_index"] != previous["frame_index"] + 1 or
+              sample["episode_id"] != previous["episode_id"] or
+              sample["episode_start_frame"] != previous["episode_start_frame"]):
+            raise EvaluationEvidenceError("motion reference skipped or episode changed without reset")
+        previous = sample
+    computed = summarize_motion_samples(samples, names, telemetry["joint_effort_limits"])
+    for name, value in computed.items():
+        actual = result.get("metrics", {}).get(name)
+        if type(actual) not in (int, float) or not math.isclose(actual, value, rel_tol=1e-10, abs_tol=1e-12):
+            raise EvaluationEvidenceError(f"motion metric differs from telemetry: {name}")
+    validate_motion_physics(result, telemetry, scenario)
+
+
+def validate_motion_physics(result, telemetry, scenario):
+    """Require every substep of every observed window, including terminal steps."""
+    from policy_evaluation_telemetry import (
+        MOTION_PHYSICS_VECTOR_WIDTHS, MOTION_PHYSICS_JOINT_SIGNALS, summarize_motion_physics,
+    )
+    window = scenario["scenario_overrides"].get("evaluation.motion_physics_window")
+    diagnostic = telemetry["motion_diagnostics"].get("physics_window")
+    if window is None:
+        if diagnostic is not None or "physics_samples" in telemetry or "physics_window_metrics" in result:
+            raise EvaluationEvidenceError("unbound motion physics telemetry")
+        return
+    if not isinstance(diagnostic, dict):
+        raise EvaluationEvidenceError("missing motion physics diagnostics")
+    dt = diagnostic.get("physics_dt_seconds")
+    decimation = diagnostic.get("decimation")
+    if (diagnostic.get("frame_range_inclusive") != window
+            or window[1] >= telemetry["motion_diagnostics"]["frame_count"]
+            or type(dt) not in (int, float) or not math.isclose(dt, .005, abs_tol=1e-12)
+            or type(decimation) is not int or decimation <= 0
+            or not math.isclose(dt * decimation, telemetry["step_dt_seconds"], abs_tol=1e-12)
+            or diagnostic.get("sampling_phase") != "after_scene_update_before_reset"
+            or diagnostic.get("wheel_body_names") != ["right_wheel_link", "left_wheel_link"]):
+        raise EvaluationEvidenceError("motion physics timing/window mismatch")
+    control = [s for s in telemetry["samples"] if window[0] <= s["frame_index"] <= window[1]]
+    samples = telemetry.get("physics_samples")
+    if not isinstance(samples, list) or len(samples) != len(control) * decimation:
+        raise EvaluationEvidenceError("missing motion physics samples")
+    widths = {**MOTION_PHYSICS_VECTOR_WIDTHS,
+              **{k: len(telemetry["joint_names"]) for k in MOTION_PHYSICS_JOINT_SIGNALS}}
+    previous = None
+    for i, sample in enumerate(samples):
+        parent = control[i // decimation]
+        substep = i % decimation
+        physics_step = parent["step"] * decimation + substep
+        expected = {"control_step": parent["step"], "substep": substep, "physics_step": physics_step,
+                    **{k: parent[k] for k in ("frame_index", "episode_id", "episode_start_frame")}}
+        if any(type(sample.get(k)) is not int or sample[k] != v for k, v in expected.items()):
+            raise EvaluationEvidenceError("out-of-order/reset-misaligned motion physics sample")
+        stamp = sample.get("sim_time_seconds")
+        if type(stamp) not in (int, float) or not math.isclose(stamp, (physics_step + 1) * dt, abs_tol=1e-9):
+            raise EvaluationEvidenceError("motion physics timestamp mismatch")
+        for name, width in widths.items():
+            values = sample.get(name)
+            if (not isinstance(values, list) or len(values) != width
+                    or any(type(v) not in (int, float) or not math.isfinite(v) for v in values)):
+                raise EvaluationEvidenceError(f"invalid motion physics signal: {name}")
+        if previous is not None and previous["episode_id"] == sample["episode_id"] and previous["physics_step"] + 1 == physics_step:
+            if sample["wheel_center_velocity_before_w"] != previous["wheel_center_velocity_w"]:
+                raise EvaluationEvidenceError("motion physics before/after velocity discontinuity")
+        if substep == decimation - 1:
+            for name in ("contact_forces_w", "applied_torque", "computed_torque", "joint_velocity"):
+                if sample[name] != parent[name]:
+                    raise EvaluationEvidenceError(f"physics/control endpoint mismatch: {name}")
+        previous = sample
+    expected_metrics = summarize_motion_physics(samples, telemetry["joint_effort_limits"], dt)
+    if result.get("physics_window_metrics") != expected_metrics:
+        raise EvaluationEvidenceError("motion physics metrics differ from telemetry")

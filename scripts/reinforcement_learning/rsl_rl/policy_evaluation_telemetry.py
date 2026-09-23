@@ -145,6 +145,125 @@ class RoaSensorDelay:
         return result, snapshot
 
 
+MOTION_MODES = ("nominal_start", "randomized_start", "randomized_phase")
+MOTION_VECTOR_WIDTHS = {
+    "root_position_w": 3, "root_quaternion_w": 4,
+    "root_linear_velocity_b": 3, "root_angular_velocity_b": 3,
+    "projected_gravity_b": 3, "anchor_position_error": 3,
+    "anchor_orientation_error": 1,
+}
+MOTION_JOINT_SIGNALS = (
+    "joint_position", "joint_velocity", "reference_joint_position",
+    "reference_joint_velocity", "joint_position_error", "joint_velocity_error",
+    "applied_torque", "computed_torque",
+)
+MOTION_BODY_SIGNALS = {
+    "body_position_w": 3, "body_quaternion_w": 4,
+    "reference_body_position_w": 3, "reference_body_quaternion_w": 4,
+    "body_position_error": 1, "body_orientation_error": 1,
+}
+MOTION_REQUIRED_SIGNALS = frozenset({
+    *BASE_REQUIRED_SIGNALS, *MOTION_VECTOR_WIDTHS, *MOTION_JOINT_SIGNALS,
+    *MOTION_BODY_SIGNALS, "frame_index", "episode_start_frame", "episode_id",
+    "contact_forces_w", "termination_terms",
+})
+
+MOTION_PHYSICS_VECTOR_WIDTHS = {
+    "contact_forces_w": 12, "wheel_center_position_w": 6,
+    "wheel_center_velocity_w": 6, "wheel_center_velocity_before_w": 6,
+}
+MOTION_PHYSICS_JOINT_SIGNALS = (
+    "joint_velocity", "joint_acceleration", "computed_torque", "applied_torque",
+)
+
+
+def summarize_motion_physics(samples, effort_limits, physics_dt):
+    """Descriptive statistics for the recorded window, not hardware acceptance limits."""
+    import numpy as np
+
+    if not samples:
+        return {"sample_count": 0}
+    arr = lambda key: np.asarray([s[key] for s in samples], dtype=float)
+    force = arr("contact_forces_w").reshape(-1, 4, 3)
+    torque = np.abs(arr("applied_torque"))
+    computed = np.abs(arr("computed_torque"))
+    limits = np.asarray(effort_limits, dtype=float)
+    return {
+        "sample_count": len(samples),
+        "physics_dt_seconds": physics_dt,
+        "max_single_wheel_normal_force_n": float(np.linalg.norm(force[:, 2:], axis=2).max()),
+        "max_summed_wheel_normal_force_z_n": float(force[:, 2:, 2].sum(axis=1).max()),
+        "max_single_foot_normal_force_n": float(np.linalg.norm(force[:, :2], axis=2).max()),
+        "max_wheel_downward_speed_before_m_s": float(np.maximum(0, -arr("wheel_center_velocity_before_w").reshape(-1, 2, 3)[:, :, 2]).max()),
+        "max_abs_applied_torque_nm": float(torque.max()),
+        "max_abs_computed_torque_nm": float(computed.max()),
+        "max_applied_effort_utilization": float((torque / limits).max()),
+        "computed_over_limit_joint_samples": int((computed > limits + 1e-5).sum()),
+        "applied_over_limit_joint_samples": int((torque > limits + 1e-5).sum()),
+        "computed_over_limit_counts_by_joint": (computed > limits + 1e-5).sum(axis=0).tolist(),
+        "max_abs_applied_torque_by_joint_nm": torque.max(axis=0).tolist(),
+    }
+
+
+def summarize_motion_samples(samples, joint_names, effort_limits):
+    """Descriptive control-step metrics; never count censored episodes as successes.
+
+    Errors and forces are captured after physics and before automatic reset.
+    Joint position tracking excludes wheels, whose unwrapped angles are not targets.
+    Torque maxima refer to the sampled final physics substep of each control step.
+    """
+    import numpy as np
+
+    if not samples:
+        raise ValueError("motion samples must not be empty")
+    position_ids = [i for i, name in enumerate(joint_names) if "wheel" not in name]
+    wheel_ids = [i for i, name in enumerate(joint_names) if "wheel" in name]
+    if not position_ids or not wheel_ids:
+        raise ValueError("motion diagnostics require both position and wheel joints")
+    arr = lambda key: np.asarray([sample[key] for sample in samples], dtype=float)
+    rms = lambda a: float(np.sqrt(np.mean(np.square(a))))
+    ended = [s for s in samples if s["done"]]
+    success = lambda s: s["termination_terms"].get("motion_finished", False) and not any(
+        value for name, value in s["termination_terms"].items()
+        if name not in ("motion_finished", "time_out")
+    ) and not s["termination_terms"].get("time_out", False)
+    full = [s for s in ended if s["episode_start_frame"] == 0]
+    torque = arr("applied_torque")
+    limits = np.asarray(effort_limits, dtype=float)
+    if limits.shape != (len(joint_names),) or not np.all(np.isfinite(limits) & (limits > 0)):
+        raise ValueError("invalid motion effort limits")
+    deltas = [np.asarray(b["action"]) - np.asarray(a["action"])
+              for a, b in zip(samples, samples[1:]) if not a["done"]]
+    metrics = {
+        "mean_reward": float(arr("reward").mean()),
+        "anchor_position_rmse_m": rms(np.linalg.norm(arr("anchor_position_error"), axis=1)),
+        "anchor_orientation_rmse_rad": rms(arr("anchor_orientation_error")),
+        "body_position_rmse_m": rms(arr("body_position_error")),
+        "body_orientation_rmse_rad": rms(arr("body_orientation_error")),
+        "position_joint_rmse_rad": rms(arr("joint_position_error")[:, position_ids]),
+        "wheel_velocity_rmse_rad_s": rms(arr("joint_velocity_error")[:, wheel_ids]),
+        "max_abs_applied_torque": float(np.abs(torque).max()),
+        "max_joint_effort_utilization": float((np.abs(torque) / limits).max()),
+        "torque_saturation_sample_fraction": float((np.abs(torque) >= limits * (1 - 1e-6)).mean()),
+        "max_abs_action": float(np.abs(arr("action")).max()),
+        "completed_episodes": len(ended),
+        "successful_motion_episodes": sum(success(s) for s in ended),
+        "failed_episodes": sum(not success(s) for s in ended),
+        "censored_episodes": int(not samples[-1]["done"]),
+        "frame_zero_completed_episodes": len(full),
+        "frame_zero_successful_episodes": sum(success(s) for s in full),
+    }
+    if ended:
+        metrics["motion_success_fraction"] = sum(success(s) for s in ended) / len(ended)
+    if full:
+        metrics["frame_zero_success_fraction"] = sum(success(s) for s in full) / len(full)
+    if deltas:
+        metrics["action_rate_rms"] = rms(deltas)
+    for name in samples[0]["termination_terms"]:
+        metrics[f"termination_count_{name}"] = sum(s["termination_terms"][name] for s in samples)
+    return metrics
+
+
 def capture_dwaq_diagnostics(policy, observations, actual_velocity, velocity_scale):
     """Replace only deterministic DWAQ velocity before actor normalization.
 
