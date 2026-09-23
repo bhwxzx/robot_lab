@@ -17,6 +17,7 @@ from robot_lab.tasks.manager_based.locomotion.velocity.velocity_env_cfg import L
 from robot_lab.assets.LW import LW_WHEEL_CFG
 from robot_lab.tasks.manager_based.locomotion.velocity.mdp.terrains.terrains_cfg import (
     BLIND_ROUGH_TERRAINS_CFG,
+    BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG,
     DWAQ_ROUGH_TERRAINS_CFG
 )
 import robot_lab.tasks.manager_based.locomotion.velocity.mdp as mdp
@@ -238,7 +239,22 @@ class LWWheelRewardsCfg(RewardsCfg):
         params={"asset_cfg": SceneEntityCfg("robot", body_names="")},
     )
 
+    # Keep global terms disabled; each algorithm sets the two groups' weights below.
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=0.0)
     action_smoothness = RewTerm(func=mdp.ActionSmoothnessPenalty, weight=0.0)
+
+    action_rate_legs_l2 = RewTerm(
+        func=mdp.action_rate_l2_by_term, weight=0.0, params={"action_term_name": "joint_pos"}
+    )
+    action_rate_wheels_l2 = RewTerm(
+        func=mdp.action_rate_l2_by_term, weight=0.0, params={"action_term_name": "joint_vel"}
+    )
+    action_smoothness_legs = RewTerm(
+        func=mdp.ActionSmoothnessPenalty, weight=0.0, params={"action_term_name": "joint_pos"}
+    )
+    action_smoothness_wheels = RewTerm(
+        func=mdp.ActionSmoothnessPenalty, weight=0.0, params={"action_term_name": "joint_vel"}
+    )
 
     penalize_hip_roll_action = RewTerm(
         func=mdp.specific_joint_action_penalty,
@@ -447,8 +463,10 @@ class LWWheelRoughTeacherEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
 
         # Action penalties
-        self.rewards.action_rate_l2.weight = -0.3 # -0.01
-        self.rewards.action_smoothness.weight = -0.03 
+        self.rewards.action_rate_legs_l2.weight = -0.3
+        self.rewards.action_rate_wheels_l2.weight = -0.3
+        self.rewards.action_smoothness_legs.weight = -0.03
+        self.rewards.action_smoothness_wheels.weight = -0.03
 
         # Contact sensorstand_still
         self.rewards.undesired_contacts.weight = -1.0
@@ -647,6 +665,7 @@ class LWWheelRoughStudentEnvCfg(LocomotionVelocityRoughEnvCfg):
     observations: LWWheelRoughStudentObservationsCfg = LWWheelRoughStudentObservationsCfg()
     commands: LWWheelCommandsCfg = LWWheelCommandsCfg()
     actions: LWWheelActionsCfg = LWWheelActionsCfg()
+    rewards: LWWheelRewardsCfg = LWWheelRewardsCfg()
 
     base_link_name = "base_link"
     wheel_link_name = ".*_wheel_link"
@@ -1052,8 +1071,10 @@ class LWWheelRoughDwaqEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.joint_deviation_legs.params["asset_cfg"].joint_names = [".*_thigh_joint",".*_shank_joint"]
 
         # Action penalties
-        self.rewards.action_rate_l2.weight = -0.02 # -0.01 
-        self.rewards.action_smoothness.weight = -0.02 # -0.15 
+        self.rewards.action_rate_legs_l2.weight = -0.02
+        self.rewards.action_rate_wheels_l2.weight = -0.02
+        self.rewards.action_smoothness_legs.weight = -0.02
+        self.rewards.action_smoothness_wheels.weight = -0.02
 
         # Contact sensorstand_still
         self.rewards.undesired_contacts.weight = -10.0
@@ -1427,8 +1448,10 @@ class LWWheelRoughRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.joint_deviation_legs.params["asset_cfg"].joint_names = [".*_thigh_joint",".*_shank_joint"]
 
         # Action penalties
-        self.rewards.action_rate_l2.weight = -0.02 # -0.01 
-        self.rewards.action_smoothness.weight = -0.02 # -0.15 
+        self.rewards.action_rate_legs_l2.weight = -0.02
+        self.rewards.action_rate_wheels_l2.weight = -0.02
+        self.rewards.action_smoothness_legs.weight = -0.02
+        self.rewards.action_smoothness_wheels.weight = -0.02
 
         # Contact sensorstand_still
         self.rewards.undesired_contacts.weight = -10.0

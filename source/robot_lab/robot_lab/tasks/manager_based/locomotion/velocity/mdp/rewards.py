@@ -1018,10 +1018,28 @@ def same_feet_x_position(env: ManagerBasedRLEnv,
     # return torch.exp(-feet_x_distance / 0.2)
     return feet_x_distance
 
+def _action_term_slice(env: ManagerBasedRLEnv, action_term_name: str) -> slice:
+    """Resolve a named term in the concatenated raw action, independent of joint order."""
+    start = 0
+    for name, size in zip(env.action_manager.active_terms, env.action_manager.action_term_dim):
+        if name == action_term_name:
+            return slice(start, start + size)
+        start += size
+    raise ValueError(f"Unknown action term: {action_term_name!r}")
+
+
+def action_rate_l2_by_term(env: ManagerBasedRLEnv, action_term_name: str) -> torch.Tensor:
+    """Sum squared raw action changes for one action term, without scaling or dt normalization."""
+    action_slice = _action_term_slice(env, action_term_name)
+    delta = env.action_manager.action[:, action_slice] - env.action_manager.prev_action[:, action_slice]
+    return torch.sum(torch.square(delta), dim=1)
+
+
 class ActionSmoothnessPenalty(ManagerTermBase):
     """
     A reward term for penalizing large instantaneous changes in the network action output.
-    This penalty encourages smoother actions over time.
+    This penalty encourages smoother actions over time. An optional action term
+    selects one group of raw actions; omitting it preserves the all-action penalty.
     """
 
     def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):
@@ -1037,7 +1055,7 @@ class ActionSmoothnessPenalty(ManagerTermBase):
         self.prev_action = None
         # self.__name__ = "action_smoothness_penalty"
 
-    def __call__(self, env: ManagerBasedRLEnv) -> torch.Tensor:
+    def __call__(self, env: ManagerBasedRLEnv, action_term_name: str | None = None) -> torch.Tensor:
         """Compute the action smoothness penalty.
 
         Args:
@@ -1047,7 +1065,8 @@ class ActionSmoothnessPenalty(ManagerTermBase):
             The penalty value based on the action smoothness.
         """
         # Get the current action from the environment's action manager
-        current_action = env.action_manager.action.clone()
+        action_slice = slice(None) if action_term_name is None else _action_term_slice(env, action_term_name)
+        current_action = env.action_manager.action[:, action_slice].clone()
 
         # If this is the first call, initialize the previous actions
         if self.prev_action is None:
