@@ -1,0 +1,1276 @@
+{
+  "version": 1,
+  "created_at": "2026-09-26T02:54:10.614714+00:00",
+  "question": "Analyze newly pulled real-wheel right-turn incident and propose reward changes for Flat ROA; no new policy evaluation or training",
+  "data_repository": {
+    "root": "/home/server/liufengrong/sim2real_test",
+    "head": "b89df0ac437b174d7876915844fbd108c87091c4",
+    "branch": "main",
+    "worktree_status": "",
+    "retrieval": "authorized fast-forward pull completed this turn"
+  },
+  "robotlab_repository": {
+    "head": "dd0cdfe39f4d540882d7f7588cfca89acc530bd1",
+    "tracked_worktree_status": "M source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py",
+    "tracked_diff_sha256": "280de719347264e19f0e49ed24f1d1d830c99b78368b226ad72c4cb493cc75f5",
+    "relevant_source": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+        "sha256": "923d93ce089bd42e16b8a6187de494074e2789093e06c7c16b0f2fc2dfa1f80c"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py",
+        "sha256": "0334a0cbf84e8d512ca987eaefcb5b4857142009d9a780889f9260220a5fe2ad"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py",
+        "sha256": "69343d3d2c2776016c6c4f9fe9056faa087beda54e87883661a732deefbf5b31"
+      },
+      {
+        "path": "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/mdp/commands/velocity_command.py",
+        "sha256": "0ff254a375c9ea8d408824c24145e7ac7906cc7b513c52c4dd4ca0834c1ce241"
+      },
+      {
+        "path": "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/managers/reward_manager.py",
+        "sha256": "6be44a98df5aed8a0ebac2913ebea33010633e007e816697a6d99f7ccfd731db"
+      }
+    ]
+  },
+  "policy": {
+    "run_id": "2026-09-23_17-23-24",
+    "checkpoint": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-23_17-23-24/model_49999.pt",
+      "sha256": "4ed632b8da31fec8a3a76d4917cd8fd5e94917e9f79ed35a2a2d4ce2d1fb88b1"
+    },
+    "onnx_files": [
+      {
+        "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/context/policy/LW/robot_lab/wheel_loco/policy.onnx",
+        "sha256": "33de9e0f5b6fc6ec8365cd323265bd3ea363330b5a867f8c37579455faefb75a"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-23_17-23-24/evidence/export/deploy-20260924-001/policy.onnx",
+        "sha256": "33de9e0f5b6fc6ec8365cd323265bd3ea363330b5a867f8c37579455faefb75a"
+      },
+      {
+        "path": "/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-23-17-23-24/policy.onnx",
+        "sha256": "33de9e0f5b6fc6ec8365cd323265bd3ea363330b5a867f8c37579455faefb75a"
+      }
+    ],
+    "training_context": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-23_17-23-24/provenance/context-0916ad3c09ffcfa8cc35bcd509c3e6e89905cf0b259d68301ef0d756b5affb74.json",
+      "sha256": "0916ad3c09ffcfa8cc35bcd509c3e6e89905cf0b259d68301ef0d756b5affb74"
+    },
+    "effective_config": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-23_17-23-24/provenance/config-f0e512d5d8ddf2268b41a6feebe63a49f8f07ee6b6095c2c9a9b87750c57a86e.json",
+      "sha256": "f0e512d5d8ddf2268b41a6feebe63a49f8f07ee6b6095c2c9a9b87750c57a86e"
+    },
+    "saved_env": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-23_17-23-24/params/env.yaml",
+      "sha256": "ed83b48154d807a9491c1a72ea9c260f7368802a91df25c4954c848b9726b753"
+    },
+    "saved_agent": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-23_17-23-24/params/agent.yaml",
+      "sha256": "27fe0f99bb26255da8a3514849e3aa540219ce7db2a4b27d39333f2b264bb5e1"
+    },
+    "training_argv": "bash scripts/start_roa.sh --terrain Flat --type wheel",
+    "argv_source": "previous explicit user confirmation",
+    "deployment_context": {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/analysis/deployment_context.json",
+      "sha256": "61dda794a64fcc57e4d1fc26f4dd353a16d82aeb3f64925f5baf79bb519bb74e"
+    },
+    "status": "Hardware instability observed in this incident; no readiness acceptance"
+  },
+  "inputs": [
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/exports/joint_states.csv",
+      "sha256": "82bd9dde4af13a0e19bcd50e58047ff0939a72ea665bc5be19a05af8649edd81"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/analysis/decoded.npz",
+      "sha256": "4ea08fd439fac43e03fb5685c6eb241b522f3e72bfa2ad23333c07c7cd4dbe8a"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/raw/lw_real_20260924-170019/lw_real_20260924-170019_0.db3",
+      "sha256": "65e208556a75936f7efa9f7e2ddfd623d7061472615a5e689fba885bf171af1f"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/analysis/metrics.json",
+      "sha256": "f85b7e26e0f5df1f70675b87862e27a85d0bde1721bed4097c7be9d00e133221"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/analysis/replay_alignment.json",
+      "sha256": "598d1f4bf4d82f0bb14819997eea6d1d48013909e01f356aed21fd38c1f4ea6a"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/manifest.json",
+      "sha256": "41464afa4016489fca53f012bcf4bb1c7992b2b3a3d135ff13951ca774e27a07"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/exports/validation.json",
+      "sha256": "80e62c865e7463e76f51725467bcf990538eca50a52c60978042dbd2511750ac"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/exports/README.md",
+      "sha256": "a54cc229ac6c89581b2282781a4fe6e9b5bc4429a2ffec4bced47c4473210325"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/context/policy/LW/robot_lab/wheel_loco/config.yaml",
+      "sha256": "5212d6c03ecbac99bcc0890e4a31a2eb034a87b47fc45efcf651babe06af1d70"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20260924-170019-right-turn-instability/context/policy/LW/base.yaml",
+      "sha256": "45aa0cfed1797855ab8e23c1a991faf94e62f539012349380c964168cbcfebf9"
+    }
+  ],
+  "verification": {
+    "checksum_manifest_entries_verified": 75,
+    "bag_sqlite_integrity": "ok",
+    "bag_message_count": 3235,
+    "csv_npz_bitwise_numeric_values": 252330,
+    "csv_integer_timestamps_match": true,
+    "all_numeric_values_finite": true,
+    "rpy_independent_quaternion_recompute_max_error_deg": 1.4210854715202004e-14,
+    "archived_phase_peak_recompute_max_error": 0.0,
+    "header_sample_interval_ms_min_median_max": [
+      19.463539,
+      20.002426999999997,
+      20.535376
+    ],
+    "onnx_hardware_export_storage_bytes_equal": true
+  },
+  "method": {
+    "joint_order": [
+      "right_hip_joint",
+      "left_hip_joint",
+      "right_thigh_joint",
+      "left_thigh_joint",
+      "right_shank_joint",
+      "left_shank_joint",
+      "right_foot_joint",
+      "left_foot_joint",
+      "right_wheel_joint",
+      "left_wheel_joint"
+    ],
+    "leg_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "wheel_indices": [
+      8,
+      9
+    ],
+    "hip_indices": [
+      0,
+      1
+    ],
+    "header_relative_time_used": true,
+    "action_proxy": "a=(published target-default)/scale; scale .25 for leg position, 1 for wheel velocity",
+    "not_exact_raw_policy_actions": "Debug target and feedback snapshot alignment is not guaranteed; actor input/action timestamps are missing; auxiliary replay is inexact",
+    "rate_proxy": "mean over consecutive rows strictly inside each stage of (a_t-a_t-1)^2 per joint",
+    "smoothness_proxy": "mean over consecutive triples strictly inside each stage of (a_t-2*a_t-1+a_t-2)^2 per joint",
+    "weighted_cost": "positive magnitudes abs(weight)*term; before-dt and hypothetical 20ms step versions provided; not measured hardware reward",
+    "stage_boundaries": "Archived FSM boundaries inferred from target trajectories; GetDown at row 2927 is excluded from all policy reward conclusions",
+    "actual_velocity": "Device-reported joint velocity, not finite-differenced targets",
+    "command_units": "control fields raw; no confirmed physical command calibration",
+    "no_spectral_claim": "Onset/growth are short nonstationary windows; no resonance frequency inference"
+  },
+  "phases": {
+    "policy_zero_command": {
+      "row_index_inclusive": [
+        2450,
+        2574
+      ],
+      "header_time_range_s": [
+        49.006156773,
+        51.486159660000006
+      ],
+      "sample_count": 125,
+      "policy_stage_inferred": true,
+      "include_in_action_reward_analysis": true,
+      "command_raw_abs_peak": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "hip_target_abs_peak_rad": [
+        0.06358031183481216,
+        0.06790357083082199
+      ],
+      "hip_actual_position_abs_peak_rad": [
+        0.032998085021972656,
+        0.01926422119140625
+      ],
+      "hip_actual_velocity_abs_peak_rad_s": [
+        0.09157562255859375,
+        0.128204345703125
+      ],
+      "hip_motor_reported_effort_abs_peak_Nm": [
+        8.058609008789062,
+        8.058609008789062
+      ],
+      "hip_debug_PD_estimate_abs_peak_Nm": [
+        8.160969734191895,
+        7.790158271789551
+      ],
+      "body_roll_pitch_rate_rms_rad_s": 0.12174480956617388,
+      "roll_pitch_min_max_deg": [
+        [
+          0.14648282175511343,
+          -2.5763430396886164
+        ],
+        [
+          0.8537173263938413,
+          1.5095533627769966
+        ]
+      ],
+      "per_joint_actual_velocity_rms_rad_s": [
+        0.024205342491818053,
+        0.031599991547109026,
+        0.0748803413501499,
+        0.06406476801289872,
+        0.07174042335268184,
+        0.06750935608858975,
+        0.015164233913137912,
+        0.010956142488248593,
+        1.5818159165650134,
+        1.5449697901672752
+      ],
+      "per_joint_action_proxy_first_difference_sq_mean": [
+        2.3496726969504397e-05,
+        4.807066043155171e-05,
+        0.0002584876165141828,
+        0.00027316172884780135,
+        0.00011866360025641361,
+        9.76829998711325e-05,
+        3.9321649107118504e-05,
+        6.15360114639444e-05,
+        0.11392440201767802,
+        0.08879834481605166
+      ],
+      "per_joint_action_proxy_second_difference_sq_mean": [
+        1.5372267178343534e-05,
+        2.2809369567199212e-05,
+        0.000320326341027136,
+        0.0003637211116607595,
+        0.00013471332138842757,
+        9.186317625782367e-05,
+        3.099141036172685e-05,
+        5.214087116399796e-05,
+        0.017384499617118805,
+        0.013750949768589552
+      ],
+      "hips_share_leg_actual_velocity_sq": 0.0742134557881646,
+      "hips_share_leg_action_proxy_rate_sq": 0.07775505764149879,
+      "hips_share_leg_action_proxy_smoothness_sq": 0.03699993760006339,
+      "hips_share_total_four_weighted_action_proxy_cost": 0.0005845803979674744,
+      "wheels_share_total_four_weighted_action_proxy_cost": 0.9912314237958634,
+      "weighted_proxy_cost_magnitudes_before_dt_mean": {
+        "action_rate_legs": 0.0002761262980384948,
+        "action_rate_wheels": 0.04054454936674594,
+        "action_smoothness_legs": 0.00010319378686054143,
+        "action_smoothness_wheels": 0.0023351587039281267,
+        "hip_action_L1": 0.09593817860484123,
+        "all_leg_velocity_current": 1.0675005321449135e-06,
+        "additional_hip_velocity_if_weight_minus_0_005": 7.922290354617871e-06,
+        "additional_hip_velocity_if_weight_minus_0_01": 1.5844580709235743e-05
+      },
+      "weighted_proxy_step_cost_magnitudes_if_dt_0_02_mean": {
+        "action_rate_legs": 5.5225259607698956e-06,
+        "action_rate_wheels": 0.0008108909873349188,
+        "action_smoothness_legs": 2.063875737210829e-06,
+        "action_smoothness_wheels": 4.6703174078562535e-05,
+        "hip_action_L1": 0.0019187635720968248,
+        "all_leg_velocity_current": 2.135001064289827e-08,
+        "additional_hip_velocity_if_weight_minus_0_005": 1.5844580709235743e-07,
+        "additional_hip_velocity_if_weight_minus_0_01": 3.1689161418471486e-07
+      }
+    },
+    "forward": {
+      "row_index_inclusive": [
+        2582,
+        2824
+      ],
+      "header_time_range_s": [
+        51.646166507000004,
+        56.486345488000005
+      ],
+      "sample_count": 243,
+      "policy_stage_inferred": true,
+      "include_in_action_reward_analysis": true,
+      "command_raw_abs_peak": [
+        0.303109735250473,
+        0.0,
+        0.0
+      ],
+      "hip_target_abs_peak_rad": [
+        0.052533432841300964,
+        0.056346017867326736
+      ],
+      "hip_actual_position_abs_peak_rad": [
+        0.02536773681640625,
+        0.00972747802734375
+      ],
+      "hip_actual_velocity_abs_peak_rad_s": [
+        0.128204345703125,
+        0.128204345703125
+      ],
+      "hip_motor_reported_effort_abs_peak_Nm": [
+        5.128204345703125,
+        4.9328460693359375
+      ],
+      "hip_debug_PD_estimate_abs_peak_Nm": [
+        4.932852268218994,
+        5.106624126434326
+      ],
+      "body_roll_pitch_rate_rms_rad_s": 0.1265673896001793,
+      "roll_pitch_min_max_deg": [
+        [
+          0.8980326073781214,
+          -2.3685561460465414
+        ],
+        [
+          1.7227042703270234,
+          2.0684861230776526
+        ]
+      ],
+      "per_joint_actual_velocity_rms_rad_s": [
+        0.026057687680148,
+        0.027028521386397768,
+        0.11767027192417512,
+        0.1144670312273232,
+        0.09844569199757437,
+        0.10542727477330441,
+        0.04584500469331275,
+        0.026308690113619543,
+        2.016677501017236,
+        1.8235217688705292
+      ],
+      "per_joint_action_proxy_first_difference_sq_mean": [
+        3.3465292328853865e-05,
+        5.334583803264372e-05,
+        0.00026887048174153056,
+        0.00024328723588128991,
+        0.00015028550458709685,
+        0.00015305113561333048,
+        2.851561200063895e-05,
+        4.381110262210774e-05,
+        0.1574366719960822,
+        0.10666453470200389
+      ],
+      "per_joint_action_proxy_second_difference_sq_mean": [
+        2.555643028045503e-05,
+        3.1846066798274926e-05,
+        0.0002493774642308151,
+        0.00022490382952230966,
+        0.00010390973982750931,
+        0.00010219871470136366,
+        1.5377417138902286e-05,
+        3.2490206554581696e-05,
+        0.007580661404851831,
+        0.005205033130498043
+      ],
+      "hips_share_leg_actual_velocity_sq": 0.02712805055656675,
+      "hips_share_leg_action_proxy_rate_sq": 0.08907065671689529,
+      "hips_share_leg_action_proxy_smoothness_sq": 0.07306278370541172,
+      "hips_share_total_four_weighted_action_proxy_cost": 0.0005869532038527544,
+      "wheels_share_total_four_weighted_action_proxy_cost": 0.9931494958863503,
+      "weighted_proxy_cost_magnitudes_before_dt_mean": {
+        "action_rate_legs": 0.0002923896608422476,
+        "action_rate_wheels": 0.05282024133961721,
+        "action_smoothness_legs": 7.856598690542117e-05,
+        "action_smoothness_wheels": 0.0009589270901512405,
+        "hip_action_L1": 0.04742416466620785,
+        "all_leg_velocity_current": 2.597945717905442e-06,
+        "additional_hip_velocity_if_weight_minus_0_005": 7.047720277855492e-06,
+        "additional_hip_velocity_if_weight_minus_0_01": 1.4095440555710985e-05
+      },
+      "weighted_proxy_step_cost_magnitudes_if_dt_0_02_mean": {
+        "action_rate_legs": 5.847793216844953e-06,
+        "action_rate_wheels": 0.0010564048267923444,
+        "action_smoothness_legs": 1.5713197381084235e-06,
+        "action_smoothness_wheels": 1.917854180302481e-05,
+        "hip_action_L1": 0.000948483293324157,
+        "all_leg_velocity_current": 5.195891435810884e-08,
+        "additional_hip_velocity_if_weight_minus_0_005": 1.4095440555710984e-07,
+        "additional_hip_velocity_if_weight_minus_0_01": 2.819088111142197e-07
+      }
+    },
+    "pre_turn": {
+      "row_index_inclusive": [
+        2825,
+        2869
+      ],
+      "header_time_range_s": [
+        56.506341378,
+        57.386398789000005
+      ],
+      "sample_count": 45,
+      "policy_stage_inferred": true,
+      "include_in_action_reward_analysis": true,
+      "command_raw_abs_peak": [
+        0.0,
+        0.0,
+        0.0257720947265625
+      ],
+      "hip_target_abs_peak_rad": [
+        0.05804666876792908,
+        0.06190701574087143
+      ],
+      "hip_actual_position_abs_peak_rad": [
+        0.00553131103515625,
+        0.00247955322265625
+      ],
+      "hip_actual_velocity_abs_peak_rad_s": [
+        0.03052520751953125,
+        0.06715583801269531
+      ],
+      "hip_motor_reported_effort_abs_peak_Nm": [
+        5.8119659423828125,
+        5.616607666015625
+      ],
+      "hip_debug_PD_estimate_abs_peak_Nm": [
+        5.635037422180176,
+        5.797492027282715
+      ],
+      "body_roll_pitch_rate_rms_rad_s": 0.09369662074192359,
+      "roll_pitch_min_max_deg": [
+        [
+          1.4223815860757214,
+          -1.75409944111696
+        ],
+        [
+          1.5855282849404295,
+          0.42106252352371953
+        ]
+      ],
+      "per_joint_actual_velocity_rms_rad_s": [
+        0.012511442359441231,
+        0.01738698724173255,
+        0.04304389457098925,
+        0.04644978708070301,
+        0.06715504039649825,
+        0.059183252100801935,
+        0.0048847198486328125,
+        0.005686979227222144,
+        0.6516214652012099,
+        0.5393577218047039
+      ],
+      "per_joint_action_proxy_first_difference_sq_mean": [
+        2.4273689012078613e-05,
+        4.8007315072075915e-05,
+        0.0002866267847591334,
+        0.0002629078563219619,
+        0.00011831578159414813,
+        0.00013111274127441952,
+        1.7147480284523195e-05,
+        3.9898007102139125e-05,
+        0.048460139924586934,
+        0.042792887163155095
+      ],
+      "per_joint_action_proxy_second_difference_sq_mean": [
+        1.8840303192791873e-05,
+        4.262912458524855e-05,
+        0.00038014750522332303,
+        0.0004545076145513291,
+        0.0001306566173767547,
+        9.938953429953367e-05,
+        1.2356986297212049e-05,
+        4.445012216464999e-05,
+        0.0021682206140051195,
+        0.0022956039763494304
+      ],
+      "hips_share_leg_actual_velocity_sq": 0.036596631208807275,
+      "hips_share_leg_action_proxy_rate_sq": 0.07786470921235678,
+      "hips_share_leg_action_proxy_smoothness_sq": 0.051961606869048486,
+      "hips_share_total_four_weighted_action_proxy_cost": 0.0014661776724642463,
+      "wheels_share_total_four_weighted_action_proxy_cost": 0.9790969877340355,
+      "weighted_proxy_cost_magnitudes_before_dt_mean": {
+        "action_rate_legs": 0.0002784868966261439,
+        "action_rate_wheels": 0.01825060541754841,
+        "action_smoothness_legs": 0.0001182977807690843,
+        "action_smoothness_wheels": 0.00033478684427659124,
+        "hip_action_L1": 0.12579667290051777,
+        "all_leg_velocity_current": 6.268931047775874e-07,
+        "additional_hip_velocity_if_weight_minus_0_005": 2.2942175762889545e-06,
+        "additional_hip_velocity_if_weight_minus_0_01": 4.588435152577909e-06
+      },
+      "weighted_proxy_step_cost_magnitudes_if_dt_0_02_mean": {
+        "action_rate_legs": 5.569737932522879e-06,
+        "action_rate_wheels": 0.0003650121083509682,
+        "action_smoothness_legs": 2.365955615381686e-06,
+        "action_smoothness_wheels": 6.695736885531825e-06,
+        "hip_action_L1": 0.0025159334580103555,
+        "all_leg_velocity_current": 1.2537862095551749e-08,
+        "additional_hip_velocity_if_weight_minus_0_005": 4.588435152577909e-08,
+        "additional_hip_velocity_if_weight_minus_0_01": 9.176870305155818e-08
+      }
+    },
+    "turn_early": {
+      "row_index_inclusive": [
+        2870,
+        2891
+      ],
+      "header_time_range_s": [
+        57.406400601,
+        57.826427492
+      ],
+      "sample_count": 22,
+      "policy_stage_inferred": true,
+      "include_in_action_reward_analysis": true,
+      "command_raw_abs_peak": [
+        0.0,
+        0.0,
+        0.4123687744140625
+      ],
+      "hip_target_abs_peak_rad": [
+        0.06665290147066116,
+        0.06208588182926178
+      ],
+      "hip_actual_position_abs_peak_rad": [
+        0.00553131103515625,
+        0.00514984130859375
+      ],
+      "hip_actual_velocity_abs_peak_rad_s": [
+        0.05494499206542969,
+        0.06715583801269531
+      ],
+      "hip_motor_reported_effort_abs_peak_Nm": [
+        6.398040771484375,
+        5.7142791748046875
+      ],
+      "hip_debug_PD_estimate_abs_peak_Nm": [
+        6.160082817077637,
+        5.976552486419678
+      ],
+      "body_roll_pitch_rate_rms_rad_s": 0.05240722921923062,
+      "roll_pitch_min_max_deg": [
+        [
+          1.466960972444891,
+          -1.0628029192978827
+        ],
+        [
+          1.7439373162439764,
+          -0.34152148066606225
+        ]
+      ],
+      "per_joint_actual_velocity_rms_rad_s": [
+        0.017941041626066575,
+        0.02008003154667124,
+        0.03328604309971428,
+        0.047109666317171284,
+        0.06541700154171957,
+        0.09311623242665393,
+        0.04056964389809661,
+        0.005703901146840603,
+        1.7236071287953847,
+        0.15381015881121265
+      ],
+      "per_joint_action_proxy_first_difference_sq_mean": [
+        0.00011761852420028822,
+        0.00016279736461684755,
+        0.00183757175834184,
+        0.0017346551907058668,
+        0.00033813175373816523,
+        0.00024255735378203846,
+        9.52086660114339e-05,
+        0.00011916763530327499,
+        0.0703713600717254,
+        0.026122827184544544
+      ],
+      "per_joint_action_proxy_second_difference_sq_mean": [
+        0.00011979411638580739,
+        0.00019488248108465723,
+        0.0017763760560200125,
+        0.0016775435072617028,
+        0.00037798073927493016,
+        0.0002552924876949358,
+        6.387625892697868e-05,
+        0.00011721586995576683,
+        0.007209644476432686,
+        0.005005462458761744
+      ],
+      "hips_share_leg_actual_velocity_sq": 0.03881461020391408,
+      "hips_share_leg_action_proxy_rate_sq": 0.06033422795336896,
+      "hips_share_leg_action_proxy_smoothness_sq": 0.06866228231032309,
+      "hips_share_total_four_weighted_action_proxy_cost": 0.005238110890358897,
+      "wheels_share_total_four_weighted_action_proxy_cost": 0.9160483976279532,
+      "weighted_proxy_cost_magnitudes_before_dt_mean": {
+        "action_rate_legs": 0.0013943124740099263,
+        "action_rate_wheels": 0.01929883745125399,
+        "action_smoothness_legs": 0.00045829615166047917,
+        "action_smoothness_wheels": 0.0009161330201395822,
+        "hip_action_L1": 0.12944602383808657,
+        "all_leg_velocity_current": 9.34040864682505e-07,
+        "additional_hip_velocity_if_weight_minus_0_005": 3.6254432077178284e-06,
+        "additional_hip_velocity_if_weight_minus_0_01": 7.250886415435657e-06
+      },
+      "weighted_proxy_step_cost_magnitudes_if_dt_0_02_mean": {
+        "action_rate_legs": 2.7886249480198527e-05,
+        "action_rate_wheels": 0.00038597674902507976,
+        "action_smoothness_legs": 9.165923033209583e-06,
+        "action_smoothness_wheels": 1.8322660402791645e-05,
+        "hip_action_L1": 0.0025889204767617314,
+        "all_leg_velocity_current": 1.8680817293650102e-08,
+        "additional_hip_velocity_if_weight_minus_0_005": 7.250886415435657e-08,
+        "additional_hip_velocity_if_weight_minus_0_01": 1.4501772830871315e-07
+      }
+    },
+    "onset_left": {
+      "row_index_inclusive": [
+        2892,
+        2906
+      ],
+      "header_time_range_s": [
+        57.846429304000004,
+        58.126446134000005
+      ],
+      "sample_count": 15,
+      "policy_stage_inferred": true,
+      "include_in_action_reward_analysis": true,
+      "command_raw_abs_peak": [
+        0.0,
+        0.0,
+        0.268035888671875
+      ],
+      "hip_target_abs_peak_rad": [
+        0.07116466760635376,
+        0.22377189993858337
+      ],
+      "hip_actual_position_abs_peak_rad": [
+        0.00743865966796875,
+        0.053978919982910156
+      ],
+      "hip_actual_velocity_abs_peak_rad_s": [
+        0.15262603759765625,
+        1.9230766296386719
+      ],
+      "hip_motor_reported_effort_abs_peak_Nm": [
+        7.374847412109375,
+        11.379730224609375
+      ],
+      "hip_debug_PD_estimate_abs_peak_Nm": [
+        7.4817585945129395,
+        12.041531562805176
+      ],
+      "body_roll_pitch_rate_rms_rad_s": 0.17447347498503502,
+      "roll_pitch_min_max_deg": [
+        [
+          0.8811618015870243,
+          -0.2570778997103619
+        ],
+        [
+          1.6419272764571375,
+          0.6443050564455081
+        ]
+      ],
+      "per_joint_actual_velocity_rms_rad_s": [
+        0.045000685752637465,
+        0.6692433658285866,
+        0.20580919323527808,
+        0.4102240866496441,
+        0.25981335870722383,
+        0.5399509030850416,
+        0.07731563052794568,
+        0.10723341714030797,
+        2.3076695959657774,
+        1.3903334362941564
+      ],
+      "per_joint_action_proxy_first_difference_sq_mean": [
+        0.0012702152833524558,
+        0.06100216220292398,
+        0.0409446729679591,
+        0.11070405589494012,
+        0.00954876767958579,
+        0.06367454048705097,
+        0.0006245402014927955,
+        0.003867763783621216,
+        0.04589531780462153,
+        0.2080121581163488
+      ],
+      "per_joint_action_proxy_second_difference_sq_mean": [
+        0.0025950383268990443,
+        0.08757411304946255,
+        0.04374258059984562,
+        0.14971324668951305,
+        0.014927339587185924,
+        0.10830852949199159,
+        0.00079477790280411,
+        0.0036062641530480656,
+        0.03407847431470565,
+        0.1203280370555892
+      ],
+      "hips_share_leg_actual_velocity_sq": 0.4338256451194506,
+      "hips_share_leg_action_proxy_rate_sq": 0.21352721909082453,
+      "hips_share_leg_action_proxy_smoothness_sq": 0.2192499563235659,
+      "hips_share_total_four_weighted_action_proxy_cost": 0.14503480019904302,
+      "wheels_share_total_four_weighted_action_proxy_cost": 0.32653811217892464,
+      "weighted_proxy_cost_magnitudes_before_dt_mean": {
+        "action_rate_legs": 0.08749101555027793,
+        "action_rate_wheels": 0.05078149518419407,
+        "action_smoothness_legs": 0.041126188980074994,
+        "action_smoothness_wheels": 0.011580488352772112,
+        "hip_action_L1": 0.1586317378282547,
+        "all_leg_velocity_current": 5.1853982064603765e-05,
+        "additional_hip_velocity_if_weight_minus_0_005": 0.002249558722118915,
+        "additional_hip_velocity_if_weight_minus_0_01": 0.00449911744423783
+      },
+      "weighted_proxy_step_cost_magnitudes_if_dt_0_02_mean": {
+        "action_rate_legs": 0.0017498203110055586,
+        "action_rate_wheels": 0.0010156299036838815,
+        "action_smoothness_legs": 0.0008225237796014999,
+        "action_smoothness_wheels": 0.00023160976705544225,
+        "hip_action_L1": 0.003172634756565094,
+        "all_leg_velocity_current": 1.0370796412920753e-06,
+        "additional_hip_velocity_if_weight_minus_0_005": 4.4991174442378304e-05,
+        "additional_hip_velocity_if_weight_minus_0_01": 8.998234888475661e-05
+      }
+    },
+    "growth": {
+      "row_index_inclusive": [
+        2907,
+        2926
+      ],
+      "header_time_range_s": [
+        58.146450344,
+        58.526473579000005
+      ],
+      "sample_count": 20,
+      "policy_stage_inferred": true,
+      "include_in_action_reward_analysis": true,
+      "command_raw_abs_peak": [
+        0.0,
+        0.0,
+        0.1288604736328125
+      ],
+      "hip_target_abs_peak_rad": [
+        1.3467217683792114,
+        1.6666234731674194
+      ],
+      "hip_actual_position_abs_peak_rad": [
+        0.2805747985839844,
+        0.22602462768554688
+      ],
+      "hip_actual_velocity_abs_peak_rad_s": [
+        9.603174209594727,
+        12.14285659790039
+      ],
+      "hip_motor_reported_effort_abs_peak_Nm": [
+        97.53357696533203,
+        97.33822631835938
+      ],
+      "hip_debug_PD_estimate_abs_peak_Nm": [
+        134.0338134765625,
+        136.14910888671875
+      ],
+      "body_roll_pitch_rate_rms_rad_s": 1.6201539642487908,
+      "roll_pitch_min_max_deg": [
+        [
+          1.0101596988340014,
+          -1.852878309306583
+        ],
+        [
+          6.78214368184221,
+          2.6799865145368122
+        ]
+      ],
+      "per_joint_actual_velocity_rms_rad_s": [
+        5.250460754212967,
+        5.489499062327269,
+        1.9321415848471406,
+        2.3802149946661872,
+        1.688793164114199,
+        1.2893824189740555,
+        0.8367512826084681,
+        0.7784650557910217,
+        2.382548155065973,
+        2.674053485719202
+      ],
+      "per_joint_action_proxy_first_difference_sq_mean": [
+        18.602189243717547,
+        20.39570226832325,
+        0.7633764352530049,
+        1.6371737418256083,
+        2.32512925975693,
+        1.3330443311836881,
+        0.34475329847906294,
+        0.48617611354498,
+        1.6103988593026959,
+        1.349446114137909
+      ],
+      "per_joint_action_proxy_second_difference_sq_mean": [
+        42.35561569992433,
+        45.6062212958947,
+        2.047047684877059,
+        3.5658248860767827,
+        6.8873348294401895,
+        4.382243408713982,
+        1.0100109285189975,
+        1.6577850109058814,
+        4.968309757500289,
+        2.422668308569192
+      ],
+      "hips_share_leg_actual_velocity_sq": 0.7912914248998204,
+      "hips_share_leg_action_proxy_rate_sq": 0.8498578813428693,
+      "hips_share_leg_action_proxy_smoothness_sq": 0.8181576798844256,
+      "hips_share_total_four_weighted_action_proxy_cost": 0.7986182793768336,
+      "wheels_share_total_four_weighted_action_proxy_cost": 0.04466579196101866,
+      "weighted_proxy_cost_magnitudes_before_dt_mean": {
+        "action_rate_legs": 13.766263407625221,
+        "action_rate_wheels": 0.591968994688121,
+        "action_smoothness_legs": 10.75120837443519,
+        "action_smoothness_wheels": 0.554323354955211,
+        "hip_action_L1": 1.535914187170565,
+        "all_leg_velocity_current": 0.0036460611268552406,
+        "additional_hip_velocity_if_weight_minus_0_005": 0.28850969043411284,
+        "additional_hip_velocity_if_weight_minus_0_01": 0.5770193808682257
+      },
+      "weighted_proxy_step_cost_magnitudes_if_dt_0_02_mean": {
+        "action_rate_legs": 0.2753252681525044,
+        "action_rate_wheels": 0.01183937989376242,
+        "action_smoothness_legs": 0.21502416748870382,
+        "action_smoothness_wheels": 0.01108646709910422,
+        "hip_action_L1": 0.0307182837434113,
+        "all_leg_velocity_current": 7.292122253710482e-05,
+        "additional_hip_velocity_if_weight_minus_0_005": 0.005770193808682257,
+        "additional_hip_velocity_if_weight_minus_0_01": 0.011540387617364515
+      }
+    },
+    "post_exit": {
+      "row_index_inclusive": [
+        2927,
+        3234
+      ],
+      "header_time_range_s": [
+        58.546485789,
+        64.687065977
+      ],
+      "sample_count": 308,
+      "policy_stage_inferred": false,
+      "include_in_action_reward_analysis": false,
+      "command_raw_abs_peak": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "hip_target_abs_peak_rad": [
+        0.12372142821550369,
+        0.1434256136417389
+      ],
+      "hip_actual_position_abs_peak_rad": [
+        0.3114748001098633,
+        0.3736553192138672
+      ],
+      "hip_actual_velocity_abs_peak_rad_s": [
+        9.065933227539062,
+        12.338217735290527
+      ],
+      "hip_motor_reported_effort_abs_peak_Nm": [
+        21.636138916015625,
+        29.25518798828125
+      ],
+      "hip_debug_PD_estimate_abs_peak_Nm": [
+        44.095603942871094,
+        56.63500213623047
+      ],
+      "body_roll_pitch_rate_rms_rad_s": 0.6636314061250725,
+      "roll_pitch_min_max_deg": [
+        [
+          -7.101454743622786,
+          -76.5867089047584
+        ],
+        [
+          22.694247820363625,
+          0.36197838033074065
+        ]
+      ],
+      "per_joint_actual_velocity_rms_rad_s": [
+        0.6838395835048112,
+        0.9466717538743357,
+        0.5914339009739951,
+        0.547309648636039,
+        0.578915526270693,
+        0.38353029893847984,
+        0.4281288445017228,
+        0.06366751462755248,
+        0.6975794433535218,
+        0.49414064633063776
+      ],
+      "per_joint_action_proxy_first_difference_sq_mean": [
+        5.3540744583855935e-06,
+        7.1952848289593e-06,
+        0.00030902693923541,
+        0.00030012222291877724,
+        0.0003512431357646763,
+        0.00024055546166692638,
+        6.3474040444398086e-06,
+        4.29705886516812e-06,
+        0.0,
+        0.0
+      ],
+      "per_joint_action_proxy_second_difference_sq_mean": [
+        3.604114456482347e-08,
+        4.843531535812644e-08,
+        2.080225774834095e-06,
+        2.020283415031842e-06,
+        2.3642868997894114e-06,
+        1.6193334559395376e-06,
+        4.272777975071095e-08,
+        2.8925805315112053e-08,
+        0.0,
+        0.0
+      ],
+      "hips_share_leg_actual_velocity_sq": 0.5083674396516388,
+      "hips_share_leg_action_proxy_rate_sq": 0.01025155870374814,
+      "hips_share_leg_action_proxy_smoothness_sq": 0.01025167459766476,
+      "hips_share_total_four_weighted_action_proxy_cost": 0.010251558963211026,
+      "wheels_share_total_four_weighted_action_proxy_cost": 0.0,
+      "weighted_proxy_cost_magnitudes_before_dt_mean": {
+        "action_rate_legs": 0.00036724247453482283,
+        "action_rate_wheels": 0.0,
+        "action_smoothness_legs": 8.24025959058366e-07,
+        "action_smoothness_wheels": 0.0,
+        "hip_action_L1": 0.07806251286889997,
+        "all_leg_velocity_current": 0.00013413762164686546,
+        "additional_hip_velocity_if_weight_minus_0_005": 0.006819119927757722,
+        "additional_hip_velocity_if_weight_minus_0_01": 0.013638239855515445
+      },
+      "weighted_proxy_step_cost_magnitudes_if_dt_0_02_mean": {
+        "action_rate_legs": 7.344849490696457e-06,
+        "action_rate_wheels": 0.0,
+        "action_smoothness_legs": 1.648051918116732e-08,
+        "action_smoothness_wheels": 0.0,
+        "hip_action_L1": 0.0015612502573779993,
+        "all_leg_velocity_current": 2.682752432937309e-06,
+        "additional_hip_velocity_if_weight_minus_0_005": 0.00013638239855515445,
+        "additional_hip_velocity_if_weight_minus_0_01": 0.0002727647971103089
+      }
+    }
+  },
+  "history": {
+    "native_metrics": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-23_17-23-24/evidence/analysis/flat-roa-final-assess-20260924-001/metrics.json",
+      "sha256": "21b9b6fa83d26eb66f2aabcd73866c5e3187e14b513cbbd8f8fdd9892b423811"
+    },
+    "comparisons": {
+      "2026-09-23_17-23-24/right-delay15-noise vs 2026-09-21_20-20-10/right-delay15-noise": {
+        "stage": "turn_steady_42_70s",
+        "scenario_contract_equal": true,
+        "change_percent": {
+          "body_roll_pitch_angvel_rms_rad_s": 10.660628316031673,
+          "hip_target_step_rms_rad": 17.50781098743761,
+          "hip_velocity_rms_rad_s": 34.44280698372524,
+          "hip_velocity_band_5_25Hz_rms_rad_s": 26.098789198555327,
+          "tracking_yaw_rmse_rad_s": -14.984950163980459,
+          "tracking_xy_rmse_m_s": 78.00548516543206
+        }
+      },
+      "2026-09-23_17-23-24/left-delay15-noise vs 2026-09-21_20-20-10/left-delay15-noise": {
+        "stage": "turn_steady_42_70s",
+        "scenario_contract_equal": true,
+        "change_percent": {
+          "body_roll_pitch_angvel_rms_rad_s": 14.689306316634587,
+          "hip_target_step_rms_rad": 16.408994089831364,
+          "hip_velocity_rms_rad_s": 38.57216678053839,
+          "hip_velocity_band_5_25Hz_rms_rad_s": 32.157285266765534,
+          "tracking_yaw_rmse_rad_s": -16.714074816387836,
+          "tracking_xy_rmse_m_s": 25.447382560954267
+        }
+      },
+      "2026-09-23_17-23-24/right-delay30-noise vs 2026-09-21_20-20-10/right-delay30-noise": {
+        "stage": "turn_steady_42_70s",
+        "scenario_contract_equal": true,
+        "change_percent": {
+          "body_roll_pitch_angvel_rms_rad_s": 15.180949526913512,
+          "hip_target_step_rms_rad": 5.446558775505284,
+          "hip_velocity_rms_rad_s": 37.113501919477756,
+          "hip_velocity_band_5_25Hz_rms_rad_s": 26.78211010832836,
+          "tracking_yaw_rmse_rad_s": -14.003549342677745,
+          "tracking_xy_rmse_m_s": 80.58422848672873
+        }
+      },
+      "2026-09-23_17-23-24/left-delay30-noise vs 2026-09-21_20-20-10/left-delay30-noise": {
+        "stage": "turn_steady_42_70s",
+        "scenario_contract_equal": true,
+        "change_percent": {
+          "body_roll_pitch_angvel_rms_rad_s": 15.096793984621758,
+          "hip_target_step_rms_rad": 10.303287072379286,
+          "hip_velocity_rms_rad_s": 41.75774136047099,
+          "hip_velocity_band_5_25Hz_rms_rad_s": 27.007607588940097,
+          "tracking_yaw_rmse_rad_s": -14.82917082570715,
+          "tracking_xy_rmse_m_s": 28.33466826750559
+        }
+      },
+      "2026-09-23_17-23-24/nominal-no-noise vs 2026-09-21_20-20-10/nominal-no-noise": {
+        "stage": "standing_40_120s",
+        "scenario_contract_equal": true,
+        "change_percent": {
+          "body_roll_pitch_angvel_rms_rad_s": 103.31700312404881,
+          "hip_target_step_rms_rad": -67.45527037478129,
+          "hip_velocity_rms_rad_s": -12.517777220921822,
+          "hip_velocity_band_5_25Hz_rms_rad_s": -49.84369332481601,
+          "tracking_yaw_rmse_rad_s": -65.90584376342244,
+          "tracking_xy_rmse_m_s": 76.4119697366856
+        }
+      },
+      "2026-09-23_17-23-24/nominal-training-noise vs 2026-09-21_20-20-10/nominal-training-noise": {
+        "stage": "standing_40_120s",
+        "scenario_contract_equal": true,
+        "change_percent": {
+          "body_roll_pitch_angvel_rms_rad_s": 22.438718279697255,
+          "hip_target_step_rms_rad": -26.3139663044875,
+          "hip_velocity_rms_rad_s": 16.842227874512883,
+          "hip_velocity_band_5_25Hz_rms_rad_s": 23.60693222393577,
+          "tracking_yaw_rmse_rad_s": -3.9324452601851467,
+          "tracking_xy_rmse_m_s": 5.28447679122741
+        }
+      }
+    },
+    "earlier_hip_action_L1_metrics": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-19_11-41-48/evidence/analysis/hip-penalty-comparison-20260921-001.json",
+      "sha256": "46660e095956a4da5230c83d719dc0cece8d82863bd8109ffcff008696a1298d"
+    },
+    "earlier_L1_added_minus_0_5_noisy_standing_changes_percent": {
+      "steady_40_120s/hip_target_rms_rad": -86.23746535127415,
+      "steady_40_120s/hip_actual_velocity_rms_rad_s": 37.87577524631411,
+      "steady_40_120s/body_roll_pitch_angular_velocity_rms_rad_s": 5.173542153023658
+    },
+    "qualification": "Nonidentical reward and delay changes across policies; observational comparisons do not establish parameter causality",
+    "query": {
+      "support": {
+        "status": "query_context_incomplete",
+        "query_context_complete": false,
+        "context_compatibility_is_not_outcome_evidence": true,
+        "only_complete_outcomes_are_candidate_evidence": true,
+        "direct_parameter_change_supported": false
+      },
+      "classification_counts": {
+        "compatible_events": 0,
+        "conflicting_events": 12,
+        "unknown_events": 1,
+        "invalid_events": 0
+      },
+      "candidate_event_count": 0,
+      "unknown_fingerprints_reason": "No complete measured policy-input/reset and physical deployment timing contract for this incident"
+    }
+  },
+  "current_reward_weights": {
+    "is_terminated": -200.0,
+    "lin_vel_z_l2": -1.0,
+    "ang_vel_xy_l2": -0.1,
+    "flat_orientation_l2": -5.0,
+    "base_height_l2": -15.0,
+    "joint_torques_l2": -1.25e-05,
+    "joint_vel_l2": -5e-05,
+    "joint_acc_l2": -2.5e-07,
+    "joint_pos_limits": -2.0,
+    "joint_vel_limits": -2.0,
+    "joint_power": -2e-05,
+    "undesired_contacts": -5.0,
+    "track_lin_vel_xy_exp": 4.0,
+    "track_ang_vel_z_exp": 3.0,
+    "feet_distance_y_exp": 3.0,
+    "joint_vel_wheel_l2": -0.0005,
+    "joint_acc_wheel_l2": -1.5e-07,
+    "joint_torques_wheel_l2": -0.00016,
+    "leg_symmetry": 0.5,
+    "same_foot_x_position": -50.0,
+    "action_rate_legs_l2": -0.3,
+    "action_rate_wheels_l2": -0.2,
+    "action_smoothness_legs": -0.1,
+    "action_smoothness_wheels": -0.075,
+    "penalize_hip_roll_action": -0.3,
+    "feet_distance_penalize": -150.0,
+    "stop_motion": -5.0,
+    "keep_alive": 1.0,
+    "joint_deviation_hip": -0.3,
+    "joint_deviation_ankle": -1.0,
+    "joint_deviation_legs": -0.4,
+    "body_orientation_l2": -3.0
+  },
+  "recommendation": {
+    "status": "proposal_only_not_applied",
+    "direct_parameter_change_supported": false,
+    "first_variant": {
+      "additional_hip_velocity_l2": {
+        "current_additional_weight": 0.0,
+        "proposed_additional_weight": -0.005,
+        "function": "isaaclab.envs.mdp.joint_vel_l2",
+        "joint_names": [
+          "right_hip_joint",
+          "left_hip_joint"
+        ],
+        "formula": "-0.005*(dq_Rhip^2+dq_Lhip^2)",
+        "combined_hip_velocity_weight_including_existing_all_leg_term": -0.00505,
+        "expected_effect": "Put explicit cost on physical hip motion, while retaining existing action-output regularization",
+        "counter_metrics": [
+          "hip actual velocity RMS/p95 and 5-25Hz band RMS",
+          "roll/pitch angular rate RMS",
+          "yaw tracking RMSE",
+          "forward tracking RMSE",
+          "standing drift",
+          "applied torque utilization"
+        ],
+        "risk": "May suppress required balance/posture correction and worsen tracking; arbitrary starting hypothesis, not validated optimum",
+        "history_support": "Target shrinkage has not consistently reduced physical jitter; no outcome evidence for this new term"
+      },
+      "unchanged_weights": {
+        "action_rate_legs_l2": -0.3,
+        "action_rate_wheels_l2": -0.2,
+        "action_smoothness_legs": -0.1,
+        "action_smoothness_wheels": -0.075,
+        "penalize_hip_roll_action": -0.3,
+        "joint_vel_l2": -5e-05,
+        "ang_vel_xy_l2": -0.1,
+        "stop_motion": -5.0,
+        "track_lin_vel_xy_exp": 4.0,
+        "track_ang_vel_z_exp": 3.0,
+        "feet_distance_penalize": -150.0,
+        "flat_orientation_l2": -5.0,
+        "body_orientation_l2": -3.0
+      }
+    },
+    "separate_second_variant_if_supported": {
+      "ang_vel_xy_l2": {
+        "current": -0.1,
+        "proposed": -0.3,
+        "expected_effect": "Penalize rapid roll/pitch motion before large tilt builds",
+        "counter_metrics": [
+          "yaw tracking RMSE",
+          "forward tracking RMSE",
+          "push recovery",
+          "hip actual velocity RMS"
+        ],
+        "risk": "May resist necessary turning lean or disturbance recovery",
+        "history_support": "No matched causal outcome for this change; do not combine with first variant initially"
+      }
+    },
+    "do_not_infer": {
+      "increase_all_four_action_weights": "Existing target-derived growth action costs are already large; global mean improvements previously coexisted with greater actual jitter",
+      "increase_hip_action_L1": "Earlier -0.5 version reduced targets while noisy-stand actual hip RMS increased",
+      "remove_wheel_second_difference": "This incident does not isolate wheel regularization as cause; wheel commands also serve balance",
+      "relax_feet_distance_or_stop_motion": "Base/contact/foot geometry telemetry absent; no direct evidence to assign cause"
+    },
+    "configuration_edit_plan_requires_approval": [
+      {
+        "file": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py",
+        "proposal": "Declare a shared optional hip-only joint_vel_l2 reward using existing function and SceneEntityCfg; no new algorithm class or reward implementation"
+      },
+      {
+        "file": "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py",
+        "proposal": "Inherit shared term and enable candidate Flat ROA weight -0.005 only after approval; preserve four existing group weights and unrelated dirty changes"
+      }
+    ],
+    "coverage_gap": {
+      "current_command_sampler": "x,y,yaw uniform; 10% standing zeros all fields; no dedicated exact x=0,y=0,yaw!=0 sample group",
+      "prior_closed_loop_turn": "vx=.5,yaw=+/- .6; hardware raw forward command was zero during turn",
+      "sampling_change": "Dedicated pure-yaw training sampling is a separate proposed change, not part of first reward variant"
+    }
+  },
+  "next_finite_test_proposal": {
+    "status": "not_run_requires_approval",
+    "backend": "Isaac Native",
+    "environment": "isaacsim-5.1",
+    "seed": 42,
+    "num_envs": 1,
+    "video": false,
+    "checkpoint": "model_49999.pt from selected run",
+    "cases": [
+      {
+        "direction": "right",
+        "fixed_delay_ms": 15,
+        "steps": 3000
+      },
+      {
+        "direction": "right",
+        "fixed_delay_ms": 30,
+        "steps": 3000
+      },
+      {
+        "direction": "left",
+        "fixed_delay_ms": 15,
+        "steps": 3000
+      },
+      {
+        "direction": "left",
+        "fixed_delay_ms": 30,
+        "steps": 3000
+      }
+    ],
+    "total_steps": 12000,
+    "command_schedule_seconds": [
+      {
+        "start": 0,
+        "end": 10,
+        "vx": 0,
+        "vy": 0,
+        "yaw": 0
+      },
+      {
+        "start": 10,
+        "end": 30,
+        "vx": 0.3,
+        "vy": 0,
+        "yaw": 0
+      },
+      {
+        "start": 30,
+        "end": 35,
+        "vx": 0,
+        "vy": 0,
+        "yaw": 0
+      },
+      {
+        "start": 35,
+        "end": 45,
+        "vx": 0,
+        "vy": 0,
+        "yaw": "-0.4 right / +0.4 left"
+      },
+      {
+        "start": 45,
+        "end": 60,
+        "vx": 0,
+        "vy": 0,
+        "yaw": 0
+      }
+    ],
+    "scenario_qualification": "Finite simulation assumptions; raw hardware input is not a calibrated physical command; not an exact accident reconstruction",
+    "other_settings": "Reuse previously sealed delay30-assess-20260922-001 plant/noise settings, replacing schedule and checkpoint; contract must be reviewed before execution",
+    "purpose": "Establish the missing pure-turn baseline before any new training and before comparing a future approved reward variant",
+    "metrics": [
+      "per-joint actual velocities, targets, raw actions, applied torques",
+      "hip first/second differences and physical velocity band RMS",
+      "roll/pitch rates and tilt",
+      "yaw and forward tracking",
+      "estimated vs true velocity grouped by zero/low/pure-yaw commands",
+      "resets and limit utilization"
+    ],
+    "approved_acceptance_thresholds": null
+  },
+  "limitations": [
+    "One right-turn hardware recording; no same-scenario left-turn or old-DWAQ hardware control; cannot prove directional asymmetry or compare hardware stability across policies.",
+    "No base velocity, foot contact/positions, FSM trace, raw actor inputs, actual inference timestamps, control-loop misses, or individual sensor age.",
+    "50Hz debug continuity does not prove physical 200Hz control continuity; nominal gains and timing fields do not verify actual timing.",
+    "Archived replay hip RMSE ~0.09566rad and max position mismatch ~0.71449rad, so no precise input contribution or closed-loop gain attribution.",
+    "Debug PD estimated effort is not saturated actual torque; motor effort calibration independently unverified.",
+    "Reward changes cannot establish hardware safety or resolve unmeasured deployment timing/mechanics by themselves."
+  ],
+  "policy_description_required": "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。",
+  "plot": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-23_17-23-24/evidence/analysis/hardware-rightturn-20260926-001/onset-and-joint-contributions.png",
+    "sha256": "9d9023d1667e2be05cec8fa1f6c9848ab21836f7bc479f7b720a36d467065e41"
+  },
+  "analysis_source": {
+    "language": "Python",
+    "environment": "isaacsim-5.1",
+    "execution": "inline, no source script file created",
+    "sha256": "86231ea80a2df2a9242a46596c82c2b68a8e81bc7d7e4aa57bd18495a4a91a59",
+    "content_utf8": "from pathlib import Path\nfrom datetime import datetime, timezone\nimport csv, hashlib, json, sqlite3, subprocess, sys\nimport numpy as np\nimport yaml\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\n\nrepo=Path(\"/home/server/liufengrong/robot_lab\")\ndata_repo=Path(\"/home/server/liufengrong/sim2real_test\")\nroot=data_repo/\"experiments/wheel/20260924-170019-right-turn-instability\"\nrun=repo/\"learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-23_17-23-24\"\nout=run/\"evidence/analysis/hardware-rightturn-20260926-001\"\nassert not out.exists(), \"Refuse to replace existing analysis evidence\"\n\ndef sha(path):\n    h=hashlib.sha256()\n    with Path(path).open(\"rb\") as f:\n        for chunk in iter(lambda:f.read(1024*1024),b\"\"): h.update(chunk)\n    return h.hexdigest()\n\ndef ref(path):\n    path=Path(path)\n    return {\"path\":str(path),\"sha256\":sha(path)}\n\ndef git(path,*args):\n    return subprocess.check_output([\"git\",\"-C\",str(path),*args],text=True).strip()\n\nchecked=0\nfor line in (data_repo/\"SHA256SUMS\").read_text().splitlines():\n    if not line.strip(): continue\n    digest,rel=line.split(maxsplit=1)\n    path=data_repo/rel.lstrip(\"*\")\n    assert sha(path)==digest, path\n    checked+=1\n\nz=np.load(root/\"analysis/decoded.npz\",allow_pickle=False)\nnames=z[\"names\"].tolist()\nwith (root/\"exports/joint_states.csv\").open(newline=\"\") as f:\n    rows=list(csv.DictReader(f))\nt=z[\"t\"]; p=z[\"position\"]; v=z[\"velocity\"]; e=z[\"effort\"]\nchannels=np.array([[float(row[name+\".\"+field]) for name in names for field in [\"position\",\"velocity\",\"effort\"]] for row in rows])\nassert np.array_equal(channels.view(np.uint64),np.stack([p,v,e],axis=-1).reshape(len(t),78).view(np.uint64))\nassert np.array_equal(np.array([int(row[\"bag_timestamp_ns\"]) for row in rows]),z[\"bag_ns\"])\nassert np.array_equal(np.array([int(row[\"header_stamp_ns\"]) for row in rows]),z[\"header_ns\"])\nassert np.array_equal(t,(z[\"header_ns\"]-z[\"header_ns\"][0])*1e-9)\nassert np.isfinite(channels).all()\nassert np.all(np.diff(z[\"header_ns\"])>0)\nwith sqlite3.connect(\"file:\"+str(root/\"raw/lw_real_20260924-170019/lw_real_20260924-170019_0.db3\")+\"?mode=ro\",uri=True) as db:\n    integrity=db.execute(\"PRAGMA integrity_check\").fetchone()[0]\n    count=db.execute(\"SELECT COUNT(*) FROM messages\").fetchone()[0]\nassert integrity==\"ok\" and count==len(t)\n\nquat=p[:,21:25]\nquat=quat/np.linalg.norm(quat,axis=1)[:,None]\nw,x,y,zz=quat.T\nrpy=np.column_stack([\n    np.arctan2(2*(w*x+y*zz),1-2*(x*x+y*y)),\n    np.arcsin(np.clip(2*(w*y-zz*x),-1,1)),\n    np.arctan2(2*(w*zz+x*y),1-2*(y*y+zz*zz))])*180/np.pi\nassert np.max(np.abs(rpy-z[\"rpy\"]))<1e-10\ncmd=np.column_stack([p[:,25],v[:,25],e[:,25]])\ngyro=np.column_stack([p[:,20],v[:,20],e[:,20]])\nassert np.array_equal(cmd,z[\"cmd\"])\nassert np.array_equal(gyro,z[\"gyro\"])\n\nsaved=repo/\"logs/rsl_rl/LW_wheel_flat_roa/2026-09-23_17-23-24/params\"\nenv=yaml.load((saved/\"env.yaml\").read_text(),Loader=yaml.BaseLoader)\ndeploy=yaml.safe_load((root/\"context/policy/LW/robot_lab/wheel_loco/config.yaml\").read_text())[\"LW/robot_lab/wheel_loco\"]\nscale=np.array(deploy[\"action_scale\"]); default=np.array(deploy[\"default_dof_pos\"])\nassert float(env[\"actions\"][\"joint_pos\"][\"scale\"])==scale[0]==0.25\nassert float(env[\"actions\"][\"joint_vel\"][\"scale\"])==scale[8]==1.0\ntarget=p[:,10:20].copy();target[:,8:]=v[:,18:20]\na=(target-default)/scale\njoint_order=[name.replace(\"_now\",\"_joint\") for name in names[:10]]\nweights={name:float(val[\"weight\"]) for name,val in env[\"rewards\"].items() if isinstance(val,dict) and \"weight\" in val}\narchived=json.loads((root/\"analysis/metrics.json\").read_text())\nphase_keys=[\"policy_zero_command\",\"forward\",\"pre_turn\",\"turn_early\",\"onset_left\",\"growth\",\"post_exit\"]\nphase_results={}\npeak_check=0.0\nfor key in phase_keys:\n    old_key=\"policy_zero_command\" if key==\"policy_zero_command\" else key\n    val=archived[old_key]\n    mask=(t>=val[\"time_start\"]-1e-7)&(t<=val[\"time_end\"]+1e-7)\n    idx=np.flatnonzero(mask);ai=a[mask];vi=v[mask,:10]\n    rate=np.mean(np.diff(ai,axis=0)**2,axis=0)\n    smooth=np.mean(np.diff(ai,n=2,axis=0)**2,axis=0)\n    vel2=np.mean(vi**2,axis=0)\n    wr=rate*np.array([abs(weights[\"action_rate_legs_l2\"])]*8+[abs(weights[\"action_rate_wheels_l2\"])]*2)\n    ws=smooth*np.array([abs(weights[\"action_smoothness_legs\"])]*8+[abs(weights[\"action_smoothness_wheels\"])]*2)\n    def share(vals,inds):\n        return float(vals[inds].sum()/vals.sum()) if vals.sum() else None\n    costs={\n        \"action_rate_legs\":float(wr[:8].sum()),\n        \"action_rate_wheels\":float(wr[8:].sum()),\n        \"action_smoothness_legs\":float(ws[:8].sum()),\n        \"action_smoothness_wheels\":float(ws[8:].sum()),\n        \"hip_action_L1\":float(abs(weights[\"penalize_hip_roll_action\"])*np.mean(np.abs(ai[:,:2]).sum(axis=1))),\n        \"all_leg_velocity_current\":float(abs(weights[\"joint_vel_l2\"])*vel2[:8].sum()),\n        \"additional_hip_velocity_if_weight_minus_0_005\":float(.005*vel2[:2].sum()),\n        \"additional_hip_velocity_if_weight_minus_0_01\":float(.01*vel2[:2].sum())\n    }\n    res={\n        \"row_index_inclusive\":[int(idx[0]),int(idx[-1])],\n        \"header_time_range_s\":[float(t[idx[0]]),float(t[idx[-1]])],\n        \"sample_count\":int(len(idx)),\n        \"policy_stage_inferred\":key!=\"post_exit\",\n        \"include_in_action_reward_analysis\":key!=\"post_exit\",\n        \"command_raw_abs_peak\":np.max(np.abs(cmd[mask]),axis=0).tolist(),\n        \"hip_target_abs_peak_rad\":np.max(np.abs(target[mask,:2]),axis=0).tolist(),\n        \"hip_actual_position_abs_peak_rad\":np.max(np.abs(p[mask,:2]),axis=0).tolist(),\n        \"hip_actual_velocity_abs_peak_rad_s\":np.max(np.abs(vi[:,:2]),axis=0).tolist(),\n        \"hip_motor_reported_effort_abs_peak_Nm\":np.max(np.abs(e[mask,:2]),axis=0).tolist(),\n        \"hip_debug_PD_estimate_abs_peak_Nm\":np.max(np.abs(e[mask,10:12]),axis=0).tolist(),\n        \"body_roll_pitch_rate_rms_rad_s\":float(np.sqrt(np.mean(np.sum(gyro[mask,:2]**2,axis=1)))),\n        \"roll_pitch_min_max_deg\":[rpy[mask,:2].min(axis=0).tolist(),rpy[mask,:2].max(axis=0).tolist()],\n        \"per_joint_actual_velocity_rms_rad_s\":np.sqrt(vel2).tolist(),\n        \"per_joint_action_proxy_first_difference_sq_mean\":rate.tolist(),\n        \"per_joint_action_proxy_second_difference_sq_mean\":smooth.tolist(),\n        \"hips_share_leg_actual_velocity_sq\":share(vel2[:8],[0,1]),\n        \"hips_share_leg_action_proxy_rate_sq\":share(rate[:8],[0,1]),\n        \"hips_share_leg_action_proxy_smoothness_sq\":share(smooth[:8],[0,1]),\n        \"hips_share_total_four_weighted_action_proxy_cost\":share(wr+ws,[0,1]),\n        \"wheels_share_total_four_weighted_action_proxy_cost\":share(wr+ws,[8,9]),\n        \"weighted_proxy_cost_magnitudes_before_dt_mean\":costs,\n        \"weighted_proxy_step_cost_magnitudes_if_dt_0_02_mean\":{name:val*.02 for name,val in costs.items()}\n    }\n    for new_key,old_key in [\n        (\"hip_target_abs_peak_rad\",\"hip_target_abs_max_rad\"),\n        (\"hip_actual_position_abs_peak_rad\",\"hip_position_abs_max_rad\"),\n        (\"hip_actual_velocity_abs_peak_rad_s\",\"hip_velocity_abs_max_rad_s\")]:\n        if old_key in val:\n            peak_check=max(peak_check,float(np.max(np.abs(np.array(res[new_key])-val[old_key]))))\n    phase_results[key]=res\nassert peak_check<1e-12\n\npolicy_files=[\n    root/\"context/policy/LW/robot_lab/wheel_loco/policy.onnx\",\n    run/\"evidence/export/deploy-20260924-001/policy.onnx\",\n    Path(\"/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-09-23-17-23-24/policy.onnx\")]\npolicy_refs=[ref(path) for path in policy_files]\nassert len({r[\"sha256\"] for r in policy_refs})==1\n\nctx=run/\"provenance/context-0916ad3c09ffcfa8cc35bcd509c3e6e89905cf0b259d68301ef0d756b5affb74.json\"\ncfg=run/\"provenance/config-f0e512d5d8ddf2268b41a6feebe63a49f8f07ee6b6095c2c9a9b87750c57a86e.json\"\nsys.path.insert(0,str(repo/\".agents/skills/monitor-tune-isaaclab-training/scripts\"))\nfrom query_tuning_experience import query_tuning_experience\nfrom capture_effective_training_config import load_run_identity\nhistory=query_tuning_experience(repo/\"learnings/policy_tuning\",run_identity=load_run_identity(ctx),effective_config_path=cfg,effective_config_sha256=sha(cfg),observation_fingerprint=\"unknown\",deployment_fingerprint=\"unknown\")\n\nhistorical_path=run/\"evidence/analysis/flat-roa-final-assess-20260924-001/metrics.json\"\nhistorical=json.loads(historical_path.read_text())\nhistorical_diffs={}\nfor key,c in historical[\"comparisons\"].items():\n    if \"vs 2026-09-21_20-20-10/\" not in key: continue\n    stage=\"standing_40_120s\" if \"nominal-\" in key else \"turn_steady_42_70s\"\n    s=c[\"change_percent\"][stage]\n    historical_diffs[key]={\"stage\":stage,\"scenario_contract_equal\":c[\"scenario_contract_equal\"],\n        \"change_percent\":{name:s[name] for name in [\n            \"body_roll_pitch_angvel_rms_rad_s\",\"hip_target_step_rms_rad\",\n            \"hip_velocity_rms_rad_s\",\"hip_velocity_band_5_25Hz_rms_rad_s\",\n            \"tracking_yaw_rmse_rad_s\",\"tracking_xy_rmse_m_s\"]}}\nhip_history_path=run.parent/\"2026-09-19_11-41-48/evidence/analysis/hip-penalty-comparison-20260921-001.json\"\nhip_history=json.loads(hip_history_path.read_text())\nhip_comparison={k:hip_history[\"changes_percent\"][\"nominal-training-noise\"][k] for k in [\n    \"steady_40_120s/hip_target_rms_rad\",\"steady_40_120s/hip_actual_velocity_rms_rad_s\",\n    \"steady_40_120s/body_roll_pitch_angular_velocity_rms_rad_s\"]}\nplot_path=out/\"onset-and-joint-contributions.png\"\nfig,axs=plt.subplots(6,1,figsize=(11,14),constrained_layout=True)\nmask=(t>=56.5)&(t<=59.2)\nts=t[mask]\naxs[0].plot(ts,cmd[mask,0],label=\"raw forward input\")\naxs[0].plot(ts,cmd[mask,2],label=\"raw yaw input\")\naxs[0].set_ylabel(\"Input (raw)\")\nfor j,label,color in [(0,\"Right\",\"tab:blue\"),(1,\"Left\",\"tab:orange\")]:\n    axs[1].plot(ts,target[mask,j],color=color,label=label+\" target\")\n    axs[1].plot(ts,p[mask,j],color=color,linestyle=\"--\",label=label+\" feedback\")\n    axs[2].plot(ts,v[mask,j],color=color,label=label+\" hip\")\n    axs[3].plot(ts,e[mask,j],color=color,label=label+\" motor reported\")\naxs[1].set_ylabel(\"Hip position (rad)\")\naxs[2].set_ylabel(\"Hip velocity (rad/s)\")\naxs[3].set_ylabel(\"Reported torque (Nm)\")\naxs[4].plot(ts,rpy[mask,0],label=\"Roll\")\naxs[4].plot(ts,rpy[mask,1],label=\"Pitch\")\naxs[4].set_ylabel(\"Angle (deg)\")\nfor ax in axs[:5]:\n    ax.axvline(57.406400601,color=\"black\",linestyle=\":\",linewidth=.9)\n    ax.axvline(57.846429304,color=\"tab:red\",linestyle=\":\",linewidth=.9)\n    ax.axvline(58.166450000,color=\"gray\",linestyle=\":\",linewidth=.9)\n    ax.axvspan(58.546485789,59.2,color=\"gray\",alpha=.15,label=\"After inferred GetDown\")\n    ax.grid(alpha=.2);ax.legend(loc=\"upper left\",fontsize=8,ncol=3)\naxs[4].set_xlabel(\"Seconds from first header timestamp\")\nphases=[\"forward\",\"onset_left\",\"growth\"]; xp=np.arange(3);width=.22\nfor n,(field,label) in enumerate([\n    (\"hips_share_leg_action_proxy_rate_sq\",\"First difference\"),\n    (\"hips_share_leg_action_proxy_smoothness_sq\",\"Second difference\"),\n    (\"hips_share_leg_actual_velocity_sq\",\"Actual velocity squared\")]):\n    values=[phase_results[k][field]*100 for k in phases]\n    bars=axs[5].bar(xp+(n-1)*width,values,width,label=label)\n    axs[5].bar_label(bars,labels=[f\"{val:.1f}%\" for val in values],fontsize=8,padding=3)\naxs[5].set_xticks(xp,[\"Forward\",\"Left hip onset\",\"Growth before GetDown\"])\naxs[5].set_ylabel(\"Both hips / all 8 leg joints (%)\")\naxs[5].set_ylim(0,105);axs[5].legend(fontsize=8);axs[5].grid(axis=\"y\",alpha=.2)\nfig.suptitle(\"2026-09-24 hardware right-turn incident: measured trajectories and target-derived action proxies\")\nout.mkdir(parents=True)\nfig.savefig(plot_path,dpi=150)\nplt.close(fig)\n\nsource_paths=[\n    repo/\"source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py\",\n    repo/\"source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py\",\n    repo/\"source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py\",\n    Path(\"/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/mdp/commands/velocity_command.py\"),\n    Path(\"/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/managers/reward_manager.py\")]\nanalysis_source={\"language\":\"Python\",\"environment\":\"isaacsim-5.1\",\"execution\":\"inline, no source script file created\",\"sha256\":hashlib.sha256(ANALYSIS_SOURCE.encode()).hexdigest(),\"content_utf8\":ANALYSIS_SOURCE}\nresult={\n    \"version\":1,\"created_at\":datetime.now(timezone.utc).isoformat(),\n    \"question\":\"Analyze newly pulled real-wheel right-turn incident and propose reward changes for Flat ROA; no new policy evaluation or training\",\n    \"data_repository\":{\"root\":str(data_repo),\"head\":git(data_repo,\"rev-parse\",\"HEAD\"),\"branch\":git(data_repo,\"branch\",\"--show-current\"),\"worktree_status\":git(data_repo,\"status\",\"--porcelain\"),\"retrieval\":\"authorized fast-forward pull completed this turn\"},\n    \"robotlab_repository\":{\"head\":git(repo,\"rev-parse\",\"HEAD\"),\"tracked_worktree_status\":git(repo,\"status\",\"--porcelain\",\"--untracked-files=no\"),\"tracked_diff_sha256\":hashlib.sha256(subprocess.check_output([\"git\",\"-C\",str(repo),\"diff\",\"--binary\"])).hexdigest(),\"relevant_source\": [ref(path) for path in source_paths]},\n    \"policy\":{\"run_id\":\"2026-09-23_17-23-24\",\"checkpoint\":ref(repo/\"logs/rsl_rl/LW_wheel_flat_roa/2026-09-23_17-23-24/model_49999.pt\"),\"onnx_files\":policy_refs,\"training_context\":ref(ctx),\"effective_config\":ref(cfg),\"saved_env\":ref(saved/\"env.yaml\"),\"saved_agent\":ref(saved/\"agent.yaml\"),\"training_argv\":\"bash scripts/start_roa.sh --terrain Flat --type wheel\",\"argv_source\":\"previous explicit user confirmation\",\"deployment_context\":ref(root/\"analysis/deployment_context.json\"),\"status\":\"Hardware instability observed in this incident; no readiness acceptance\"},\n    \"inputs\":[ref(root/rel) for rel in [\"exports/joint_states.csv\",\"analysis/decoded.npz\",\"raw/lw_real_20260924-170019/lw_real_20260924-170019_0.db3\",\"analysis/metrics.json\",\"analysis/replay_alignment.json\",\"manifest.json\",\"exports/validation.json\",\"exports/README.md\",\"context/policy/LW/robot_lab/wheel_loco/config.yaml\",\"context/policy/LW/base.yaml\"]],\n    \"verification\":{\"checksum_manifest_entries_verified\":checked,\"bag_sqlite_integrity\":integrity,\"bag_message_count\":count,\"csv_npz_bitwise_numeric_values\":len(t)*78,\"csv_integer_timestamps_match\":True,\"all_numeric_values_finite\":True,\"rpy_independent_quaternion_recompute_max_error_deg\":float(np.max(np.abs(rpy-z[\"rpy\"]))),\"archived_phase_peak_recompute_max_error\":peak_check,\"header_sample_interval_ms_min_median_max\":np.quantile(np.diff(z[\"header_ns\"])*1e-6,[0,.5,1]).tolist(),\"onnx_hardware_export_storage_bytes_equal\":True},\n    \"method\":{\"joint_order\":joint_order,\"leg_indices\":list(range(8)),\"wheel_indices\":[8,9],\"hip_indices\":[0,1],\"header_relative_time_used\":True,\"action_proxy\":\"a=(published target-default)/scale; scale .25 for leg position, 1 for wheel velocity\",\"not_exact_raw_policy_actions\":\"Debug target and feedback snapshot alignment is not guaranteed; actor input/action timestamps are missing; auxiliary replay is inexact\",\"rate_proxy\":\"mean over consecutive rows strictly inside each stage of (a_t-a_t-1)^2 per joint\",\"smoothness_proxy\":\"mean over consecutive triples strictly inside each stage of (a_t-2*a_t-1+a_t-2)^2 per joint\",\"weighted_cost\":\"positive magnitudes abs(weight)*term; before-dt and hypothetical 20ms step versions provided; not measured hardware reward\",\"stage_boundaries\":\"Archived FSM boundaries inferred from target trajectories; GetDown at row 2927 is excluded from all policy reward conclusions\",\"actual_velocity\":\"Device-reported joint velocity, not finite-differenced targets\",\"command_units\":\"control fields raw; no confirmed physical command calibration\",\"no_spectral_claim\":\"Onset/growth are short nonstationary windows; no resonance frequency inference\"},\n    \"phases\":phase_results,\n    \"history\":{\"native_metrics\":ref(historical_path),\"comparisons\":historical_diffs,\"earlier_hip_action_L1_metrics\":ref(hip_history_path),\"earlier_L1_added_minus_0_5_noisy_standing_changes_percent\":hip_comparison,\"qualification\":\"Nonidentical reward and delay changes across policies; observational comparisons do not establish parameter causality\",\"query\":{\"support\":history[\"historical_support\"],\"classification_counts\":{name:len(history[name]) for name in [\"compatible_events\",\"conflicting_events\",\"unknown_events\",\"invalid_events\"]},\"candidate_event_count\":len(history[\"candidate_events\"]),\"unknown_fingerprints_reason\":\"No complete measured policy-input/reset and physical deployment timing contract for this incident\"}},\n    \"current_reward_weights\":weights,\n    \"recommendation\":{\n        \"status\":\"proposal_only_not_applied\",\"direct_parameter_change_supported\":False,\n        \"first_variant\":{\"additional_hip_velocity_l2\":{\"current_additional_weight\":0.0,\"proposed_additional_weight\":-0.005,\"function\":\"isaaclab.envs.mdp.joint_vel_l2\",\"joint_names\":[\"right_hip_joint\",\"left_hip_joint\"],\"formula\":\"-0.005*(dq_Rhip^2+dq_Lhip^2)\",\"combined_hip_velocity_weight_including_existing_all_leg_term\":-0.00505,\"expected_effect\":\"Put explicit cost on physical hip motion, while retaining existing action-output regularization\",\"counter_metrics\":[\"hip actual velocity RMS/p95 and 5-25Hz band RMS\",\"roll/pitch angular rate RMS\",\"yaw tracking RMSE\",\"forward tracking RMSE\",\"standing drift\",\"applied torque utilization\"],\"risk\":\"May suppress required balance/posture correction and worsen tracking; arbitrary starting hypothesis, not validated optimum\",\"history_support\":\"Target shrinkage has not consistently reduced physical jitter; no outcome evidence for this new term\"},\n        \"unchanged_weights\":{name:weights[name] for name in [\"action_rate_legs_l2\",\"action_rate_wheels_l2\",\"action_smoothness_legs\",\"action_smoothness_wheels\",\"penalize_hip_roll_action\",\"joint_vel_l2\",\"ang_vel_xy_l2\",\"stop_motion\",\"track_lin_vel_xy_exp\",\"track_ang_vel_z_exp\",\"feet_distance_penalize\",\"flat_orientation_l2\",\"body_orientation_l2\"]}},\n        \"separate_second_variant_if_supported\":{\"ang_vel_xy_l2\":{\"current\":-0.1,\"proposed\":-0.3,\"expected_effect\":\"Penalize rapid roll/pitch motion before large tilt builds\",\"counter_metrics\":[\"yaw tracking RMSE\",\"forward tracking RMSE\",\"push recovery\",\"hip actual velocity RMS\"],\"risk\":\"May resist necessary turning lean or disturbance recovery\",\"history_support\":\"No matched causal outcome for this change; do not combine with first variant initially\"}},\n        \"do_not_infer\":{\"increase_all_four_action_weights\":\"Existing target-derived growth action costs are already large; global mean improvements previously coexisted with greater actual jitter\",\"increase_hip_action_L1\":\"Earlier -0.5 version reduced targets while noisy-stand actual hip RMS increased\",\"remove_wheel_second_difference\":\"This incident does not isolate wheel regularization as cause; wheel commands also serve balance\",\"relax_feet_distance_or_stop_motion\":\"Base/contact/foot geometry telemetry absent; no direct evidence to assign cause\"},\n        \"configuration_edit_plan_requires_approval\":[{\"file\":\"source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py\",\"proposal\":\"Declare a shared optional hip-only joint_vel_l2 reward using existing function and SceneEntityCfg; no new algorithm class or reward implementation\"},{\"file\":\"source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py\",\"proposal\":\"Inherit shared term and enable candidate Flat ROA weight -0.005 only after approval; preserve four existing group weights and unrelated dirty changes\"}],\n        \"coverage_gap\":{\"current_command_sampler\":\"x,y,yaw uniform; 10% standing zeros all fields; no dedicated exact x=0,y=0,yaw!=0 sample group\",\"prior_closed_loop_turn\":\"vx=.5,yaw=+/- .6; hardware raw forward command was zero during turn\",\"sampling_change\":\"Dedicated pure-yaw training sampling is a separate proposed change, not part of first reward variant\"}\n    },\n    \"next_finite_test_proposal\":{\n        \"status\":\"not_run_requires_approval\",\"backend\":\"Isaac Native\",\"environment\":\"isaacsim-5.1\",\"seed\":42,\"num_envs\":1,\"video\":False,\"checkpoint\":\"model_49999.pt from selected run\",\n        \"cases\":[{\"direction\":direction,\"fixed_delay_ms\":delay,\"steps\":3000} for direction in [\"right\",\"left\"] for delay in [15,30]],\n        \"total_steps\":12000,\n        \"command_schedule_seconds\":[{\"start\":0,\"end\":10,\"vx\":0,\"vy\":0,\"yaw\":0},{\"start\":10,\"end\":30,\"vx\":.3,\"vy\":0,\"yaw\":0},{\"start\":30,\"end\":35,\"vx\":0,\"vy\":0,\"yaw\":0},{\"start\":35,\"end\":45,\"vx\":0,\"vy\":0,\"yaw\":\"-0.4 right / +0.4 left\"},{\"start\":45,\"end\":60,\"vx\":0,\"vy\":0,\"yaw\":0}],\n        \"scenario_qualification\":\"Finite simulation assumptions; raw hardware input is not a calibrated physical command; not an exact accident reconstruction\",\n        \"other_settings\":\"Reuse previously sealed delay30-assess-20260922-001 plant/noise settings, replacing schedule and checkpoint; contract must be reviewed before execution\",\n        \"purpose\":\"Establish the missing pure-turn baseline before any new training and before comparing a future approved reward variant\",\n        \"metrics\":[\"per-joint actual velocities, targets, raw actions, applied torques\",\"hip first/second differences and physical velocity band RMS\",\"roll/pitch rates and tilt\",\"yaw and forward tracking\",\"estimated vs true velocity grouped by zero/low/pure-yaw commands\",\"resets and limit utilization\"],\n        \"approved_acceptance_thresholds\":None},\n    \"limitations\":[\n        \"One right-turn hardware recording; no same-scenario left-turn or old-DWAQ hardware control; cannot prove directional asymmetry or compare hardware stability across policies.\",\n        \"No base velocity, foot contact/positions, FSM trace, raw actor inputs, actual inference timestamps, control-loop misses, or individual sensor age.\",\n        \"50Hz debug continuity does not prove physical 200Hz control continuity; nominal gains and timing fields do not verify actual timing.\",\n        \"Archived replay hip RMSE ~0.09566rad and max position mismatch ~0.71449rad, so no precise input contribution or closed-loop gain attribution.\",\n        \"Debug PD estimated effort is not saturated actual torque; motor effort calibration independently unverified.\",\n        \"Reward changes cannot establish hardware safety or resolve unmeasured deployment timing/mechanics by themselves.\"],\n    \"policy_description_required\":\"仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。\",\n    \"plot\":{\"path\":str(plot_path),\"sha256\":sha(plot_path)},\n    \"analysis_source\":analysis_source\n}\nmetrics_path=out/\"metrics.json\"\nwith metrics_path.open(\"x\") as f:\n    json.dump(result,f,indent=2,ensure_ascii=False,allow_nan=False);f.write(\"\\n\")\nassert git(data_repo,\"status\",\"--porcelain\")==\"\"\nprint(json.dumps({\"metrics\":ref(metrics_path),\"plot\":ref(plot_path),\"checksums\":checked,\"policy_onnx_sha256\":policy_refs[0][\"sha256\"],\"growth_hips_share_action_cost\":phase_results[\"growth\"][\"hips_share_total_four_weighted_action_proxy_cost\"],\"first_variant\":result[\"recommendation\"][\"first_variant\"]},ensure_ascii=False))\n"
+  }
+}
