@@ -1,0 +1,172 @@
+{
+  "version": 2,
+  "archive_authorized": true,
+  "storage_root": "/home/server/liufengrong/policy_storage",
+  "collection": "LW/wheel_loco",
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+  "algorithm": "ROAPPO",
+  "runner": "OnPolicyRunnerROA",
+  "selected_checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-09-26_11-37-09/model_49999.pt",
+    "sha256": "cd50d786d48b8420159fc76145b84ab52ba72a9be39434a747017d2769b212bd",
+    "iteration": 49999
+  },
+  "artifacts": {
+    "jit": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evidence/export/storage-20260928-001/policy.pt",
+      "sha256": "e9166dbbf943c6eb65ef4c8716dd52401c9d879ec5c1cc64fba2103b2a29238e"
+    },
+    "onnx": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evidence/export/storage-20260928-001/policy.onnx",
+      "sha256": "33aea9901317a597c72688a233a3c8c22516295ea87966e61bb7701762a9d7c3"
+    }
+  },
+  "export_receipt": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evidence/export/storage-20260928-001/receipt.json",
+    "sha256": "e7a9c7d2ac1261223f8bd7dc49c49c2635358994160191c17853b33dde7c5b19"
+  },
+  "source": {
+    "commit": "dd0cdfe39f4d540882d7f7588cfca89acc530bd1",
+    "dirty": true
+  },
+  "parameters": {
+    "saved_training_parameters": {
+      "device": "cuda:0",
+      "experiment_name": "LW_wheel_flat_roa",
+      "logger": "wandb",
+      "max_iterations": 50000,
+      "num_envs": 4096,
+      "num_steps_per_env": 24,
+      "resume": false,
+      "run_name": ""
+    },
+    "effective_config": {
+      "effective_config_fingerprint": "bb3bab71b621d2189e11a32bd605eb27e6e94447876154e7919074a05854b624",
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/provenance/config-dd838bb4594384aaa7a8b0b022eecc94c8ca8ed77f1d38ea35c26c6122366240.json",
+      "reward_fingerprint": "bc3874c22b23e21beece6f1e597eefa1decef5f7cab64e058f09d3c574aef0d0",
+      "sha256": "dd838bb4594384aaa7a8b0b022eecc94c8ca8ed77f1d38ea35c26c6122366240"
+    },
+    "effective_config_summary": {
+      "fingerprints": {
+        "agent": "7c6fd3677c4c0fe96ae82d1b31b955f3dd598e9fa9c9902f6c61765fbcb513b3",
+        "effective_config": "bb3bab71b621d2189e11a32bd605eb27e6e94447876154e7919074a05854b624",
+        "environment": "cfe618c714b63a1c532885eb75707385942e987dbdd7513162b60e8e3953fdee",
+        "reward": "bc3874c22b23e21beece6f1e597eefa1decef5f7cab64e058f09d3c574aef0d0"
+      },
+      "resolved_identity": {
+        "algorithm_class": "ROAPPO",
+        "declared_algorithm": "ROAPPO",
+        "runner_class": "OnPolicyRunnerROA",
+        "seed": 42
+      }
+    },
+    "confirmed_launch_command": "bash scripts/start_roa.sh --terrain Flat --type wheel",
+    "additional_arguments_or_hydra_overrides": [],
+    "environment": "isaacsim-5.1",
+    "physics_dt_s": 0.005,
+    "decimation": 4,
+    "policy_frequency_hz": 50,
+    "training_actuator_delay_physics_steps": [
+      0,
+      3
+    ],
+    "history_frames": 10,
+    "observation_frame_size": 39,
+    "history_order": "oldest_first_time_major",
+    "input_dtype": "float32",
+    "input_shape": [
+      1,
+      390
+    ],
+    "output_shape": [
+      1,
+      10
+    ],
+    "action_order": [
+      "right_hip",
+      "left_hip",
+      "right_thigh",
+      "left_thigh",
+      "right_shank",
+      "left_shank",
+      "right_foot",
+      "left_foot",
+      "right_wheel",
+      "left_wheel"
+    ],
+    "position_action_scale_rad": [
+      0.125,
+      0.125,
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "wheel_velocity_action_scale_rad_s": [
+      1.0,
+      1.0
+    ],
+    "default_joint_positions_rad": [
+      0.0,
+      0.0,
+      0.733,
+      -0.733,
+      -0.1745,
+      0.1745,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "outputs_raw_actions": true,
+    "checkpoint_internal_iter": 50000,
+    "hardware_reproduction_paused": true
+  },
+  "evaluation": {
+    "results": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evaluations/flat-roa-scale-assess-20260928-001/raw/right-delay15-noise-a01/result.json",
+        "sha256": "f2c9d944b8dacf5b8a7569187607b36a4b2c111a298d2a99c20477118aeda71f"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evaluations/flat-roa-scale-assess-20260928-001/raw/left-delay15-noise-a01/result.json",
+        "sha256": "bf6987faa493b7fda155fed690ab585ec812a5c9dd5013131eef54a0fdd5d12c"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evaluations/flat-roa-scale-assess-20260928-001/raw/right-delay30-noise-a01/result.json",
+        "sha256": "fc9f2f9f0fff490257f47561458d8899e30c78132066b9ed02f781055f01221c"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evaluations/flat-roa-scale-assess-20260928-001/raw/left-delay30-noise-a01/result.json",
+        "sha256": "ed0697c729777d5cde31e69a3ce69972edd84c0c079b7170d2ab334e3fea9c6d"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evaluations/flat-roa-scale-assess-20260928-001/raw/nominal-no-noise-a01/result.json",
+        "sha256": "714ea34be73f26306cb36cd486dd775bfa11674dc5f29626e49aefd4e54b3a6e"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evaluations/flat-roa-scale-assess-20260928-001/raw/nominal-training-noise-a01/result.json",
+        "sha256": "88d4b85af27f1c7421dd0788247074a41b893e1221c61f311897378529600c5a"
+      }
+    ],
+    "closed_loop_manifest": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evaluations/flat-roa-scale-assess-20260928-001/manifest.json",
+      "sha256": "9cee0f17114af0e6c18a8914291d4a9207701f4b74ea24dbc66e1f13417422b2"
+    },
+    "closed_loop_metrics": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evidence/analysis/flat-roa-scale-assess-20260928-001/metrics.json",
+      "sha256": "a551af2b1474d7f63574a47dbc78a0fbbe12f899d5f5d09ab58f3b22eb461c5d"
+    },
+    "static_comparison_metrics": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evidence/analysis/static-rightturn-scale-comparison-20260928-001/metrics.json",
+      "sha256": "e69fc714a6626078b0e1ec33ad69013244caabaa93e355f532239283ec40a7ff"
+    },
+    "final_verification": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/evidence/analysis/flat-roa-scale-assess-20260928-001/verification-final.json",
+      "sha256": "5cc8a517cad5ff3521d2750d94dd40434180977eb57a975a010d8702b926be35"
+    }
+  },
+  "description_notes": "用户明确选择将 2026-09-26_11-37-09/model_49999.pt 导出归档并提交推送。归档目录时间取训练启动时间，不是导出时间。checkpoint 文件名迭代为 49999，checkpoint 内部 iter=50000。\n用户确认准确启动命令：在 isaacsim-5.1 中执行 bash scripts/start_roa.sh --terrain Flat --type wheel，无附加参数或 Hydra 覆盖。训练源码 commit 为 dd0cdfe39f4d540882d7f7588cfca89acc530bd1；当时 flat_env_cfg.py 和 rough_env_cfg.py 有未提交修改。训练源码身份由保存的 W&B HEAD 和原始 git diff 重建，已核对与当前相关源码一致；不是新取得的训练进程现场证明。评估与导出执行时 HEAD 为 0d34228a0b2f00d0e9ab8ec9cb37142559b76b5e，不将它冒充训练启动 HEAD。\n模型接口：float32 输入 [1,390]，10 帧 ×39 维，最旧帧在前的 time-major 展平历史；输出 [1,10] 为原始动作。动作顺序：right_hip,left_hip,right_thigh,left_thigh,right_shank,left_shank,right_foot,left_foot,right_wheel,left_wheel。双髋位置目标必须按 default_position + 0.125*raw_action 转换为 rad；其余六个腿关节 scale=0.25 rad，两个轮关节速度 scale=1.0 rad/s。不可继续采用旧双髋 0.25 scale；本次没有将 scale 烘焙进模型，也没有修改任何部署配置。\nNative GPU/CPU、JIT、ONNX 共 8 个真实环境观测样本的输出一致性校验覆盖 initial、pre_reset、post_reset、final；Native GPU→CPU 最大误差 2.86102294921875e-6，CPU→JIT 0，CPU→ONNX 3.337860107421875e-6，均通过 1e-5 阈值。ONNX 为 static_batch_1_simplified。该校验验证导出数值一致性，不替代运动评估。\n仅引用本次已完成的新策略评估：6 个受控 Native 场景、30000 个控制步，均无 done/timeout；对照旧 9 月 23 日 ROA 的结果复用已完成证据，没有重跑旧策略。转弯稳态 42–70s 中髋目标步变 RMS 降低约 41–45%，但实际髋速度 RMS 增加约 9–19%，机身 roll/pitch 角速度 RMS 增加约 8–23%；±0.6 rad/s 命令存在欠跟踪。15/30ms 延迟下右转平均 yaw 为 -0.302/-0.303，左转为 0.217/0.228 rad/s。训练噪声站立 40–120s 漂移 0.977m，旧对照 0.469m。\n9 月 24 日实机冻结数据的静态双髋敏感度对照沿用旧协议与原始历史动作，未做 ×2 目标等效重映射。新策略仅作新增推理，旧 June3 DWAQ 和既有 ROA 数据复用。主映射 Gq 中位数 onset/growth：新 ROA 1.980/2.818，June3 DWAQ 4.458/2.070，Sep23 ROA 3.781/3.507。growth 仍高于 June3 约 36%；冻结的旧动作历史对新髋 scale 存在分布差异。这是静态敏感度证据，不是实机闭环稳定性或事故根因证明。\n无已批准的收敛判据，收敛状态未判定；本次用户选择归档不代表优于所有旧策略。实机复现保持暂停；未启动训练、修改训练参数或进行硬件部署。仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+}

@@ -1,0 +1,42 @@
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py
+index 1c9d9872ff74d5ddfa4e915efd1486f946a133e6..f0ddf87356a70a59846980a4aa6653f3222e479b 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py
+@@ -138,11 +138,11 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):
+         self.rewards.flat_orientation_l2.weight = -5.0  # -5.0
+         self.rewards.body_orientation_l2.weight = -3.0
+         self.rewards.stop_motion.weight = -5.0
+-        self.rewards.action_rate_legs_l2.weight = -0.2
++        self.rewards.action_rate_legs_l2.weight = -0.3
+         self.rewards.action_rate_wheels_l2.weight = -0.2
+-        self.rewards.action_smoothness_legs.weight = -0.075
+-        self.rewards.action_smoothness_wheels.weight = -0.0
+-        self.rewards.penalize_hip_roll_action.weight = -0.0
++        self.rewards.action_smoothness_legs.weight = -0.1
++        self.rewards.action_smoothness_wheels.weight = -0.075
++        self.rewards.penalize_hip_roll_action.weight = -0.3
+         self.rewards.feet_stumble.weight = 0.0
+         self.rewards.leg_symmetry.weight = 0.5
+         self.rewards.lazy_penalty.weight = -0.0
+@@ -151,7 +151,7 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):
+         self.rewards.feet_distance_penalize.weight = -150.0
+         self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.50
+         self.rewards.feet_distance_penalize.params["max_feet_distance"] = 0.52
+-        self.rewards.centrifugal_compensation.weight = 3.0
++        self.rewards.centrifugal_compensation.weight = 0.0
+ 
+         # If the weight of rewards is 0, set rewards to None
+         if self.__class__.__name__ == "LWWheelFlatRoaEnvCfg":
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py
+index 65ca85fc1543701e178d955c902712c5a8322457..25e974257ca85f8f05e8ce304dc6647952cb4a87 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py
+@@ -1365,7 +1365,7 @@ class LWWheelRoughRoaEnvCfg(LocomotionVelocityRoughEnvCfg):
+ 
+         # ------------------------------Actions------------------------------
+         # reduce action scale
+-        self.actions.joint_pos.scale = 0.25
++        self.actions.joint_pos.scale = {".*_hip_joint": 0.125, "^(?!.*_hip_joint).*": 0.25}
+         self.actions.joint_vel.scale = 1.0
+         self.actions.joint_pos.clip = {".*": (-100.0, 100.0)}
+         self.actions.joint_vel.clip = {".*": (-100.0, 100.0)}
