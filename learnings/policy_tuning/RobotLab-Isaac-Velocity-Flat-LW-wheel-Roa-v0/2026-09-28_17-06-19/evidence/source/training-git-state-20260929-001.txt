@@ -1,0 +1,31 @@
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-26_11-37-09/
+	scripts/analysis/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py
+index 3495ecd..36602c1 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py
+@@ -18,7 +18,7 @@ class LWWheelRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
+         "privileged": ["privileged"]  # 专供特权编码器使用的纯物理参数组
+     }
+     policy = RslRlActorCriticRoaCfg(
+-        use_velocity_estimation=True,  # False：关闭显式速度头、actor 速度输入及速度监督，需独立训练。
++        use_velocity_estimation=False,  # False：关闭显式速度头、actor 速度输入及速度监督，需独立训练。
+         init_noise_std=1.0,
+         actor_hidden_dims=[512, 256, 128],
+         critic_hidden_dims=[512, 256, 128],
