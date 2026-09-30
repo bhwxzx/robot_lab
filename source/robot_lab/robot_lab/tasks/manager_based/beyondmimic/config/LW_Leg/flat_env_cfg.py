@@ -80,15 +80,18 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.events.add_joint_default_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.events.base_com.params["asset_cfg"].body_names = self.base_link_name
         self.events.randomize_rigid_body_mass_base.params["asset_cfg"].body_names = [self.base_link_name]
-        self.events.randomize_rigid_body_mass_others.params["asset_cfg"].body_names = [
-            "right_.*", "left_.*",
-        ]
+        self.events.randomize_rigid_body_mass_others = None
+        self.events.randomize_actuator_gains = None
         # rewards
-        self.rewards.action_rate_l2.weight = -0.02
-        self.rewards.action_smoothness.weight = -0.02
+        self.rewards.action_rate_l2.weight = -0.2
+        self.rewards.action_smoothness.weight = -0.075
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.2
+        self.rewards.joint_torques_l2.weight = -1.25e-5
+        self.rewards.joint_torques_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_power.weight = -2e-5
+        self.rewards.joint_power.params["asset_cfg"].joint_names = self.joint_names
         self.rewards.joint_vel_wheel_l2.weight = -2e-3
         self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
         self.rewards.joint_acc_wheel_l2.weight = -1.5e-7

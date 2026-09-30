@@ -590,7 +590,7 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
             cmd.time_steps[env_ids] = 0
         cmd._adaptive_sampling = zero_start
     observations, _ = env.reset()
-    cmd.body_pos_relative_w, cmd.body_quat_relative_w = aligned_reference()
+    cmd._refresh_relative_body_targets()
     observations = env.get_observations()
     initial_runtime = {
         "body_names": list(robot.body_names),
@@ -751,7 +751,7 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
                     # IsaacLab advances commands after auto-reset. Restore the zero reference
                     # before recomputing the next observation; physical reset already used zero.
                     cmd.time_steps[:] = 0
-                    cmd.body_pos_relative_w, cmd.body_quat_relative_w = aligned_reference()
+                    cmd._refresh_relative_body_targets()
                     observations = env.get_observations()
                 episode_id += 1
                 start_frame = int(cmd.time_steps[0].item())

@@ -1,0 +1,53 @@
+{
+  "contract": {
+    "command_schedule": [],
+    "duration_steps": 280,
+    "num_envs": 1,
+    "scenario_id": "apr19-randomized-start",
+    "scenario_overrides": {
+      "commands.motion.motion_file": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-04-19_19-11-42/evidence/source/leg_to_wheel_apr19_reconstructed_50hz.npz",
+      "evaluation.motion_mode": "randomized_start",
+      "evaluation.motion_physics_window": [
+        0,
+        138
+      ],
+      "evaluation.motion_sha256": "85e53dc37459b295a4a3f06dd56044eb96b661caf01461ccceb1908cf52fa75d",
+      "events.base_com.params.com_range.x": [
+        -0.025,
+        0.025
+      ],
+      "events.base_com.params.com_range.y": [
+        -0.05,
+        0.05
+      ],
+      "events.base_com.params.com_range.z": [
+        -0.05,
+        0.05
+      ],
+      "events.physics_material.params.make_consistent": false,
+      "events.randomize_actuator_gains": null,
+      "events.randomize_rigid_body_mass_base": null,
+      "events.randomize_rigid_body_mass_others": null,
+      "observations.critic.joint_pos.func": "lambda env, asset_cfg, wheel_asset_cfg: (lambda q: q.index_fill(1, __import__('torch').as_tensor(wheel_asset_cfg.joint_ids, device=q.device), 0))(env.scene[asset_cfg.name].data.joint_pos[:, asset_cfg.joint_ids] - env.scene[asset_cfg.name].data.default_joint_pos[:, asset_cfg.joint_ids])",
+      "observations.policy.joint_pos.func": "lambda env, asset_cfg, wheel_asset_cfg: (lambda q: q.index_fill(1, __import__('torch').as_tensor(wheel_asset_cfg.joint_ids, device=q.device), 0))(env.scene[asset_cfg.name].data.joint_pos[:, asset_cfg.joint_ids] - env.scene[asset_cfg.name].data.default_joint_pos[:, asset_cfg.joint_ids])",
+      "rewards.action_rate_l2.weight": -0.02,
+      "rewards.action_smoothness.weight": -0.02,
+      "rewards.joint_acc_wheel_l2": null,
+      "rewards.joint_vel_wheel_l2": null,
+      "rewards.torque_limit.weight": -1.0,
+      "scene.robot.actuators.foots.damping": 1.8,
+      "scene.robot.actuators.foots.max_delay": 6,
+      "scene.robot.actuators.foots.stiffness": 36.0,
+      "scene.robot.actuators.legs.max_delay": 6,
+      "scene.robot.actuators.wheels.max_delay": 6
+    },
+    "seed": 42
+  },
+  "evaluator_source": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-04-19_19-11-42/provenance/source-270548962df7ec3d0fa4ba4b5d673260c9ac0b8921688086715bd94933608b97.json",
+    "sha256": "270548962df7ec3d0fa4ba4b5d673260c9ac0b8921688086715bd94933608b97"
+  },
+  "run_id": "2026-04-19_19-11-42",
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0",
+  "version": 1
+}

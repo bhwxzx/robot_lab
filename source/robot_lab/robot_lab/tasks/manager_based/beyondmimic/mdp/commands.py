@@ -78,9 +78,10 @@ class MotionCommand(CommandTerm):
 
         self.motion = MotionLoader(self.cfg.motion_file, self.body_indexes, device=self.device)
         self.time_steps = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
-        self.body_pos_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 3, device=self.device)
-        self.body_quat_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 4, device=self.device)
-        self.body_quat_relative_w[:, :, 0] = 1.0
+        self._body_pos_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 3, device=self.device)
+        self._body_quat_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 4, device=self.device)
+        self._body_quat_relative_w[:, :, 0] = 1.0
+        self._body_targets_valid = False
 
         self.bin_count = int(self.motion.time_step_total // (1 / (env.cfg.decimation * env.cfg.sim.dt))) + 1
         self.bin_failed_count = torch.zeros(self.bin_count, dtype=torch.float, device=self.device)
@@ -133,6 +134,18 @@ class MotionCommand(CommandTerm):
     @property
     def body_ang_vel_w(self) -> torch.Tensor:
         return self.motion.body_ang_vel_w[self.time_steps]
+
+    @property
+    def body_pos_relative_w(self) -> torch.Tensor:
+        if not self._body_targets_valid:
+            self._refresh_relative_body_targets()
+        return self._body_pos_relative_w
+
+    @property
+    def body_quat_relative_w(self) -> torch.Tensor:
+        if not self._body_targets_valid:
+            self._refresh_relative_body_targets()
+        return self._body_quat_relative_w
 
     @property
     def anchor_pos_w(self) -> torch.Tensor:
@@ -189,6 +202,21 @@ class MotionCommand(CommandTerm):
     @property
     def robot_anchor_ang_vel_w(self) -> torch.Tensor:
         return self.robot.data.body_ang_vel_w[:, self.robot_anchor_body_index]
+
+    def _refresh_relative_body_targets(self):
+        """Update cached body targets at the current motion frame without advancing it."""
+        anchor_pos_w_repeat = self.anchor_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
+        anchor_quat_w_repeat = self.anchor_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
+        robot_anchor_pos_w_repeat = self.robot_anchor_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
+        robot_anchor_quat_w_repeat = self.robot_anchor_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
+
+        delta_pos_w = robot_anchor_pos_w_repeat
+        delta_pos_w[..., 2] = anchor_pos_w_repeat[..., 2]
+        delta_ori_w = yaw_quat(quat_mul(robot_anchor_quat_w_repeat, quat_inv(anchor_quat_w_repeat)))
+
+        self._body_quat_relative_w = quat_mul(delta_ori_w, self.body_quat_w)
+        self._body_pos_relative_w = delta_pos_w + quat_apply(delta_ori_w, self.body_pos_w - anchor_pos_w_repeat)
+        self._body_targets_valid = True
 
     def _update_metrics(self):
         self.metrics["error_anchor_pos"] = torch.norm(self.anchor_pos_w - self.robot_anchor_pos_w, dim=-1)
@@ -284,23 +312,13 @@ class MotionCommand(CommandTerm):
             torch.cat([root_pos[env_ids], root_ori[env_ids], root_lin_vel[env_ids], root_ang_vel[env_ids]], dim=-1),
             env_ids=env_ids,
         )
+        self._body_targets_valid = False
 
     def _update_command(self):
         self.time_steps += 1
         env_ids = torch.where(self.time_steps >= self.motion.time_step_total)[0]
         self._resample_command(env_ids)
-
-        anchor_pos_w_repeat = self.anchor_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
-        anchor_quat_w_repeat = self.anchor_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
-        robot_anchor_pos_w_repeat = self.robot_anchor_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
-        robot_anchor_quat_w_repeat = self.robot_anchor_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
-
-        delta_pos_w = robot_anchor_pos_w_repeat
-        delta_pos_w[..., 2] = anchor_pos_w_repeat[..., 2]
-        delta_ori_w = yaw_quat(quat_mul(robot_anchor_quat_w_repeat, quat_inv(anchor_quat_w_repeat)))
-
-        self.body_quat_relative_w = quat_mul(delta_ori_w, self.body_quat_w)
-        self.body_pos_relative_w = delta_pos_w + quat_apply(delta_ori_w, self.body_pos_w - anchor_pos_w_repeat)
+        self._refresh_relative_body_targets()
 
         self.bin_failed_count = (
             self.cfg.adaptive_alpha * self._current_bin_failed + (1 - self.cfg.adaptive_alpha) * self.bin_failed_count

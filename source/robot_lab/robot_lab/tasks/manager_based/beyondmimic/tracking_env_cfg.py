@@ -170,6 +170,7 @@ class EventCfg:
             "dynamic_friction_range": (0.3, 1.2),
             "restitution_range": (0.0, 0.5),
             "num_buckets": 64,
+            "make_consistent": True,
         },
     )
 
@@ -188,7 +189,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=""),
-            "mass_distribution_params": (-1.0, 3.0),  # (-1.0, 3.0)
+            "mass_distribution_params": (0.0, 3.0),  # (-1.0, 3.0)
             "operation": "add",
             "recompute_inertia": True,
         },
@@ -298,6 +299,16 @@ class RewardsCfg:
             "ratio": 0.875,  
             "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]) # 匹配所有关节
         },
+    )
+    joint_torques_l2 = RewTerm(
+        func=mdp.joint_torques_l2,
+        weight=0.0,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")},
+    )
+    joint_power = RewTerm(
+        func=mdp.joint_power,
+        weight=0.0,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")},
     )
     joint_vel_wheel_l2 = RewTerm(
         func=mdp.joint_vel_l2, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names="")}
