@@ -1,0 +1,35 @@
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py
+index 36602c189a4bf957fe6b580b69620a64b221f862..a0df26743487629bb0973f74f9c2c37c4f3e164d 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py
+@@ -18,7 +18,7 @@ class LWWheelRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
+         "privileged": ["privileged"]  # 专供特权编码器使用的纯物理参数组
+     }
+     policy = RslRlActorCriticRoaCfg(
+-        use_velocity_estimation=False,  # False：关闭显式速度头、actor 速度输入及速度监督，需独立训练。
++        use_velocity_estimation=True,  # False：关闭显式速度头、actor 速度输入及速度监督，需独立训练。
+         init_noise_std=1.0,
+         actor_hidden_dims=[512, 256, 128],
+         critic_hidden_dims=[512, 256, 128],
+@@ -48,7 +48,7 @@ class LWWheelRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
+         vel_loss_coef=1.0,
+         # None：原有真实速度 PPO；课程格式：[初始概率, 最终概率, 起始迭代, 渐变迭代数]。
+         # 例如 [0.0, 1.0, 2000, 3000]；关闭 use_velocity_estimation 时课程自动停用。
+-        estimated_velocity_schedule=[0.0, 1.0, 2000, 3000],
++        estimated_velocity_schedule=[1.0, 1.0, 0, 1],
+         estimated_velocity_schedule_resume=None,  # None：恢复 checkpoint 课程；列表：显式覆盖。
+     )
+ 
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py
+index 25e974257ca85f8f05e8ce304dc6647952cb4a87..50db7f0e4b6aa487e078d35ab4fc3031cd300e4f 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py
+@@ -1182,7 +1182,7 @@ class LWWheelRoaObservationsCfg(ObservationsCfg):
+             func=mdp.joint_vel_rel,
+             params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
+             # noise=GaussianNoise(mean=0.0, std=0.02),
+-            noise=Unoise(n_min=-1.5, n_max=1.5),
++            noise=Unoise(n_min=-0.5, n_max=0.5),
+             clip=(-100.0, 100.0),
+             scale=1.0,
+         )
