@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from dataclasses import MISSING
 from typing import TYPE_CHECKING
 
+from isaaclab.actuators import DelayedPDActuator
 from isaaclab.assets import Articulation
 from isaaclab.managers import CommandTerm, CommandTermCfg
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
@@ -312,7 +313,23 @@ class MotionCommand(CommandTerm):
             torch.cat([root_pos[env_ids], root_ori[env_ids], root_lin_vel[env_ids], root_ang_vel[env_ids]], dim=-1),
             env_ids=env_ids,
         )
+        if self.cfg.initialize_reset_targets:
+            self._initialize_reset_targets(env_ids, joint_pos[env_ids])
         self._body_targets_valid = False
+
+    def _initialize_reset_targets(self, env_ids: Sequence[int], joint_pos: torch.Tensor):
+        """Synchronize targets after teleporting selected environments, without advancing delays."""
+        self.robot.set_joint_position_target(joint_pos, env_ids=env_ids)
+        # Position actions do not overwrite velocity/effort targets: keep their normal zero values.
+        zeros = torch.zeros_like(joint_pos)
+        self.robot.set_joint_velocity_target(zeros, env_ids=env_ids)
+        self.robot.set_joint_effort_target(zeros, env_ids=env_ids)
+        for actuator in self.robot.actuators.values():
+            if isinstance(actuator, DelayedPDActuator):
+                # Preserve sampled lags; the next normal write initializes only cleared histories.
+                actuator.positions_delay_buffer.reset(env_ids)
+                actuator.velocities_delay_buffer.reset(env_ids)
+                actuator.efforts_delay_buffer.reset(env_ids)
 
     def _update_command(self):
         self.time_steps += 1
@@ -394,6 +411,9 @@ class MotionCommandCfg(CommandTermCfg):
     velocity_range: dict[str, tuple[float, float]] = {}
 
     joint_position_range: tuple[float, float] = (-0.52, 0.52) # 训练初始化时添加的随机噪声范围
+
+    initialize_reset_targets: bool = False
+    """Synchronize actuator targets and clear stale delays when resetting motion state."""
 
     adaptive_kernel_size: int = 1
     adaptive_lambda: float = 0.8

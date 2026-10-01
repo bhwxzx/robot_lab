@@ -309,6 +309,8 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene, joi
 
             # np.savez("/tmp/motion.npz", **log)
             np.savez(f"{args_cli.output_name}", **log)
+            print(f"[INFO]: Motion saved to {args_cli.output_name} ({motion.output_frames} frames)", flush=True)
+            return
 
             # import wandb
 
@@ -356,5 +358,5 @@ def main():
 if __name__ == "__main__":
     # run the main function
     main()
-    # close sim app
-    simulation_app.close()
+    # The NPZ is closed above; avoid waiting for stage teardown after this finite conversion.
+    simulation_app.close(skip_cleanup=True)

@@ -92,14 +92,15 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.joint_torques_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.joint_power.weight = -2e-5
         self.rewards.joint_power.params["asset_cfg"].joint_names = self.joint_names
-        self.rewards.joint_vel_wheel_l2.weight = -2e-3
+        self.rewards.joint_vel_wheel_l2.weight = -7.5e-4
         self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
         self.rewards.joint_acc_wheel_l2.weight = -1.5e-7
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
         # terminations
         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands
-        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/leg_to_wheel_transform_60hz.npz"
+        self.commands.motion.initialize_reset_targets = True
+        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/leg_to_wheel_transform_50hz.npz"
         self.commands.motion.anchor_body_name = "base_link"
         self.commands.motion.body_names = [ # 需要追踪的连杆
             "base_link",
