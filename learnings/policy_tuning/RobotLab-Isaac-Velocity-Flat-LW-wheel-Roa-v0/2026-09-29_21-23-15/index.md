@@ -46,3 +46,11 @@
 建议让训练继续按现有计划进行；待训练结束且 GPU 空闲后，对选定稳定 checkpoint 做与旧版完全一致的 4500 步零速—直行—右转—停车 Native 闭环测试，重点看零速净位移、转弯双髋目标步差和实测髋速度 5–25 Hz。现阶段不据此改训练参数或作实机部署决定。仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。
 
 [训练健康前](evidence/health/health-model29000-overlap-20260930-001.json) · [训练健康后](evidence/health/health-model29000-overlap-post-20260930-001.json) · [训练标量快照](evidence/training/summary-model29000-overlap-20260930-001.json) · [运行身份](evidence/source/identity-model29000-overlap-20260930-001.json)
+
+## 最终模型 model_49999（2026-09-30）
+
+- [六场景批次报告](evaluations/wheel-flat-final-estvel-20260930-001/report.md)与[封存清单](evaluations/wheel-flat-final-estvel-20260930-001/manifest.json)：6 组完成，0 组失败。
+- [闭环窗口指标与历史同协议对照](evidence/analysis/final-model49999-batch-20260930-001/metrics.json)及[转弯对比图](evidence/analysis/final-model49999-batch-20260930-001/comparison.png)。
+- [历史实机输入的静态双髋敏感度](evidence/analysis/static-rightturn-model49999-20260930-001/metrics.json)及[静态对比图](evidence/analysis/static-rightturn-model49999-20260930-001/comparison.png)。
+
+旧版数值均直接读取归档结果；本次新运行的只有最终模型。静态实机输入回放不代表最终模型的实机闭环测试。
