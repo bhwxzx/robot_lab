@@ -138,9 +138,9 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):
         self.rewards.flat_orientation_l2.weight = -5.0  # -5.0
         self.rewards.body_orientation_l2.weight = -3.0
         self.rewards.stop_motion.weight = -5.0
-        self.rewards.action_rate_legs_l2.weight = -0.3
+        self.rewards.action_rate_legs_l2.weight = -0.4
         self.rewards.action_rate_wheels_l2.weight = -0.2
-        self.rewards.action_smoothness_legs.weight = -0.1
+        self.rewards.action_smoothness_legs.weight = -0.15
         self.rewards.action_smoothness_wheels.weight = -0.075
         self.rewards.penalize_hip_roll_action.weight = -0.3
         self.rewards.feet_stumble.weight = 0.0
@@ -148,9 +148,9 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):
         self.rewards.lazy_penalty.weight = -0.0
         self.rewards.same_foot_x_position.weight = -50.0
         self.rewards.feet_distance_y_exp.weight = 3.0
-        self.rewards.feet_distance_penalize.weight = -150.0
-        self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.50
-        self.rewards.feet_distance_penalize.params["max_feet_distance"] = 0.52
+        self.rewards.feet_distance_penalize.weight = -100.0
+        self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.506
+        self.rewards.feet_distance_penalize.params["max_feet_distance"] = 0.526
         self.rewards.centrifugal_compensation.weight = 0.0
 
         # If the weight of rewards is 0, set rewards to None
