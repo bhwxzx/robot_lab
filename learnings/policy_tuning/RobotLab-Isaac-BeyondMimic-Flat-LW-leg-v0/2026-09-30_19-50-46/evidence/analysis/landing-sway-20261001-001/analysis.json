@@ -1,0 +1,2896 @@
+{
+  "version": 1,
+  "question": "Latest leg-to-wheel policy: landing sway and actuator delay sensitivity",
+  "checkpoint": {
+    "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-09-30_19-50-46/model_49999.pt",
+    "sha256": "782f9cedbe27a68fcfda54b9a47801250d585a17ca42cb08d509cf9c3c02db85"
+  },
+  "method": {
+    "control_dt_s": 0.02,
+    "physics_dt_s": 0.005,
+    "landing_detection": "First wheel world normal force z sum above contact-sensor threshold 10 N, after reference frame 60 (1.2 s).",
+    "post_window": "First detected landing through terminal pre-reset sample; only completed frame-zero episodes aggregated.",
+    "tail_window": "Reference frames 112..141 inclusive, last 0.6 s; incomplete episodes excluded.",
+    "orientation": "Root and reference quaternion wxyz converted to roll/pitch/yaw, degrees. Error wrapped to [-180,180].",
+    "force_semantics": "Net normal contact force averaged over each completed 5 ms step; excludes friction. Peaks are per wheel and summed world z.",
+    "torque_semantics": "Computed and applied actuator drive torque; excludes passive impact loads.",
+    "success_semantics": "Reached motion_finished without other termination, not a stability acceptance gate."
+  },
+  "cases": [
+    {
+      "attempt_id": "play-equivalent-a01",
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-30_19-50-46/evaluations/landing-sway-20261001-001/raw/play-equivalent-a01/result.json",
+        "sha256": "8b9857d687c6aa043e49231ddd843ef67881ed4c4b69e17dee5d3afb45a9efa8"
+      },
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-30_19-50-46/evaluations/landing-sway-20261001-001/raw/play-equivalent-a01/telemetry.json.gz",
+        "sha256": "b06bd38f45a4b8c601e5c5fcfe4b4a1a44f6adf4f19c8572facd85c04b592b8a"
+      },
+      "metrics": {
+        "action_rate_rms": 0.22218402636796877,
+        "anchor_orientation_rmse_rad": 0.15884968305676908,
+        "anchor_position_rmse_m": 0.05781601486625188,
+        "body_orientation_rmse_rad": 0.15138417339219531,
+        "body_position_rmse_m": 0.03697724993959693,
+        "censored_episodes": 1,
+        "completed_episodes": 7,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 7,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 7,
+        "max_abs_action": 9.929567337036133,
+        "max_abs_applied_torque": 95.26940155029297,
+        "max_joint_effort_utilization": 0.7939116795857747,
+        "mean_reward": 0.08764953409094596,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.1616399108522938,
+        "real_time_factor": 1.1217917320728086,
+        "successful_motion_episodes": 7,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 7,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 1.9964270365033274
+      },
+      "physics_window_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 0,
+        "max_abs_applied_torque_by_joint_nm": [
+          34.6810302734375,
+          39.728065490722656,
+          50.42251968383789,
+          57.314788818359375,
+          95.26940155029297,
+          79.45999145507812,
+          16.712865829467773,
+          5.804986476898193,
+          13.3414945602417,
+          6.6590986251831055
+        ],
+        "max_abs_applied_torque_nm": 95.26940155029297,
+        "max_abs_computed_torque_nm": 95.26940155029297,
+        "max_applied_effort_utilization": 0.7939116795857747,
+        "max_single_foot_normal_force_n": 318.51422119140915,
+        "max_single_wheel_normal_force_n": 2338.060302734396,
+        "max_summed_wheel_normal_force_z_n": 2338.060302734375,
+        "max_wheel_downward_speed_before_m_s": 3.7473700046539307,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "runtime": {
+        "body_names": [
+          "base_link",
+          "left_hip_link",
+          "right_hip_link",
+          "left_thigh_link",
+          "right_thigh_link",
+          "left_shank_link",
+          "right_shank_link",
+          "left_foot_link",
+          "left_wheel_link",
+          "right_foot_link",
+          "right_wheel_link"
+        ],
+        "coms": [
+          [
+            0.08622747659683228,
+            -9.382000280311331e-05,
+            -0.03217460960149765,
+            -0.022581160068511963,
+            0.3610861301422119,
+            -0.03821751847863197,
+            0.9314754009246826
+          ],
+          [
+            0.009005130268633366,
+            -0.0018396199448034167,
+            0.000799469999037683,
+            -0.008289804682135582,
+            -0.0012182985665276647,
+            0.06665070354938507,
+            0.9977412223815918
+          ],
+          [
+            0.013404140248894691,
+            0.0018396199448034167,
+            0.0007994800107553601,
+            0.016379544511437416,
+            0.010768990963697433,
+            -0.08588487654924393,
+            0.9961122274398804
+          ],
+          [
+            -0.0017561400309205055,
+            -0.0164329893887043,
+            -0.19384029507637024,
+            -0.018955795094370842,
+            0.005382041912525892,
+            -0.013608413748443127,
+            0.9997133016586304
+          ],
+          [
+            0.0017490299651399255,
+            0.016432909294962883,
+            -0.19383908808231354,
+            0.01895534247159958,
+            -0.005379188805818558,
+            -0.01344207488000393,
+            0.9997155666351318
+          ],
+          [
+            -0.08977188169956207,
+            0.016440270468592644,
+            -0.011020669713616371,
+            -0.003287442261353135,
+            0.19643700122833252,
+            -0.07754892855882645,
+            0.9774395227432251
+          ],
+          [
+            -0.08975149691104889,
+            -0.016440270468592644,
+            -0.011041049845516682,
+            0.003330790903419256,
+            0.1963769942522049,
+            0.07776656746864319,
+            0.9774340987205505
+          ],
+          [
+            0.0,
+            -0.00040099999750964344,
+            0.04890105873346329,
+            0.022306330502033234,
+            0.0,
+            0.0,
+            0.9997512698173523
+          ],
+          [
+            0.0,
+            0.004360570106655359,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.00040099999750964344,
+            0.04890105873346329,
+            -0.022306330502033234,
+            0.0,
+            0.0,
+            0.9997512698173523
+          ],
+          [
+            0.0,
+            -0.004360570106655359,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "joint_damping": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "joint_stiffness": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "masses_kg": [
+          10.802294731140137,
+          1.7281856536865234,
+          1.7281856536865234,
+          2.1688711643218994,
+          2.168884515762329,
+          2.4008846282958984,
+          2.4008846282958984,
+          0.44560420513153076,
+          1.2208995819091797,
+          0.44560420513153076,
+          1.2208995819091797
+        ],
+        "material_properties": [
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ]
+        ]
+      },
+      "episodes": [
+        {
+          "episode_id": 0,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            8.794569094218081,
+            24.910913171509357
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 11.506950468179486,
+          "post_pitch_rate_rms_rad_s": 0.6512335112152304,
+          "post_height_peak_to_peak_m": 0.10374635457992554,
+          "post_wheel_velocity_rms_rad_s": 2.566785737230718,
+          "post_wheel_target_rms_rad_s": 3.4595333603902554,
+          "post_action_delta_rms": 0.18953381760216984,
+          "landing_max_single_wheel_normal_force_n": 2320.024658203146,
+          "landing_max_summed_wheel_world_z_n": 2320.024658203125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6828749179840088,
+            -1.5607244968414307
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            30.10745620727539,
+            33.879852294921875,
+            50.42251968383789,
+            52.76846694946289,
+            89.59215545654297,
+            79.4384994506836,
+            16.415699005126953,
+            3.139285087585449,
+            13.3414945602417,
+            2.059887647628784
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            30.10745620727539,
+            33.879852294921875,
+            50.42251968383789,
+            52.76846694946289,
+            89.59215545654297,
+            79.4384994506836,
+            16.415699005126953,
+            3.139285087585449,
+            13.3414945602417,
+            2.059887647628784
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 5.686923567982715,
+          "tail_pitch_error_rms_deg": 14.069806221967584,
+          "tail_pitch_rate_rms_rad_s": 0.34040191904030354,
+          "tail_wheel_velocity_rms_rad_s": 2.2568857311689268,
+          "tail_height_peak_to_peak_m": 0.06826138496398926,
+          "tail_pitch_end_deg": -16.87232693925707,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 1,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.611808336625728,
+            21.17458745898197
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.886145456099879,
+          "post_pitch_rate_rms_rad_s": 0.6440760375740237,
+          "post_height_peak_to_peak_m": 0.10024124383926392,
+          "post_wheel_velocity_rms_rad_s": 2.6416497790763502,
+          "post_wheel_target_rms_rad_s": 3.6648299019241946,
+          "post_action_delta_rms": 0.2099261926859144,
+          "landing_max_single_wheel_normal_force_n": 2338.060302734396,
+          "landing_max_summed_wheel_world_z_n": 2338.060302734375,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6725910902023315,
+            -1.55402410030365
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            30.26125144958496,
+            31.813167572021484,
+            50.30226135253906,
+            53.782684326171875,
+            89.93966674804688,
+            79.45999145507812,
+            16.257169723510742,
+            4.120734214782715,
+            7.85205602645874,
+            4.6991143226623535
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            30.26125144958496,
+            31.813167572021484,
+            50.30226135253906,
+            53.782684326171875,
+            89.93966674804688,
+            79.45999145507812,
+            16.257169723510742,
+            4.120734214782715,
+            7.85205602645874,
+            4.6991143226623535
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 3.8356315383453303,
+          "tail_pitch_error_rms_deg": 11.561699835599534,
+          "tail_pitch_rate_rms_rad_s": 0.3187560077667783,
+          "tail_wheel_velocity_rms_rad_s": 2.6020935146446607,
+          "tail_height_peak_to_peak_m": 0.061259329319000244,
+          "tail_pitch_end_deg": -12.97417837673598,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 2,
+          "landing_frame": 78,
+          "landing_time_s": 1.565,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.4210838237071,
+            16.001056332270025
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 10.199395734570292,
+          "post_pitch_rate_rms_rad_s": 0.5282927993516943,
+          "post_height_peak_to_peak_m": 0.09705358743667603,
+          "post_wheel_velocity_rms_rad_s": 2.538313504910926,
+          "post_wheel_target_rms_rad_s": 3.6488156009914596,
+          "post_action_delta_rms": 0.19488043965747834,
+          "landing_max_single_wheel_normal_force_n": 2283.4599609375205,
+          "landing_max_summed_wheel_world_z_n": 2283.4599609375,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6432101726531982,
+            -1.4802888631820679
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            30.90754508972168,
+            35.174644470214844,
+            47.57514572143555,
+            54.05780792236328,
+            93.37137603759766,
+            77.7178726196289,
+            16.6951847076416,
+            3.4506144523620605,
+            7.815245628356934,
+            4.522673606872559
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            30.90754508972168,
+            35.174644470214844,
+            47.57514572143555,
+            54.05780792236328,
+            93.37137603759766,
+            77.7178726196289,
+            16.6951847076416,
+            3.4506144523620605,
+            7.815245628356934,
+            4.522673606872559
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 4.527171781327503,
+          "tail_pitch_error_rms_deg": 11.015640839053756,
+          "tail_pitch_rate_rms_rad_s": 0.32012957378847046,
+          "tail_wheel_velocity_rms_rad_s": 2.6552277354417413,
+          "tail_height_peak_to_peak_m": 0.0598599910736084,
+          "tail_pitch_end_deg": -13.821601667151288,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 3,
+          "landing_frame": 78,
+          "landing_time_s": 1.565,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.45960665858853,
+            15.752976392906936
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 10.236879530362957,
+          "post_pitch_rate_rms_rad_s": 0.5269364297364979,
+          "post_height_peak_to_peak_m": 0.09488385915756226,
+          "post_wheel_velocity_rms_rad_s": 2.8700105279282315,
+          "post_wheel_target_rms_rad_s": 3.579393643564768,
+          "post_action_delta_rms": 0.20640163478144868,
+          "landing_max_single_wheel_normal_force_n": 1813.9018554687664,
+          "landing_max_summed_wheel_world_z_n": 2007.8079071044922,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6363131999969482,
+            -1.4719722270965576
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            30.17351722717285,
+            34.28335189819336,
+            47.62578201293945,
+            52.64895248413086,
+            94.53868865966797,
+            77.40885162353516,
+            16.07299041748047,
+            4.462862491607666,
+            7.46356725692749,
+            6.6590986251831055
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            30.17351722717285,
+            34.28335189819336,
+            47.62578201293945,
+            52.64895248413086,
+            94.53868865966797,
+            77.40885162353516,
+            16.07299041748047,
+            4.462862491607666,
+            7.46356725692749,
+            6.6590986251831055
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 3.069844780701553,
+          "tail_pitch_error_rms_deg": 11.319605218819003,
+          "tail_pitch_rate_rms_rad_s": 0.2795309436214646,
+          "tail_wheel_velocity_rms_rad_s": 3.2684659632784756,
+          "tail_height_peak_to_peak_m": 0.06517910957336426,
+          "tail_pitch_end_deg": -12.602026471571818,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 4,
+          "landing_frame": 77,
+          "landing_time_s": 1.56,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.953181968932473,
+            20.794450973547324
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 10.81217786658484,
+          "post_pitch_rate_rms_rad_s": 0.5891421130898827,
+          "post_height_peak_to_peak_m": 0.10307580232620239,
+          "post_wheel_velocity_rms_rad_s": 2.531277060528347,
+          "post_wheel_target_rms_rad_s": 3.553623888858576,
+          "post_action_delta_rms": 0.19464536718091877,
+          "landing_max_single_wheel_normal_force_n": 2270.5571289062705,
+          "landing_max_summed_wheel_world_z_n": 2270.55712890625,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6550793647766113,
+            -1.5199830532073975
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            31.9229679107666,
+            34.30049133300781,
+            48.76787567138672,
+            53.60152053833008,
+            91.90725708007812,
+            78.69087982177734,
+            16.553848266601562,
+            4.37286376953125,
+            8.072205543518066,
+            2.2833986282348633
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            31.9229679107666,
+            34.30049133300781,
+            48.76787567138672,
+            53.60152053833008,
+            91.90725708007812,
+            78.69087982177734,
+            16.553848266601562,
+            4.37286376953125,
+            8.072205543518066,
+            2.2833986282348633
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.760211130233031,
+          "tail_pitch_error_rms_deg": 12.312839299655261,
+          "tail_pitch_rate_rms_rad_s": 0.3338692790873294,
+          "tail_wheel_velocity_rms_rad_s": 2.3975539919097844,
+          "tail_height_peak_to_peak_m": 0.06977403163909912,
+          "tail_pitch_end_deg": -15.327368712003437,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 5,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.01206352279026,
+            18.383854096977142
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.730457918660774,
+          "post_pitch_rate_rms_rad_s": 0.5670128900930256,
+          "post_height_peak_to_peak_m": 0.10557633638381958,
+          "post_wheel_velocity_rms_rad_s": 2.6127738685333894,
+          "post_wheel_target_rms_rad_s": 3.452450033753044,
+          "post_action_delta_rms": 0.1881748678051294,
+          "landing_max_single_wheel_normal_force_n": 2197.260498046895,
+          "landing_max_summed_wheel_world_z_n": 2197.260498046875,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.644675374031067,
+            -1.4508671760559082
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            34.6810302734375,
+            39.728065490722656,
+            47.16437911987305,
+            57.314788818359375,
+            95.26940155029297,
+            75.72698974609375,
+            16.712865829467773,
+            3.513383150100708,
+            7.748821258544922,
+            2.769753932952881
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            34.6810302734375,
+            39.728065490722656,
+            47.16437911987305,
+            57.314788818359375,
+            95.26940155029297,
+            75.72698974609375,
+            16.712865829467773,
+            3.513383150100708,
+            7.748821258544922,
+            2.769753932952881
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 11.262803145991354,
+          "tail_pitch_error_rms_deg": 10.44088610755451,
+          "tail_pitch_rate_rms_rad_s": 0.5007604585901236,
+          "tail_wheel_velocity_rms_rad_s": 2.2557538810690727,
+          "tail_height_peak_to_peak_m": 0.04886126518249512,
+          "tail_pitch_end_deg": -17.646158620918648,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 6,
+          "landing_frame": 77,
+          "landing_time_s": 1.56,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.983259495551646,
+            21.572580581988994
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 11.219686405979726,
+          "post_pitch_rate_rms_rad_s": 0.6188368159914314,
+          "post_height_peak_to_peak_m": 0.10471153259277344,
+          "post_wheel_velocity_rms_rad_s": 2.4559317364369013,
+          "post_wheel_target_rms_rad_s": 3.3442701346507206,
+          "post_action_delta_rms": 0.18543970084608358,
+          "landing_max_single_wheel_normal_force_n": 1678.3294677734527,
+          "landing_max_summed_wheel_world_z_n": 1698.4661407470703,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6427861452102661,
+            -1.5061551332473755
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            32.92625045776367,
+            32.72886657714844,
+            48.883460998535156,
+            53.844505310058594,
+            92.0353775024414,
+            78.72694396972656,
+            16.06686782836914,
+            5.804986476898193,
+            7.781928539276123,
+            2.8953917026519775
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            32.92625045776367,
+            32.72886657714844,
+            48.883460998535156,
+            53.844505310058594,
+            92.0353775024414,
+            78.72694396972656,
+            16.06686782836914,
+            5.804986476898193,
+            7.781928539276123,
+            2.8953917026519775
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.835963262892438,
+          "tail_pitch_error_rms_deg": 12.574535617903077,
+          "tail_pitch_rate_rms_rad_s": 0.31857558562284566,
+          "tail_wheel_velocity_rms_rad_s": 2.2135963993727037,
+          "tail_height_peak_to_peak_m": 0.0638190507888794,
+          "tail_pitch_end_deg": -15.63889523071562,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        }
+      ],
+      "averages": {
+        "post_pitch_error_rms_deg": 10.51309905434828,
+        "post_pitch_rate_rms_rad_s": 0.5893615138645408,
+        "tail_pitch_peak_to_peak_deg": 5.4255070296391334,
+        "tail_pitch_error_rms_deg": 11.899287591507532,
+        "tail_pitch_rate_rms_rad_s": 0.34457482393104516,
+        "tail_wheel_velocity_rms_rad_s": 2.5213681738407665,
+        "landing_max_single_wheel_normal_force_n": 2128.7991245814924,
+        "landing_max_summed_wheel_world_z_n": 2159.3766566685267
+      }
+    },
+    {
+      "attempt_id": "zero-delay-a01",
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-30_19-50-46/evaluations/landing-sway-20261001-001/raw/zero-delay-a01/result.json",
+        "sha256": "ca60301884fa5e6202369888046c369e854aef4b036fef064313a8b2a27aeda3"
+      },
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-30_19-50-46/evaluations/landing-sway-20261001-001/raw/zero-delay-a01/telemetry.json.gz",
+        "sha256": "777e2f3c1a11d0158de09445a9e7bea4bfb7d19f9a55010cf3abd2434a3c4a23"
+      },
+      "metrics": {
+        "action_rate_rms": 0.22814237842233878,
+        "anchor_orientation_rmse_rad": 0.15095923658023788,
+        "anchor_position_rmse_m": 0.05964990199118633,
+        "body_orientation_rmse_rad": 0.1454537050391248,
+        "body_position_rmse_m": 0.03597685420100528,
+        "censored_episodes": 1,
+        "completed_episodes": 7,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 7,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 7,
+        "max_abs_action": 9.997170448303223,
+        "max_abs_applied_torque": 77.24388122558594,
+        "max_joint_effort_utilization": 0.6436990102132162,
+        "mean_reward": 0.08764782272325829,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.16083228744801162,
+        "real_time_factor": 1.1048643839855532,
+        "successful_motion_episodes": 7,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 7,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 1.9492906953406655
+      },
+      "physics_window_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 0,
+        "max_abs_applied_torque_by_joint_nm": [
+          35.631813049316406,
+          29.47028350830078,
+          50.33750915527344,
+          53.62282943725586,
+          90.10025787353516,
+          79.36135864257812,
+          15.48674201965332,
+          6.113293170928955,
+          7.763845443725586,
+          4.866146564483643
+        ],
+        "max_abs_applied_torque_nm": 90.10025787353516,
+        "max_abs_computed_torque_nm": 90.10025787353516,
+        "max_applied_effort_utilization": 0.7508354822794596,
+        "max_single_foot_normal_force_n": 318.1893005371123,
+        "max_single_wheel_normal_force_n": 2387.5004882812714,
+        "max_summed_wheel_normal_force_z_n": 2387.50048828125,
+        "max_wheel_downward_speed_before_m_s": 3.7055952548980713,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "runtime": {
+        "body_names": [
+          "base_link",
+          "left_hip_link",
+          "right_hip_link",
+          "left_thigh_link",
+          "right_thigh_link",
+          "left_shank_link",
+          "right_shank_link",
+          "left_foot_link",
+          "left_wheel_link",
+          "right_foot_link",
+          "right_wheel_link"
+        ],
+        "coms": [
+          [
+            0.08622747659683228,
+            -9.382000280311331e-05,
+            -0.03217460960149765,
+            -0.022581160068511963,
+            0.3610861301422119,
+            -0.03821751847863197,
+            0.9314754009246826
+          ],
+          [
+            0.009005130268633366,
+            -0.0018396199448034167,
+            0.000799469999037683,
+            -0.008289804682135582,
+            -0.0012182985665276647,
+            0.06665070354938507,
+            0.9977412223815918
+          ],
+          [
+            0.013404140248894691,
+            0.0018396199448034167,
+            0.0007994800107553601,
+            0.016379544511437416,
+            0.010768990963697433,
+            -0.08588487654924393,
+            0.9961122274398804
+          ],
+          [
+            -0.0017561400309205055,
+            -0.0164329893887043,
+            -0.19384029507637024,
+            -0.018955795094370842,
+            0.005382041912525892,
+            -0.013608413748443127,
+            0.9997133016586304
+          ],
+          [
+            0.0017490299651399255,
+            0.016432909294962883,
+            -0.19383908808231354,
+            0.01895534247159958,
+            -0.005379188805818558,
+            -0.01344207488000393,
+            0.9997155666351318
+          ],
+          [
+            -0.08977188169956207,
+            0.016440270468592644,
+            -0.011020669713616371,
+            -0.003287442261353135,
+            0.19643700122833252,
+            -0.07754892855882645,
+            0.9774395227432251
+          ],
+          [
+            -0.08975149691104889,
+            -0.016440270468592644,
+            -0.011041049845516682,
+            0.003330790903419256,
+            0.1963769942522049,
+            0.07776656746864319,
+            0.9774340987205505
+          ],
+          [
+            0.0,
+            -0.00040099999750964344,
+            0.04890105873346329,
+            0.022306330502033234,
+            0.0,
+            0.0,
+            0.9997512698173523
+          ],
+          [
+            0.0,
+            0.004360570106655359,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.00040099999750964344,
+            0.04890105873346329,
+            -0.022306330502033234,
+            0.0,
+            0.0,
+            0.9997512698173523
+          ],
+          [
+            0.0,
+            -0.004360570106655359,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "joint_damping": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "joint_stiffness": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "masses_kg": [
+          10.802294731140137,
+          1.7281856536865234,
+          1.7281856536865234,
+          2.1688711643218994,
+          2.168884515762329,
+          2.4008846282958984,
+          2.4008846282958984,
+          0.44560420513153076,
+          1.2208995819091797,
+          0.44560420513153076,
+          1.2208995819091797
+        ],
+        "material_properties": [
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ]
+        ]
+      },
+      "episodes": [
+        {
+          "episode_id": 0,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.459613771248554,
+            21.018283031509732
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.92432712085405,
+          "post_pitch_rate_rms_rad_s": 0.644758545407119,
+          "post_height_peak_to_peak_m": 0.100685715675354,
+          "post_wheel_velocity_rms_rad_s": 2.5423694292074606,
+          "post_wheel_target_rms_rad_s": 3.584785732590517,
+          "post_action_delta_rms": 0.21343532324017686,
+          "landing_max_single_wheel_normal_force_n": 2387.5004882812714,
+          "landing_max_summed_wheel_world_z_n": 2387.50048828125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6741985082626343,
+            -1.5520975589752197
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.021565515295098,
+          "tail_pitch_error_rms_deg": 10.925328944801473,
+          "tail_pitch_rate_rms_rad_s": 0.3140606617169819,
+          "tail_wheel_velocity_rms_rad_s": 2.7444899158319283,
+          "tail_height_peak_to_peak_m": 0.06427842378616333,
+          "tail_pitch_end_deg": -12.961698627024264,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 1,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.459613771248554,
+            21.018283031509732
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.92432712085405,
+          "post_pitch_rate_rms_rad_s": 0.644758545407119,
+          "post_height_peak_to_peak_m": 0.100685715675354,
+          "post_wheel_velocity_rms_rad_s": 2.5423694292074606,
+          "post_wheel_target_rms_rad_s": 3.584785732590517,
+          "post_action_delta_rms": 0.21343532324017686,
+          "landing_max_single_wheel_normal_force_n": 2387.5004882812714,
+          "landing_max_summed_wheel_world_z_n": 2387.50048828125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6741985082626343,
+            -1.5520975589752197
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.021565515295098,
+          "tail_pitch_error_rms_deg": 10.925328944801473,
+          "tail_pitch_rate_rms_rad_s": 0.3140606617169819,
+          "tail_wheel_velocity_rms_rad_s": 2.7444899158319283,
+          "tail_height_peak_to_peak_m": 0.06427842378616333,
+          "tail_pitch_end_deg": -12.961698627024264,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 2,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.459613771248554,
+            21.018283031509732
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.92432712085405,
+          "post_pitch_rate_rms_rad_s": 0.644758545407119,
+          "post_height_peak_to_peak_m": 0.100685715675354,
+          "post_wheel_velocity_rms_rad_s": 2.5423694292074606,
+          "post_wheel_target_rms_rad_s": 3.584785732590517,
+          "post_action_delta_rms": 0.21343532324017686,
+          "landing_max_single_wheel_normal_force_n": 2387.5004882812714,
+          "landing_max_summed_wheel_world_z_n": 2387.50048828125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6741985082626343,
+            -1.5520975589752197
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.021565515295098,
+          "tail_pitch_error_rms_deg": 10.925328944801473,
+          "tail_pitch_rate_rms_rad_s": 0.3140606617169819,
+          "tail_wheel_velocity_rms_rad_s": 2.7444899158319283,
+          "tail_height_peak_to_peak_m": 0.06427842378616333,
+          "tail_pitch_end_deg": -12.961698627024264,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 3,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.459613771248554,
+            21.018283031509732
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.92432712085405,
+          "post_pitch_rate_rms_rad_s": 0.644758545407119,
+          "post_height_peak_to_peak_m": 0.100685715675354,
+          "post_wheel_velocity_rms_rad_s": 2.5423694292074606,
+          "post_wheel_target_rms_rad_s": 3.584785732590517,
+          "post_action_delta_rms": 0.21343532324017686,
+          "landing_max_single_wheel_normal_force_n": 2387.5004882812714,
+          "landing_max_summed_wheel_world_z_n": 2387.50048828125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6741985082626343,
+            -1.5520975589752197
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.021565515295098,
+          "tail_pitch_error_rms_deg": 10.925328944801473,
+          "tail_pitch_rate_rms_rad_s": 0.3140606617169819,
+          "tail_wheel_velocity_rms_rad_s": 2.7444899158319283,
+          "tail_height_peak_to_peak_m": 0.06427842378616333,
+          "tail_pitch_end_deg": -12.961698627024264,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 4,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.459613771248554,
+            21.018283031509732
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.92432712085405,
+          "post_pitch_rate_rms_rad_s": 0.644758545407119,
+          "post_height_peak_to_peak_m": 0.100685715675354,
+          "post_wheel_velocity_rms_rad_s": 2.5423694292074606,
+          "post_wheel_target_rms_rad_s": 3.584785732590517,
+          "post_action_delta_rms": 0.21343532324017686,
+          "landing_max_single_wheel_normal_force_n": 2387.5004882812714,
+          "landing_max_summed_wheel_world_z_n": 2387.50048828125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6741985082626343,
+            -1.5520975589752197
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.021565515295098,
+          "tail_pitch_error_rms_deg": 10.925328944801473,
+          "tail_pitch_rate_rms_rad_s": 0.3140606617169819,
+          "tail_wheel_velocity_rms_rad_s": 2.7444899158319283,
+          "tail_height_peak_to_peak_m": 0.06427842378616333,
+          "tail_pitch_end_deg": -12.961698627024264,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 5,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.459613771248554,
+            21.018283031509732
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.92432712085405,
+          "post_pitch_rate_rms_rad_s": 0.644758545407119,
+          "post_height_peak_to_peak_m": 0.100685715675354,
+          "post_wheel_velocity_rms_rad_s": 2.5423694292074606,
+          "post_wheel_target_rms_rad_s": 3.584785732590517,
+          "post_action_delta_rms": 0.21343532324017686,
+          "landing_max_single_wheel_normal_force_n": 2387.5004882812714,
+          "landing_max_summed_wheel_world_z_n": 2387.50048828125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6741985082626343,
+            -1.5520975589752197
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.021565515295098,
+          "tail_pitch_error_rms_deg": 10.925328944801473,
+          "tail_pitch_rate_rms_rad_s": 0.3140606617169819,
+          "tail_wheel_velocity_rms_rad_s": 2.7444899158319283,
+          "tail_height_peak_to_peak_m": 0.06427842378616333,
+          "tail_pitch_end_deg": -12.961698627024264,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 6,
+          "landing_frame": 77,
+          "landing_time_s": 1.555,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            10.459613771248554,
+            21.018283031509732
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.92432712085405,
+          "post_pitch_rate_rms_rad_s": 0.644758545407119,
+          "post_height_peak_to_peak_m": 0.100685715675354,
+          "post_wheel_velocity_rms_rad_s": 2.5423694292074606,
+          "post_wheel_target_rms_rad_s": 3.584785732590517,
+          "post_action_delta_rms": 0.21343532324017686,
+          "landing_max_single_wheel_normal_force_n": 2387.5004882812714,
+          "landing_max_summed_wheel_world_z_n": 2387.50048828125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6741985082626343,
+            -1.5520975589752197
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            35.631813049316406,
+            29.47028350830078,
+            50.33750915527344,
+            53.62282943725586,
+            90.10025787353516,
+            79.36135864257812,
+            15.48674201965332,
+            6.113293170928955,
+            7.763845443725586,
+            4.866146564483643
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 4.021565515295098,
+          "tail_pitch_error_rms_deg": 10.925328944801473,
+          "tail_pitch_rate_rms_rad_s": 0.3140606617169819,
+          "tail_wheel_velocity_rms_rad_s": 2.7444899158319283,
+          "tail_height_peak_to_peak_m": 0.06427842378616333,
+          "tail_pitch_end_deg": -12.961698627024264,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        }
+      ],
+      "averages": {
+        "post_pitch_error_rms_deg": 9.92432712085405,
+        "post_pitch_rate_rms_rad_s": 0.644758545407119,
+        "tail_pitch_peak_to_peak_deg": 4.021565515295098,
+        "tail_pitch_error_rms_deg": 10.925328944801475,
+        "tail_pitch_rate_rms_rad_s": 0.3140606617169818,
+        "tail_wheel_velocity_rms_rad_s": 2.744489915831928,
+        "landing_max_single_wheel_normal_force_n": 2387.5004882812714,
+        "landing_max_summed_wheel_world_z_n": 2387.50048828125
+      }
+    },
+    {
+      "attempt_id": "fixed-15ms-a01",
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-30_19-50-46/evaluations/landing-sway-20261001-001/raw/fixed-15ms-a01/result.json",
+        "sha256": "1c9c33582b8cb4af03574ed61c21859dd1b2d3c593ae3e355a282737c7f1472e"
+      },
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-30_19-50-46/evaluations/landing-sway-20261001-001/raw/fixed-15ms-a01/telemetry.json.gz",
+        "sha256": "8a65dd8cf900bb383c53c55ba168f2da38d378f4695e68c2db0f5d0878b87753"
+      },
+      "metrics": {
+        "action_rate_rms": 0.2233531721414696,
+        "anchor_orientation_rmse_rad": 0.16279271975503246,
+        "anchor_position_rmse_m": 0.05866796865757947,
+        "body_orientation_rmse_rad": 0.15712349607315096,
+        "body_position_rmse_m": 0.03868374574209187,
+        "censored_episodes": 1,
+        "completed_episodes": 7,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 7,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 7,
+        "max_abs_action": 9.628665924072266,
+        "max_abs_applied_torque": 95.22929382324219,
+        "max_joint_effort_utilization": 0.7935774485270183,
+        "mean_reward": 0.08717900224248297,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.16273208969450975,
+        "real_time_factor": 1.1111370548066588,
+        "successful_motion_episodes": 7,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 7,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 2.0971695604567255
+      },
+      "physics_window_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          3,
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 6,
+        "max_abs_applied_torque_by_joint_nm": [
+          38.75894546508789,
+          36.82117462158203,
+          48.17425537109375,
+          55.51126480102539,
+          120.0,
+          120.0,
+          17.227121353149414,
+          8.241572380065918,
+          13.3414945602417,
+          6.8300089836120605
+        ],
+        "max_abs_applied_torque_nm": 120.0,
+        "max_abs_computed_torque_nm": 200.28924560546875,
+        "max_applied_effort_utilization": 1.0,
+        "max_single_foot_normal_force_n": 969.989318847665,
+        "max_single_wheel_normal_force_n": 2246.2080078125205,
+        "max_summed_wheel_normal_force_z_n": 2246.2080078125,
+        "max_wheel_downward_speed_before_m_s": 3.7454376220703125,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "runtime": {
+        "body_names": [
+          "base_link",
+          "left_hip_link",
+          "right_hip_link",
+          "left_thigh_link",
+          "right_thigh_link",
+          "left_shank_link",
+          "right_shank_link",
+          "left_foot_link",
+          "left_wheel_link",
+          "right_foot_link",
+          "right_wheel_link"
+        ],
+        "coms": [
+          [
+            0.08622747659683228,
+            -9.382000280311331e-05,
+            -0.03217460960149765,
+            -0.022581160068511963,
+            0.3610861301422119,
+            -0.03821751847863197,
+            0.9314754009246826
+          ],
+          [
+            0.009005130268633366,
+            -0.0018396199448034167,
+            0.000799469999037683,
+            -0.008289804682135582,
+            -0.0012182985665276647,
+            0.06665070354938507,
+            0.9977412223815918
+          ],
+          [
+            0.013404140248894691,
+            0.0018396199448034167,
+            0.0007994800107553601,
+            0.016379544511437416,
+            0.010768990963697433,
+            -0.08588487654924393,
+            0.9961122274398804
+          ],
+          [
+            -0.0017561400309205055,
+            -0.0164329893887043,
+            -0.19384029507637024,
+            -0.018955795094370842,
+            0.005382041912525892,
+            -0.013608413748443127,
+            0.9997133016586304
+          ],
+          [
+            0.0017490299651399255,
+            0.016432909294962883,
+            -0.19383908808231354,
+            0.01895534247159958,
+            -0.005379188805818558,
+            -0.01344207488000393,
+            0.9997155666351318
+          ],
+          [
+            -0.08977188169956207,
+            0.016440270468592644,
+            -0.011020669713616371,
+            -0.003287442261353135,
+            0.19643700122833252,
+            -0.07754892855882645,
+            0.9774395227432251
+          ],
+          [
+            -0.08975149691104889,
+            -0.016440270468592644,
+            -0.011041049845516682,
+            0.003330790903419256,
+            0.1963769942522049,
+            0.07776656746864319,
+            0.9774340987205505
+          ],
+          [
+            0.0,
+            -0.00040099999750964344,
+            0.04890105873346329,
+            0.022306330502033234,
+            0.0,
+            0.0,
+            0.9997512698173523
+          ],
+          [
+            0.0,
+            0.004360570106655359,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.00040099999750964344,
+            0.04890105873346329,
+            -0.022306330502033234,
+            0.0,
+            0.0,
+            0.9997512698173523
+          ],
+          [
+            0.0,
+            -0.004360570106655359,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "joint_damping": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "joint_stiffness": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "masses_kg": [
+          10.802294731140137,
+          1.7281856536865234,
+          1.7281856536865234,
+          2.1688711643218994,
+          2.168884515762329,
+          2.4008846282958984,
+          2.4008846282958984,
+          0.44560420513153076,
+          1.2208995819091797,
+          0.44560420513153076,
+          1.2208995819091797
+        ],
+        "material_properties": [
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            1.0,
+            0.0
+          ]
+        ]
+      },
+      "episodes": [
+        {
+          "episode_id": 0,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            8.09616588016258,
+            14.22995844372182
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 5.822039138715306,
+          "post_pitch_rate_rms_rad_s": 0.5028530190472006,
+          "post_height_peak_to_peak_m": 0.0956307053565979,
+          "post_wheel_velocity_rms_rad_s": 2.449775966859113,
+          "post_wheel_target_rms_rad_s": 4.212918444513783,
+          "post_action_delta_rms": 0.14531741284329103,
+          "landing_max_single_wheel_normal_force_n": 2206.37109375002,
+          "landing_max_summed_wheel_world_z_n": 2206.37109375,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6645983457565308,
+            -1.438122272491455
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            38.75894546508789,
+            20.043203353881836,
+            48.17425537109375,
+            45.36570358276367,
+            120.0,
+            120.0,
+            17.227121353149414,
+            4.632462501525879,
+            13.3414945602417,
+            6.8300089836120605
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            38.75894546508789,
+            20.043203353881836,
+            48.17425537109375,
+            45.36570358276367,
+            200.28924560546875,
+            200.28863525390625,
+            17.227121353149414,
+            4.632462501525879,
+            13.3414945602417,
+            6.8300089836120605
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 9.746801279624751,
+          "tail_pitch_error_rms_deg": 7.5738073958913015,
+          "tail_pitch_rate_rms_rad_s": 0.4060664207479888,
+          "tail_wheel_velocity_rms_rad_s": 2.6380687377199554,
+          "tail_height_peak_to_peak_m": 0.04302090406417847,
+          "tail_pitch_end_deg": -13.382317622381427,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 1,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.761590516321704,
+            16.20714236421232
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 11.415860948438654,
+          "post_pitch_rate_rms_rad_s": 0.5529439372353281,
+          "post_height_peak_to_peak_m": 0.08895444869995117,
+          "post_wheel_velocity_rms_rad_s": 2.8140971745829644,
+          "post_wheel_target_rms_rad_s": 3.4746314158744847,
+          "post_action_delta_rms": 0.19537311475943286,
+          "landing_max_single_wheel_normal_force_n": 2246.2080078125205,
+          "landing_max_summed_wheel_world_z_n": 2246.2080078125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6466262340545654,
+            -1.4463473558425903
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 3.642309588592237,
+          "tail_pitch_error_rms_deg": 13.437648921289291,
+          "tail_pitch_rate_rms_rad_s": 0.2964582099064561,
+          "tail_wheel_velocity_rms_rad_s": 2.5144999834926414,
+          "tail_height_peak_to_peak_m": 0.05923980474472046,
+          "tail_pitch_end_deg": -14.199464876100144,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 2,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.761590516321704,
+            16.20714236421232
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 11.415860948438654,
+          "post_pitch_rate_rms_rad_s": 0.5529439372353281,
+          "post_height_peak_to_peak_m": 0.08895444869995117,
+          "post_wheel_velocity_rms_rad_s": 2.8140971745829644,
+          "post_wheel_target_rms_rad_s": 3.4746314158744847,
+          "post_action_delta_rms": 0.19537311475943286,
+          "landing_max_single_wheel_normal_force_n": 2246.2080078125205,
+          "landing_max_summed_wheel_world_z_n": 2246.2080078125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6466262340545654,
+            -1.4463473558425903
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 3.642309588592237,
+          "tail_pitch_error_rms_deg": 13.437648921289291,
+          "tail_pitch_rate_rms_rad_s": 0.2964582099064561,
+          "tail_wheel_velocity_rms_rad_s": 2.5144999834926414,
+          "tail_height_peak_to_peak_m": 0.05923980474472046,
+          "tail_pitch_end_deg": -14.199464876100144,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 3,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.761590516321704,
+            16.20714236421232
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 11.415860948438654,
+          "post_pitch_rate_rms_rad_s": 0.5529439372353281,
+          "post_height_peak_to_peak_m": 0.08895444869995117,
+          "post_wheel_velocity_rms_rad_s": 2.8140971745829644,
+          "post_wheel_target_rms_rad_s": 3.4746314158744847,
+          "post_action_delta_rms": 0.19537311475943286,
+          "landing_max_single_wheel_normal_force_n": 2246.2080078125205,
+          "landing_max_summed_wheel_world_z_n": 2246.2080078125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6466262340545654,
+            -1.4463473558425903
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 3.642309588592237,
+          "tail_pitch_error_rms_deg": 13.437648921289291,
+          "tail_pitch_rate_rms_rad_s": 0.2964582099064561,
+          "tail_wheel_velocity_rms_rad_s": 2.5144999834926414,
+          "tail_height_peak_to_peak_m": 0.05923980474472046,
+          "tail_pitch_end_deg": -14.199464876100144,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 4,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.761590516321704,
+            16.20714236421232
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 11.415860948438654,
+          "post_pitch_rate_rms_rad_s": 0.5529439372353281,
+          "post_height_peak_to_peak_m": 0.08895444869995117,
+          "post_wheel_velocity_rms_rad_s": 2.8140971745829644,
+          "post_wheel_target_rms_rad_s": 3.4746314158744847,
+          "post_action_delta_rms": 0.19537311475943286,
+          "landing_max_single_wheel_normal_force_n": 2246.2080078125205,
+          "landing_max_summed_wheel_world_z_n": 2246.2080078125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6466262340545654,
+            -1.4463473558425903
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 3.642309588592237,
+          "tail_pitch_error_rms_deg": 13.437648921289291,
+          "tail_pitch_rate_rms_rad_s": 0.2964582099064561,
+          "tail_wheel_velocity_rms_rad_s": 2.5144999834926414,
+          "tail_height_peak_to_peak_m": 0.05923980474472046,
+          "tail_pitch_end_deg": -14.199464876100144,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 5,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.761590516321704,
+            16.20714236421232
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 11.415860948438654,
+          "post_pitch_rate_rms_rad_s": 0.5529439372353281,
+          "post_height_peak_to_peak_m": 0.08895444869995117,
+          "post_wheel_velocity_rms_rad_s": 2.8140971745829644,
+          "post_wheel_target_rms_rad_s": 3.4746314158744847,
+          "post_action_delta_rms": 0.19537311475943286,
+          "landing_max_single_wheel_normal_force_n": 2246.2080078125205,
+          "landing_max_summed_wheel_world_z_n": 2246.2080078125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6466262340545654,
+            -1.4463473558425903
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 3.642309588592237,
+          "tail_pitch_error_rms_deg": 13.437648921289291,
+          "tail_pitch_rate_rms_rad_s": 0.2964582099064561,
+          "tail_wheel_velocity_rms_rad_s": 2.5144999834926414,
+          "tail_height_peak_to_peak_m": 0.05923980474472046,
+          "tail_pitch_end_deg": -14.199464876100144,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 6,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.761590516321704,
+            16.20714236421232
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 11.415860948438654,
+          "post_pitch_rate_rms_rad_s": 0.5529439372353281,
+          "post_height_peak_to_peak_m": 0.08895444869995117,
+          "post_wheel_velocity_rms_rad_s": 2.8140971745829644,
+          "post_wheel_target_rms_rad_s": 3.4746314158744847,
+          "post_action_delta_rms": 0.19537311475943286,
+          "landing_max_single_wheel_normal_force_n": 2246.2080078125205,
+          "landing_max_summed_wheel_world_z_n": 2246.2080078125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.6466262340545654,
+            -1.4463473558425903
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            32.55727767944336,
+            36.82117462158203,
+            47.02566909790039,
+            55.51126480102539,
+            95.22929382324219,
+            75.96884155273438,
+            16.750333786010742,
+            8.241572380065918,
+            7.651772499084473,
+            4.498172760009766
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 3.642309588592237,
+          "tail_pitch_error_rms_deg": 13.437648921289291,
+          "tail_pitch_rate_rms_rad_s": 0.2964582099064561,
+          "tail_wheel_velocity_rms_rad_s": 2.5144999834926414,
+          "tail_height_peak_to_peak_m": 0.05923980474472046,
+          "tail_pitch_end_deg": -14.199464876100144,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        }
+      ],
+      "averages": {
+        "post_pitch_error_rms_deg": 10.616743547049605,
+        "post_pitch_rate_rms_rad_s": 0.5457880917798812,
+        "tail_pitch_peak_to_peak_deg": 4.514379830168311,
+        "tail_pitch_error_rms_deg": 12.599957274803867,
+        "tail_pitch_rate_rms_rad_s": 0.31211652574096077,
+        "tail_wheel_velocity_rms_rad_s": 2.532152662667972,
+        "landing_max_single_wheel_normal_force_n": 2240.517020089306,
+        "landing_max_summed_wheel_world_z_n": 2240.517020089286
+      }
+    },
+    {
+      "attempt_id": "randomized-no-push-a01",
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-30_19-50-46/evaluations/landing-sway-20261001-001/raw/randomized-no-push-a01/result.json",
+        "sha256": "1c45b42b05a39de7a6b5c8ec080f4d39ccec0d8d545c7cb3199e152023e3c096"
+      },
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-09-30_19-50-46/evaluations/landing-sway-20261001-001/raw/randomized-no-push-a01/telemetry.json.gz",
+        "sha256": "b5531f192a0bd047334f6b6da5b308fb8d8a067ffcff6eb77f6d5343547cc833"
+      },
+      "metrics": {
+        "action_rate_rms": 0.26952466073843084,
+        "anchor_orientation_rmse_rad": 0.18941008106810225,
+        "anchor_position_rmse_m": 0.11641946392079351,
+        "body_orientation_rmse_rad": 0.18379057132667198,
+        "body_position_rmse_m": 0.0495551349562473,
+        "censored_episodes": 1,
+        "completed_episodes": 7,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 7,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 7,
+        "max_abs_action": 10.075202941894531,
+        "max_abs_applied_torque": 99.78435516357422,
+        "max_joint_effort_utilization": 0.949191340693721,
+        "mean_reward": 0.08184078051592224,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.18386079861398327,
+        "real_time_factor": 1.1085843295717352,
+        "successful_motion_episodes": 7,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 7,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 2.272936239287587
+      },
+      "physics_window_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 2,
+        "max_abs_applied_torque_by_joint_nm": [
+          40.40088653564453,
+          41.47120666503906,
+          55.92478942871094,
+          76.34971618652344,
+          120.0,
+          120.0,
+          21.925800323486328,
+          7.987892150878906,
+          25.969003677368164,
+          6.0819244384765625
+        ],
+        "max_abs_applied_torque_nm": 120.0,
+        "max_abs_computed_torque_nm": 202.1484375,
+        "max_applied_effort_utilization": 1.0,
+        "max_single_foot_normal_force_n": 1036.0148925781343,
+        "max_single_wheel_normal_force_n": 2427.069824218772,
+        "max_summed_wheel_normal_force_z_n": 3957.0401611328125,
+        "max_wheel_downward_speed_before_m_s": 3.7183282375335693,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "runtime": {
+        "body_names": [
+          "base_link",
+          "left_hip_link",
+          "right_hip_link",
+          "left_thigh_link",
+          "right_thigh_link",
+          "left_shank_link",
+          "right_shank_link",
+          "left_foot_link",
+          "left_wheel_link",
+          "right_foot_link",
+          "right_wheel_link"
+        ],
+        "coms": [
+          [
+            0.08249715715646744,
+            -0.04531175270676613,
+            -0.07805999368429184,
+            -0.022581130266189575,
+            0.36108633875846863,
+            -0.03821740671992302,
+            0.9314752817153931
+          ],
+          [
+            0.009005130268633366,
+            -0.0018396199448034167,
+            0.000799469999037683,
+            -0.008289779536426067,
+            -0.0012182968202978373,
+            0.06665069609880447,
+            0.997741162776947
+          ],
+          [
+            0.013404140248894691,
+            0.0018396199448034167,
+            0.0007994800107553601,
+            0.016379544511437416,
+            0.01076898630708456,
+            -0.08588492125272751,
+            0.9961122870445251
+          ],
+          [
+            -0.0017561400309205055,
+            -0.0164329893887043,
+            -0.19384029507637024,
+            -0.018955795094370842,
+            0.005382041912525892,
+            -0.013608433306217194,
+            0.9997133016586304
+          ],
+          [
+            0.0017490299651399255,
+            0.016432909294962883,
+            -0.19383908808231354,
+            0.01895534060895443,
+            -0.00537919020280242,
+            -0.013442052528262138,
+            0.9997155666351318
+          ],
+          [
+            -0.08977188169956207,
+            0.016440270468592644,
+            -0.011020669713616371,
+            -0.003287505591288209,
+            0.1964370161294937,
+            -0.0775492861866951,
+            0.9774394631385803
+          ],
+          [
+            -0.08975149691104889,
+            -0.016440270468592644,
+            -0.011041049845516682,
+            0.003330770181491971,
+            0.1963770091533661,
+            0.07776649296283722,
+            0.9774340987205505
+          ],
+          [
+            0.0,
+            -0.00040099999750964344,
+            0.04890105873346329,
+            0.02230631560087204,
+            0.0,
+            0.0,
+            0.9997512698173523
+          ],
+          [
+            0.0,
+            0.004360570106655359,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.00040099999750964344,
+            0.04890105873346329,
+            -0.02230631560087204,
+            0.0,
+            0.0,
+            0.9997512698173523
+          ],
+          [
+            0.0,
+            -0.004360570106655359,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "joint_damping": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "joint_stiffness": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "masses_kg": [
+          12.886627197265625,
+          1.7281856536865234,
+          1.7281856536865234,
+          2.1688711643218994,
+          2.168884515762329,
+          2.4008846282958984,
+          2.4008846282958984,
+          0.44560420513153076,
+          1.2208995819091797,
+          0.44560420513153076,
+          1.2208995819091797
+        ],
+        "material_properties": [
+          [
+            0.43690937757492065,
+            0.43690937757492065,
+            0.1794063150882721
+          ],
+          [
+            1.223557472229004,
+            1.151769995689392,
+            0.39451488852500916
+          ],
+          [
+            1.223557472229004,
+            1.151769995689392,
+            0.39451488852500916
+          ],
+          [
+            0.44146355986595154,
+            0.44146355986595154,
+            0.3512600362300873
+          ],
+          [
+            0.5095406770706177,
+            0.4411221742630005,
+            0.10414955019950867
+          ],
+          [
+            1.1818110942840576,
+            1.098318099975586,
+            0.01463991403579712
+          ],
+          [
+            1.0513029098510742,
+            1.0513029098510742,
+            0.2773299217224121
+          ],
+          [
+            1.1135836839675903,
+            0.5564433336257935,
+            0.22260379791259766
+          ],
+          [
+            1.1930527687072754,
+            0.6709253787994385,
+            0.18379968404769897
+          ],
+          [
+            1.391875982284546,
+            0.42367202043533325,
+            0.11653295159339905
+          ],
+          [
+            0.523097038269043,
+            0.523097038269043,
+            0.2890927791595459
+          ]
+        ]
+      },
+      "episodes": [
+        {
+          "episode_id": 0,
+          "landing_frame": 78,
+          "landing_time_s": 1.57,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.894905443864856,
+            22.3241733458131
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 6.295226279721815,
+          "post_pitch_rate_rms_rad_s": 0.8637635052094912,
+          "post_height_peak_to_peak_m": 0.12246149778366089,
+          "post_wheel_velocity_rms_rad_s": 2.851763563980591,
+          "post_wheel_target_rms_rad_s": 4.044162407844951,
+          "post_action_delta_rms": 0.17956044191840392,
+          "landing_max_single_wheel_normal_force_n": 1407.3160400390752,
+          "landing_max_summed_wheel_world_z_n": 1407.3160400390625,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.5328181982040405,
+            -1.254990577697754
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            31.851806640625,
+            31.892444610595703,
+            43.5364875793457,
+            45.44293212890625,
+            120.0,
+            120.0,
+            19.158891677856445,
+            7.014369487762451,
+            24.786697387695312,
+            6.0819244384765625
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            31.851806640625,
+            31.892444610595703,
+            43.5364875793457,
+            45.44293212890625,
+            192.16885375976562,
+            202.1484375,
+            19.158891677856445,
+            7.014369487762451,
+            24.786697387695312,
+            6.0819244384765625
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 7.7996402536985565,
+          "tail_pitch_error_rms_deg": 7.42577045153777,
+          "tail_pitch_rate_rms_rad_s": 0.371510154827362,
+          "tail_wheel_velocity_rms_rad_s": 2.8447380434256666,
+          "tail_height_peak_to_peak_m": 0.048921048641204834,
+          "tail_pitch_end_deg": -12.35780404677418,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 1,
+          "landing_frame": 78,
+          "landing_time_s": 1.565,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            12.033731411649251,
+            19.572820007992767
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.69547379055037,
+          "post_pitch_rate_rms_rad_s": 0.7131560929201963,
+          "post_height_peak_to_peak_m": 0.10816419124603271,
+          "post_wheel_velocity_rms_rad_s": 2.891209897958734,
+          "post_wheel_target_rms_rad_s": 3.6269489450180696,
+          "post_action_delta_rms": 0.2529475557106135,
+          "landing_max_single_wheel_normal_force_n": 1510.4637451172011,
+          "landing_max_summed_wheel_world_z_n": 2026.979736328125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.63711678981781,
+            -1.4327908754348755
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            35.101234436035156,
+            34.782012939453125,
+            50.69328689575195,
+            69.35494995117188,
+            91.78300476074219,
+            91.21507263183594,
+            21.925800323486328,
+            5.5811638832092285,
+            10.656196594238281,
+            5.572183609008789
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            35.101234436035156,
+            34.782012939453125,
+            50.69328689575195,
+            69.35494995117188,
+            91.78300476074219,
+            91.21507263183594,
+            21.925800323486328,
+            5.5811638832092285,
+            10.656196594238281,
+            5.572183609008789
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 3.255111257180988,
+          "tail_pitch_error_rms_deg": 8.832421949786568,
+          "tail_pitch_rate_rms_rad_s": 0.44502597915512027,
+          "tail_wheel_velocity_rms_rad_s": 3.6225566703173895,
+          "tail_height_peak_to_peak_m": 0.03323453664779663,
+          "tail_pitch_end_deg": -10.954064293305212,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 2,
+          "landing_frame": 78,
+          "landing_time_s": 1.575,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            11.061553483789588,
+            13.653714796649444
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 8.320178543437379,
+          "post_pitch_rate_rms_rad_s": 0.6121084293554483,
+          "post_height_peak_to_peak_m": 0.07968008518218994,
+          "post_wheel_velocity_rms_rad_s": 2.986485071994532,
+          "post_wheel_target_rms_rad_s": 3.8896179756595783,
+          "post_action_delta_rms": 0.23932023996070578,
+          "landing_max_single_wheel_normal_force_n": 1946.1528320312675,
+          "landing_max_summed_wheel_world_z_n": 2211.6698608398438,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.727449893951416,
+            -1.4497992992401123
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            34.710418701171875,
+            29.797077178955078,
+            45.689598083496094,
+            53.102664947509766,
+            95.60169219970703,
+            89.42849731445312,
+            17.89048957824707,
+            6.013155937194824,
+            10.07778263092041,
+            3.9856715202331543
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            34.710418701171875,
+            29.797077178955078,
+            45.689598083496094,
+            53.102664947509766,
+            95.60169219970703,
+            89.42849731445312,
+            17.89048957824707,
+            6.013155937194824,
+            10.07778263092041,
+            3.9856715202331543
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 5.162690805716104,
+          "tail_pitch_error_rms_deg": 7.546489606355915,
+          "tail_pitch_rate_rms_rad_s": 0.4986856745222711,
+          "tail_wheel_velocity_rms_rad_s": 3.495261721099937,
+          "tail_height_peak_to_peak_m": 0.03459954261779785,
+          "tail_pitch_end_deg": -9.986496999722437,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 3,
+          "landing_frame": 78,
+          "landing_time_s": 1.565,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            11.34736940779199,
+            23.947012271666463
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 9.151618294379738,
+          "post_pitch_rate_rms_rad_s": 0.7529232470015,
+          "post_height_peak_to_peak_m": 0.13978397846221924,
+          "post_wheel_velocity_rms_rad_s": 3.0517832996755634,
+          "post_wheel_target_rms_rad_s": 2.975268506798374,
+          "post_action_delta_rms": 0.27686840572410126,
+          "landing_max_single_wheel_normal_force_n": 1956.68029785158,
+          "landing_max_summed_wheel_world_z_n": 2217.1891479492188,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.559098243713379,
+            -1.4400681257247925
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            40.38374328613281,
+            39.65789794921875,
+            55.92478942871094,
+            66.26644134521484,
+            99.78435516357422,
+            89.46102142333984,
+            14.043121337890625,
+            4.132734298706055,
+            9.526251792907715,
+            4.04153299331665
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            40.38374328613281,
+            39.65789794921875,
+            55.92478942871094,
+            66.26644134521484,
+            99.78435516357422,
+            89.46102142333984,
+            14.043121337890625,
+            4.132734298706055,
+            9.526251792907715,
+            4.04153299331665
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 15.52578278458856,
+          "tail_pitch_error_rms_deg": 11.99298733430516,
+          "tail_pitch_rate_rms_rad_s": 0.6725808436990902,
+          "tail_wheel_velocity_rms_rad_s": 2.2401653935810257,
+          "tail_height_peak_to_peak_m": 0.06141477823257446,
+          "tail_pitch_end_deg": -16.119068955955495,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 4,
+          "landing_frame": 78,
+          "landing_time_s": 1.58,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            9.772385710300055,
+            16.333597827813414
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 3.551050612869748,
+          "post_pitch_rate_rms_rad_s": 0.8401887219746659,
+          "post_height_peak_to_peak_m": 0.11234533786773682,
+          "post_wheel_velocity_rms_rad_s": 3.3750434386304295,
+          "post_wheel_target_rms_rad_s": 4.295544988954944,
+          "post_action_delta_rms": 0.2216244837548503,
+          "landing_max_single_wheel_normal_force_n": 1626.1428222656398,
+          "landing_max_summed_wheel_world_z_n": 1646.1559448242188,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.604748010635376,
+            -1.4893865585327148
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            36.110191345214844,
+            36.62678146362305,
+            51.074832916259766,
+            43.5242919921875,
+            94.25518035888672,
+            93.834716796875,
+            14.312566757202148,
+            5.825860977172852,
+            14.798087120056152,
+            6.019881248474121
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            36.110191345214844,
+            36.62678146362305,
+            51.074832916259766,
+            43.5242919921875,
+            94.25518035888672,
+            93.834716796875,
+            14.312566757202148,
+            5.825860977172852,
+            14.798087120056152,
+            6.019881248474121
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 4.655116466055311,
+          "tail_pitch_error_rms_deg": 3.409653591173341,
+          "tail_pitch_rate_rms_rad_s": 0.48122804838011385,
+          "tail_wheel_velocity_rms_rad_s": 3.645369023758939,
+          "tail_height_peak_to_peak_m": 0.03880953788757324,
+          "tail_pitch_end_deg": -6.451371545366688,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 5,
+          "landing_frame": 78,
+          "landing_time_s": 1.565,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            11.8521209184592,
+            23.352521021774855
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 13.241645573129006,
+          "post_pitch_rate_rms_rad_s": 0.6822269592784725,
+          "post_height_peak_to_peak_m": 0.0839725136756897,
+          "post_wheel_velocity_rms_rad_s": 2.635968633667781,
+          "post_wheel_target_rms_rad_s": 3.519919592982668,
+          "post_action_delta_rms": 0.25673662991412616,
+          "landing_max_single_wheel_normal_force_n": 2427.069824218772,
+          "landing_max_summed_wheel_world_z_n": 3957.0401611328125,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.7644948959350586,
+            -1.386704444885254
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            36.631404876708984,
+            36.097068786621094,
+            45.235084533691406,
+            64.81197357177734,
+            96.94641876220703,
+            92.03923797607422,
+            14.248531341552734,
+            7.987892150878906,
+            7.713976860046387,
+            4.423938751220703
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            36.631404876708984,
+            36.097068786621094,
+            45.235084533691406,
+            64.81197357177734,
+            96.94641876220703,
+            92.03923797607422,
+            14.248531341552734,
+            7.987892150878906,
+            7.713976860046387,
+            4.423938751220703
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.28,
+          "tail_pitch_peak_to_peak_deg": 6.600545756600916,
+          "tail_pitch_error_rms_deg": 13.996058056888941,
+          "tail_pitch_rate_rms_rad_s": 0.41498839080874084,
+          "tail_wheel_velocity_rms_rad_s": 3.313636753542405,
+          "tail_height_peak_to_peak_m": 0.07597410678863525,
+          "tail_pitch_end_deg": -13.453937417926987,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        },
+        {
+          "episode_id": 6,
+          "landing_frame": 77,
+          "landing_time_s": 1.545,
+          "success": true,
+          "post_roll_pitch_peak_to_peak_deg": [
+            6.735864269970699,
+            28.217573986098454
+          ],
+          "post_reference_roll_pitch_peak_to_peak_deg": [
+            0.06659641080276585,
+            2.0263379144294884
+          ],
+          "post_pitch_error_rms_deg": 14.146258941915585,
+          "post_pitch_rate_rms_rad_s": 0.778885884914803,
+          "post_height_peak_to_peak_m": 0.14275503158569336,
+          "post_wheel_velocity_rms_rad_s": 3.3096524120586177,
+          "post_wheel_target_rms_rad_s": 3.195003185659469,
+          "post_action_delta_rms": 0.27800247524129856,
+          "landing_max_single_wheel_normal_force_n": 2036.953735351581,
+          "landing_max_summed_wheel_world_z_n": 2036.9537353515625,
+          "wheel_velocity_z_before_first_contact_m_s": [
+            -1.8185955286026,
+            -1.5933572053909302
+          ],
+          "max_abs_applied_drive_torque_by_joint_nm": [
+            40.40088653564453,
+            41.47120666503906,
+            52.827354431152344,
+            76.34971618652344,
+            88.68695068359375,
+            81.17125701904297,
+            13.577707290649414,
+            7.709563255310059,
+            12.95242691040039,
+            4.358111381530762
+          ],
+          "max_abs_computed_drive_torque_by_joint_nm": [
+            40.40088653564453,
+            41.47120666503906,
+            52.827354431152344,
+            76.34971618652344,
+            88.68695068359375,
+            81.17125701904297,
+            13.577707290649414,
+            7.709563255310059,
+            12.95242691040039,
+            4.358111381530762
+          ],
+          "post_applied_drive_saturation_joint_samples": 0,
+          "observed_post_duration_s": 1.3,
+          "tail_pitch_peak_to_peak_deg": 6.135640124302752,
+          "tail_pitch_error_rms_deg": 16.964094790814354,
+          "tail_pitch_rate_rms_rad_s": 0.4507719447181682,
+          "tail_wheel_velocity_rms_rad_s": 3.1462653435374506,
+          "tail_height_peak_to_peak_m": 0.06177419424057007,
+          "tail_pitch_end_deg": -19.75118044880791,
+          "tail_reference_pitch_end_deg": -0.16661569720467004
+        }
+      ],
+      "averages": {
+        "post_pitch_error_rms_deg": 9.200207433714807,
+        "post_pitch_rate_rms_rad_s": 0.7490361200935111,
+        "tail_pitch_peak_to_peak_deg": 7.019218206877598,
+        "tail_pitch_error_rms_deg": 10.023925111551721,
+        "tail_pitch_rate_rms_rad_s": 0.4763987194444095,
+        "tail_wheel_velocity_rms_rad_s": 3.186856135608973,
+        "landing_max_single_wheel_normal_force_n": 1844.3970424107308,
+        "landing_max_summed_wheel_world_z_n": 2214.757803780692
+      }
+    }
+  ],
+  "reference": {
+    "file": {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/leg_to_wheel_transform_60hz.npz",
+      "sha256": "48dd4ee594e132f447ee86cfda1c7b3d4fe2d87eb20e2c37a1ca84c24de31bda"
+    },
+    "frame_count": 142,
+    "fps": 50.0,
+    "final_base_angular_velocity_world_rad_s": [
+      -0.001108649536035955,
+      0.20484808087348938,
+      -5.136258914717473e-05
+    ],
+    "final_base_linear_velocity_world_m_s": [
+      0.019450485706329346,
+      4.999999873689376e-05,
+      0.020200014114379883
+    ],
+    "last30_pitch_peak_to_peak_deg": 0.8848911689148281,
+    "final_joint_velocity_rad_s": [
+      -0.0007000000332482159,
+      -0.0007000000332482159,
+      -0.009399652481079102,
+      0.008949637413024902,
+      -0.24795010685920715,
+      0.24874955415725708,
+      -0.06509999930858612,
+      0.2991500198841095,
+      0.06589999794960022,
+      -0.2991500198841095
+    ]
+  }
+}
