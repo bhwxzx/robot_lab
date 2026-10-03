@@ -92,10 +92,15 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.joint_torques_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.joint_power.weight = -2e-5
         self.rewards.joint_power.params["asset_cfg"].joint_names = self.joint_names
-        self.rewards.joint_vel_wheel_l2.weight = -7.5e-4
+        self.rewards.joint_vel_wheel_l2.weight = 0.0
         self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
-        self.rewards.joint_acc_wheel_l2.weight = -1.5e-7
+        self.rewards.joint_acc_wheel_l2.weight = 0.0
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
+        self.rewards.wheel_contact_continuous.weight = 0.5
+        self.rewards.wheel_contact_continuous.params["sensor_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
+        self.rewards.wheel_contact_continuous.params["start_time_s"] = 1.6
+        self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
+        self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
         # terminations
         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands

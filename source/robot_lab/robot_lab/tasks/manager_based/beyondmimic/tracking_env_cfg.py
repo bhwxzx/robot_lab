@@ -316,6 +316,17 @@ class RewardsCfg:
     joint_acc_wheel_l2 = RewTerm(
         func=mdp.joint_acc_l2, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names="")}
     )
+    wheel_contact_continuous = RewTerm(
+        func=mdp.wheel_contact_continuous,
+        weight=0.0,
+        params={
+            "command_name": "motion",
+            "sensor_cfg": SceneEntityCfg("contact_forces"),
+            "start_time_s": 1.6,
+            "min_contact_force": 10.0,
+            "stable_contact_time": 0.1,
+        },
+    )
 
 
 @configclass

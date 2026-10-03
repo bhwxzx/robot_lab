@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import torch
 from typing import TYPE_CHECKING
 
@@ -82,6 +83,43 @@ def feet_contact_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, thresh
     last_contact_time = contact_sensor.data.last_contact_time[:, sensor_cfg.body_ids]
     reward = torch.sum((last_contact_time < threshold) * first_air, dim=-1)
     return reward
+
+
+def wheel_contact_continuous(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    sensor_cfg: SceneEntityCfg,
+    start_time_s: float,
+    min_contact_force: float,
+    stable_contact_time: float,
+) -> torch.Tensor:
+    """Reward sustained bilateral wheel support in the reference's wheel phase.
+
+    Reference frames handle adaptive motion starts independently of episode time.
+    The sensor's contact timers reset on loss of contact, and current positive
+    world-z forces must also exceed the threshold on both wheels. The shorter
+    contact duration ramps to one; larger forces and wheel speed earn no bonus.
+    Requires exactly two sensor bodies and ``track_air_time=True``.
+    """
+    if start_time_s < 0.0 or min_contact_force < 0.0 or stable_contact_time <= 0.0:
+        raise ValueError("Wheel contact reward requires nonnegative start/force and positive stable contact time.")
+
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    sensor_data = contact_sensor.data
+    if sensor_data.current_contact_time is None:
+        raise RuntimeError("Wheel contact reward requires the contact sensor to enable track_air_time.")
+    contact_time = sensor_data.current_contact_time[:, sensor_cfg.body_ids]
+    if contact_time.shape[1] != 2:
+        raise ValueError("Wheel contact reward requires exactly two wheel bodies in sensor_cfg.")
+
+    vertical_force = sensor_data.net_forces_w[:, sensor_cfg.body_ids, 2]
+    both_supported = (vertical_force > min_contact_force).all(dim=-1)
+    continuity = torch.clamp(contact_time.min(dim=-1).values / stable_contact_time, min=0.0, max=1.0)
+    start_frame = math.ceil(start_time_s * command.motion.fps.item())
+    wheel_phase = command.time_steps >= start_frame
+    return continuity * both_supported * wheel_phase
+
 
 class ActionSmoothnessPenalty(ManagerTermBase):
     """
