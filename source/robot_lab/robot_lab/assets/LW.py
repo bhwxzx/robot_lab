@@ -199,7 +199,7 @@ LW_WHEEL_CFG = ArticulationCfg(
             damping=3.0,
             armature=0.01,
             min_delay=0,
-            max_delay=3
+            max_delay=6
         ),
         "wheels": DelayedPDActuatorCfg(
             joint_names_expr=[
