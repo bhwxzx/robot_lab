@@ -1,0 +1,948 @@
+{
+  "algorithm_profile": {
+    "evaluation_capabilities": {
+      "history_contract": "flat_time_major_history",
+      "play_entrypoint": "scripts/reinforcement_learning/rsl_rl/play.py",
+      "supported_artifacts": [
+        "native",
+        "jit",
+        "onnx"
+      ]
+    },
+    "id": "rsl-rl-roa",
+    "is_generic": false,
+    "match": {
+      "algorithm_names": [
+        "ROAPPO"
+      ],
+      "backends": [
+        "rsl_rl"
+      ],
+      "runner_classes": [
+        "OnPolicyRunnerROA"
+      ]
+    },
+    "metric_aliases": {
+      "Episode_Termination/illegal_contact": "illegal_contact",
+      "Episode_Termination/terrain_out_of_bounds": "terrain_out_of_bounds",
+      "Episode_Termination/time_out": "time_out",
+      "Iteration time": "iteration_time_seconds",
+      "Mean action noise std": "action_noise_std",
+      "Mean entropy loss": "entropy_loss",
+      "Mean episode length": "mean_episode_length",
+      "Mean hist_latent loss": "hist_latent_loss",
+      "Mean priv_reg loss": "priv_reg_loss",
+      "Mean reward": "mean_reward",
+      "Mean surrogate loss": "surrogate_loss",
+      "Mean value_function loss": "value_function_loss",
+      "Mean vel_loss loss": "vel_loss",
+      "Metrics/base_velocity/error_vel_xy": "error_vel_xy",
+      "Metrics/base_velocity/error_vel_yaw": "error_vel_yaw",
+      "Total timesteps": "total_timesteps"
+    },
+    "profile_version": 2,
+    "progress_patterns": [
+      {
+        "completion_offset": 1,
+        "name": "learning_iteration",
+        "regex": "Learning iteration\\s+(?P<current>\\d+)(?:/(?P<target>\\d+))?"
+      },
+      {
+        "completion_offset": 0,
+        "name": "epoch",
+        "regex": "(?:Epoch|epoch)\\s*[: ]\\s*(?P<current>\\d+)(?:/(?P<target>\\d+))?"
+      },
+      {
+        "completion_offset": 0,
+        "name": "global_step",
+        "regex": "(?:global_step|Global step|Step)\\s*[: ]\\s*(?P<current>\\d+)(?:/(?P<target>\\d+))?"
+      }
+    ],
+    "protected_parameter_patterns": [
+      "(?:^|\\.)(?:batch_size|num_updates|update_count|num_learning_epochs|num_mini_batches)(?:$|\\.)",
+      "(?:^|\\.)(?:dagger_update_freq|priv_reg_coef_schedule|priv_reg_coef_schedule_resume)(?:$|\\.)"
+    ],
+    "resume_required_args": [
+      "--resume"
+    ]
+  },
+  "authorization": "User requests evaluation and analysis of latest trained wheel-flat ROA. Reuse established six-case finite Native protocol and historical-input hip sensitivity; no source/parameter/training changes or export/deployment.",
+  "checkpoint": {
+    "algorithm_counter": 50000,
+    "internal_iter": 50000,
+    "iteration_is_next": true,
+    "load_complete_and_stable": true,
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_49999.pt",
+    "sha256": "a34a087b57b6453157820a23eb101610786805aa0b32aee3f308f1ba46235acb"
+  },
+  "context": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/context-8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065.json",
+    "sha256": "8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065"
+  },
+  "effective_config": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/config-dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94.json",
+    "sha256": "dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94"
+  },
+  "exact_training_argv_source": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-before.json",
+    "sha256": "91ced94127ad3c89ff0b1353422f90b0ef56303f5c7d77f6be4fb7a9ec7cfa18"
+  },
+  "finite_evaluation_contract": {
+    "batch_id": "wheel-flat-final-delay30-20261003-001",
+    "cases": [
+      {
+        "attempt_id": "right-delay15-noise-a01",
+        "scenario": {
+          "command_schedule": [
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 499,
+              "start_step": 0
+            },
+            {
+              "command": [
+                0.5,
+                0,
+                0
+              ],
+              "end_step": 1999,
+              "start_step": 500
+            },
+            {
+              "command": [
+                0.5,
+                0,
+                -0.6
+              ],
+              "end_step": 3499,
+              "start_step": 2000
+            },
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 4499,
+              "start_step": 3500
+            }
+          ],
+          "duration_steps": 4500,
+          "num_envs": 1,
+          "scenario_id": "right-delay15-noise",
+          "scenario_overrides": {
+            "curriculum.terrain_levels": null,
+            "episode_length_s": 120.0,
+            "evaluation.roa_mode": "student",
+            "events.add_joint_default_pos": null,
+            "events.randomize_actuator_gains": null,
+            "events.randomize_com_positions": null,
+            "events.randomize_push_robot": null,
+            "events.randomize_reset_base.params.pose_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_base.params.velocity_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_joints.params.position_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_reset_joints.params.velocity_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_mass_base": null,
+            "events.randomize_rigid_body_mass_others": null,
+            "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+              1.0,
+              1.0
+            ],
+            "events.randomize_rigid_body_material.params.restitution_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_material.params.static_friction_range": [
+              1.0,
+              1.0
+            ],
+            "observations.policy.enable_corruption": true,
+            "scene.robot.actuators.foots.max_delay": 3,
+            "scene.robot.actuators.foots.min_delay": 3,
+            "scene.robot.actuators.legs.max_delay": 3,
+            "scene.robot.actuators.legs.min_delay": 3,
+            "scene.robot.actuators.wheels.max_delay": 3,
+            "scene.robot.actuators.wheels.min_delay": 3,
+            "scene.terrain.terrain_generator": null,
+            "scene.terrain.terrain_type": "plane",
+            "terminations.terrain_out_of_bounds": null
+          },
+          "seed": 42
+        },
+        "timeout_seconds": 600,
+        "video": false
+      },
+      {
+        "attempt_id": "left-delay15-noise-a01",
+        "scenario": {
+          "command_schedule": [
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 499,
+              "start_step": 0
+            },
+            {
+              "command": [
+                0.5,
+                0,
+                0
+              ],
+              "end_step": 1999,
+              "start_step": 500
+            },
+            {
+              "command": [
+                0.5,
+                0,
+                0.6
+              ],
+              "end_step": 3499,
+              "start_step": 2000
+            },
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 4499,
+              "start_step": 3500
+            }
+          ],
+          "duration_steps": 4500,
+          "num_envs": 1,
+          "scenario_id": "left-delay15-noise",
+          "scenario_overrides": {
+            "curriculum.terrain_levels": null,
+            "episode_length_s": 120.0,
+            "evaluation.roa_mode": "student",
+            "events.add_joint_default_pos": null,
+            "events.randomize_actuator_gains": null,
+            "events.randomize_com_positions": null,
+            "events.randomize_push_robot": null,
+            "events.randomize_reset_base.params.pose_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_base.params.velocity_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_joints.params.position_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_reset_joints.params.velocity_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_mass_base": null,
+            "events.randomize_rigid_body_mass_others": null,
+            "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+              1.0,
+              1.0
+            ],
+            "events.randomize_rigid_body_material.params.restitution_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_material.params.static_friction_range": [
+              1.0,
+              1.0
+            ],
+            "observations.policy.enable_corruption": true,
+            "scene.robot.actuators.foots.max_delay": 3,
+            "scene.robot.actuators.foots.min_delay": 3,
+            "scene.robot.actuators.legs.max_delay": 3,
+            "scene.robot.actuators.legs.min_delay": 3,
+            "scene.robot.actuators.wheels.max_delay": 3,
+            "scene.robot.actuators.wheels.min_delay": 3,
+            "scene.terrain.terrain_generator": null,
+            "scene.terrain.terrain_type": "plane",
+            "terminations.terrain_out_of_bounds": null
+          },
+          "seed": 42
+        },
+        "timeout_seconds": 600,
+        "video": false
+      },
+      {
+        "attempt_id": "right-delay30-noise-a01",
+        "scenario": {
+          "command_schedule": [
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 499,
+              "start_step": 0
+            },
+            {
+              "command": [
+                0.5,
+                0,
+                0
+              ],
+              "end_step": 1999,
+              "start_step": 500
+            },
+            {
+              "command": [
+                0.5,
+                0,
+                -0.6
+              ],
+              "end_step": 3499,
+              "start_step": 2000
+            },
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 4499,
+              "start_step": 3500
+            }
+          ],
+          "duration_steps": 4500,
+          "num_envs": 1,
+          "scenario_id": "right-delay30-noise",
+          "scenario_overrides": {
+            "curriculum.terrain_levels": null,
+            "episode_length_s": 120.0,
+            "evaluation.roa_mode": "student",
+            "events.add_joint_default_pos": null,
+            "events.randomize_actuator_gains": null,
+            "events.randomize_com_positions": null,
+            "events.randomize_push_robot": null,
+            "events.randomize_reset_base.params.pose_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_base.params.velocity_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_joints.params.position_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_reset_joints.params.velocity_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_mass_base": null,
+            "events.randomize_rigid_body_mass_others": null,
+            "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+              1.0,
+              1.0
+            ],
+            "events.randomize_rigid_body_material.params.restitution_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_material.params.static_friction_range": [
+              1.0,
+              1.0
+            ],
+            "observations.policy.enable_corruption": true,
+            "scene.robot.actuators.foots.max_delay": 6,
+            "scene.robot.actuators.foots.min_delay": 6,
+            "scene.robot.actuators.legs.max_delay": 6,
+            "scene.robot.actuators.legs.min_delay": 6,
+            "scene.robot.actuators.wheels.max_delay": 6,
+            "scene.robot.actuators.wheels.min_delay": 6,
+            "scene.terrain.terrain_generator": null,
+            "scene.terrain.terrain_type": "plane",
+            "terminations.terrain_out_of_bounds": null
+          },
+          "seed": 42
+        },
+        "timeout_seconds": 600,
+        "video": false
+      },
+      {
+        "attempt_id": "left-delay30-noise-a01",
+        "scenario": {
+          "command_schedule": [
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 499,
+              "start_step": 0
+            },
+            {
+              "command": [
+                0.5,
+                0,
+                0
+              ],
+              "end_step": 1999,
+              "start_step": 500
+            },
+            {
+              "command": [
+                0.5,
+                0,
+                0.6
+              ],
+              "end_step": 3499,
+              "start_step": 2000
+            },
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 4499,
+              "start_step": 3500
+            }
+          ],
+          "duration_steps": 4500,
+          "num_envs": 1,
+          "scenario_id": "left-delay30-noise",
+          "scenario_overrides": {
+            "curriculum.terrain_levels": null,
+            "episode_length_s": 120.0,
+            "evaluation.roa_mode": "student",
+            "events.add_joint_default_pos": null,
+            "events.randomize_actuator_gains": null,
+            "events.randomize_com_positions": null,
+            "events.randomize_push_robot": null,
+            "events.randomize_reset_base.params.pose_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_base.params.velocity_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_joints.params.position_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_reset_joints.params.velocity_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_mass_base": null,
+            "events.randomize_rigid_body_mass_others": null,
+            "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+              1.0,
+              1.0
+            ],
+            "events.randomize_rigid_body_material.params.restitution_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_material.params.static_friction_range": [
+              1.0,
+              1.0
+            ],
+            "observations.policy.enable_corruption": true,
+            "scene.robot.actuators.foots.max_delay": 6,
+            "scene.robot.actuators.foots.min_delay": 6,
+            "scene.robot.actuators.legs.max_delay": 6,
+            "scene.robot.actuators.legs.min_delay": 6,
+            "scene.robot.actuators.wheels.max_delay": 6,
+            "scene.robot.actuators.wheels.min_delay": 6,
+            "scene.terrain.terrain_generator": null,
+            "scene.terrain.terrain_type": "plane",
+            "terminations.terrain_out_of_bounds": null
+          },
+          "seed": 42
+        },
+        "timeout_seconds": 600,
+        "video": false
+      },
+      {
+        "attempt_id": "nominal-no-noise-a01",
+        "scenario": {
+          "command_schedule": [
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 5999,
+              "start_step": 0
+            }
+          ],
+          "duration_steps": 6000,
+          "num_envs": 1,
+          "scenario_id": "nominal-no-noise",
+          "scenario_overrides": {
+            "curriculum.terrain_levels": null,
+            "episode_length_s": 150.0,
+            "events.add_joint_default_pos": null,
+            "events.randomize_actuator_gains": null,
+            "events.randomize_com_positions": null,
+            "events.randomize_push_robot": null,
+            "events.randomize_reset_base.params.pose_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_base.params.velocity_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_joints.params.position_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_reset_joints.params.velocity_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_mass_base": null,
+            "events.randomize_rigid_body_mass_others": null,
+            "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+              1.0,
+              1.0
+            ],
+            "events.randomize_rigid_body_material.params.restitution_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_material.params.static_friction_range": [
+              1.0,
+              1.0
+            ],
+            "observations.policy.enable_corruption": false,
+            "scene.robot.actuators.foots.max_delay": 0,
+            "scene.robot.actuators.foots.min_delay": 0,
+            "scene.robot.actuators.legs.max_delay": 0,
+            "scene.robot.actuators.legs.min_delay": 0,
+            "scene.robot.actuators.wheels.max_delay": 0,
+            "scene.robot.actuators.wheels.min_delay": 0,
+            "scene.terrain.terrain_generator": null,
+            "scene.terrain.terrain_type": "plane",
+            "terminations.terrain_out_of_bounds": null
+          },
+          "seed": 42
+        },
+        "timeout_seconds": 600,
+        "video": false
+      },
+      {
+        "attempt_id": "nominal-training-noise-a01",
+        "scenario": {
+          "command_schedule": [
+            {
+              "command": [
+                0,
+                0,
+                0
+              ],
+              "end_step": 5999,
+              "start_step": 0
+            }
+          ],
+          "duration_steps": 6000,
+          "num_envs": 1,
+          "scenario_id": "nominal-training-noise",
+          "scenario_overrides": {
+            "curriculum.terrain_levels": null,
+            "episode_length_s": 150.0,
+            "events.add_joint_default_pos": null,
+            "events.randomize_actuator_gains": null,
+            "events.randomize_com_positions": null,
+            "events.randomize_push_robot": null,
+            "events.randomize_reset_base.params.pose_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_base.params.velocity_range": {
+              "pitch": [
+                0.0,
+                0.0
+              ],
+              "roll": [
+                0.0,
+                0.0
+              ],
+              "x": [
+                0.0,
+                0.0
+              ],
+              "y": [
+                0.0,
+                0.0
+              ],
+              "yaw": [
+                0.0,
+                0.0
+              ],
+              "z": [
+                0.0,
+                0.0
+              ]
+            },
+            "events.randomize_reset_joints.params.position_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_reset_joints.params.velocity_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_mass_base": null,
+            "events.randomize_rigid_body_mass_others": null,
+            "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+              1.0,
+              1.0
+            ],
+            "events.randomize_rigid_body_material.params.restitution_range": [
+              0.0,
+              0.0
+            ],
+            "events.randomize_rigid_body_material.params.static_friction_range": [
+              1.0,
+              1.0
+            ],
+            "observations.policy.enable_corruption": true,
+            "scene.robot.actuators.foots.max_delay": 0,
+            "scene.robot.actuators.foots.min_delay": 0,
+            "scene.robot.actuators.legs.max_delay": 0,
+            "scene.robot.actuators.legs.min_delay": 0,
+            "scene.robot.actuators.wheels.max_delay": 0,
+            "scene.robot.actuators.wheels.min_delay": 0,
+            "scene.terrain.terrain_generator": null,
+            "scene.terrain.terrain_type": "plane",
+            "terminations.terrain_out_of_bounds": null
+          },
+          "seed": 42
+        },
+        "timeout_seconds": 600,
+        "video": false
+      }
+    ],
+    "checkpoint": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_49999.pt",
+      "sha256": "a34a087b57b6453157820a23eb101610786805aa0b32aee3f308f1ba46235acb"
+    },
+    "effective_config": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/config-dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94.json",
+      "sha256": "dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94"
+    },
+    "run_identity": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/context-8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065.json",
+      "sha256": "8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065"
+    },
+    "version": 1
+  },
+  "historical_protocol": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-01_00-04-08/evaluations/wheel-flat-final-noise15-20261002-001/contract.json",
+    "sha256": "af71cb8e3d184e8629caa03ae4935d56a1d5849c26740ced8073a762a8c93685"
+  },
+  "protected_files": {
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-01_00-04-08/evaluations/wheel-flat-final-noise15-20261002-001/manifest.json": "0f1ab22058d3caf6804a17fb049ecd5464d1d31a0fdc3a4c1e26819791f4beb6",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-01_00-04-08/evaluations/wheel-flat-final-noise15-20261002-001/report.md": "016d7ccac65525f79510f83ea3d6f6abdcd56111cf878a149551e14c814560ea",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-01_00-04-08/index.md": "9e4c1bb5670420d7b4eaf9da468ef2f62b97641ed0747c6cf08347c1c32cc990",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-model22000-20261003-004/manifest.json": "47375151f716d8c8c505616a1127e804b771d57033b189479bac8bd8a8198a9d",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-model22000-20261003-004/report.md": "069983131794c0de6547a6d6105ddaaa8f60161ddbb07234b0fa86d8e95baf87",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-short-model21000-20261003-003/manifest.json": "104a650ad5dc0a2f0dd588a15ba0139bae154dfbaff90b78bdabda9775bef0c1",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-short-model21000-20261003-003/report.md": "9252deb953491d729e068014bb8fb747f61c17c20eec8056d42bd8d5ff77a97b",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-live-model21000-20261003-001/manifest.json": "82e77aef5183a15aa8e353d6714c090f256986cd822d4bc07aacea3a38463a2f",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-live-model21000-20261003-001/report.md": "39a5e8fc2805ddaf41095bc9fe4c7dcc698e67a4d19407e1818c2bfca4775f4f",
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/git/robot_lab.diff": "59d5af64dd7fa780f792d5d6a4910cf2ec11ecf1802f4d74c946a92f408bb59d",
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/params/agent.yaml": "2cbc63544d8513907ad615d9dc9d640553e9b8d084e06863624f9c993eb6cd86",
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/params/env.yaml": "55fabdd81fa596011fb44dfc786270424e874a64fb1858ea6ffe769bd0923ffa",
+    "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/algorithms/roa_ppo.py": "55b9ff47aafe0374af6be3d45b816d78d6c7eac78f24dca77336f17208bcabea",
+    "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/modules/actor_critic_roa.py": "15dfbd940d500c67051e6112c17a159b775804804c8bd4fad2a1dce1565ae206",
+    "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/runners/on_policy_runner_roa.py": "32126bd72de289fd0e96e5be0819c9c21ea873f56ca6f2677964642a97a12e65",
+    "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/train.py": "95a4a317d71089d9658b85a8048c857fe3990ff5fbf8a558d5e258fdd308f808",
+    "/home/server/liufengrong/robot_lab/scripts/start_roa.sh": "1ea5a2877f95c9c09b8828fc6de69496230c3710a47e7b2415b775a2783d726c",
+    "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/assets/LW.py": "efecd732278bd1e269ae6ccef49667a51751956594cd900ae1f3ed6a75089ec2",
+    "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/__init__.py": "6b6612fb65644f78d65667f305dc4ce754ea121ab4e72a53362359e675ef1274",
+    "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py": "2c6b049265d040cac08e7fbc3aa7ec28eb24681b5d2cbe807832d1d7a6be2c8f",
+    "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py": "c079b13e9d2362dde1b63bb8b8d7e8b0a5061f6d28a113c55da3fe2d3e9ab36f",
+    "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py": "cb03d4fdfbb306bc94ad611636d133aeb53dce878541fa95b1d97e8c1a566053",
+    "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/velocity_env_cfg.py": "ee43a2023fc80eabb3932db0a22f1940c7e095670f78ada4b61dd0b7e99e925c"
+  },
+  "recorded_at": "2026-10-03T05:36:16.352771+00:00",
+  "source_note": "Current source and effective YAML match last verified live training capture. Original training start HEAD remains independently unproven.",
+  "training_completion": {
+    "convergence": "indeterminate",
+    "last_scalar_step": 49999,
+    "reason": "No run-specific approved convergence criteria.",
+    "status": "completed_schedule",
+    "target_iterations": 50000,
+    "tensorboard": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/final-model49999-20261003-001-completion.json",
+      "sha256": "880f802d278e333c02eee3e54b865c06b5aaf478afa4d1b426b3a07b503a6aa1"
+    },
+    "training_pid_absent": true
+  },
+  "version": 1
+}

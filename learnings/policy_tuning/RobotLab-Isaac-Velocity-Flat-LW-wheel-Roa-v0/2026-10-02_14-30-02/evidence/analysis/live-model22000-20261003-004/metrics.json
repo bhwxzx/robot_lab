@@ -1,0 +1,429 @@
+{
+  "analysis_kind": "bounded_native_closed_loop_and_training_overlap",
+  "analysis_source": {
+    "python": "import sys,json,gzip,hashlib,re,datetime,math\nfrom pathlib import Path\nimport numpy as np\nimport yaml\nimport matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt\nROOT=Path('/home/server/liufengrong/robot_lab')\nsys.path.insert(0,str(ROOT/'scripts/reinforcement_learning/rsl_rl'))\nsys.path.insert(0,str(ROOT/'.agents/skills/monitor-tune-isaaclab-training/scripts'))\nfrom policy_evaluation_evidence import validate_evaluation_bundle\nfrom evidence_provenance import write_bytes,encode\nTASK='RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0';RUN='2026-10-02_14-30-02';BATCH='overlap-native-model22000-20261003-004'\nrun=ROOT/'learnings/policy_tuning'/TASK/RUN\nrp=run/'evaluations'/BATCH/'raw/native-right15-noise-a01/result.json'\nbinding=validate_evaluation_bundle(rp)\nresult=json.loads(rp.read_bytes())\nt=json.loads(gzip.decompress(Path(result['outputs']['telemetry']['path']).read_bytes()))\nsamples=t['samples'];dt=float(t['step_dt_seconds']);n=len(samples)\nassert n==2000 and dt==.02 and t['telemetry_status']=='complete' and not t['missing_required_signals']\ndef arr(name):\n x=np.asarray([s[name] for s in samples],dtype=float)\n assert np.isfinite(x).all(),name\n return x\nsteps=np.asarray([s['step'] for s in samples]);assert np.array_equal(steps,np.arange(n))\ncmd=arr('command');v=arr('root_linear_velocity_b');omega=arr('root_angular_velocity_b');pos=arr('root_position_w');q=arr('root_quaternion_w');jv=arr('joint_velocity');jp=arr('joint_position');a=arr('action');torque=arr('applied_torque')\nenv=yaml.load((ROOT/'logs/rsl_rl/LW_wheel_flat_roa'/RUN/'params/env.yaml').read_text(),Loader=yaml.BaseLoader)\nnames=env['actions']['joint_pos']['joint_names']+env['actions']['joint_vel']['joint_names']\nassert names[:2]==['right_hip_joint','left_hip_joint'] and env['actions']['joint_pos']['preserve_order']=='true'\nhip_idx=[t['joint_names'].index(name) for name in names[:2]]\nscale=np.array([.125,.125]);target=a[:,:2]*scale\nassert [float(env['scene']['robot']['init_state']['joint_pos'][name]) for name in names[:2]]==[0.,0.]\nhips_v=jv[:,hip_idx];hips_q=jp[:,hip_idx];hips_tau=torque[:,hip_idx]\nqw,qx,qy,qz=q.T\nyaw=np.unwrap(np.arctan2(2*(qw*qz+qx*qy),1-2*(qy*qy+qz*qz)))\nstudent=arr('roa_student_velocity_b');true=arr('roa_true_velocity_b')\ndone=np.asarray([s['done'] for s in samples]);timeout=np.asarray([s['timeout'] for s in samples])\nassert not done.any() and not timeout.any()\ndef rms(x):return float(np.sqrt(np.mean(np.square(x))))\ndef band(x,low=5.,high=25.):\n x=x-x.mean(axis=0)\n z=np.fft.rfft(x,axis=0);freq=np.fft.rfftfreq(len(x),dt)\n weights=np.full(len(freq),2.);weights[0]=1.\n if len(x)%2==0:weights[-1]=1.\n chosen=(freq>=low)&(freq<=high)\n per=np.sqrt(np.sum(np.abs(z[chosen])**2*weights[chosen,None],axis=0)/(len(x)**2))\n return {'rms':float(np.sqrt(np.mean(per**2))),'right_left':per.tolist()}\ndef window(lo,hi):\n assert 0<=lo<hi<=n\n sl=slice(lo,hi);c=cmd[sl];lin=v[sl];ang=omega[sl];pp=pos[sl,:2]\n return {'half_open_steps':[lo,hi],'sample_count':hi-lo,'nominal_duration_s':(hi-lo)*dt,'endpoint_time_span_s':(hi-lo-1)*dt,'command':c[0].tolist(),'mean_velocity_b_m_s':lin.mean(axis=0).tolist(),'mean_yaw_rate_b_rad_s':float(ang[:,2].mean()),'tracking_xy_rmse_m_s':rms(lin[:,:2]-c[:,:2])*math.sqrt(2),'tracking_yaw_rmse_rad_s':rms(ang[:,2]-c[:,2]),'net_xy_displacement_m':float(np.linalg.norm(pp[-1]-pp[0])),'path_xy_length_m':float(np.linalg.norm(np.diff(pp,axis=0),axis=1).sum()),'world_heading_change_rad':float(yaw[hi-1]-yaw[lo]),'command_yaw_integral_rad':float(c[:-1,2].sum()*dt),'hip_target_step_rms_rad':rms(np.diff(target[sl],axis=0)),'hip_target_abs_peak_rad':float(np.abs(target[sl]).max()),'hip_target_rms_rad':rms(target[sl]),'hip_position_rms_rad':rms(hips_q[sl]),'hip_velocity_rms_rad_s':rms(hips_v[sl]),'hip_velocity_band_5_25Hz':band(hips_v[sl]),'hip_target_band_5_25Hz':band(target[sl]),'hip_position_band_5_25Hz':band(hips_q[sl]),'hip_torque_rms_Nm':rms(hips_tau[sl]),'hip_torque_abs_peak_Nm':float(np.abs(hips_tau[sl]).max()),'student_velocity_x_estimation_rmse_m_s':rms(student[sl,0]-true[sl,0]),'resets':int(done[sl].sum())}\nwindows={name:window(lo,hi) for name,lo,hi in [('initial_zero_steady',50,250),('forward_steady',300,750),('right_turn_steady',800,1500),('parking_steady',1550,2000),('parking_full_phase',1500,2000)]}\ntrain_dir=run/'evidence/training'\nhealth_paths=[train_dir/(BATCH+'-'+s+'.json') for s in ['before','during-01','during-02','during-03','during-04','during-05','after','recovery']]\nhealth=[json.loads(p.read_bytes()) for p in health_paths]\nprogress=[x['tensorboard']['step'] for x in health]\nassert all(x['process']['identity_matches'] for x in health) and all(b>a for a,b in zip(progress,progress[1:]))\nbegin=health[0]['tensorboard']['wall_time'];end=health[-2]['tensorboard']['wall_time']\nfps={int(s['step']):s for h in health for s in h['tensorboard']['metrics']['Perf/total_fps']['samples']}\nbefore_samples=[s['value'] for s in fps.values() if begin-60<=s['wall_time']<=begin]\nduring_samples=[s['value'] for s in fps.values() if begin<s['wall_time']<=end]\nafter_samples=[s['value'] for s in fps.values() if s['wall_time']>end]\nthroughput={'health_snapshots':[{'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in health_paths],'steps':progress,'all_monotonic':True,'same_training_identity':True,'before_last5_fps':health[0]['tensorboard']['metrics']['Perf/total_fps']['mean_last_5'],'minimum_overlap_snapshot_last5_fps':min(h['tensorboard']['metrics']['Perf/total_fps']['mean_last_5'] for h in health[1:-2]),'recovery_last5_fps':health[-1]['tensorboard']['metrics']['Perf/total_fps']['mean_last_5'],'before60s':{'count':len(before_samples),'mean_fps':float(np.mean(before_samples))},'overlap_all_between_pre_post_TB_times':{'count':len(during_samples),'mean_fps':float(np.mean(during_samples))},'post_until_recovery':{'count':len(after_samples),'mean_fps':float(np.mean(after_samples))},'all_loss_samples_finite':all(m['all_finite'] for h in health for tag,m in h['tensorboard']['metrics'].items() if tag.startswith('Loss/'))}\nthroughput['overlap_mean_drop_vs_before60s_percent']=(throughput['overlap_all_between_pre_post_TB_times']['mean_fps']/throughput['before60s']['mean_fps']-1)*100\nout=run/'evidence/analysis/live-model22000-20261003-004';out.mkdir(parents=True,exist_ok=False)\ntime_s=steps*dt\nfig,axes=plt.subplots(4,1,figsize=(13,12),sharex=True,constrained_layout=True)\naxes[0].plot(time_s,cmd[:,0],'k--',label='command vx');axes[0].plot(time_s,v[:,0],label='body vx');axes[0].plot(time_s,v[:,1],alpha=.5,label='body vy');axes[0].set_ylabel('Velocity (m/s)');axes[0].legend(ncol=3)\naxes[1].plot(time_s,cmd[:,2],'k--',label='command yaw rate');axes[1].plot(time_s,omega[:,2],label='body yaw rate');axes[1].set_ylabel('Yaw rate (rad/s)');axes[1].legend()\nfor i,name in enumerate(['Right','Left']):axes[2].plot(time_s,target[:,i],alpha=.75,label=name+' requested target');axes[3].plot(time_s,hips_v[:,i],alpha=.75,label=name+' actual velocity')\naxes[2].set_ylabel('Hip target (rad)');axes[2].legend(ncol=2);axes[3].set_ylabel('Hip velocity (rad/s)');axes[3].set_xlabel('Simulation time (s)');axes[3].legend(ncol=2)\nfor ax in axes:\n for transition in [5,15,30]:ax.axvline(transition,color='gray',lw=.8,alpha=.5)\n ax.grid(alpha=.2)\nfig.suptitle('ROA Oct02 model22000 | Native 1 env | 15 ms delay | observation noise enabled')\ntimeline=out/'timeline.png';fig.savefig(timeline,dpi=150);plt.close(fig)\nfig,axes=plt.subplots(1,2,figsize=(12,4),constrained_layout=True)\naxes[0].plot(pos[:,0],pos[:,1]);axes[0].set(xlabel='World x (m)',ylabel='World y (m)',title='Measured world path');axes[0].axis('equal')\naxes[1].plot(time_s,yaw,label='Measured world heading');axes[1].plot(time_s,np.cumsum(cmd[:,2])*dt,label='Command yaw-rate integral');axes[1].set(xlabel='Simulation time (s)',ylabel='Unwrapped angle (rad)',title='Heading; body yaw rate reported separately');axes[1].legend()\nfor ax in axes:ax.grid(alpha=.2)\npath_plot=out/'path-heading.png';fig.savefig(path_plot,dpi=150);plt.close(fig)\nfig,ax=plt.subplots(figsize=(10,4),constrained_layout=True)\nordered=sorted(fps.values(),key=lambda x:x['wall_time']);times=np.asarray([x['wall_time'] for x in ordered])-begin;rates=np.asarray([x['value'] for x in ordered]);ax.plot(times,rates/1000,lw=1)\nax.axvspan(0,end-begin,alpha=.2,color='orange',label='Pre/post evaluation TB interval')\nax.set(xlabel='Seconds from pre-evaluation TensorBoard time',ylabel='Training throughput (thousand steps/s)',title='Training continued; slowdown explicitly accepted');ax.legend();ax.grid(alpha=.2)\nfps_plot=out/'training-throughput.png';fig.savefig(fps_plot,dpi=150);plt.close(fig)\nartifacts={k:{'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for k,p in [('timeline',timeline),('path_heading',path_plot),('training_throughput',fps_plot)]}\nvalue={'version':1,'created_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'analysis_kind':'bounded_native_closed_loop_and_training_overlap','result_validation':binding,'windows':windows,'training':throughput,'telemetry_required_motion_signals_complete':True,'done_count':int(done.sum()),'sample_count':n,'analysis_source':{'python':ANALYSIS_SOURCE,'sha256':hashlib.sha256(ANALYSIS_SOURCE.encode()).hexdigest()},'artifacts':artifacts,'method':{'step_dt_s':dt,'steady_windows_exclude_first_1s_of_each_phase':True,'rms_xy_convention':'sqrt(mean(sum((vx,vy-command)^2,axis=1)))','hip_action_joint_order':names[:2],'hip_telemetry_indices':hip_idx,'hip_scale_rad_per_raw_action':scale.tolist(),'physical_target':'Policy-requested positions before the 15ms actuator buffer, hip default offset 0; not measured actuator setpoints','fft':'Demeaned rFFT; Parseval weights 2 except DC/Nyquist; rectangular window; band 5<=f<=25 Hz; differences stay inside each window','estimator_timing':'roa_student_velocity_b and roa_true_velocity_b are both captured before env.step; root velocities/joints are post-step','drift':'Euclidean world XY endpoint displacement; reported endpoint time is one dt shorter than sample-count duration; no reset crossing','training_fps':'Unique TB step samples, 60s before pre-snapshot TB time, between pre/post TB times, then until recovery; observational windows not controlled causality'},'limitations':['One seed and one environment, a mid-training fixed checkpoint; no convergence conclusion.','Four phases are shorter than historical 4500-step Native tests; static policy comparisons share identical archived inputs, Native protocols are not interchangeable.','No new hardware test; simulated tracking/parking and frozen-input sensitivity are separate evidence.'],'direct_parameter_change_supported':False}\nwrite_bytes(out/'metrics.json',encode(value))\nprint(json.dumps({'metrics_path':str(out/'metrics.json'),'windows':windows,'training':throughput},ensure_ascii=False),flush=True)\n",
+    "sha256": "0cb9b1dc0ce4d018a090f1563c538155aac1e403b0869f138e9b82e977d145f8"
+  },
+  "artifacts": {
+    "path_heading": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/live-model22000-20261003-004/path-heading.png",
+      "sha256": "0f20d8a6fb36883828386f59c591923a75fbf9f17a4ab651aa93a9b80155ce4e"
+    },
+    "timeline": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/live-model22000-20261003-004/timeline.png",
+      "sha256": "d08fc42e2157b3153b00ef43ff5d4398bf1863a21c23beaccc2861fcb4093ad3"
+    },
+    "training_throughput": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/live-model22000-20261003-004/training-throughput.png",
+      "sha256": "f2c108ecb9528f165b574c47c5f41d2de9064465f7f8bc7e62522237e35984e7"
+    }
+  },
+  "created_at": "2026-10-02T16:53:11.742681+00:00",
+  "direct_parameter_change_supported": false,
+  "done_count": 0,
+  "limitations": [
+    "One seed and one environment, a mid-training fixed checkpoint; no convergence conclusion.",
+    "Four phases are shorter than historical 4500-step Native tests; static policy comparisons share identical archived inputs, Native protocols are not interchangeable.",
+    "No new hardware test; simulated tracking/parking and frozen-input sensitivity are separate evidence."
+  ],
+  "method": {
+    "drift": "Euclidean world XY endpoint displacement; reported endpoint time is one dt shorter than sample-count duration; no reset crossing",
+    "estimator_timing": "roa_student_velocity_b and roa_true_velocity_b are both captured before env.step; root velocities/joints are post-step",
+    "fft": "Demeaned rFFT; Parseval weights 2 except DC/Nyquist; rectangular window; band 5<=f<=25 Hz; differences stay inside each window",
+    "hip_action_joint_order": [
+      "right_hip_joint",
+      "left_hip_joint"
+    ],
+    "hip_scale_rad_per_raw_action": [
+      0.125,
+      0.125
+    ],
+    "hip_telemetry_indices": [
+      1,
+      0
+    ],
+    "physical_target": "Policy-requested positions before the 15ms actuator buffer, hip default offset 0; not measured actuator setpoints",
+    "rms_xy_convention": "sqrt(mean(sum((vx,vy-command)^2,axis=1)))",
+    "steady_windows_exclude_first_1s_of_each_phase": true,
+    "step_dt_s": 0.02,
+    "training_fps": "Unique TB step samples, 60s before pre-snapshot TB time, between pre/post TB times, then until recovery; observational windows not controlled causality"
+  },
+  "result_validation": {
+    "artifact": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_22000.pt",
+      "sha256": "666ac9d50b7e8c0854ddd47e85cf7cc393b2b2f3f2082b5b8d8cb7582c243558"
+    },
+    "checkpoint": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_22000.pt",
+      "sha256": "666ac9d50b7e8c0854ddd47e85cf7cc393b2b2f3f2082b5b8d8cb7582c243558"
+    },
+    "outputs": {
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-model22000-20261003-004/raw/native-right15-noise-a01/telemetry.json.gz",
+        "sha256": "0f680df5491de22800f02511ddefe578f9f351045848f7cb6e77b5fa4fd12f9c"
+      },
+      "video": null
+    },
+    "result": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-model22000-20261003-004/raw/native-right15-noise-a01/result.json",
+      "sha256": "4ec7b80208a355243b992c5aaab414109b97bdb3e5ee4d4f01e0ebc029efc52d"
+    },
+    "run_identity": {
+      "file_sha256": "8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065",
+      "identity_sha256": "50edcfc72780f7bd4ab817f012513c739a5bd1144acf6721f6497051a2af8ad8",
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/context-8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065.json"
+    },
+    "scenario_sha256": "b0920f6e17a8c90081294649223b6b813de2af112ba45a12fb31441c832f8e38",
+    "status": "valid"
+  },
+  "sample_count": 2000,
+  "telemetry_required_motion_signals_complete": true,
+  "training": {
+    "all_loss_samples_finite": true,
+    "all_monotonic": true,
+    "before60s": {
+      "count": 33,
+      "mean_fps": 54566.51515151515
+    },
+    "before_last5_fps": 53155.4,
+    "health_snapshots": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-before.json",
+        "sha256": "91ced94127ad3c89ff0b1353422f90b0ef56303f5c7d77f6be4fb7a9ec7cfa18"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-01.json",
+        "sha256": "50ee564c0d3a54df30c630e62e9b979ad98702af12d97433a951b98118b8ffb6"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-02.json",
+        "sha256": "f6ac4cebb12db53a457ab5457ae938ba9734be1a36142a6f7133ae22f101c988"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-03.json",
+        "sha256": "a99a444c50e9c21135074396d43d8720d1f91ae0de933a86aa7b62a81dcb847b"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-04.json",
+        "sha256": "5b7ebd18a558c80e0995834c5b22303f64c982cca9151f3950dbf0d8180ac77f"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-05.json",
+        "sha256": "3cab54b3bc373d5fa06282829864074e9aabdd369a368c178b30f1e329036cb5"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-after.json",
+        "sha256": "d2e0de165ef75e727abb206308d930d374b4a47d1c906772cb88b2c012bf644b"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-recovery.json",
+        "sha256": "c587047dfa1efd1df86c81e1225d21f0d196dc0885a2efc4acaf9c4f0b40a323"
+      }
+    ],
+    "minimum_overlap_snapshot_last5_fps": 27094.0,
+    "overlap_all_between_pre_post_TB_times": {
+      "count": 38,
+      "mean_fps": 33079.60526315789
+    },
+    "overlap_mean_drop_vs_before60s_percent": -39.37746405225702,
+    "post_until_recovery": {
+      "count": 17,
+      "mean_fps": 53865.294117647056
+    },
+    "recovery_last5_fps": 54339.6,
+    "same_training_identity": true,
+    "steps": [
+      22569,
+      22576,
+      22582,
+      22587,
+      22593,
+      22598,
+      22607,
+      22624
+    ]
+  },
+  "version": 1,
+  "windows": {
+    "forward_steady": {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "command_yaw_integral_rad": 0.0,
+      "endpoint_time_span_s": 8.98,
+      "half_open_steps": [
+        300,
+        750
+      ],
+      "hip_position_band_5_25Hz": {
+        "right_left": [
+          0.0029854654863104005,
+          0.0029803613595015717
+        ],
+        "rms": 0.0029829145146283236
+      },
+      "hip_position_rms_rad": 0.013482069426222328,
+      "hip_target_abs_peak_rad": 0.2913329601287842,
+      "hip_target_band_5_25Hz": {
+        "right_left": [
+          0.008031216923364911,
+          0.007028876390957372
+        ],
+        "rms": 0.007546706188447411
+      },
+      "hip_target_rms_rad": 0.20671491823507848,
+      "hip_target_step_rms_rad": 0.009190724052064428,
+      "hip_torque_abs_peak_Nm": 27.206832885742188,
+      "hip_torque_rms_Nm": 19.589536254668307,
+      "hip_velocity_band_5_25Hz": {
+        "right_left": [
+          0.16141129141584107,
+          0.16442894342940323
+        ],
+        "rms": 0.16292710399721627
+      },
+      "hip_velocity_rms_rad_s": 0.17988500012503442,
+      "mean_velocity_b_m_s": [
+        0.4765497104326884,
+        0.004179573305235762,
+        -0.003428028864921847
+      ],
+      "mean_yaw_rate_b_rad_s": 0.03403132589409425,
+      "net_xy_displacement_m": 4.274020479262577,
+      "nominal_duration_s": 9.0,
+      "path_xy_length_m": 4.299374769898206,
+      "resets": 0,
+      "sample_count": 450,
+      "student_velocity_x_estimation_rmse_m_s": 0.036172559570912595,
+      "tracking_xy_rmse_m_s": 0.06642696963230799,
+      "tracking_yaw_rmse_rad_s": 0.15184675142974036,
+      "world_heading_change_rad": 0.29944180171600754
+    },
+    "initial_zero_steady": {
+      "command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "command_yaw_integral_rad": 0.0,
+      "endpoint_time_span_s": 3.98,
+      "half_open_steps": [
+        50,
+        250
+      ],
+      "hip_position_band_5_25Hz": {
+        "right_left": [
+          0.00216807612453773,
+          0.0021966599518236426
+        ],
+        "rms": 0.0021824148351924743
+      },
+      "hip_position_rms_rad": 0.007699037570415344,
+      "hip_target_abs_peak_rad": 0.419494092464447,
+      "hip_target_band_5_25Hz": {
+        "right_left": [
+          0.00988776151399158,
+          0.00786398741302471
+        ],
+        "rms": 0.008933367948030131
+      },
+      "hip_target_rms_rad": 0.33776007365020866,
+      "hip_target_step_rms_rad": 0.010423359098788667,
+      "hip_torque_abs_peak_Nm": 39.137081146240234,
+      "hip_torque_rms_Nm": 30.760616974195948,
+      "hip_velocity_band_5_25Hz": {
+        "right_left": [
+          0.08788232772144608,
+          0.08789582564491386
+        ],
+        "rms": 0.0878890769423048
+      },
+      "hip_velocity_rms_rad_s": 0.09950323542677425,
+      "mean_velocity_b_m_s": [
+        0.08729731665065628,
+        0.0018632189279287558,
+        -0.0022352401872558405
+      ],
+      "mean_yaw_rate_b_rad_s": -0.002618241205814229,
+      "net_xy_displacement_m": 0.34879889387523466,
+      "nominal_duration_s": 4.0,
+      "path_xy_length_m": 0.36127781308691237,
+      "resets": 0,
+      "sample_count": 200,
+      "student_velocity_x_estimation_rmse_m_s": 0.056144315197942184,
+      "tracking_xy_rmse_m_s": 0.10155017313757304,
+      "tracking_yaw_rmse_rad_s": 0.054158349820492266,
+      "world_heading_change_rad": -0.006768293904793184
+    },
+    "parking_full_phase": {
+      "command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "command_yaw_integral_rad": 0.0,
+      "endpoint_time_span_s": 9.98,
+      "half_open_steps": [
+        1500,
+        2000
+      ],
+      "hip_position_band_5_25Hz": {
+        "right_left": [
+          0.0018943463166997273,
+          0.0019606759441871315
+        ],
+        "rms": 0.001927796426714699
+      },
+      "hip_position_rms_rad": 0.00969884449115077,
+      "hip_target_abs_peak_rad": 0.4435453414916992,
+      "hip_target_band_5_25Hz": {
+        "right_left": [
+          0.009497152287570719,
+          0.008098085185447742
+        ],
+        "rms": 0.008825386259084583
+      },
+      "hip_target_rms_rad": 0.3318799681878484,
+      "hip_target_step_rms_rad": 0.010859455088191859,
+      "hip_torque_abs_peak_Nm": 41.28606414794922,
+      "hip_torque_rms_Nm": 30.335452585585113,
+      "hip_velocity_band_5_25Hz": {
+        "right_left": [
+          0.08088772059225388,
+          0.08428227985953879
+        ],
+        "rms": 0.08260243955517341
+      },
+      "hip_velocity_rms_rad_s": 0.1142288506552415,
+      "mean_velocity_b_m_s": [
+        0.05055708724702709,
+        -0.0011214392853435128,
+        0.0019005652623600327
+      ],
+      "mean_yaw_rate_b_rad_s": -0.005679739970946685,
+      "net_xy_displacement_m": 0.4969970985450739,
+      "nominal_duration_s": 10.0,
+      "path_xy_length_m": 0.727498516904582,
+      "resets": 0,
+      "sample_count": 500,
+      "student_velocity_x_estimation_rmse_m_s": 0.04292058074044418,
+      "tracking_xy_rmse_m_s": 0.1098196147040643,
+      "tracking_yaw_rmse_rad_s": 0.07080384018158117,
+      "world_heading_change_rad": 0.013297519555278914
+    },
+    "parking_steady": {
+      "command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "command_yaw_integral_rad": 0.0,
+      "endpoint_time_span_s": 8.98,
+      "half_open_steps": [
+        1550,
+        2000
+      ],
+      "hip_position_band_5_25Hz": {
+        "right_left": [
+          0.0016739828941587996,
+          0.0016907678850765012
+        ],
+        "rms": 0.001682396322383988
+      },
+      "hip_position_rms_rad": 0.00886740131928219,
+      "hip_target_abs_peak_rad": 0.4435453414916992,
+      "hip_target_band_5_25Hz": {
+        "right_left": [
+          0.007610940244823876,
+          0.00636113165490927
+        ],
+        "rms": 0.007013929260456241
+      },
+      "hip_target_rms_rad": 0.33935098915803896,
+      "hip_target_step_rms_rad": 0.010706481655964167,
+      "hip_torque_abs_peak_Nm": 41.28606414794922,
+      "hip_torque_rms_Nm": 31.015795494043257,
+      "hip_velocity_band_5_25Hz": {
+        "right_left": [
+          0.07731459077852142,
+          0.07858508433828121
+        ],
+        "rms": 0.07795242596515198
+      },
+      "hip_velocity_rms_rad_s": 0.10565797368473828,
+      "mean_velocity_b_m_s": [
+        0.03322539740785335,
+        2.7234844552973906e-06,
+        0.0007323373822469471
+      ],
+      "mean_yaw_rate_b_rad_s": -0.0043081697524111305,
+      "net_xy_displacement_m": 0.29928052174802783,
+      "nominal_duration_s": 9.0,
+      "path_xy_length_m": 0.5195794786088908,
+      "resets": 0,
+      "sample_count": 450,
+      "student_velocity_x_estimation_rmse_m_s": 0.04405552752611736,
+      "tracking_xy_rmse_m_s": 0.07237446430070581,
+      "tracking_yaw_rmse_rad_s": 0.05164566076822856,
+      "world_heading_change_rad": 0.018738694307006476
+    },
+    "right_turn_steady": {
+      "command": [
+        0.5,
+        0.0,
+        -0.6000000238418579
+      ],
+      "command_yaw_integral_rad": -8.388000333309174,
+      "endpoint_time_span_s": 13.98,
+      "half_open_steps": [
+        800,
+        1500
+      ],
+      "hip_position_band_5_25Hz": {
+        "right_left": [
+          0.0029110823659292675,
+          0.003198881458448713
+        ],
+        "rms": 0.0030583691018606063
+      },
+      "hip_position_rms_rad": 0.015028012487907822,
+      "hip_target_abs_peak_rad": 0.234229177236557,
+      "hip_target_band_5_25Hz": {
+        "right_left": [
+          0.007100438609392192,
+          0.005450185546223565
+        ],
+        "rms": 0.006329326620344837
+      },
+      "hip_target_rms_rad": 0.1813250924428652,
+      "hip_target_step_rms_rad": 0.008317566380327102,
+      "hip_torque_abs_peak_Nm": 23.29230308532715,
+      "hip_torque_rms_Nm": 16.972917518401594,
+      "hip_velocity_band_5_25Hz": {
+        "right_left": [
+          0.1506701292920686,
+          0.16899544937174588
+        ],
+        "rms": 0.16009520568906332
+      },
+      "hip_velocity_rms_rad_s": 0.1772615134694502,
+      "mean_velocity_b_m_s": [
+        0.4744672993677003,
+        -0.010461709067375133,
+        -0.0012753468736939665
+      ],
+      "mean_yaw_rate_b_rad_s": -0.20877297311139825,
+      "net_xy_displacement_m": 4.144065789603442,
+      "nominal_duration_s": 14.0,
+      "path_xy_length_m": 6.666835463755788,
+      "resets": 0,
+      "sample_count": 700,
+      "student_velocity_x_estimation_rmse_m_s": 0.03812780940812003,
+      "tracking_xy_rmse_m_s": 0.06217239733367453,
+      "tracking_yaw_rmse_rad_s": 0.43570196850530246,
+      "world_heading_change_rad": -3.245636650442742
+    }
+  }
+}

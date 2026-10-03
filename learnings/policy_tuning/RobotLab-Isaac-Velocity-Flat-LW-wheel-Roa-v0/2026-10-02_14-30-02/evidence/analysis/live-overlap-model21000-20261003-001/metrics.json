@@ -1,0 +1,1030 @@
+{
+  "analysis_source": "def ref(path):\n path=pathlib.Path(path)\n return {'path':str(path),'sha256':hashlib.sha256(path.read_bytes()).hexdigest()}\nrefs=data['cpu'];result_path=pathlib.Path(refs['layout']['paths']['play_result'])\nvalidation=validate_evaluation_bundle(result_path);result=json.loads(result_path.read_text());telemetry=json.loads(gzip.decompress(pathlib.Path(refs['layout']['paths']['telemetry']).read_bytes()))\nsamples=telemetry['samples'];n=len(samples);done=sum(s['done'] for s in samples);timeouts=sum(s['timeout'] for s in samples)\nlongest=curr=0\nfor s in samples:\n curr=0 if s['done'] else curr+1;longest=max(longest,curr)\nunique_positions=len({tuple(s['root_position_w']) for s in samples})\nunique_joint_positions=len({tuple(s['joint_position']) for s in samples})\ncompletion_files=['completion-model21000-20261003-001.json','completion-cpu-model21000-20261003-002.json','completion-short-model21000-20261003-003.json']\ncompletions=[json.loads((training_dir/name).read_text()) for name in completion_files]\nrecovery=read_reference(data['recovery'])\ntraining_values=recovery['tensorboard']['metrics']\ntracking={'status':'unavailable','reason':'No published CUDA trajectory; every CPU sample has done=true and post-reset state.'}\nparking={'status':'unavailable','reason':'No uninterrupted stop window. Zero post-reset displacement is not measured parking drift.'}\nhips={'status':'unavailable','reason':'No consecutive closed-loop hip feedback window. Spectral analysis across resets would be invalid.'}\naudit={'version':1,'record_type':'live-training-overlap-assessment','recorded_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'task':refs['layout']['task'],'run_id':refs['layout']['run_id'],'checkpoint':result['inputs']['checkpoint'],'context':refs['context'],'effective_config':refs['config'],'assessment_status':'insufficient_evidence','convergence_status':'indeterminate','approved_convergence_criteria':None,'closed_loop':{'valid_samples':n-done,'longest_non_done_run_steps':longest,'tracking':tracking,'parking':parking,'hip_oscillation':hips},'cpu_evidence':{'validation':validation,'telemetry_status':result['telemetry_status'],'missing_required_signals':result['missing_required_signals'],'signal_status':telemetry['signal_status'],'metric_availability':result['metric_availability'],'sample_count':n,'done_count':done,'timeout_count':timeouts,'illegal_contact_count':round(result['metrics']['illegal_contact_rate']*n),'unique_root_positions':unique_positions,'unique_joint_positions':unique_joint_positions,'raw_metric_note':'Raw zero feedback/tilt/drift metrics describe post-reset samples and must not be scored as successful motion or stability.'},'attempts':completions,'current_training_snapshot':data['recovery'],'training_metric_means':{k:{f:v for f,v in values.items() if f!='samples'} for k,values in training_values.items()},'training_limits':'Training scalars describe evolving stochastic teacher/student rollouts, not deterministic inference of model_21000.pt. Command tracking error scalars are accumulated norm/absolute errors, not RMSE. Near-stationary fractions are conditional training diagnostics, not net parking drift.','source_diagnostics':{'base_illegal_contact':ref(root/'source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/terminations.py'),'velocity_diagnostics':ref(root/'rsl_rl/rsl_rl/utils/velocity_diagnostics.py'),'source_note':'base_illegal_contact subtracts filtered self-contact from net contact history; no contact-force telemetry is available to identify the CPU reset cause. CPU warning about collision groups is a diagnostic clue only.'},'user_boundaries':{'source_changed':False,'training_signaled':False,'training_parameters_changed':False,'packages_installed':False,'user_files_deleted':False,'git_committed_or_pushed':False,'old_policy_tests_rerun':False},'methods':{'process_identity':'same PID, argv and /proc start ticks','tensorboard':'2 MiB suffix with TFRecord header/payload masked CRC32C validation; original offsets and hashes saved','throughput_comparison':'before last-30 mean versus during/after last-5 mean; show per-iteration values in figure','physical_validity':'Exclude every done/reset sample and require an uninterrupted window before computing parking drift or spectral estimates'}}\nassert n==2000 and done==2000 and longest==0 and unique_positions==1 and unique_joint_positions==1\nfor c in completions:\n assert c['training_identity_compatible'] and c['training_step_after']>c['training_step_before']\n",
+  "approved_convergence_criteria": null,
+  "assessment_status": "insufficient_evidence",
+  "attempts": [
+    {
+      "after_fps_last5": 28543.0,
+      "baseline_fps_last30": 54532.433333333334,
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-model21000-20261003-001/raw/native-quick-a01/console.log",
+        "sha256": "07ad280621daf2fcc43d80456c987e2cff44f3b1d9491e19581098cbf7da13bf"
+      },
+      "elapsed_wall_seconds": 47.04881677904632,
+      "evaluation_pid": 591334,
+      "exit_code": -6,
+      "launch_reference": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/launch-model21000-20261003-001.json",
+        "sha256": "575bf1e4cb0130a317956a50a591144761295e5320acbcd69671c0a3ae444a3c"
+      },
+      "monitor_snapshots": [
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-model21000-20261003-001-before.json",
+          "sha256": "eb332b11f36a049ec81a646da112558ab561853362c1c4d1a0c29c8c8ebb088c"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-model21000-20261003-001-during-01.json",
+          "sha256": "43e0fc273eceaac321a2bd91bf9143d7ce454f05823e84c811037f4545718979"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-model21000-20261003-001-during-02.json",
+          "sha256": "164be9ab05bc24f9e8f888c383a1c105f46c2326fd56dd5d7228a146b659c003"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-model21000-20261003-001-during-03.json",
+          "sha256": "d6a2ea64ace4048ee69fda53dc0bbeb72d00448032b4e9d836e33d0a3c86d168"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-model21000-20261003-001-after.json",
+          "sha256": "99ffa7e980751fdc93553df16cc635ad90b434b8ddaf8957ad528479f90b00c7"
+        }
+      ],
+      "record_type": "native-overlap-completion",
+      "recorded_at": "2026-10-02T16:05:32.824455+00:00",
+      "result_exists": false,
+      "stop_reason": "material training throughput drop",
+      "training_identity_compatible": true,
+      "training_step_after": 21290,
+      "training_step_before": 21275,
+      "version": 1
+    },
+    {
+      "after_fps_last5": 44946.4,
+      "baseline_fps_last30": 53554.73333333333,
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-cpu-model21000-20261003-002/raw/native-quick-cpu-a02/console.log",
+        "sha256": "8933e4681043953fa7f98adb0948d7970d14d221d11277374a62b52e05830e0e"
+      },
+      "elapsed_wall_seconds": 31.94070446898695,
+      "evaluation_pid": 592277,
+      "exit_code": 0,
+      "launch_reference": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/launch-cpu-model21000-20261003-002.json",
+        "sha256": "8c88d804f84fe1e1ecc69ac541159264b602f336b4c77ad78df1d90f4abeb3dc"
+      },
+      "monitor_snapshots": [
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-cpu-model21000-20261003-002-before.json",
+          "sha256": "10ce553307dfe317c99f64a809a5484e35dcda1fed1267e6e76a1e260d6d1bc4"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-cpu-model21000-20261003-002-during-01.json",
+          "sha256": "9b83df5453255933979490a3f2be5ed849003a1745036e3c03bc0c2b43aa653b"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-cpu-model21000-20261003-002-during-02.json",
+          "sha256": "1b18079764ea5ada72505319202031d93c197cb223141fcc906ae4016521ce61"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-cpu-model21000-20261003-002-after.json",
+          "sha256": "25cab33e2b34ac72dc5aa8c41fb310453c846cc9d87d932a0013d3d017051d56"
+        }
+      ],
+      "record_type": "native-overlap-completion",
+      "recorded_at": "2026-10-02T16:09:34.927808+00:00",
+      "result_exists": true,
+      "stop_reason": null,
+      "training_identity_compatible": true,
+      "training_step_after": 21417,
+      "training_step_before": 21403,
+      "version": 1
+    },
+    {
+      "after_fps_last5": 40158.8,
+      "baseline_fps_last30": 54008.833333333336,
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-short-model21000-20261003-003/raw/native-quick-gpu500-a03/console.log",
+        "sha256": "6a3ab5bc978e14b27e81bba2f29b6627ae5898d790cd615ab0fbbd897e366b3d"
+      },
+      "elapsed_wall_seconds": 40.73036625003442,
+      "evaluation_pid": 593318,
+      "exit_code": -9,
+      "launch_reference": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/launch-short-model21000-20261003-003.json",
+        "sha256": "fa218d9b32fd2cba3a576cbe787ad1cf2a9ba9b8e990ae583c8e361ff9623e31"
+      },
+      "monitor_snapshots": [
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-short-model21000-20261003-003-before.json",
+          "sha256": "cdec3698d44c5acd4e638834473cfb91e28348e347ce1c09099b0ccb78545325"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-short-model21000-20261003-003-during-01.json",
+          "sha256": "d0d184f5ba6c1f261ba10ee9104f5a973541bd337f379af5eabb3f2bf054b01d"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-short-model21000-20261003-003-during-02.json",
+          "sha256": "96c544b738ae95d6d368d28cf087ba4d85ed8f24e18b82a9fcd1d93b0f674ead"
+        },
+        {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-short-model21000-20261003-003-after.json",
+          "sha256": "d15faf1b337f49b556d5518620aba810972eb1d81c3da03add9b76032873b837"
+        }
+      ],
+      "record_type": "native-overlap-completion",
+      "recorded_at": "2026-10-02T16:14:46.033535+00:00",
+      "result_exists": false,
+      "stop_reason": "material training throughput drop",
+      "training_identity_compatible": true,
+      "training_step_after": 21578,
+      "training_step_before": 21563,
+      "version": 1
+    }
+  ],
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_21000.pt",
+    "sha256": "330ac2360e010eb4622bfd3d29f65753a14f78a266b1509d641f879e047579c8"
+  },
+  "closed_loop": {
+    "hip_oscillation": {
+      "reason": "No consecutive closed-loop hip feedback window. Spectral analysis across resets would be invalid.",
+      "status": "unavailable"
+    },
+    "longest_non_done_run_steps": 0,
+    "parking": {
+      "reason": "No uninterrupted stop window. Zero post-reset displacement is not measured parking drift.",
+      "status": "unavailable"
+    },
+    "tracking": {
+      "reason": "No published CUDA trajectory; every CPU sample has done=true and post-reset state.",
+      "status": "unavailable"
+    },
+    "valid_samples": 0
+  },
+  "context": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/context-8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065.json",
+    "sha256": "8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065"
+  },
+  "convergence_status": "indeterminate",
+  "cpu_evidence": {
+    "done_count": 2000,
+    "illegal_contact_count": 2000,
+    "metric_availability": {
+      "body_roll_pitch_angular_acceleration_p95": {
+        "available": false,
+        "complete": false,
+        "errors": {
+          "derived": "insufficient consecutive samples after transition exclusions"
+        },
+        "partial": true,
+        "source_signals": [
+          "root_angular_velocity_b"
+        ]
+      },
+      "body_roll_pitch_angular_acceleration_rms": {
+        "available": false,
+        "complete": false,
+        "errors": {
+          "derived": "insufficient consecutive samples after transition exclusions"
+        },
+        "partial": true,
+        "source_signals": [
+          "root_angular_velocity_b"
+        ]
+      },
+      "body_roll_pitch_angular_velocity_p95": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "root_angular_velocity_b"
+        ]
+      },
+      "body_roll_pitch_angular_velocity_rms": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "root_angular_velocity_b"
+        ]
+      },
+      "body_vertical_acceleration_p95": {
+        "available": false,
+        "complete": false,
+        "errors": {
+          "derived": "insufficient consecutive samples after transition exclusions"
+        },
+        "partial": true,
+        "source_signals": [
+          "root_linear_velocity_b"
+        ]
+      },
+      "body_vertical_acceleration_rms": {
+        "available": false,
+        "complete": false,
+        "errors": {
+          "derived": "insufficient consecutive samples after transition exclusions"
+        },
+        "partial": true,
+        "source_signals": [
+          "root_linear_velocity_b"
+        ]
+      },
+      "body_vertical_velocity_p95": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "root_linear_velocity_b"
+        ]
+      },
+      "body_vertical_velocity_rms": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "root_linear_velocity_b"
+        ]
+      },
+      "joint_effort_limit_violation_rate": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "joint_names",
+          "joint_effort_limits",
+          "applied_torque"
+        ]
+      },
+      "joint_velocity_limit_violation_rate": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "joint_names",
+          "joint_velocity_limits",
+          "joint_velocity"
+        ]
+      },
+      "max_abs_applied_torque": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "applied_torque"
+        ]
+      },
+      "max_abs_joint_velocity": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "joint_velocity"
+        ]
+      },
+      "max_joint_effort_utilization": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "joint_names",
+          "joint_effort_limits",
+          "applied_torque"
+        ]
+      },
+      "max_joint_velocity_utilization": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "joint_names",
+          "joint_velocity_limits",
+          "joint_velocity"
+        ]
+      },
+      "max_tilt": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "projected_gravity_b"
+        ]
+      },
+      "tilt_rms": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "projected_gravity_b"
+        ]
+      },
+      "tracking_xy_rmse": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "command",
+          "root_linear_velocity_b"
+        ]
+      },
+      "tracking_yaw_rmse": {
+        "available": true,
+        "complete": true,
+        "errors": {},
+        "partial": false,
+        "source_signals": [
+          "command",
+          "root_angular_velocity_b"
+        ]
+      }
+    },
+    "missing_required_signals": [],
+    "raw_metric_note": "Raw zero feedback/tilt/drift metrics describe post-reset samples and must not be scored as successful motion or stability.",
+    "sample_count": 2000,
+    "signal_status": {
+      "action": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "applied_torque": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": false,
+        "sample_count": 2000
+      },
+      "command": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "done": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "joint_effort_limits": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 1,
+        "required": false,
+        "sample_count": 1
+      },
+      "joint_names": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 1,
+        "required": false,
+        "sample_count": 1
+      },
+      "joint_position": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": false,
+        "sample_count": 2000
+      },
+      "joint_velocity": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": false,
+        "sample_count": 2000
+      },
+      "joint_velocity_limits": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 1,
+        "required": false,
+        "sample_count": 1
+      },
+      "projected_gravity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": false,
+        "sample_count": 2000
+      },
+      "reward": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "roa_student_action": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "roa_student_latent": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "roa_student_velocity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "roa_teacher_action": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "roa_teacher_latent": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "roa_teacher_velocity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "roa_true_velocity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      },
+      "root_angular_velocity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": false,
+        "sample_count": 2000
+      },
+      "root_linear_velocity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": false,
+        "sample_count": 2000
+      },
+      "root_position_w": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": false,
+        "sample_count": 2000
+      },
+      "root_quaternion_w": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": false,
+        "sample_count": 2000
+      },
+      "timeout": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 2000,
+        "required": true,
+        "sample_count": 2000
+      }
+    },
+    "telemetry_status": "complete",
+    "timeout_count": 0,
+    "unique_joint_positions": 1,
+    "unique_root_positions": 1,
+    "validation": {
+      "artifact": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_21000.pt",
+        "sha256": "330ac2360e010eb4622bfd3d29f65753a14f78a266b1509d641f879e047579c8"
+      },
+      "checkpoint": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_21000.pt",
+        "sha256": "330ac2360e010eb4622bfd3d29f65753a14f78a266b1509d641f879e047579c8"
+      },
+      "outputs": {
+        "telemetry": {
+          "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-cpu-model21000-20261003-002/raw/native-quick-cpu-a02/telemetry.json.gz",
+          "sha256": "c093029462e43aa2b74cd19549c5d95f9364850cdd7c25b770658c4579b32787"
+        },
+        "video": null
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-cpu-model21000-20261003-002/raw/native-quick-cpu-a02/result.json",
+        "sha256": "d7cb93c802e9140c1aadae9a4991e97123c6a205cf1a15b78a9218cb9fd1c46c"
+      },
+      "run_identity": {
+        "file_sha256": "8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065",
+        "identity_sha256": "50edcfc72780f7bd4ab817f012513c739a5bd1144acf6721f6497051a2af8ad8",
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/context-8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065.json"
+      },
+      "scenario_sha256": "34f673f9452573af753089a92fc014bbd0f178edadbce6e817ee63e31d4314df",
+      "status": "valid"
+    }
+  },
+  "current_training_snapshot": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-short-model21000-20261003-003-recovery.json",
+    "sha256": "99250660dca1e764f736c36c0a88c6c0cce8f16f8ad1a4e3049d66858573835b"
+  },
+  "effective_config": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/config-dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94.json",
+    "sha256": "dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94"
+  },
+  "methods": {
+    "physical_validity": "Exclude every done/reset sample and require an uninterrupted window before computing parking drift or spectral estimates",
+    "process_identity": "same PID, argv and /proc start ticks",
+    "tensorboard": "2 MiB suffix with TFRecord header/payload masked CRC32C validation; original offsets and hashes saved",
+    "throughput_comparison": "before last-30 mean versus during/after last-5 mean; show per-iteration values in figure"
+  },
+  "record_type": "live-training-overlap-assessment",
+  "recorded_at": "2026-10-02T16:22:05.562928+00:00",
+  "run_id": "2026-10-02_14-30-02",
+  "source_diagnostics": {
+    "base_illegal_contact": {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/terminations.py",
+      "sha256": "e33a8a893e6d1ae12b06012b3cfaf3c741d1e2de72a09399b126cc6cbd01fde0"
+    },
+    "source_note": "base_illegal_contact subtracts filtered self-contact from net contact history; no contact-force telemetry is available to identify the CPU reset cause. CPU warning about collision groups is a diagnostic clue only.",
+    "velocity_diagnostics": {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/velocity_diagnostics.py",
+      "sha256": "1f5dec1bed927c7f13067d9f0f195a452f5a682ccc1ab19b6f54e14263efaac9"
+    }
+  },
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+  "training_limits": "Training scalars describe evolving stochastic teacher/student rollouts, not deterministic inference of model_21000.pt. Command tracking error scalars are accumulated norm/absolute errors, not RMSE. Near-stationary fractions are conditional training diagnostics, not net parking drift.",
+  "training_metric_means": {
+    "Episode_Reward/action_rate_legs_l2": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -0.5352984791994095,
+      "mean_last_30": -0.5356121142705281,
+      "mean_last_5": -0.5328057885169983
+    },
+    "Episode_Reward/action_rate_wheels_l2": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -0.49534467786550523,
+      "mean_last_30": -0.4906585345665614,
+      "mean_last_5": -0.4868826687335968
+    },
+    "Episode_Reward/action_smoothness_legs": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -0.38993130952119825,
+      "mean_last_30": -0.3893231103817622,
+      "mean_last_5": -0.3881175398826599
+    },
+    "Episode_Reward/action_smoothness_wheels": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -0.18522871911525726,
+      "mean_last_30": -0.1846633791923523,
+      "mean_last_5": -0.18468478918075562
+    },
+    "Episode_Reward/joint_deviation_hip": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -0.021629929654300214,
+      "mean_last_30": -0.02146688736975193,
+      "mean_last_5": -0.020964884757995607
+    },
+    "Episode_Reward/stop_motion": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -0.302706732749939,
+      "mean_last_30": -0.30913680146137873,
+      "mean_last_5": -0.3338474214076996
+    },
+    "Loss/entropy": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 2.8175102496147155,
+      "mean_last_30": 2.7537716547648112,
+      "mean_last_5": 2.7304502010345457
+    },
+    "Loss/hist_latent": {
+      "all_finite": true,
+      "count": 8,
+      "mean": 0.009985260316170752,
+      "mean_last_30": 0.009985260316170752,
+      "mean_last_5": 0.009836931899189948
+    },
+    "Loss/priv_reg": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.009684180449694395,
+      "mean_last_30": 0.009812470680723587,
+      "mean_last_5": 0.009657127037644386
+    },
+    "Loss/surrogate": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -2.6257433273713104e-05,
+      "mean_last_30": -6.661632384445208e-05,
+      "mean_last_5": 0.002332907120580785
+    },
+    "Loss/value_function": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.34848475992679595,
+      "mean_last_30": 0.33009082575639087,
+      "mean_last_5": 0.307334703207016
+    },
+    "Loss/vel_loss": {
+      "all_finite": true,
+      "count": 8,
+      "mean": 0.025438461685553193,
+      "mean_last_30": 0.025438461685553193,
+      "mean_last_5": 0.02448164001107216
+    },
+    "Metrics/base_velocity/error_vel_xy": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.4545992401242256,
+      "mean_last_30": 0.44983492890993754,
+      "mean_last_5": 0.4449345886707306
+    },
+    "Metrics/base_velocity/error_vel_yaw": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.5551976925134658,
+      "mean_last_30": 0.5559990445772807,
+      "mean_last_5": 0.5504560708999634
+    },
+    "Perf/total_fps": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 54447.37,
+      "mean_last_30": 54491.53333333333,
+      "mean_last_5": 55404.6
+    },
+    "Train/mean_episode_length": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 995.6307983398438,
+      "mean_last_30": 995.8133321126302,
+      "mean_last_5": 997.8739990234375
+    },
+    "Train/mean_reward": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 134.75841773986815,
+      "mean_last_30": 135.71605377197267,
+      "mean_last_5": 137.00139770507812
+    },
+    "VelocityDiagnostics/student/all/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 8,
+      "mean": 0.0019976298208348453,
+      "mean_last_30": 0.0019976298208348453,
+      "mean_last_5": 0.00185546875
+    },
+    "VelocityDiagnostics/student/command_low/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.016360907970617216,
+      "mean_last_30": 0.016360907970617216,
+      "mean_last_5": 0.020786763168871403
+    },
+    "VelocityDiagnostics/student/command_other/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.0002970040303706709,
+      "mean_last_30": 0.0002970040303706709,
+      "mean_last_5": 0.00023505754652433097
+    },
+    "VelocityDiagnostics/student/command_zero/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 8,
+      "mean": 0.017336910706944764,
+      "mean_last_30": 0.017336910706944764,
+      "mean_last_5": 0.016331770084798337
+    },
+    "VelocityDiagnostics/student/state_moving/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.0,
+      "mean_last_30": 0.0,
+      "mean_last_5": 0.0
+    },
+    "VelocityDiagnostics/student/state_near_stationary/actual_vx_mean_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": -1.1649073308540715e-05,
+      "mean_last_30": -1.1649073308540715e-05,
+      "mean_last_5": 7.731232908554375e-05
+    },
+    "VelocityDiagnostics/student/state_near_stationary/actual_vy_mean_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 5.292754697923859e-06,
+      "mean_last_30": 5.292754697923859e-06,
+      "mean_last_5": -0.0005418272281531245
+    },
+    "VelocityDiagnostics/student/state_near_stationary/actual_vz_mean_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.004010775812073714,
+      "mean_last_30": 0.004010775812073714,
+      "mean_last_5": 0.007356708589941263
+    },
+    "VelocityDiagnostics/student/state_near_stationary/bias_vx_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.005300232862484538,
+      "mean_last_30": 0.005300232862484538,
+      "mean_last_5": -0.003108626580797136
+    },
+    "VelocityDiagnostics/student/state_near_stationary/bias_vy_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.003981539603652588,
+      "mean_last_30": 0.003981539603652588,
+      "mean_last_5": 0.0034061666097841225
+    },
+    "VelocityDiagnostics/student/state_near_stationary/bias_vz_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.0031887179486350054,
+      "mean_last_30": 0.0031887179486350054,
+      "mean_last_5": -0.0011076484806835651
+    },
+    "VelocityDiagnostics/student/state_near_stationary/estimated_vx_mean_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.005288583798877274,
+      "mean_last_30": 0.005288583798877274,
+      "mean_last_5": -0.003031314309919253
+    },
+    "VelocityDiagnostics/student/state_near_stationary/estimated_vy_mean_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.003986832537015693,
+      "mean_last_30": 0.003986832537015693,
+      "mean_last_5": 0.002864339528605342
+    },
+    "VelocityDiagnostics/student/state_near_stationary/estimated_vz_mean_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.007199493469670415,
+      "mean_last_30": 0.007199493469670415,
+      "mean_last_5": 0.006249060155823827
+    },
+    "VelocityDiagnostics/student/state_near_stationary/fraction_valid": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.002022072129572431,
+      "mean_last_30": 0.002022072129572431,
+      "mean_last_5": 0.00185546875
+    },
+    "VelocityDiagnostics/student/state_near_stationary/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 1.0,
+      "mean_last_30": 1.0,
+      "mean_last_5": 1.0
+    },
+    "VelocityDiagnostics/student/state_near_stationary/rmse_vx_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.0517229148083263,
+      "mean_last_30": 0.0517229148083263,
+      "mean_last_5": 0.047421937435865404
+    },
+    "VelocityDiagnostics/student/state_near_stationary/rmse_vy_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.0359255505932702,
+      "mean_last_30": 0.0359255505932702,
+      "mean_last_5": 0.033646440505981444
+    },
+    "VelocityDiagnostics/student/state_near_stationary/rmse_vz_m_s": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 0.047484271228313446,
+      "mean_last_30": 0.047484271228313446,
+      "mean_last_5": 0.03767223805189133
+    },
+    "VelocityDiagnostics/student/state_near_stationary/sample_count": {
+      "all_finite": true,
+      "count": 9,
+      "mean": 198.77777777777777,
+      "mean_last_30": 198.77777777777777,
+      "mean_last_5": 182.4
+    },
+    "VelocityDiagnostics/teacher/all/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.0021836344338953496,
+      "mean_last_30": 0.0021311441940876346,
+      "mean_last_5": 0.002189127588644624
+    },
+    "VelocityDiagnostics/teacher/command_low/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.0157425184850581,
+      "mean_last_30": 0.015956630689712863,
+      "mean_last_5": 0.009394134581089019
+    },
+    "VelocityDiagnostics/teacher/command_other/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.0003017884354630951,
+      "mean_last_30": 0.0003123758375295438,
+      "mean_last_5": 0.0003033686778508127
+    },
+    "VelocityDiagnostics/teacher/command_zero/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.019145161509513856,
+      "mean_last_30": 0.019361321131388345,
+      "mean_last_5": 0.020566729828715324
+    },
+    "VelocityDiagnostics/teacher/state_moving/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.0,
+      "mean_last_30": 0.0,
+      "mean_last_5": 0.0
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/actual_vx_mean_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -8.37983109158813e-05,
+      "mean_last_30": 8.327174376366505e-05,
+      "mean_last_5": -0.00024291667068609968
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/actual_vy_mean_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 6.074952685366952e-05,
+      "mean_last_30": 0.00014905899654422684,
+      "mean_last_5": -5.4057645729699286e-05
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/actual_vz_mean_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.0007007803533633705,
+      "mean_last_30": 0.0005950201011728495,
+      "mean_last_5": 0.004665268620010465
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/bias_vx_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.0004537227500259178,
+      "mean_last_30": 0.0009269760215829592,
+      "mean_last_5": 0.0013968454572022893
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/bias_vy_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 5.390412567521708e-05,
+      "mean_last_30": -0.002171450358567502,
+      "mean_last_5": -0.0032175008091144264
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/bias_vz_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": -0.0006694463323947275,
+      "mean_last_30": -0.0031537662483363724,
+      "mean_last_5": -0.0009291273250710219
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/estimated_vx_mean_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.00036992443303461185,
+      "mean_last_30": 0.0010102477404871023,
+      "mean_last_5": 0.0011539288301719353
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/estimated_vy_mean_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.00011465366536867804,
+      "mean_last_30": -0.0020223913505712215,
+      "mean_last_5": -0.003271558473352343
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/estimated_vz_mean_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 3.1334005507233086e-05,
+      "mean_last_30": -0.0025587461326116077,
+      "mean_last_5": 0.0037361413706094027
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/fraction_valid": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.0021836344338953496,
+      "mean_last_30": 0.0021311441940876346,
+      "mean_last_5": 0.002189127588644624
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/near_stationary_fraction": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 1.0,
+      "mean_last_30": 1.0,
+      "mean_last_5": 1.0
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/rmse_vx_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.04504360318183899,
+      "mean_last_30": 0.045096324756741524,
+      "mean_last_5": 0.04577770605683327
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/rmse_vy_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.03344550590962172,
+      "mean_last_30": 0.03383188440153996,
+      "mean_last_5": 0.03455906137824059
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/rmse_vz_m_s": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 0.037536797653883694,
+      "mean_last_30": 0.03565684376905362,
+      "mean_last_5": 0.034293311089277266
+    },
+    "VelocityDiagnostics/teacher/state_near_stationary/sample_count": {
+      "all_finite": true,
+      "count": 100,
+      "mean": 214.66,
+      "mean_last_30": 209.5,
+      "mean_last_5": 215.2
+    }
+  },
+  "user_boundaries": {
+    "git_committed_or_pushed": false,
+    "old_policy_tests_rerun": false,
+    "packages_installed": false,
+    "source_changed": false,
+    "training_parameters_changed": false,
+    "training_signaled": false,
+    "user_files_deleted": false
+  },
+  "version": 1
+}

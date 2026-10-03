@@ -1,0 +1,276 @@
+{
+  "batch_id": "overlap-native-model22000-20261003-004",
+  "cases": [
+    {
+      "attempt_id": "native-right15-noise-a01",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-model22000-20261003-004/raw/native-right15-noise-a01/console.log",
+        "sha256": "cc99c1a9bfa90b3051e66ea951b330fe7a5e06cecd64d97ca74ddd8d479c8570"
+      },
+      "reason": null,
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-model22000-20261003-004/raw/native-right15-noise-a01/result.json",
+        "sha256": "4ec7b80208a355243b992c5aaab414109b97bdb3e5ee4d4f01e0ebc029efc52d"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "end_step": 249,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.5,
+              0.0,
+              0.0
+            ],
+            "end_step": 749,
+            "start_step": 250
+          },
+          {
+            "command": [
+              0.5,
+              0.0,
+              -0.6
+            ],
+            "end_step": 1499,
+            "start_step": 750
+          },
+          {
+            "command": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "end_step": 1999,
+            "start_step": 1500
+          }
+        ],
+        "duration_steps": 2000,
+        "num_envs": 1,
+        "scenario_id": "quick-right15-noise",
+        "scenario_overrides": {
+          "curriculum.terrain_levels": null,
+          "episode_length_s": 60.0,
+          "evaluation.roa_mode": "student",
+          "events.add_joint_default_pos": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_base.params.velocity_range": {
+            "pitch": [
+              0.0,
+              0.0
+            ],
+            "roll": [
+              0.0,
+              0.0
+            ],
+            "x": [
+              0.0,
+              0.0
+            ],
+            "y": [
+              0.0,
+              0.0
+            ],
+            "yaw": [
+              0.0,
+              0.0
+            ],
+            "z": [
+              0.0,
+              0.0
+            ]
+          },
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material.params.dynamic_friction_range": [
+            1.0,
+            1.0
+          ],
+          "events.randomize_rigid_body_material.params.restitution_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_material.params.static_friction_range": [
+            1.0,
+            1.0
+          ],
+          "observations.policy.enable_corruption": true,
+          "scene.robot.actuators.foots.max_delay": 3,
+          "scene.robot.actuators.foots.min_delay": 3,
+          "scene.robot.actuators.legs.max_delay": 3,
+          "scene.robot.actuators.legs.min_delay": 3,
+          "scene.robot.actuators.wheels.max_delay": 3,
+          "scene.robot.actuators.wheels.min_delay": 3,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane",
+          "terminations.terrain_out_of_bounds": null
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_22000.pt",
+    "sha256": "666ac9d50b7e8c0854ddd47e85cf7cc393b2b2f3f2082b5b8d8cb7582c243558"
+  },
+  "contract": null,
+  "effective_config": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/config-dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94.json",
+    "sha256": "dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94"
+  },
+  "layout_version": 2,
+  "notes": [
+    "Native single-evaluation overlap route; fixed new checkpoint, slowdown explicitly accepted, continued progress verified.",
+    "Matched frozen hardware inputs compare six archived policies; no historical policy inference or hardware reproduction."
+  ],
+  "origin": "adopted",
+  "recommendations": [
+    "After training, verify yaw-rate tracking and parking under the full matching Native protocol; code/parameter changes require a separately approved plan."
+  ],
+  "report": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/overlap-native-model22000-20261003-004/report.md",
+    "sha256": "069983131794c0de6547a6d6105ddaaa8f60161ddbb07234b0fa86d8e95baf87"
+  },
+  "repository_root": "/home/server/liufengrong/robot_lab",
+  "run_id": "2026-10-02_14-30-02",
+  "run_identity": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/context-8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065.json",
+    "sha256": "8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065"
+  },
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/live-model22000-20261003-004/metrics.json",
+      "sha256": "ed54d0936226382740c771fe1d5229ded8b64e8180910937698b95e7e918c29a"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/static-rightturn-model22000-20261003-001/metrics.json",
+      "sha256": "6e9a3855e7be489ad834b111b7e586c2dd0deb852471dbab20a25c6d5a6f6890"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-launch.json",
+      "sha256": "0523316f70727ddaa9d9e17fa403e81c6e9f73e64d64bb1414b0802557b62a40"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-final-integrity.json",
+      "sha256": "b627804bf757228714d118da8aa91a04218ba073101acc6238fff6e7e32bad3f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-preflight.json",
+      "sha256": "352ca065116bfda0111fdb9f61111d5786eb843ca1085e294508e887fcda58f4"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-completion.json",
+      "sha256": "e26b2242d0e43f7a2ad2e118c6e248a50dca767f86e5bcefb380fb5b11cff1b6"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/source/controller-native-model22000-20261003-004.json",
+      "sha256": "39b26751e8a4e69dd0076017f4be4c5404736e8d579f63d1e1c454466af0fcf5"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-final.json",
+      "sha256": "9161e958f946947a822181a17deabd4c9ebcf47559afffcc08633443e3a098d0"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-before.json",
+      "sha256": "91ced94127ad3c89ff0b1353422f90b0ef56303f5c7d77f6be4fb7a9ec7cfa18"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-01.json",
+      "sha256": "50ee564c0d3a54df30c630e62e9b979ad98702af12d97433a951b98118b8ffb6"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-02.json",
+      "sha256": "f6ac4cebb12db53a457ab5457ae938ba9734be1a36142a6f7133ae22f101c988"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-03.json",
+      "sha256": "a99a444c50e9c21135074396d43d8720d1f91ae0de933a86aa7b62a81dcb847b"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-04.json",
+      "sha256": "5b7ebd18a558c80e0995834c5b22303f64c982cca9151f3950dbf0d8180ac77f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-during-05.json",
+      "sha256": "3cab54b3bc373d5fa06282829864074e9aabdd369a368c178b30f1e329036cb5"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-after.json",
+      "sha256": "d2e0de165ef75e727abb206308d930d374b4a47d1c906772cb88b2c012bf644b"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/training/overlap-native-model22000-20261003-004-recovery.json",
+      "sha256": "c587047dfa1efd1df86c81e1225d21f0d196dc0885a2efc4acaf9c4f0b40a323"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/live-model22000-20261003-004/path-heading.png",
+      "sha256": "0f20d8a6fb36883828386f59c591923a75fbf9f17a4ab651aa93a9b80155ce4e"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/live-model22000-20261003-004/timeline.png",
+      "sha256": "d08fc42e2157b3153b00ef43ff5d4398bf1863a21c23beaccc2861fcb4093ad3"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/live-model22000-20261003-004/training-throughput.png",
+      "sha256": "f2c108ecb9528f165b574c47c5f41d2de9064465f7f8bc7e62522237e35984e7"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/static-rightturn-model22000-20261003-001/samples-and-jacobians.npz",
+      "sha256": "14ae4dd5cd9a69b197dcc3799f9c51eacb56f745fd632e8fcb131111f79d2f0a"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/static-rightturn-model22000-20261003-001/per-frame-comparison.csv",
+      "sha256": "079de0bbeb3ca7c46743477a90f6e16f6bd7dc9117bcb70e4b4ba571ee663558"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/static-rightturn-model22000-20261003-001/comparison.png",
+      "sha256": "ccfbae99b0a46800683e0a0b48880b8c28ed7a53d30be2508061eec4dead69a4"
+    }
+  ],
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+  "version": 1
+}

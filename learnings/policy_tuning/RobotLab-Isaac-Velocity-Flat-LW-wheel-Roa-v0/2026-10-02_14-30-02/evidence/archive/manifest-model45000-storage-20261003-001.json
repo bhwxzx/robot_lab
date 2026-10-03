@@ -1,0 +1,717 @@
+{
+  "algorithm": "ROAPPO",
+  "archive_authorized": true,
+  "artifacts": {
+    "jit": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/export/model45000-storage-20261003-001/policy.pt",
+      "sha256": "4044b73e9ea257e5d237e09dd11d9c73ac2432aeae52f242792e1e57bc7a3214"
+    },
+    "onnx": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/export/model45000-storage-20261003-001/policy.onnx",
+      "sha256": "ef6cf9f83ffcf559e15d1e4e8da138fcd6d0c8c0b8fd02e1de5a4f021817429b"
+    }
+  },
+  "assessment_evidence": {
+    "checkpoint_selection": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/checkpoint_selection/selection-model45000-storage-20261003-001.json",
+      "sha256": "6b32005164a8785c3665c1bc3a8c0428f1079fddb982b43197b30fc4c1e73df0"
+    },
+    "matched_closed_loop_comparison": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/late-checkpoint-comparison-20261003-001/metrics.json",
+      "sha256": "c30f7d2f8909902230097c68d8d86d2f6a99265f9dc1a9296a3639f602b6ae57"
+    },
+    "publication_preflight": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/source/publication-model45000-storage-20261003-001-preflight.json",
+      "sha256": "39d4da6bf9b57c95d448efecc5b763a1eded9512f28f2f1894ef924660bd8413"
+    },
+    "selected_checkpoint_batch": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/manifest.json",
+      "sha256": "e87362b6dab58dfb3573a9318238dd726453a11a2c60f5c079335a09db559153"
+    },
+    "selected_checkpoint_static_sensitivity": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/analysis/static-rightturn-model45000-20261003-001/metrics.json",
+      "sha256": "0f921a2323ba580bfd2009aec990f4049805838d6d87f62197d9853f34e052b0"
+    }
+  },
+  "authorization": {
+    "archive": true,
+    "checkpoint_selected": 45000,
+    "commit": true,
+    "export": true,
+    "push": true,
+    "recorded_at": "2026-10-03T07:18:03.043527+00:00",
+    "user_message": "将45000轮策略导出到policy_storage，并对其进行git提交并且推送"
+  },
+  "collection": "LW/wheel_loco",
+  "description_notes": "用户明确选择该训练 run 的 model_45000.pt 导出、归档、Git 提交和推送。文件名轮次为45000；checkpoint内 iter=45001 是下一轮计数。本归档只绑定该 checkpoint。源码 provenance 为经文件哈希核对的评估/导出工作区快照；训练启动时原始 HEAD 未独立采集，训练配置由该 run 保存的 env.yaml/agent.yaml 单独绑定。\n\n导出接口: float32 obs[1,390] -> actions[1,10]；10帧、每帧39维、按时间顺序展开。ROA 使用速度估计、current_frame_only 归一化，actor 输入顺序 [current_obs, code_vel, hist_latent]。外部调用方须维护并在 reset 时重置观测历史；位置动作默认偏置和物理缩放由调用方执行，双髋 scale=0.125 rad，其余位置关节=0.25 rad，轮速度=1.0。默认位姿、观测缩放/噪声、动作顺序及 actuator 参数见 parameters。\n\n使用 isaacsim-5.1，Native 单环境 headless、seed42，8步导出一致性样本，reset_step=4，覆盖initial/pre_reset/post_reset/final。Native GPU->CPU最大动作误差 2.145767212e-06；JIT对Native CPU误差 0；ONNX对Native CPU误差 1.907348633e-06，门槛1e-5。ONNX单环境静态batch1/opset17，onnxsim检查通过。该验证是有界动作一致性检查。\n\n沿用并重新校验45000轮已完成的6组Native闭环评估：30000个控制步、单环境、seed42、无视频、平地固定初态/摩擦，4组左右转×固定15/30ms全部执行器延迟+训练观测噪声，2组零指令120s/零延迟/噪声关闭或开启。全部done/timeout为0；30ms超过训练中轮/脚0-15ms延迟范围。转向稳态42-70s四组vx RMSE均值=0.127767 m/s、yaw RMSE均值=0.405632 rad/s；停车72-90s四组净漂移均值=0.148304 m、vx RMS均值=0.061735 m/s，存在转向欠跟踪和停车动态残留。\n\n零指令无噪声：启动0-40s净漂移=0.028998 m，后续40-120s净漂移=0.000005127 m，vx RMS=0.000160233 m/s；开启训练噪声后40-120s净漂移=0.680875 m、vx RMS=0.055785 m/s。45000相对最终49999轮减少了无噪声启动漂移和四组停车净漂移；其噪声零指令漂移仍高于35000轮，四组vx跟踪RMSE也高于40000轮。该选择体现现有评估中的取舍。\n\n历史实机right-turn输入冻结回放/双髋局部Jacobian分析：主对齐state1_action1、增长窗口58.146-58.526s（20帧），Gq中位数=1.651411 rad/rad，Gdq中位数=0.016642759 rad/(rad/s)，双髋物理目标步差RMS=0.302029 rad。新策略沿历史轨迹进行静态推理；轨迹仍由旧策略生成，动作历史缩放差异和替代对齐均已记录，因此该证据不能证明新策略实机闭环稳定。旧DWAQ/其他ROA已完成结果直接复用，未重跑。\n\n尚无用户批准的收敛/验收门槛，assessment=insufficient_evidence/indeterminate；该候选未经实机验证。归档和推送不修改robot_lab源码、训练参数、训练进程或实机运行状态。",
+  "evaluation": {
+    "results": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/right-delay15-noise-a01/result.json",
+        "sha256": "05ad5cff3c44c3afe8498cb42ef3fd9969609a98fb3368e98a5c752232aa40e7"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/left-delay15-noise-a01/result.json",
+        "sha256": "0aea4fd56fe9de7282a3a43afd04f7afff0309dc011b13b59b78d0ce405e61ca"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/right-delay30-noise-a01/result.json",
+        "sha256": "857a001d4bc7f9440611b9c5489226a63598fcb23c5950ffa23fac8b9300d7e5"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/left-delay30-noise-a01/result.json",
+        "sha256": "ba1f35803e619fa48222702ec861b66dfcc2b4bce75263845f20ff4238690aa9"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/nominal-no-noise-a01/result.json",
+        "sha256": "e5f4e310f45fbfcfdd168d4508fd00e429ce644cc3c26950ddb5e044fc96537b"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/nominal-training-noise-a01/result.json",
+        "sha256": "9d069deaf0640a42480b394037a9237a2eca7a75b0fa86255f07e91ca0c9b296"
+      }
+    ]
+  },
+  "export_receipt": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/export/model45000-storage-20261003-001/receipt.json",
+    "sha256": "e4a6bdfa5a8489b12b63b1ced945f9f6226d4aa059712d6ec7702de859acbaee"
+  },
+  "parameters": {
+    "action_order": [
+      "right_hip_joint",
+      "left_hip_joint",
+      "right_thigh_joint",
+      "left_thigh_joint",
+      "right_shank_joint",
+      "left_shank_joint",
+      "right_foot_joint",
+      "left_foot_joint",
+      "right_wheel_joint",
+      "left_wheel_joint"
+    ],
+    "action_semantics": {
+      "policy_outputs": "raw_actions; physical scaling and default offsets applied by the consumer",
+      "position_channels": [
+        "right_hip_joint",
+        "left_hip_joint",
+        "right_thigh_joint",
+        "left_thigh_joint",
+        "right_shank_joint",
+        "left_shank_joint",
+        "right_foot_joint",
+        "left_foot_joint"
+      ],
+      "position_targets": "default_joint_position + scale * raw_policy_action",
+      "wheel_targets": "scale * raw_policy_action + default_joint_velocity",
+      "wheel_velocity_channels": [
+        "right_wheel_joint",
+        "left_wheel_joint"
+      ]
+    },
+    "actor_input_order": [
+      "current_obs",
+      "code_vel",
+      "hist_latent"
+    ],
+    "actuator_delay_physics_steps": {
+      "foots": [
+        0,
+        3
+      ],
+      "legs": [
+        0,
+        6
+      ],
+      "wheels": [
+        0,
+        3
+      ]
+    },
+    "algorithm": {
+      "class_name": "ROAPPO",
+      "clip_param": 0.2,
+      "dagger_update_freq": 20,
+      "desired_kl": 0.01,
+      "entropy_coef": 0.01,
+      "estimated_velocity_schedule": [
+        1.0,
+        1.0,
+        0,
+        1
+      ],
+      "estimated_velocity_schedule_resume": null,
+      "gamma": 0.99,
+      "lam": 0.95,
+      "learning_rate": 0.001,
+      "max_grad_norm": 1.0,
+      "normalize_advantage_per_mini_batch": false,
+      "num_learning_epochs": 5,
+      "num_mini_batches": 4,
+      "priv_reg_coef_schedule": [
+        0.0,
+        0.1,
+        2000,
+        3000
+      ],
+      "priv_reg_coef_schedule_resume": null,
+      "rnd_cfg": null,
+      "schedule": "adaptive",
+      "symmetry_cfg": null,
+      "use_clipped_value_loss": true,
+      "value_loss_coef": 1.0,
+      "vel_loss_coef": 1.0
+    },
+    "control_decimation": 4,
+    "control_dt_s": 0.02,
+    "default_base_initial_state": {
+      "ang_vel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "joint_pos": {
+        "left_foot_joint": 0.0,
+        "left_hip_joint": 0.0,
+        "left_shank_joint": 0.1745,
+        "left_thigh_joint": -0.733,
+        "left_wheel_joint": 0.0,
+        "right_foot_joint": 0.0,
+        "right_hip_joint": 0.0,
+        "right_shank_joint": -0.1745,
+        "right_thigh_joint": 0.733,
+        "right_wheel_joint": 0.0
+      },
+      "joint_vel": {
+        ".*": 0.0
+      },
+      "lin_vel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pos": [
+        0.0,
+        0.0,
+        0.725
+      ],
+      "rot": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "default_joint_position": {
+      "left_foot_joint": 0.0,
+      "left_hip_joint": 0.0,
+      "left_shank_joint": 0.1745,
+      "left_thigh_joint": -0.733,
+      "left_wheel_joint": 0.0,
+      "right_foot_joint": 0.0,
+      "right_hip_joint": 0.0,
+      "right_shank_joint": -0.1745,
+      "right_thigh_joint": 0.733,
+      "right_wheel_joint": 0.0
+    },
+    "external_history_reset_required": true,
+    "hip_position_action_scale_rad": 0.125,
+    "history_contract": "flat_time_major_history",
+    "history_frames": 10,
+    "input_shape": [
+      1,
+      390
+    ],
+    "joint_velocity_observation_noise_rad_s": [
+      -1.5,
+      1.5
+    ],
+    "normalization_contract": "current_frame_only",
+    "observation_frame_width": 39,
+    "onnx_export_contract": {
+      "batch_contract": "static_batch_1",
+      "input_dtype": "float32",
+      "input_name": "obs",
+      "opset_version": 17,
+      "output_dtype": "float32",
+      "output_name": "actions",
+      "profile": "static_batch_1_simplified",
+      "simplified": true
+    },
+    "onnx_final_graph": {
+      "contract": {
+        "batch_contract": "static_batch_1",
+        "input_dtype": "float32",
+        "input_name": "obs",
+        "opset_version": 17,
+        "output_dtype": "float32",
+        "output_name": "actions",
+        "profile": "static_batch_1_simplified",
+        "simplified": true
+      },
+      "input_shape": [
+        1,
+        390
+      ],
+      "output_shape": [
+        1,
+        10
+      ],
+      "post_simplify_node_count": 22,
+      "pre_simplify_node_count": 28,
+      "simplifier_check": true
+    },
+    "output_shape": [
+      1,
+      10
+    ],
+    "physical_action_scale": [
+      0.125,
+      0.125,
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      1.0,
+      1.0
+    ],
+    "physics_dt_s": 0.005,
+    "policy": {
+      "activation": "elu",
+      "actor_hidden_dims": [
+        512,
+        256,
+        128
+      ],
+      "actor_obs_normalization": false,
+      "class_name": "ActorCriticROA",
+      "critic_hidden_dims": [
+        512,
+        256,
+        128
+      ],
+      "critic_obs_normalization": false,
+      "init_noise_std": 1.0,
+      "noise_std_type": "scalar",
+      "priv_encoder_dims": [
+        64,
+        20
+      ],
+      "state_dependent_std": false,
+      "use_velocity_estimation": true,
+      "vel_offset": 39
+    },
+    "policy_observation_configuration": {
+      "actions": {
+        "clip": [
+          -100.0,
+          100.0
+        ],
+        "flatten_history_dim": true,
+        "func": "isaaclab.envs.mdp.observations:last_action",
+        "history_length": 0,
+        "modifiers": null,
+        "noise": null,
+        "params": {},
+        "scale": 1.0
+      },
+      "base_ang_vel": {
+        "clip": [
+          -100.0,
+          100.0
+        ],
+        "flatten_history_dim": true,
+        "func": "isaaclab.envs.mdp.observations:base_ang_vel",
+        "history_length": 0,
+        "modifiers": null,
+        "noise": {
+          "func": "isaaclab.utils.noise.noise_model:uniform_noise",
+          "n_max": 0.2,
+          "n_min": -0.2,
+          "operation": "add"
+        },
+        "params": {},
+        "scale": 0.25
+      },
+      "concatenate_dim": -1,
+      "concatenate_terms": true,
+      "enable_corruption": true,
+      "flatten_history_dim": false,
+      "height_scan": null,
+      "history_length": 10,
+      "joint_pos": {
+        "clip": [
+          -100.0,
+          100.0
+        ],
+        "flatten_history_dim": true,
+        "func": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.observations:joint_pos_rel_without_wheel",
+        "history_length": 0,
+        "modifiers": null,
+        "noise": {
+          "func": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.noise:uniform_joint_position_noise",
+          "joint_names": [
+            "right_hip_joint",
+            "left_hip_joint",
+            "right_thigh_joint",
+            "left_thigh_joint",
+            "right_shank_joint",
+            "left_shank_joint",
+            "right_foot_joint",
+            "left_foot_joint",
+            "right_wheel_joint",
+            "left_wheel_joint"
+          ],
+          "n_max": 0.01,
+          "n_min": -0.01,
+          "operation": "add",
+          "wheel_joint_names": [
+            "right_wheel_joint",
+            "left_wheel_joint"
+          ]
+        },
+        "params": {
+          "asset_cfg": {
+            "body_ids": [
+              null,
+              null,
+              null
+            ],
+            "body_names": null,
+            "fixed_tendon_ids": [
+              null,
+              null,
+              null
+            ],
+            "fixed_tendon_names": null,
+            "joint_ids": [
+              null,
+              null,
+              null
+            ],
+            "joint_names": [
+              "right_hip_joint",
+              "left_hip_joint",
+              "right_thigh_joint",
+              "left_thigh_joint",
+              "right_shank_joint",
+              "left_shank_joint",
+              "right_foot_joint",
+              "left_foot_joint",
+              "right_wheel_joint",
+              "left_wheel_joint"
+            ],
+            "name": "robot",
+            "object_collection_ids": [
+              null,
+              null,
+              null
+            ],
+            "object_collection_names": null,
+            "preserve_order": true
+          },
+          "wheel_asset_cfg": {
+            "body_ids": [
+              null,
+              null,
+              null
+            ],
+            "body_names": null,
+            "fixed_tendon_ids": [
+              null,
+              null,
+              null
+            ],
+            "fixed_tendon_names": null,
+            "joint_ids": [
+              null,
+              null,
+              null
+            ],
+            "joint_names": [
+              "right_wheel_joint",
+              "left_wheel_joint"
+            ],
+            "name": "robot",
+            "object_collection_ids": [
+              null,
+              null,
+              null
+            ],
+            "object_collection_names": null,
+            "preserve_order": false
+          }
+        },
+        "scale": 1.0
+      },
+      "joint_vel": {
+        "clip": [
+          -100.0,
+          100.0
+        ],
+        "flatten_history_dim": true,
+        "func": "isaaclab.envs.mdp.observations:joint_vel_rel",
+        "history_length": 0,
+        "modifiers": null,
+        "noise": {
+          "func": "isaaclab.utils.noise.noise_model:uniform_noise",
+          "n_max": 1.5,
+          "n_min": -1.5,
+          "operation": "add"
+        },
+        "params": {
+          "asset_cfg": {
+            "body_ids": [
+              null,
+              null,
+              null
+            ],
+            "body_names": null,
+            "fixed_tendon_ids": [
+              null,
+              null,
+              null
+            ],
+            "fixed_tendon_names": null,
+            "joint_ids": [
+              null,
+              null,
+              null
+            ],
+            "joint_names": [
+              "right_hip_joint",
+              "left_hip_joint",
+              "right_thigh_joint",
+              "left_thigh_joint",
+              "right_shank_joint",
+              "left_shank_joint",
+              "right_foot_joint",
+              "left_foot_joint",
+              "right_wheel_joint",
+              "left_wheel_joint"
+            ],
+            "name": "robot",
+            "object_collection_ids": [
+              null,
+              null,
+              null
+            ],
+            "object_collection_names": null,
+            "preserve_order": true
+          }
+        },
+        "scale": 0.05
+      },
+      "projected_gravity": {
+        "clip": [
+          -100.0,
+          100.0
+        ],
+        "flatten_history_dim": true,
+        "func": "isaaclab.envs.mdp.observations:projected_gravity",
+        "history_length": 0,
+        "modifiers": null,
+        "noise": {
+          "func": "isaaclab.utils.noise.noise_model:uniform_noise",
+          "n_max": 0.05,
+          "n_min": -0.05,
+          "operation": "add"
+        },
+        "params": {},
+        "scale": 1.0
+      },
+      "velocity_commands": {
+        "clip": [
+          -100.0,
+          100.0
+        ],
+        "flatten_history_dim": true,
+        "func": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.observations:generated_commands",
+        "history_length": 0,
+        "modifiers": null,
+        "noise": null,
+        "params": {
+          "command_name": "base_velocity"
+        },
+        "scale": 1.0
+      }
+    },
+    "reset_contract": "environment_history_reset",
+    "reward_weights": {
+      "action_mirror": null,
+      "action_rate_l2": null,
+      "action_rate_legs_l2": -0.5,
+      "action_rate_wheels_l2": -0.2,
+      "action_smoothness": null,
+      "action_smoothness_legs": -0.15,
+      "action_smoothness_wheels": -0.075,
+      "action_sync": null,
+      "ang_vel_xy_l2": -0.1,
+      "applied_torque_limits": null,
+      "base_height_l2": -15.0,
+      "body_lin_acc_l2": null,
+      "body_orientation_l2": -3.0,
+      "centrifugal_compensation": null,
+      "contact_forces": null,
+      "feet_air_time": null,
+      "feet_air_time_variance": null,
+      "feet_clearance": null,
+      "feet_contact": null,
+      "feet_contact_without_cmd": null,
+      "feet_distance_penalize": -100.0,
+      "feet_distance_y_exp": 3.0,
+      "feet_gait": null,
+      "feet_height": null,
+      "feet_height_body": null,
+      "feet_landing_vel": null,
+      "feet_slide": null,
+      "feet_standing_force_without_cmd": null,
+      "feet_stumble": null,
+      "flat_orientation_l2": -5.0,
+      "is_terminated": -200.0,
+      "joint_acc_l2": -2.5e-07,
+      "joint_acc_wheel_l2": -1.5e-07,
+      "joint_deviation_ankle": -1.0,
+      "joint_deviation_hip": -0.3,
+      "joint_deviation_legs": -0.4,
+      "joint_mirror": null,
+      "joint_pos_limits": -2.0,
+      "joint_pos_penalty": null,
+      "joint_power": -2e-05,
+      "joint_torques_l2": -1.25e-05,
+      "joint_torques_wheel_l2": -0.00016,
+      "joint_vel_l2": -5e-05,
+      "joint_vel_limits": -2.0,
+      "joint_vel_wheel_l2": -0.0005,
+      "keep_alive": 1.0,
+      "lazy_penalty": null,
+      "leg_symmetry": 0.5,
+      "lin_vel_z_l2": -1.0,
+      "penalize_hip_roll_action": null,
+      "same_foot_x_position": -50.0,
+      "stand_still": null,
+      "stop_motion": -5.0,
+      "track_ang_vel_z_exp": 3.0,
+      "track_lin_vel_xy_exp": 4.0,
+      "undesired_contacts": -5.0,
+      "upward": null,
+      "wheel_vel_penalty": null
+    },
+    "saved_actuator_configuration": {
+      "foots": {
+        "armature": 0.01,
+        "class_type": "isaaclab.actuators.actuator_pd:DelayedPDActuator",
+        "damping": 1.4,
+        "dynamic_friction": null,
+        "effort_limit": 27.0,
+        "effort_limit_sim": null,
+        "friction": null,
+        "joint_names_expr": [
+          "right_foot_joint",
+          "left_foot_joint"
+        ],
+        "max_delay": 3,
+        "min_delay": 0,
+        "stiffness": 28.0,
+        "velocity_limit": 10.0,
+        "velocity_limit_sim": null,
+        "viscous_friction": null
+      },
+      "legs": {
+        "armature": 0.01,
+        "class_type": "isaaclab.actuators.actuator_pd:DelayedPDActuator",
+        "damping": 3.0,
+        "dynamic_friction": null,
+        "effort_limit": 120.0,
+        "effort_limit_sim": null,
+        "friction": null,
+        "joint_names_expr": [
+          "right_hip_joint",
+          "left_hip_joint",
+          "right_thigh_joint",
+          "left_thigh_joint",
+          "right_shank_joint",
+          "left_shank_joint"
+        ],
+        "max_delay": 6,
+        "min_delay": 0,
+        "stiffness": 90.0,
+        "velocity_limit": 20.0,
+        "velocity_limit_sim": null,
+        "viscous_friction": null
+      },
+      "wheels": {
+        "armature": 0.01,
+        "class_type": "isaaclab.actuators.actuator_pd:DelayedPDActuator",
+        "damping": 0.5,
+        "dynamic_friction": null,
+        "effort_limit": 40.0,
+        "effort_limit_sim": null,
+        "friction": null,
+        "joint_names_expr": [
+          "right_wheel_joint",
+          "left_wheel_joint"
+        ],
+        "max_delay": 3,
+        "min_delay": 0,
+        "stiffness": 0.0,
+        "velocity_limit": 33.0,
+        "velocity_limit_sim": null,
+        "viscous_friction": null
+      }
+    },
+    "saved_training_parameters": {
+      "device": "cuda:0",
+      "experiment_name": "LW_wheel_flat_roa",
+      "logger": "wandb",
+      "max_iterations": 50000,
+      "num_envs": 4096,
+      "num_steps_per_env": 24,
+      "resume": false,
+      "run_name": ""
+    },
+    "saved_training_yaml": {
+      "agent": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/params/agent.yaml",
+        "sha256": "2cbc63544d8513907ad615d9dc9d640553e9b8d084e06863624f9c993eb6cd86"
+      },
+      "environment": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/params/env.yaml",
+        "sha256": "55fabdd81fa596011fb44dfc786270424e874a64fb1858ea6ffe769bd0923ffa"
+      }
+    },
+    "seed": 42,
+    "source_identity_scope": "Hash-verified evaluation/export workspace snapshot; original training-launch HEAD not independently captured. Saved env/agent YAML from this training run is bound separately.",
+    "stance_band_m": [
+      0.496,
+      0.536
+    ],
+    "training_command": [
+      "python",
+      "scripts/reinforcement_learning/rsl_rl/train.py",
+      "--task=RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+      "--log_project_name=LW_wheel_locomotion_roa",
+      "--logger=wandb",
+      "--num_envs=4096",
+      "--headless"
+    ],
+    "training_num_envs": 4096,
+    "training_run_start": "2026-10-02_14-30-02",
+    "training_start_source_head_independently_verified": false,
+    "use_velocity_estimation": true
+  },
+  "runner": "OnPolicyRunnerROA",
+  "selected_checkpoint": {
+    "iteration": 45000,
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_45000.pt",
+    "sha256": "a6b097b83272657e9f1068cafc5c74ecb5e23e6d9e8ca06f9d472bc2fe36c85b"
+  },
+  "source": {
+    "commit": "2fac895a78cea615503ee759888072eb7fe23a0c",
+    "dirty": true
+  },
+  "storage_root": "/home/server/liufengrong/policy_storage",
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+  "version": 2
+}

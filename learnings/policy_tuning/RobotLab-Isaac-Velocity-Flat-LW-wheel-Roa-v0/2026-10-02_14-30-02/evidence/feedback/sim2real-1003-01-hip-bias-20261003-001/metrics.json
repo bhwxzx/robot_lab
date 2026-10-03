@@ -1,0 +1,669 @@
+{
+  "algorithm": "ROAPPO",
+  "analysis_sources": {
+    "geometry": {
+      "python": "\nimport numpy as np,json,xml.etree.ElementTree as ET\nfrom pathlib import Path\ne=Path(\"/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias\")\nwith np.load(e/\"analysis/decoded.npz\",allow_pickle=False) as z:\n t=(z[\"t\"]-z[\"t\"][0])/1e9; names=z[\"names\"].tolist();pos=z[\"pos\"].copy()\nurdf=ET.parse(e/\"context/geometry/LW.urdf\").getroot();joints={j.find(\"child\").attrib[\"link\"]:j for j in urdf.findall(\"joint\")}\ndef rpyR(r,p,y):\n Rx=np.array([[1,0,0],[0,np.cos(r),-np.sin(r)],[0,np.sin(r),np.cos(r)]])\n Ry=np.array([[np.cos(p),0,np.sin(p)],[0,1,0],[-np.sin(p),0,np.cos(p)]])\n Rz=np.array([[np.cos(y),-np.sin(y),0],[np.sin(y),np.cos(y),0],[0,0,1]])\n return Rz@Ry@Rx\nn=len(t);cache={}\ndef fk(link):\n if link in cache:return cache[link]\n if link not in joints:cache[link]=(np.broadcast_to(np.eye(3),(n,3,3)),np.zeros((n,3)));return cache[link]\n j=joints[link];rp,pp=fk(j.find(\"parent\").attrib[\"link\"]);origin=j.find(\"origin\")\n xyz=np.fromstring(origin.attrib.get(\"xyz\",\"0 0 0\"),sep=\" \");rpy=np.fromstring(origin.attrib.get(\"rpy\",\"0 0 0\"),sep=\" \")\n rr=rpyR(*rpy);p=pp+rp@xyz\n axis=j.find(\"axis\");ax=np.fromstring(axis.attrib[\"xyz\"],sep=\" \");ax=ax/np.linalg.norm(ax)\n label=j.attrib[\"name\"].replace(\"_joint\",\"_now\");q=pos[:,names.index(label)] if label in names else np.zeros(n)\n cross=np.array([[0,-ax[2],ax[1]],[ax[2],0,-ax[0]],[-ax[1],ax[0],0]])\n cq=np.cos(q)[:,None,None];sq=np.sin(q)[:,None,None]\n Rq=cq*np.eye(3)+(1-cq)*np.outer(ax,ax)+sq*cross\n R=(rp@rr)@Rq;cache[link]=(R,p);return R,p\npr=fk(\"right_wheel_link\")[1];pl=fk(\"left_wheel_link\")[1];width=pl[:,1]-pr[:,1]\nassert np.all(width>0)\nsummary={}\nfor lo,hi,label in [(48.74,50.7396,\"prepolicy_last2\"),(50.7396,55.7396,\"policy_first5\"),(90,150,\"middle_late60\")]:\n mask=(t>=lo)&(t<hi)\n summary[label]={\"wheel_center_body_y_separation_mean_m\":float(width[mask].mean()),\"min_m\":float(width[mask].min()),\"max_m\":float(width[mask].max()),\"rms_error_to_0_516_m\":float(np.sqrt(np.mean((width[mask]-.516)**2))),\"fraction_outside_training_0_496_0_536_band\":float(np.mean((width[mask]<.496)|(width[mask]>.536)))}\nrw={}\nfor s in [.5,.05]:\n rw[str(s)]=3*np.exp(-2*.02**2/s**2)\nresult={\"analysis\":\"rigid_URDF_estimate_only\",\"actual_wheel_positions_measured\":False,\"structural_bending_measured\":False,\"training_USD_geometry_equality_verified\":False,\"same_URDF_as_archived_geometry_review\":True,\"windows\":summary,\"continuous_width_reward_for_two_sides_outward_20mm\":{\"perfect_center\":3,\"std0_5\":rw[\"0.5\"],\"std0_05\":rw[\"0.05\"]},\"urdf_total_mass_kg\":sum(float(x.attrib[\"value\"]) for x in urdf.findall(\"link/inertial/mass\"))}\nprint(json.dumps(result))\n",
+      "sha256": "04108a81351aa100c901f3dda2d3943a22377d7129c5b22befc3de22f2fe638a"
+    },
+    "native": {
+      "python": "\nimport json,gzip,sys,hashlib,math\nfrom pathlib import Path\nimport numpy as np\nrepo=Path(\"/home/server/liufengrong/robot_lab\")\nroot=repo/\"learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02\"\nout={}\nfor name in [\"nominal-no-noise-a01\",\"nominal-training-noise-a01\"]:\n p=root/\"evaluations/wheel-flat-late-model45000-20261003-001/raw\"/name/\"result.json\";r=json.loads(p.read_bytes())\n ref=r[\"outputs\"][\"telemetry\"];assert hashlib.sha256(Path(ref[\"path\"]).read_bytes()).hexdigest()==ref[\"sha256\"]\n with gzip.open(ref[\"path\"],\"rt\") as f:d=json.load(f)\n assert d[\"telemetry_status\"]==\"complete\"\n hips=[d[\"joint_names\"].index(x) for x in [\"right_hip_joint\",\"left_hip_joint\"]]\n samples=d[\"samples\"];t=np.array([x[\"sim_time_seconds\"] for x in samples]);a=np.array([x[\"action\"] for x in samples]);q=np.array([x[\"joint_position\"] for x in samples]);dq=np.array([x[\"joint_velocity\"] for x in samples]);tau=np.array([x[\"applied_torque\"] for x in samples]);cmd=np.array([x[\"command\"] for x in samples]);done=np.array([x[\"done\"] for x in samples])\n q=q[:,hips]; dq=dq[:,hips]; tau=tau[:,hips]\n assert not done.any() and not cmd.any()\n v={\"result\":{\"path\":str(p),\"sha256\":hashlib.sha256(p.read_bytes()).hexdigest()},\"telemetry\":ref,\"commands_all_zero\":True,\"no_resets\":True,\"frames\":len(samples),\"source\":\"reused completed Native evaluation; no new rollout or inference\",\"hip_order\":[\"right\",\"left\"],\"raw_action_hip_indices\":[0,1],\"physical_feedback_hip_indices\":hips,\"windows\":{}}\n for lo,hi in [(0,5),(5,15),(60,120)]:\n  mask=(t>=lo)&(t<hi)\n  v[\"windows\"][str(lo)+\"_\"+str(hi)]={\n   \"frames\":int(mask.sum()),\"hip_target_mean_deg\":np.degrees(a[mask,:2]*.125).mean(axis=0).tolist(),\"hip_actual_mean_deg\":np.degrees(q[mask,:2]).mean(axis=0).tolist(),\"hip_actual_torque_mean_Nm\":tau[mask,:2].mean(axis=0).tolist(),\"hip_torque_rms_Nm\":np.sqrt(np.mean(tau[mask,:2]**2,axis=0)).tolist(),\"hip_target_feedback_error_mean_deg\":np.degrees(a[mask,:2]*.125-q[mask,:2]).mean(axis=0).tolist(),\"hip_actual_dq_rms_rad_s\":np.sqrt(np.mean(dq[mask,:2]**2,axis=0)).tolist(),\n   \"hip_inferred_old_zero_penalty_cost_per_step\":float(np.mean(np.sum(np.abs(a[mask,:2]),axis=1)))*-.05,\n   \"hip_physical_deviation_existing_cost_per_step\":float(np.mean(np.sum(np.abs(q[mask,:2]),axis=1)))*-.3}\n out[name]=v\nprint(json.dumps(out,ensure_ascii=False))\n",
+      "sha256": "414222333ba1c11634f3063f95369e3d9a8aa74272420c9db85ad4bcd83dc9fe"
+    },
+    "verification": {
+      "python": "\nimport csv,json,hashlib,sqlite3,struct\nfrom pathlib import Path\nimport numpy as np\nrepo=Path(\"/home/server/liufengrong/sim2real_test\"); eid=\"20261003-155617-stable-motion-hip-bias\"; e=repo/\"experiments/wheel\"/eid\nm=json.loads((e/\"manifest.json\").read_text()); verified=[]\nfor x in m[\"files\"]:\n p=e/x[\"path\"]; assert p.resolve().is_relative_to(e.resolve()) and not p.is_symlink()\n b=p.read_bytes(); assert len(b)==x[\"bytes\"] and hashlib.sha256(b).hexdigest()==x[\"sha256\"],p\n verified.append(x[\"path\"])\nwith np.load(e/\"analysis/decoded.npz\",allow_pickle=False) as z:\n t=z[\"t\"].copy(); stamps=z[\"stamp\"].copy(); names=z[\"names\"].tolist()\n pos=z[\"pos\"].copy(); vel=z[\"vel\"].copy(); eff=z[\"eff\"].copy()\nbag=e/\"raw/lw_real_20261003-155617/lw_real_20261003-155617_0.db3\"\ncon=sqlite3.connect(bag.as_uri()+\"?mode=ro\",uri=True)\nassert con.execute(\"pragma quick_check\").fetchone()[0]==\"ok\"\ntopics=con.execute(\"select id,name,type from topics\").fetchall()\nassert len(topics)==1 and topics[0][1:]==(\"/LW_joint_states\",\"sensor_msgs/msg/JointState\")\ndef decode(data):\n assert data[:4]==b\"\\x00\\x01\\x00\\x00\"\n o=4\n def align(n):\n  nonlocal o; o+=(-(o-4))%n\n def u32():\n  nonlocal o; align(4); v=struct.unpack_from(\"<I\",data,o)[0]; o+=4; return v\n def text():\n  nonlocal o; n=u32(); v=data[o:o+n];o+=n;assert v[-1:]==b\"\\0\";return v[:-1].decode()\n sec=u32(); sec=sec if sec<2**31 else sec-2**32; ns=u32(); frame=text()\n labels=[text() for _ in range(u32())]\n arrays=[]\n for _ in range(3):\n  n=u32();align(8);v=np.frombuffer(data,dtype=\"<f8\",count=n,offset=o);o+=8*n;arrays.append(v)\n assert o==len(data)\n return sec,ns,frame,labels,arrays\nnumeric_compared=0; negzero=0\nwith (e/\"exports/joint_states.csv\").open(newline=\"\",encoding=\"utf-8\") as f:\n reader=csv.DictReader(f); assert len(reader.fieldnames)==85\n for i,(db,row) in enumerate(zip(con.execute(\"select id,timestamp,data from messages order by timestamp,id\"),reader,strict=True)):\n  mid,ts,data=db;sec,ns,frame,labels,arrays=decode(data)\n  assert labels==names and row[\"frame_id\"]==frame and int(row[\"row_index\"])==i\n  assert ts==int(t[i])==int(row[\"bag_timestamp_ns\"])\n  assert sec*10**9+ns==int(stamps[i])==int(row[\"header_stamp_ns\"])\n  assert int(row[\"header_stamp_sec\"])==sec and int(row[\"header_stamp_nanosec\"])==ns\n  assert abs(float(row[\"time_s\"])-(ts-int(t[0]))/1e9)<5e-10\n  for j,key in enumerate((\"position\",\"velocity\",\"effort\")):\n   expected=(pos,vel,eff)[j][i]\n   got=np.array([float(row[label+\".\"+key]) for label in names],dtype=np.float64)\n   assert np.array_equal(arrays[j].view(np.uint64),expected.view(np.uint64))\n   assert np.array_equal(got.view(np.uint64),expected.view(np.uint64))\n   numeric_compared+=len(got);negzero+=int(np.sum((got==0)&np.signbit(got)))\ncon.close()\nassert i+1==m[\"original_message_count\"]==len(t)==8892 and numeric_compared==693576\nroot=Path(\"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02\")\nstorage=Path(\"/home/server/liufengrong/policy_storage/LW/wheel_loco/2026-10-02-14-30-02\")\narchive=json.loads((storage/\"archive_manifest.json\").read_text())\nrec=json.loads((root/\"evidence/export/model45000-storage-20261003-001/receipt.json\").read_text())\npolicyhash=hashlib.sha256((e/\"context/bundle_snapshot/policy/LW/robot_lab/wheel_loco/policy.onnx\").read_bytes()).hexdigest()\nassert policyhash==hashlib.sha256((storage/\"policy.onnx\").read_bytes()).hexdigest()==archive[\"artifacts\"][\"onnx\"][\"sha256\"]\ntime=(t-t[0])/1e9\nsummary={}\nfor lo,hi,label in [(48.74,50.7396,\"prepolicy_last2\"),(50.7396,55.7396,\"policy_first5\"),(55.7396,65.7396,\"policy_next10\"),(90,150,\"middle_late60\")]:\n mask=(time>=lo)&(time<hi)\n r={}\n for side in (\"right\",\"left\"):\n  a=names.index(side+\"_hip_now\");b=names.index(side+\"_hip_target\")\n  r[side]={\"q_mean_deg\":float(np.degrees(pos[mask,a]).mean()),\"target_mean_deg\":float(np.degrees(pos[mask,b]).mean()),\"effort_mean_Nm\":float(eff[mask,a].mean()),\"dq_rms\":float(np.sqrt(np.mean(vel[mask,a]**2))),\"raw_action_abs_mean_inferred\":float(np.mean(np.abs(pos[mask,b]/.125)))}\n summary[label]=r\nprint(json.dumps({\"experiment\":eid,\"files_verified\":len(verified),\"frames\":len(t),\"duration_s\":float(time[-1]),\"numeric_values_bitwise_compared_bag_csv_npz\":numeric_compared,\"negative_zero_values_preserved\":negzero,\"topic\":topics,\"policy_onnx_sha256\":policyhash,\"export_receipt_keys\":list(rec),\"archive_keys\":list(archive),\"export_inputs\":rec.get(\"inputs\"),\"summary\":summary,\"metrics_keys\":list(json.loads((e/\"analysis/metrics.json\").read_text()))},ensure_ascii=False))\n",
+      "sha256": "0973b995da32f5327a1817cc0e8b037ac1ba81e336e4184ee7d8ea0f31b8388c"
+    }
+  },
+  "candidate_parameter_changes_advisory_only": [
+    {
+      "counter_metrics": [
+        "wheel-width RMS and peak",
+        "roll and pitch",
+        "hip torque RMS and sustained mean",
+        "vx/yaw tracking and zero-command displacement"
+      ],
+      "current": 0.5,
+      "id": "A",
+      "parameter": "feet_distance_y_exp.params.std",
+      "proposed": 0.05,
+      "purpose": "Make centimeter-scale wheel-center displacement matter continuously within the existing band.",
+      "risk": "Overly narrow center reward may increase bracing or reduce turn/disturbance compliance; do not judge by width alone.",
+      "unchanged_center_m": 0.516
+    },
+    {
+      "counter_metrics": [
+        "actual wheel-width and body pose",
+        "sustained hip load",
+        "physical target mean and peak",
+        "tracking and hip-speed band RMS"
+      ],
+      "current": 0.0,
+      "function": "sum abs raw hip actions; L1, not square and not physical joint-angle error",
+      "id": "B",
+      "parameter": "penalize_hip_roll_action.weight",
+      "previous_1001_value": -0.3,
+      "proposed": -0.05,
+      "purpose": "Apply a modest cost to sustained large position targets while retaining nonzero support torque.",
+      "risk": "A position-PD policy uses target error to support load; excessive regularization can weaken necessary support or worsen balance."
+    },
+    {
+      "counter_metrics": [
+        "late-stage target and width trends",
+        "termination rate",
+        "tracking after sustained turns",
+        "training throughput"
+      ],
+      "current": 20.0,
+      "id": "C",
+      "parameter": "episode_length_s",
+      "proposed": 60.0,
+      "purpose": "Include the 20-60s slow-settling behavior in the training state distribution.",
+      "risk": "Extending episodes changes state sampling and termination statistics; it does not by itself solve bias or guarantee long-horizon credit assignment."
+    }
+  ],
+  "checkpoint": {
+    "checkpoint_id": "model_45000",
+    "iteration": 45000,
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-02_14-30-02/model_45000.pt",
+    "sha256": "a6b097b83272657e9f1068cafc5c74ecb5e23e6d9e8ca06f9d472bc2fe36c85b",
+    "size_bytes": 4928527
+  },
+  "cost_example": {
+    "proposed_B_reward_component_before_global_dt": -0.19925052451491357,
+    "recorded_mean_raw_hip_abs_sum": 3.9850104902982713
+  },
+  "created_at": "2026-10-03T09:53:50.119606+00:00",
+  "current_training_constraints": {
+    "episode_length_s": 20.0,
+    "feet_center_reference_m": 0.516,
+    "feet_center_reward_std_m": 0.5,
+    "feet_center_reward_weight": 3.0,
+    "hip_actual_deviation_l1_weight": -0.3,
+    "hip_raw_action_amplitude_penalty_disabled": true,
+    "legs_raw_action_rate_weight": -0.5,
+    "legs_raw_action_second_difference_weight": -0.15,
+    "width_band_m": [
+      0.496,
+      0.536
+    ]
+  },
+  "data_repository": {
+    "head_after_ff_only_pull": "b4dfdb4bbad95eb0acaf71f6a88d45d03d1f73dc",
+    "head_before_pull": "46648fe3a7206e4e413bd6011f7630a0d848ebd0",
+    "path": "/home/server/liufengrong/sim2real_test",
+    "worktree_clean": true
+  },
+  "effective_config": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/config-dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94.json",
+    "sha256": "dfa33f8c8d272c7a177f09ebd1cf9167d2a9413f6b398785dba55e8953adec94"
+  },
+  "feedback_id": "sim2real-1003-01-hip-bias-20261003-001",
+  "geometry": {
+    "actual_wheel_positions_measured": false,
+    "analysis": "rigid_URDF_estimate_only",
+    "continuous_width_reward_for_two_sides_outward_20mm": {
+      "perfect_center": 3,
+      "std0_05": 2.1784471112210726,
+      "std0_5": 2.9904153436290986
+    },
+    "same_URDF_as_archived_geometry_review": true,
+    "structural_bending_measured": false,
+    "training_USD_geometry_equality_verified": false,
+    "urdf_total_mass_kg": 26.731198539999994,
+    "windows": {
+      "middle_late60": {
+        "fraction_outside_training_0_496_0_536_band": 0.0,
+        "max_m": 0.5327547429702786,
+        "min_m": 0.5192517809340471,
+        "rms_error_to_0_516_m": 0.007692847705921275,
+        "wheel_center_body_y_separation_mean_m": 0.5234377341518704
+      },
+      "policy_first5": {
+        "fraction_outside_training_0_496_0_536_band": 0.024,
+        "max_m": 0.5140409022929017,
+        "min_m": 0.4890072357737174,
+        "rms_error_to_0_516_m": 0.011631334527604365,
+        "wheel_center_body_y_separation_mean_m": 0.5052671937293839
+      },
+      "prepolicy_last2": {
+        "fraction_outside_training_0_496_0_536_band": 1.0,
+        "max_m": 0.48917644008437633,
+        "min_m": 0.48900583306078704,
+        "rms_error_to_0_516_m": 0.026912910853846554,
+        "wheel_center_body_y_separation_mean_m": 0.4890872208491694
+      }
+    }
+  },
+  "hardware_record": {
+    "duration_s": 177.82258184,
+    "experiment": "20261003-155617-stable-motion-hip-bias",
+    "force_measurement": "motor-board torque estimates, not calibrated shaft torques",
+    "hip_order": [
+      "right",
+      "left"
+    ],
+    "message_count": 8892,
+    "policy_interval_inferred_s": [
+      50.739602391,
+      163.742172297
+    ],
+    "policy_interval_source": "wheel-target activity; FSM not directly recorded",
+    "stages": {
+      "middle_late60": {
+        "frames": 3000,
+        "left": {
+          "actual_dq_rms_rad_s": 0.02155329737748179,
+          "actual_mean_deg": -0.6529660846532189,
+          "motor_board_estimated_torque_mean_Nm": 22.736931360880533,
+          "raw_hip_action_abs_mean_inferred_from_targets": 1.9438035714626312,
+          "target_mean_deg": 13.921467605908111,
+          "target_minus_actual_mean_deg": 14.574433690561332
+        },
+        "right": {
+          "actual_dq_rms_rad_s": 0.023467337173490525,
+          "actual_mean_deg": 0.2984300893675331,
+          "motor_board_estimated_torque_mean_Nm": -23.58433875020345,
+          "raw_hip_action_abs_mean_inferred_from_targets": 2.04120691883564,
+          "target_mean_deg": -14.61906769527312,
+          "target_minus_actual_mean_deg": -14.917497784640652
+        },
+        "time_from_first_bag_message_s": [
+          90,
+          150
+        ]
+      },
+      "policy_first5": {
+        "frames": 250,
+        "left": {
+          "actual_dq_rms_rad_s": 0.041946310805217754,
+          "actual_mean_deg": 1.4813646492324883,
+          "motor_board_estimated_torque_mean_Nm": -1.78598291015625,
+          "raw_hip_action_abs_mean_inferred_from_targets": 0.2605026859343052,
+          "target_mean_deg": 0.45851563902223325,
+          "target_minus_actual_mean_deg": -1.0228490102102552
+        },
+        "right": {
+          "actual_dq_rms_rad_s": 0.05406974057377857,
+          "actual_mean_deg": 0.1417180104847071,
+          "motor_board_estimated_torque_mean_Nm": 2.030183349609375,
+          "raw_hip_action_abs_mean_inferred_from_targets": 0.27591740860790015,
+          "target_mean_deg": 1.539062358217552,
+          "target_minus_actual_mean_deg": 1.3973443477328444
+        },
+        "time_from_first_bag_message_s": [
+          50.7396,
+          55.7396
+        ]
+      },
+      "policy_next10": {
+        "frames": 500,
+        "left": {
+          "actual_dq_rms_rad_s": 0.03814136852097955,
+          "actual_mean_deg": 0.9300422705996242,
+          "motor_board_estimated_torque_mean_Nm": 8.13030532836914,
+          "raw_hip_action_abs_mean_inferred_from_targets": 0.8672695663571358,
+          "target_mean_deg": 6.211360731550622,
+          "target_minus_actual_mean_deg": 5.281318460950997
+        },
+        "right": {
+          "actual_dq_rms_rad_s": 0.0349598661724057,
+          "actual_mean_deg": 0.5898223518142852,
+          "motor_board_estimated_torque_mean_Nm": -8.608156433105469,
+          "raw_hip_action_abs_mean_inferred_from_targets": 0.6692492467164993,
+          "target_mean_deg": -4.793144659895622,
+          "target_minus_actual_mean_deg": -5.3829670117099075
+        },
+        "time_from_first_bag_message_s": [
+          55.7396,
+          65.7396
+        ]
+      },
+      "prepolicy_last2": {
+        "frames": 99,
+        "left": {
+          "actual_dq_rms_rad_s": 0.009874629306140078,
+          "actual_mean_deg": 1.6064604927869988,
+          "motor_board_estimated_torque_mean_Nm": -4.6605224609375,
+          "raw_hip_action_abs_mean_inferred_from_targets": 0.0,
+          "target_mean_deg": 0.0,
+          "target_minus_actual_mean_deg": -1.6064604927869988
+        },
+        "right": {
+          "actual_dq_rms_rad_s": 0.013145228614084334,
+          "actual_mean_deg": -1.902131240923295,
+          "motor_board_estimated_torque_mean_Nm": 5.128204345703125,
+          "raw_hip_action_abs_mean_inferred_from_targets": 0.0,
+          "target_mean_deg": 0.0,
+          "target_minus_actual_mean_deg": 1.902131240923295
+        },
+        "time_from_first_bag_message_s": [
+          48.74,
+          50.7396
+        ]
+      }
+    },
+    "wheel_and_body_ground_trajectory_measured": false
+  },
+  "historical_query": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/feedback/sim2real-1003-01-hip-bias-20261003-001/history-query.json",
+    "sha256": "35e530bef0e467ac2d92dc5461472bf63d376e4cdd786a1a85f93413e010e122"
+  },
+  "interpretation": {
+    "broad_width_reward_and_disabled_target_cost_are_training_design_hypotheses": true,
+    "confidence": "medium",
+    "direct_parameter_change_supported": false,
+    "load_may_include_necessary_support_torque": true,
+    "mechanical_bending_or_encoder_zero_cause_not_isolated": true,
+    "slow_target_bias_and_sustained_load_observed": true
+  },
+  "limitations": [
+    "Actual visual shape and wheel-ground positions were not measured; FK estimates assume the archived rigid URDF, whose equality to the training USD has not been independently verified.",
+    "Support before policy was confirmed; release time, rope load and support during policy are unknown. No synchronized kick timestamp or video.",
+    "Target angles are not actual hip angles. A broad target-feedback gap under loaded position PD can deliver necessary support torque.",
+    "Native comparisons reuse completed zero-command runs; they differ from the hardware command/support history and do not isolate any one observation-noise channel.",
+    "No approved before/after training-parameter intervention or acceptance thresholds; advice is an initial test design, not a proven optimum."
+  ],
+  "native_comparison_contract": {
+    "command": "all zero",
+    "matching_duration_steps": 6000,
+    "num_envs": 1,
+    "only_scenario_override_difference": {
+      "observations.policy.enable_corruption": [
+        false,
+        true
+      ]
+    },
+    "seed": 42,
+    "whole_observation_noise_not_joint_velocity_noise_isolated": true
+  },
+  "policy_binding": {
+    "export_receipt": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evidence/export/model45000-storage-20261003-001/receipt.json",
+      "sha256": "e4a6bdfa5a8489b12b63b1ced945f9f6226d4aa059712d6ec7702de859acbaee"
+    },
+    "hardware_policy_snapshot": {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/context/bundle_snapshot/policy/LW/robot_lab/wheel_loco/policy.onnx",
+      "sha256": "ef6cf9f83ffcf559e15d1e4e8da138fcd6d0c8c0b8fd02e1de5a4f021817429b"
+    },
+    "operator_confirmed_release": "1003-01",
+    "snapshot_bytes_equal_archived_model45000": true,
+    "test_time_process_binary_hash_independently_captured": false
+  },
+  "policy_description_required": "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。",
+  "reused_native_zero_command": {
+    "nominal-no-noise-a01": {
+      "commands_all_zero": true,
+      "frames": 6000,
+      "hip_order": [
+        "right",
+        "left"
+      ],
+      "no_resets": true,
+      "physical_feedback_hip_indices": [
+        1,
+        0
+      ],
+      "raw_action_hip_indices": [
+        0,
+        1
+      ],
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/nominal-no-noise-a01/result.json",
+        "sha256": "e5f4e310f45fbfcfdd168d4508fd00e429ce644cc3c26950ddb5e044fc96537b"
+      },
+      "source": "reused completed Native evaluation; no new rollout or inference",
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/nominal-no-noise-a01/telemetry.json.gz",
+        "sha256": "7b5272840ab4cbfa97bb9aedb677983b67b35bcdc48a4c747bb821c1b17f98b3"
+      },
+      "windows": {
+        "0_5": {
+          "frames": 250,
+          "hip_actual_dq_rms_rad_s": [
+            0.04941884437396356,
+            0.04510036257858978
+          ],
+          "hip_actual_mean_deg": [
+            0.3601756253864192,
+            -0.020286429889272307
+          ],
+          "hip_actual_torque_mean_Nm": [
+            -16.409561746120453,
+            15.88609853553772
+          ],
+          "hip_inferred_old_zero_penalty_cost_per_step": -0.1409195083372295,
+          "hip_physical_deviation_existing_cost_per_step": -0.002610366392749165,
+          "hip_target_feedback_error_mean_deg": [
+            -10.44744601036024,
+            10.10782441409752
+          ],
+          "hip_target_mean_deg": [
+            -10.087270384973813,
+            10.08753798420825
+          ],
+          "hip_torque_rms_Nm": [
+            16.65487568528151,
+            16.132602188386482
+          ]
+        },
+        "5_15": {
+          "frames": 500,
+          "hip_actual_dq_rms_rad_s": [
+            0.004035196490140038,
+            0.003512611024061469
+          ],
+          "hip_actual_mean_deg": [
+            0.49271137591885256,
+            0.11614678026022131
+          ],
+          "hip_actual_torque_mean_Nm": [
+            -17.00894179534912,
+            16.335584102630616
+          ],
+          "hip_inferred_old_zero_penalty_cost_per_step": -0.14556368083953858,
+          "hip_physical_deviation_existing_cost_per_step": -0.003187973850884009,
+          "hip_target_feedback_error_mean_deg": [
+            -10.832124546286332,
+            10.394901455609503
+          ],
+          "hip_target_mean_deg": [
+            -10.339413170367486,
+            10.511048235869746
+          ],
+          "hip_torque_rms_Nm": [
+            17.009918179077722,
+            16.33679650769667
+          ]
+        },
+        "60_120": {
+          "frames": 3000,
+          "hip_actual_dq_rms_rad_s": [
+            0.004483920063746971,
+            0.003943969846641098
+          ],
+          "hip_actual_mean_deg": [
+            0.5320619933637346,
+            0.15567732686584143
+          ],
+          "hip_actual_torque_mean_Nm": [
+            -16.770110247929892,
+            16.08250438563029
+          ],
+          "hip_inferred_old_zero_penalty_cost_per_step": -0.14337889033754667,
+          "hip_physical_deviation_existing_cost_per_step": -0.003600994660030119,
+          "hip_target_feedback_error_mean_deg": [
+            -10.680736461247836,
+            10.233161424276286
+          ],
+          "hip_target_mean_deg": [
+            -10.148674467884094,
+            10.388838751142119
+          ],
+          "hip_torque_rms_Nm": [
+            16.77011025276256,
+            16.082504392743598
+          ]
+        }
+      }
+    },
+    "nominal-training-noise-a01": {
+      "commands_all_zero": true,
+      "frames": 6000,
+      "hip_order": [
+        "right",
+        "left"
+      ],
+      "no_resets": true,
+      "physical_feedback_hip_indices": [
+        1,
+        0
+      ],
+      "raw_action_hip_indices": [
+        0,
+        1
+      ],
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/nominal-training-noise-a01/result.json",
+        "sha256": "9d069deaf0640a42480b394037a9237a2eca7a75b0fa86255f07e91ca0c9b296"
+      },
+      "source": "reused completed Native evaluation; no new rollout or inference",
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/raw/nominal-training-noise-a01/telemetry.json.gz",
+        "sha256": "d6c1ee1d7beb41a30f1be310e2f6fc597c99f45a5a8af9e923055fd83256f56a"
+      },
+      "windows": {
+        "0_5": {
+          "frames": 250,
+          "hip_actual_dq_rms_rad_s": [
+            0.12979720100701858,
+            0.13227966934755683
+          ],
+          "hip_actual_mean_deg": [
+            0.46705764437840985,
+            0.06164163043993234
+          ],
+          "hip_actual_torque_mean_Nm": [
+            -13.585698231697082,
+            13.219941686630248
+          ],
+          "hip_inferred_old_zero_penalty_cost_per_step": -0.11648811420500278,
+          "hip_physical_deviation_existing_cost_per_step": -0.004571199899365637,
+          "hip_target_feedback_error_mean_deg": [
+            -8.648780538066177,
+            8.4071124375298
+          ],
+          "hip_target_mean_deg": [
+            -8.181722893687763,
+            8.468754067969746
+          ],
+          "hip_torque_rms_Nm": [
+            13.852526602637115,
+            13.53495712706063
+          ]
+        },
+        "5_15": {
+          "frames": 500,
+          "hip_actual_dq_rms_rad_s": [
+            0.09072092523412705,
+            0.08983455233929256
+          ],
+          "hip_actual_mean_deg": [
+            0.5495283517743859,
+            -0.08402747646941243
+          ],
+          "hip_actual_torque_mean_Nm": [
+            -15.72706137084961,
+            15.233935710906982
+          ],
+          "hip_inferred_old_zero_penalty_cost_per_step": -0.1331574735403061,
+          "hip_physical_deviation_existing_cost_per_step": -0.004348125113311789,
+          "hip_target_feedback_error_mean_deg": [
+            -10.006192318053579,
+            9.70076662140139
+          ],
+          "hip_target_mean_deg": [
+            -9.456663966279194,
+            9.616739144931978
+          ],
+          "hip_torque_rms_Nm": [
+            15.859236039550483,
+            15.37748150204397
+          ]
+        },
+        "60_120": {
+          "frames": 3000,
+          "hip_actual_dq_rms_rad_s": [
+            0.0946759572875992,
+            0.09459858292802224
+          ],
+          "hip_actual_mean_deg": [
+            0.3798384774807165,
+            -1.1364540173481696
+          ],
+          "hip_actual_torque_mean_Nm": [
+            -23.766745367685953,
+            23.628984318097434
+          ],
+          "hip_inferred_old_zero_penalty_cost_per_step": -0.20011389736533164,
+          "hip_physical_deviation_existing_cost_per_step": -0.008198299971429606,
+          "hip_target_feedback_error_mean_deg": [
+            -15.135354494502982,
+            15.04514235269497
+          ],
+          "hip_target_mean_deg": [
+            -14.755516017022245,
+            13.908688335346758
+          ],
+          "hip_torque_rms_Nm": [
+            23.908967118187334,
+            23.77604491759316
+          ]
+        }
+      }
+    }
+  },
+  "run_id": "2026-10-02_14-30-02",
+  "run_identity": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/provenance/context-8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065.json",
+    "sha256": "8725ba0fd4fea12981095536d2e69ab4eff6607ab008d1517b807ab9d6400065"
+  },
+  "runner": "OnPolicyRunnerROA",
+  "source": "sim2real",
+  "source_files": [
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/README.md",
+      "sha256": "c089164dc07a79be7ba914ed75481a8de4925da59540402ee005d5e5b787c54f"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/analysis.txt",
+      "sha256": "2be433556f787b9b80ae0caf36aac15ac2fb18f6e2beb9587b32ff97e7f9846a"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/archive-provenance.json",
+      "sha256": "379371ab431bb79e1a4d6dce457aa8c914ed32235039b0cb0887e72cb26258d3"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/archive-review.md",
+      "sha256": "6cc63e8a2370cb622ca2aca8fb6e19de5498c0cd7b888b54788219a06541fd36"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/decoded.npz",
+      "sha256": "c6659a021e02607e72d74b02201c3642bc281613859bbc354ba6c1cebbe720c9"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/deployment-provenance.json",
+      "sha256": "fc89533d99ab84423f92c2b4246271ba138538c5cc613aef3bb0222724ed657e"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/ending_getdown.png",
+      "sha256": "0346be5bca1bbf5637fb82c6d64a007c8f156794f0bdbaf85b1850bd0c61a28d"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/hip_geometry_estimate.json",
+      "sha256": "d56914066dfe6ce71146715d7bf412d9804f23b7bf8c94e0d308a0827efc875a"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/hip_tracking.png",
+      "sha256": "6b5883deee85fe8261472b0b1c3c404b4f7dabeeb5144aec36389975db542f71"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/logs/ahrs.log",
+      "sha256": "6d57a22a8bf4ffed5ae5e5026359c59129892be4e00692cefccfc6f1c18b20be"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/logs/launch.log",
+      "sha256": "248351be6b37b32a217eef5677a37f78508f5a5a80f2325a6257bf06d0687250"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/logs/recorder.log",
+      "sha256": "4de704c6257825ba56d6a5cbb2868bab493abb527b0883989a6045b777d6cbe2"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/logs/rl_real.log",
+      "sha256": "c27251e0b72d67a2e45cec95c6c1688109bfae0edc151358c835058c39af4591"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/metrics.json",
+      "sha256": "0a107526521ac58bf716769d4a5b240b54b38060fa0752d4001926deaccd7888"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/motion_overview.png",
+      "sha256": "261d92c8bbad89d9499f55d0e9e0684fe0b6263217b69a7f8e5c338a2105cec8"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/prepolicy_hip_timeline.json",
+      "sha256": "fe027bd26df291fe938b1ce91f0ae1cc58a60ffe19107bb4cc9113589dc2ad89"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/prepolicy_hip_timeline.png",
+      "sha256": "88fe04b0ae57e6e2580e2bfb9d9872e4e977dc2572feb967431a5dbd3a874677"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/source.json",
+      "sha256": "1b972b1a5301127a3f3b9cb2990b7e41f48c50af86a81486932e1111bb10b369"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/zero_command_bias.png",
+      "sha256": "68ee88745c44eb4942f97c89ffa8ea32f4c3c4b7abed5204af4d228cdf8f9c63"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/context/README.md",
+      "sha256": "41012d0f49c40b1129aa3f148323d4272ecae7812f92d34b1e48418a581a6884"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/context/bundle_snapshot/manifest.yaml",
+      "sha256": "1d298cb0c4153bd5120591ca21074f3e990f5d595004908ad8343de27393cc07"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/context/bundle_snapshot/policy/LW/base.yaml",
+      "sha256": "45aa0cfed1797855ab8e23c1a991faf94e62f539012349380c964168cbcfebf9"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/context/bundle_snapshot/policy/LW/robot_lab/wheel_loco/config.yaml",
+      "sha256": "22e753d7199ca4deed79570ba116e2fec5e32e79355f7b589063c39d7fb15e92"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/context/bundle_snapshot/policy/LW/robot_lab/wheel_loco/policy.onnx",
+      "sha256": "ef6cf9f83ffcf559e15d1e4e8da138fcd6d0c8c0b8fd02e1de5a4f021817429b"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/context/geometry/LW.urdf",
+      "sha256": "e416fdf3568b6a25b42c5e73e67d15b03762bf20e870d0a205e389af9dc6861e"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/exports/README.md",
+      "sha256": "d85fc3724cea1b741f7acd082603641ff0aa7474eaafcaad03fef6f4c818fc74"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/exports/joint_states.csv",
+      "sha256": "074023a84ae78c1b02881ec5ab97904c6b9cabcd2e89697307b8ebcf8afb0136"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/exports/validation.json",
+      "sha256": "876c4f8e7330cef03443273efe7a503211d971041eb49b94b9dbe4ebdf3d322c"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/manifest.json",
+      "sha256": "f87c3bcc508fee07c1ade7145681ec5ad31d83b8ccb49030896b8ef99aee462c"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/raw/lw_real_20261003-155617/lw_real_20261003-155617_0.db3",
+      "sha256": "a2a4ca256d26d23c812f2cfed6df6791ca7502d17382dd3df777c645dc005ddb"
+    },
+    {
+      "path": "/home/server/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/raw/lw_real_20261003-155617/metadata.yaml",
+      "sha256": "fbf3024fe911615e8d1f08d0fdc7e6348be53806e00d25d99adef0445bd440a3"
+    }
+  ],
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+  "verification": {
+    "independent_CDR_bag_CSV_NPZ_float64_bitwise_values_compared": 693576,
+    "negative_zero_values_preserved": 3939,
+    "primary_manifest_files": 22,
+    "source": "completed read-only verification in this task; exact verification source captured below",
+    "sqlite_quick_check": "ok",
+    "timestamps_names_and_frame_ids_exact": true,
+    "verified_new_experiment_sha256sum_files": 31
+  },
+  "version": 1
+}
