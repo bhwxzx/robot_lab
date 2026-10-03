@@ -1,49 +1,51 @@
-# 当前 wheel-flat ROA 双髋敏感度与训练轮次
+# wheel-flat ROA 2026-10-01_00-04-08 评估索引
 
-本轮 `2026-10-01_00-04-08` 的已采样结果并非随训练轮数单调增加。事故振荡增长段速度敏感度在 10000→20000 轮明显上升，之后在约 0.020 附近波动；位置敏感度有升有降。正常零指令、前进和异常初起段的末点敏感度低于 10000 轮。
+本页只提供可重新生成的导航；原始证据及哈希以批次 manifest 和分析指标文件为准。本次评估最终 `model_49999.pt`（内部迭代 50000，SHA-256 `6177c222df1a283e535d9543360737af2f1fd272bcd0ef4bef1027d81662a94c`），使用 isaacsim-5.1。
 
-使用 9/24 右转抖动事故的同一组 505 帧、同一状态/前次动作对齐协议。新测 10000、20000、30000、33000 四个 checkpoint，32000 与旧 DWAQ/ROA 均复用归档测量。总计新推理 197,960 个输入向量，isaacsim-5.1、CPU 单线程；没有启动仿真、训练或实机复现。checkpoint 文件编号与内部迭代相差 1，例如 model_33000.pt 内部迭代 33001。
+本次新测六个 Native 单环境场景，共 30000 控制步；静态分析新测最终模型在 9/24 右转事故的 505 帧上，共 49490 个输入向量。旧 DWAQ/ROA 与本轮中期 checkpoint 的测量均复用归档结果。
 
-下表为振荡增长段 20 帧（消息行 2907–2926，header 相对时间 58.146–58.526 s）。Gq/Gdq 是双髋物理动作目标对当前双髋物理位置/速度输入的局部 2×2 雅可比最大奇异值中位数。
+## 最终 checkpoint 的闭环测试
 
-| 本轮 checkpoint | Gq (rad/rad) | Gdq (rad/(rad/s)) | 髋目标峰值 (rad) | 目标步差 RMS (rad) |
-|---|---:|---:|---:|---:|
-| 10000 | 1.733 | 0.00820 | 0.687 | 0.297 |
-| 20000 | 1.918 | 0.01956 | 0.686 | 0.342 |
-| 30000 | 1.531 | 0.02105 | 0.559 | 0.337 |
-| 32000 | 1.994 | 0.01999 | 0.701 | 0.372 |
-| 33000 | 1.852 | 0.02109 | 0.619 | 0.345 |
+- [六场景批次报告](evaluations/wheel-flat-final-noise15-20261002-001/report.md) · [密封 manifest](evaluations/wheel-flat-final-noise15-20261002-001/manifest.json)
+- [完整分阶段指标、历史比较及可核验分析源码](evidence/analysis/final-model49999-batch-20261002-001/metrics.json)
+- [转弯段与旧 ROA 比较图](evidence/analysis/final-model49999-batch-20261002-001/comparison.png)
+- [右转 15/30 ms 全时序曲线](evidence/analysis/final-model49999-batch-20261002-001/timeline.png)
+- [120 秒零指令站定曲线](evidence/analysis/final-model49999-batch-20261002-001/standing.png)
+- [最后训练记录的有界扫描及校验](evidence/training/final-tail-20261002-001.json)
 
-10000→33000 轮，增长段 Gdq 从 0.00820 升至 0.02109，主对齐增加约 157.4%；四种对齐的增幅范围约 81.9%–157.4%。Gq 主对齐只增加约 6.9%，其他对齐包含下降，不能认为位置敏感度存在稳健持续上升。20000 轮后的增长段 Gdq 范围为 0.01956–0.02109；这些是采样波动，不能认定所有轮次单调变化。
+## 最终 checkpoint 的静态双髋敏感度
 
-正常前进段 10000→33000：Gq 1.388→0.478（降低约 65.6%），Gdq 0.00195→0.00120（降低约 38.3%）；零指令段 Gq 1.267→0.356、Gdq 0.00184→0.00107。速度跟踪和平衡能力没有在本次静态测试中重新测量。
+- [敏感度指标、有限差分/autograd 复核、历史对齐范围](evidence/analysis/static-rightturn-model49999-20261002-001/metrics.json)
+- [旧 DWAQ、其他 ROA、33000 轮与最终模型比较图](evidence/analysis/static-rightturn-model49999-20261002-001/comparison.png)
+- [逐帧敏感度与物理目标 CSV](evidence/analysis/static-rightturn-model49999-20261002-001/per-frame-comparison.csv)
 
-最新 33000 轮与旧策略在同一增长段的比较：
+## 先前训练轮次比较
 
-| 策略 | Gq (rad/rad) | Gdq (rad/(rad/s)) | 髋目标峰值 (rad) | 目标步差 RMS (rad) |
-|---|---:|---:|---:|---:|
-| 旧 DWAQ 6/03 | 2.070 | 0.12315 | 1.810 | 1.071 |
-| ROA 9/23 最终 | 3.507 | 0.07786 | 1.348 | 0.909 |
-| ROA 9/26 最终 | 2.818 | 0.03011 | 0.604 | 0.437 |
-| ROA 9/28 无速度估计 | 2.102 | 0.05672 | 0.853 | 0.563 |
-| ROA 9/29 最终 | 2.736 | 0.14774 | 2.167 | 1.251 |
-| 本轮 ROA @32000 | 1.994 | 0.01999 | 0.701 | 0.372 |
-| 本轮 ROA @33000 | 1.852 | 0.02109 | 0.619 | 0.345 |
+- [10000–33000 轮趋势指标](evidence/analysis/static-rightturn-training-trend-20261001-001/metrics.json) · [趋势图](evidence/analysis/static-rightturn-training-trend-20261001-001/checkpoint-trend.png) · [逐 checkpoint/阶段表](evidence/analysis/static-rightturn-training-trend-20261001-001/checkpoint-comparison.csv)
+- [10000 轮](evidence/analysis/static-rightturn-model10000-20261001-001/metrics.json)
+- [20000 轮](evidence/analysis/static-rightturn-model20000-20261001-001/metrics.json)
+- [30000 轮](evidence/analysis/static-rightturn-model30000-20261001-001/metrics.json)
+- [32000 轮](evidence/analysis/static-rightturn-model32000-20261001-001/metrics.json)
+- [33000 轮](evidence/analysis/static-rightturn-model33000-20261001-001/metrics.json)
 
-33000 轮相对 9/29 最终策略的增长段 Gq/Gdq 分别降低约 32.3%/85.7%，但这不能解释为闭环实机抖动已消除。30000 轮在这些采样点中目标峰值和增长段 Gq 较低，而 Gdq 并未最低；不能只凭训练轮数或单项敏感度认定最佳 checkpoint。
+## 来源与执行范围
 
-实际训练配置：从开始使用估计速度，关节速度均匀噪声 ±1.5 rad/s、髋动作比例 0.125、腿部一阶/二阶平滑惩罚 -0.4/-0.15、站距越界权重 -100、允许区间 [0.506, 0.526] m。多项参数相对 9/29 同时改变，无法单独判断噪声幅度的效果。
+- [原训练源码捕获](provenance/context-6056aac32c5d9db4a06f528e80fd9d52f5f12067c146323127e1a05ec90a28fe.json)
+- [本次评估上下文](provenance/context-50737a142e11a9a1096d8729617c8e16ddea450a1d6db4864ff0a1b7ce0ffef7.json)
+- [有效训练配置](provenance/config-e8e4b3da5a8ac9435411385ee2c48eb554823bd48d8030b013aa976540481952.json)
+- [完整启动参数、源码一致性与测试预算](evidence/source/launch-and-budget-final-20261002-001.json) · [有限批次输入](evidence/source/wheel-flat-final-noise15-batch-input-20261002-001.json)
+- [评估来源](provenance/) · [批次事件](events/)
 
-五个 checkpoint 的有限差分/autograd 和来源哈希已复核；训练 TensorBoard 步数从 33348 增至 33756。没有建立吞吐影响的受控对照。
+相同指令、延迟、seed 的历史对照保留各自训练噪声与奖励配置，不能归因于单项参数。每个场景只测一个环境和一个 seed；30 ms 延迟超过训练的 0–15 ms 范围。静态输入来自旧策略，未覆盖 9/30 减速事故；局部雅可比不构成闭环稳定性证明。仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。
 
-这些是旧策略产生的冻结输入，前次原始动作保持录制时的 0.25 髋比例输入，没有回填新策略动作；输入可能偏离各策略自身闭环分布。局部雅可比不是闭环增益或稳定裕度，不覆盖 9/30 减速事故，不代表已验证当前策略实机表现。仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。
+## 当前策略导出与归档
 
-[轮次趋势图](evidence/analysis/static-rightturn-training-trend-20261001-001/checkpoint-trend.png) · [完整趋势与复核](evidence/analysis/static-rightturn-training-trend-20261001-001/metrics.json) · [逐 checkpoint/阶段指标](evidence/analysis/static-rightturn-training-trend-20261001-001/checkpoint-comparison.csv) · [最新策略与旧策略对比图](evidence/analysis/static-rightturn-model33000-20261001-001/comparison.png)
+按原训练启动时间归档至 policy_storage 的 `LW/wheel_loco/2026-10-01-00-04-08`，GitHub master 提交 `cdfce8d66dca9b26c283508de73a8369c0a7247b` 已与远端核对一致。
 
-[10000 轮原始指标](evidence/analysis/static-rightturn-model10000-20261001-001/metrics.json)
-[20000 轮原始指标](evidence/analysis/static-rightturn-model20000-20261001-001/metrics.json)
-[30000 轮原始指标](evidence/analysis/static-rightturn-model30000-20261001-001/metrics.json)
-[32000 轮原始指标](evidence/analysis/static-rightturn-model32000-20261001-001/metrics.json)
-[33000 轮原始指标](evidence/analysis/static-rightturn-model33000-20261001-001/metrics.json)
-
-[运行身份](provenance/context-6056aac32c5d9db4a06f528e80fd9d52f5f12067c146323127e1a05ec90a28fe.json) · [有效训练配置](provenance/config-e8e4b3da5a8ac9435411385ee2c48eb554823bd48d8030b013aa976540481952.json)
+- [用户选择与 checkpoint 校验回执](evidence/checkpoint_selection/selection-final-storage-20261002-001.json)
+- [Native/JIT/ONNX 时序及 reset 一致性回执](evidence/export/final-storage-20261002-001/receipt.json)
+- [导出 JIT](evidence/export/final-storage-20261002-001/policy.pt) · [导出 ONNX](evidence/export/final-storage-20261002-001/policy.onnx)
+- [归档输入](evidence/source/archive-input-final-storage-20261002-001.json) · [ff-only pull 与归档前检查](evidence/source/archive-preflight-final-storage-20261002-001.json)
+- [归档回执](evidence/source/archive-receipt-final-storage-20261002-001.json) · [Git 提交推送和远端 SHA 核验](evidence/source/storage-git-publication-final-storage-20261002-001.json)
+- [导出启动参数与有界校验预算](evidence/source/export-launch-final-storage-20261002-001.json) · [导出日志](evidence/source/export-console-final-storage-20261002-001.log)
+- [GitHub 归档目录](https://github.com/bhwxzx/policy_storage/tree/master/LW/wheel_loco/2026-10-01-00-04-08)
