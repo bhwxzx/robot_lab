@@ -88,9 +88,9 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.2
-        self.rewards.joint_torques_l2.weight = -1.25e-5
+        self.rewards.joint_torques_l2.weight = -0.0
         self.rewards.joint_torques_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
-        self.rewards.joint_power.weight = -2e-5
+        self.rewards.joint_power.weight = -0.0
         self.rewards.joint_power.params["asset_cfg"].joint_names = self.joint_names
         self.rewards.joint_vel_wheel_l2.weight = 0.0
         self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
