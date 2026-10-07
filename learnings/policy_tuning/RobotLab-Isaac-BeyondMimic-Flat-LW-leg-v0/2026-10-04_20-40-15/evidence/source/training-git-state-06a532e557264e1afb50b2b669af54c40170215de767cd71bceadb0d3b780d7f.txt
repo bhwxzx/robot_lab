@@ -1,0 +1,33 @@
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Leg/flat_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-03_15-01-21/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Leg/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Leg/flat_env_cfg.py
+index c1c8527..7efaec0 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Leg/flat_env_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Leg/flat_env_cfg.py
+@@ -88,9 +88,9 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
+         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
+         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+         self.rewards.torque_limit.weight = -0.2
+-        self.rewards.joint_torques_l2.weight = -1.25e-5
++        self.rewards.joint_torques_l2.weight = -0.0
+         self.rewards.joint_torques_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+-        self.rewards.joint_power.weight = -2e-5
++        self.rewards.joint_power.weight = -0.0
+         self.rewards.joint_power.params["asset_cfg"].joint_names = self.joint_names
+         self.rewards.joint_vel_wheel_l2.weight = 0.0
+         self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
