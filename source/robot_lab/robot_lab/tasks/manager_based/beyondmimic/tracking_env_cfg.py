@@ -270,6 +270,28 @@ class RewardsCfg:
         weight=1.0,
         params={"command_name": "motion", "std": 3.14},
     )
+    # Task-specific takeoff terms are enabled by the LW Leg flat configuration.
+    motion_takeoff_pitch_ang_vel = RewTerm(
+        func=mdp.motion_phase_anchor_pitch_angular_velocity_error_l2,
+        weight=0.0,
+        params={
+            "command_name": "motion",
+            "start_time_s": 1.0,
+            "end_time_s": 1.6,
+            "ramp_time_s": 0.1,
+        },
+    )
+    motion_takeoff_anchor_ori = RewTerm(
+        func=mdp.motion_phase_anchor_orientation_error_exp,
+        weight=0.0,
+        params={
+            "command_name": "motion",
+            "std": 0.3,
+            "start_time_s": 1.0,
+            "end_time_s": 1.6,
+            "ramp_time_s": 0.1,
+        },
+    )
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-1)
 
     action_smoothness = RewTerm(func=mdp.ActionSmoothnessPenalty, weight=0.0)
@@ -325,6 +347,27 @@ class RewardsCfg:
             "start_time_s": 1.6,
             "min_contact_force": 10.0,
             "stable_contact_time": 0.1,
+        },
+    )
+    leg_symmetry = RewTerm(
+        func=mdp.wheel_phase_leg_symmetry,
+        weight=0.0,
+        params={
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg("robot"),
+            "std": 0.05,
+            "start_time_s": 1.6,
+            "ramp_time_s": 0.2,
+        },
+    )
+    same_foot_x_position = RewTerm(
+        func=mdp.wheel_phase_same_feet_x_position,
+        weight=0.0,
+        params={
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg("robot"),
+            "start_time_s": 1.6,
+            "ramp_time_s": 0.2,
         },
     )
 
