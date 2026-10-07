@@ -556,6 +556,18 @@ def _review_windows(
     return windows
 
 
+def _reset_motion_observation_history(env):
+    """Refill enabled histories after restoring the motion reference at reset."""
+    manager = env.unwrapped.observation_manager
+    if not any(manager._group_obs_term_history_buffer.values()):
+        return env.get_observations()
+    from tensordict import TensorDict
+
+    manager.reset()
+    env.unwrapped.obs_buf = manager.compute(update_history=True)
+    return TensorDict(env.unwrapped.obs_buf, batch_size=[env.num_envs])
+
+
 def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
     """One-env Native motion evaluation with terminal state captured before reset."""
     from isaaclab.utils.math import quat_apply, quat_error_magnitude, quat_inv, quat_mul, yaw_quat
@@ -592,6 +604,53 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
     observations, _ = env.reset()
     cmd._refresh_relative_body_targets()
     observations = env.get_observations()
+    manager = raw.observation_manager
+    history_buffers = manager._group_obs_term_history_buffer
+    observation_shapes = {name: list(value.shape) for name, value in observations.items()}
+    history_diagnostic = {
+        "input_shapes": observation_shapes,
+        "term_order": manager.active_terms,
+        "history_lengths": {
+            group: {name: buffer.max_length for name, buffer in buffers.items()}
+            for group, buffers in history_buffers.items()
+        },
+        "flatten_order": "per-term history, oldest to newest",
+        "reset_checks": [],
+    }
+
+    def check_history_reset(observations, after_step):
+        check = {"after_control_step": after_step, "reference_frame": int(cmd.time_steps[0].item()),
+                 "history_terms": {}}
+        for group, buffers in history_buffers.items():
+            offset = 0
+            for name, shape in zip(manager.active_terms[group], manager.group_obs_term_dim[group]):
+                width = math.prod(shape)
+                if name in buffers:
+                    history = buffers[name].buffer
+                    repeated = torch.equal(history, history[:, :1].expand_as(history))
+                    input_matches = torch.equal(observations[group][:, offset:offset + width],
+                                                history.reshape(env.num_envs, -1))
+                    if not repeated or not input_matches:
+                        raise RuntimeError("motion reset history is stale or differs from policy input")
+                    check["history_terms"][f"{group}/{name}"] = {
+                        "history_length": buffers[name].max_length,
+                        "repeated_current_frame": repeated, "input_matches_history": input_matches,
+                    }
+                offset += width
+        command_buffer = history_buffers.get("policy", {}).get("command")
+        if command_buffer is not None:
+            expected = cmd.command.clone()
+            term = env_cfg.observations.policy.command
+            if term.clip is not None:
+                expected.clamp_(min=term.clip[0], max=term.clip[1])
+            if term.scale is not None:
+                expected.mul_(torch.as_tensor(term.scale, device=expected.device, dtype=expected.dtype))
+            if not torch.equal(command_buffer.buffer[:, -1], expected):
+                raise RuntimeError("motion reset history command differs from restored reference")
+            check["command_matches_reference"] = True
+        history_diagnostic["reset_checks"].append(check)
+
+    check_history_reset(observations, None)
     initial_runtime = {
         "body_names": list(robot.body_names),
         "masses_kg": robot.root_physx_view.get_masses()[0].tolist(),
@@ -619,6 +678,7 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
                   "joint_velocity": "rad/s", "torque": "N*m", "contact_force": "N"},
         "torque_sampling": "final physics substep of each control step",
         "initial_runtime": initial_runtime,
+        "observation_history": history_diagnostic,
     }
     samples = []
     physics_window = plan.scenario_contract["scenario_overrides"].get("evaluation.motion_physics_window")
@@ -728,6 +788,8 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
             if physics_window is not None and physics_window[0] <= frame_before_action <= physics_window[1]:
                 previous_wheel_velocity = robot.data.body_link_vel_w[:, wheel_ids, :3].clone()
             with torch.inference_mode():
+                if {name: list(value.shape) for name, value in observations.items()} != observation_shapes:
+                    raise RuntimeError("motion policy observation dimensions changed")
                 actions = policy(observations)
                 if not torch.isfinite(actions).all():
                     raise FloatingPointError("nonfinite motion action")
@@ -752,7 +814,8 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
                     # before recomputing the next observation; physical reset already used zero.
                     cmd.time_steps[:] = 0
                     cmd._refresh_relative_body_targets()
-                    observations = env.get_observations()
+                    observations = _reset_motion_observation_history(env)
+                    check_history_reset(observations, step)
                 episode_id += 1
                 start_frame = int(cmd.time_steps[0].item())
     finally:
