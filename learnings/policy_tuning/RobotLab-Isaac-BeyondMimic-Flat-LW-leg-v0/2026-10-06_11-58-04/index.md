@@ -27,3 +27,10 @@
 - [分阶段指标 CSV](<evaluations/history10-landing-contact-20261006-001/plots/phase_metrics_comparison.csv>)
 - [逐周期指标 CSV](<evaluations/history10-landing-contact-20261006-001/plots/cycle_metrics_comparison.csv>)
 - [接触顺序、峰值位置及足关节超速核验 CSV](<evaluations/history10-landing-contact-20261006-001/plots/contact_and_joint_peak_audit.csv>)
+
+## 用户选择与导出归档任务
+
+- [用户选择回执](<evidence/checkpoint_selection/selection-storage-20261008-001.json>)
+- [导出归档任务及已批准预算](<evidence/export/storage-20261008-001/queued-job.json>)；执行状态以 [job-status.json](<evidence/export/storage-20261008-001/job-status.json>) 为准。
+
+- [用户允许与训练并行的8样本导出检查](<evidence/export/storage-overlap-20261008-002/overlap-contract.json>)；[导出回执](<evidence/export/storage-overlap-20261008-002/receipt.json>)；[归档回执](<evidence/export/storage-overlap-20261008-002/archive-receipt.json>)。

@@ -1,0 +1,122 @@
+{
+  "algorithm": "PPO",
+  "archive_authorized": true,
+  "artifacts": {
+    "jit": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-06_11-58-04/evidence/export/storage-overlap-20261008-002/policy.pt",
+      "sha256": "f9594f62a7dd3ca290b993e1b407b298ca1dcfb1363a34f18384a350c2d869c7"
+    },
+    "onnx": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-06_11-58-04/evidence/export/storage-overlap-20261008-002/policy.onnx",
+      "sha256": "2a94dbf5fafc1cd83bc0098476e95c3af14f4ba81a6001cf14da60325a107f8b"
+    }
+  },
+  "collection": "LW/leg_to_wheel",
+  "description_notes": "用户指定归档2026-10-06_11-58-04/model_49999.pt。复用该策略已完成的四组Native评估，不声称全面最优或训练收敛。另执行已批准的8样本、含重置边界的导出一致性检查。网络本身无循环状态，590维输入包含按时间顺序展开的10帧、每帧59维环境历史；部署端须维护历史并在重置时清空。Actor观测归一化关闭，ONNX为单机器人静态批次1、opset17简化图。参考轨迹及原始训练配置的路径和哈希见parameters。",
+  "evaluation": {
+    "results": [
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-06_11-58-04/evaluations/history10-landing-contact-20261006-001/raw/play-equivalent-a01/result.json",
+        "sha256": "73f6a3a5e77de89373301f7cc85248478b350057661060be9de3f5d0b9716a6a"
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-06_11-58-04/evaluations/history10-landing-contact-20261006-001/raw/zero-delay-a01/result.json",
+        "sha256": "91dc6b09e63114e9c64b486ef756a180baf1d8f2a77583ff5144b7a956536249"
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-06_11-58-04/evaluations/history10-landing-contact-20261006-001/raw/fixed-15ms-a01/result.json",
+        "sha256": "cdf34ab04e88d43ef672846e29131ce989b3702d14a89220bf2ee632d7f2de35"
+      },
+      {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-06_11-58-04/evaluations/history10-landing-contact-20261006-001/raw/randomized-no-push-a01/result.json",
+        "sha256": "fb469421eb5d88a1ecbbc946d2e33fc6e35d1113dfe5dd59964ab9ca40d1eb37"
+      }
+    ]
+  },
+  "export_receipt": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-06_11-58-04/evidence/export/storage-overlap-20261008-002/receipt.json",
+    "sha256": "ea1ebca651aff30af94a4d244916c7d7f41abe5b0169380eb42ef51844d7fd39"
+  },
+  "parameters": {
+    "action_width": 10,
+    "activation": "elu",
+    "actor_hidden_dims": [
+      512,
+      256,
+      128
+    ],
+    "actor_input_width": 590,
+    "actor_obs_normalization": false,
+    "control_dt_seconds": 0.02,
+    "export_parity_contract": {
+      "max_abs_action_error": 1e-05,
+      "minimum_parity_samples": 8,
+      "num_envs": 1,
+      "parity_steps": 8,
+      "required_boundaries": [
+        "initial",
+        "pre_reset",
+        "post_reset",
+        "final"
+      ],
+      "reset_step": 4,
+      "seed": 42
+    },
+    "history_length": 10,
+    "motion_frames": 167,
+    "motion_frequency_hz": 50,
+    "motion_reference": {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/leg_to_wheel_transform_50hz.npz",
+      "sha256": "9ff53e159acedd59f89179c75f08e1e2521af3573e267f0192d60e07586b3ec1"
+    },
+    "onnx_export_contract": {
+      "batch_contract": "static_batch_1",
+      "input_dtype": "float32",
+      "input_name": "obs",
+      "opset_version": 17,
+      "output_dtype": "float32",
+      "output_name": "actions",
+      "profile": "static_batch_1_simplified",
+      "simplified": true
+    },
+    "physics_dt_seconds": 0.005,
+    "policy_interface": {
+      "action_shape": [
+        1,
+        10
+      ],
+      "actor_obs_normalization": false,
+      "environment_history_must_reset": true,
+      "frame_width": 59,
+      "history_layout": "time_major_flattened_by_environment",
+      "observation_frames": 10,
+      "observation_shape": [
+        1,
+        590
+      ],
+      "policy_network_state": "stateless"
+    },
+    "training_params_agent": {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-06_11-58-04/params/agent.yaml",
+      "sha256": "e33bdb9bc9c8d905bc6d0d5e320a1c521862e237e66a0eeeab52d074ae23a31f"
+    },
+    "training_params_env": {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-06_11-58-04/params/env.yaml",
+      "sha256": "2b06f0cc0810a77d1226f99f0801f9ce580d542406ce87ee63c338b79b0b5265"
+    },
+    "training_start_local": "2026-10-06_11-58-04"
+  },
+  "runner": "OnPolicyRunner",
+  "selected_checkpoint": {
+    "iteration": 49999,
+    "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-06_11-58-04/model_49999.pt",
+    "sha256": "72c5150a1bcf2f8b76ac33959113e4325e231e290fcd352772ccf4def156f0f1"
+  },
+  "source": {
+    "commit": "5580c93377f79217fa609cf2c4031cdcb150e0a2",
+    "dirty": true
+  },
+  "storage_root": "/home/young/liufengrong/policy_storage",
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0",
+  "version": 2
+}
