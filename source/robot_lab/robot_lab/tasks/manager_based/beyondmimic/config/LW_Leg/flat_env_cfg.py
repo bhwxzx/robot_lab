@@ -27,20 +27,26 @@ class LWActionsCfg:
 class LWLegRewardsCfg(RewardsCfg):
     """Separate effort penalties for the LW Leg foot and shank joints."""
 
+    hip_pos_zero_l2 = RewTerm(
+        func=mdp.joint_pos_zero_l2,
+        weight=-1.0,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_hip_joint", "left_hip_joint"])},
+    )
+
     joint_torques_l2 = None
     joint_torques_foot_l2 = RewTerm(
         func=mdp.joint_torques_l2,
-        weight=-5e-5,
+        weight=0.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_foot_joint", "left_foot_joint"])},
     )
     joint_torques_shank_l2 = RewTerm(
         func=mdp.joint_torques_l2,
-        weight=-5e-6,
+        weight=0.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_shank_joint", "left_shank_joint"])},
     )
     torque_limit_foot = RewTerm(
         func=mdp.joint_torque_margin_penalty,
-        weight=-0.05,
+        weight=0.0,
         params={
             "ratio": 0.90,
             "asset_cfg": SceneEntityCfg("robot", joint_names=["right_foot_joint", "left_foot_joint"]),
@@ -48,7 +54,7 @@ class LWLegRewardsCfg(RewardsCfg):
     )
     torque_limit_shank = RewTerm(
         func=mdp.joint_torque_margin_penalty,
-        weight=-0.025,
+        weight=0.0,
         params={
             "ratio": 0.95,
             "asset_cfg": SceneEntityCfg("robot", joint_names=["right_shank_joint", "left_shank_joint"]),
@@ -117,6 +123,20 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.events.add_joint_default_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.events.base_com.params["asset_cfg"].body_names = self.base_link_name
         self.events.randomize_rigid_body_mass_base.params["asset_cfg"].body_names = [self.base_link_name]
+        # Keep link mass scaling from overwriting the base payload randomization.
+        self.events.randomize_rigid_body_mass_others.params["asset_cfg"].body_names = [
+            "right_hip_link",
+            "left_hip_link",
+            "right_thigh_link",
+            "left_thigh_link",
+            "right_shank_link",
+            "left_shank_link",
+            "right_foot_link",
+            "left_foot_link",
+            "right_wheel_link",
+            "left_wheel_link",
+        ]
+        self.events.push_robot = None
         # self.events.randomize_rigid_body_mass_others = None
         # self.events.randomize_actuator_gains = None
         # rewards
@@ -136,7 +156,7 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.0
-        self.rewards.joint_power.weight = -2e-5
+        self.rewards.joint_power.weight = 0.0
         self.rewards.joint_power.params["asset_cfg"].joint_names = [
             "right_foot_joint", "left_foot_joint", "right_shank_joint", "left_shank_joint"
         ]

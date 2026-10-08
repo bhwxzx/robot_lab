@@ -361,3 +361,11 @@ def joint_power(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityC
     torque = asset.data.applied_torque[:, asset_cfg.joint_ids]
     velocity = asset.data.joint_vel[:, asset_cfg.joint_ids]
     return torch.sum(torch.abs(torque * velocity), dim=1)
+
+
+def joint_pos_zero_l2(
+    env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Sum squared joint angles in radians relative to physical zero."""
+    asset: Articulation = env.scene[asset_cfg.name]
+    return torch.sum(torch.square(asset.data.joint_pos[:, asset_cfg.joint_ids]), dim=1)
