@@ -1,13 +1,13 @@
 ---
 name: monitor-tune-isaaclab-training
-description: Assess IsaacLab training and bounded policy evaluations, compare and export selected checkpoints, and advise parameter changes from evidence. Also generate MuJoCo Sim2Sim test reports on a deployment-only computer, including full evidence packages with receiver-confirmed model-resource hash reuse. Use for human-guided assessment or finite Sim2Sim reporting, not autonomous training campaigns.
+description: Assess IsaacLab training and bounded policy evaluations, compare checkpoints, export and archive selected ROA/AMP-ROA or BeyondMimic policies, and advise parameter changes from evidence. Also generate MuJoCo Sim2Sim test reports on a deployment-only computer, including full evidence packages with receiver-confirmed model-resource hash reuse. Use for human-guided assessment or finite Sim2Sim reporting, not autonomous training campaigns.
 ---
 
 # IsaacLab Training Advisor
 
 Help the operator assess one live or completed training run, evaluate bounded
-policy behavior, compare checkpoints, export a selected policy, and learn from
-feedback. Training decisions and parameter edits remain with the user.
+policy behavior, compare checkpoints, export and archive a selected policy, and
+learn from feedback. Training decisions and parameter edits remain with the user.
 
 ## Select the mode first
 
@@ -34,7 +34,7 @@ Read only the references needed for the current action:
 | Establish or reuse run provenance | [run-identity.md](references/run-identity.md), [effective-training-config.md](references/effective-training-config.md) |
 | Plan or summarize evaluations | [evidence-layout.md](references/evidence-layout.md), [human-guided-training-advisor.md](references/human-guided-training-advisor.md) |
 | Monitor training or judge convergence | [human-guided-training-advisor.md](references/human-guided-training-advisor.md), [assessment-criteria-contract.md](references/assessment-criteria-contract.md) |
-| Select, export, archive or replace a policy | [policy-export.md](references/policy-export.md) |
+| Select, export, archive or replace a policy, including ROA/AMP-ROA and BeyondMimic | [policy-export.md](references/policy-export.md) |
 | Interpret historical feedback or propose parameters | [experience-query.md](references/experience-query.md) |
 
 Resolve the most specific profile in `references/algorithm-profiles.json`.
@@ -76,8 +76,8 @@ For turns, distinguish body yaw-rate tracking from accumulated world heading;
 state averaging windows, resets and command transitions. One seed cannot prove a
 universal speed threshold. Missing contact telemetry cannot establish foot contact.
 
-For training overlap, use the existing single-evaluation route with explicit
-session authorization, Native only, normally one environment, at most 2,000 steps,
+For a single Native evaluation overlapping training, use the existing route with
+explicit session authorization, normally one environment, at most 2,000 steps,
 and no video. Record pre/post training progress and throughput. Stop only the
 evaluation if it interferes; never restart or signal training automatically.
 
@@ -86,6 +86,22 @@ partial work files are not completed evaluations. Inspect `telemetry_status`,
 `missing_required_signals`, `signal_status` and `metric_availability`. AMP-ROA needs
 complete required telemetry for complete assessment or Pareto eligibility.
 Missing signals are unknown, never zero. Simulation evidence is not hardware readiness.
+
+## Export and archive a selected policy
+
+ROA/AMP-ROA and BeyondMimic use the transactional export and archive workflow in
+[policy-export.md](references/policy-export.md). An authorized bounded export may
+overlap training when a fresh check establishes enough GPU memory and execution
+headroom, including the exporter's expected peak and a recorded reserve. GPU
+activity alone does not require waiting for idle. Follow the reference's resource
+check and record training progress and throughput before and after; stop only the
+owned export attempt on interference. Reusing and archiving a validated artifact
+pair uses CPU and filesystem operations and needs no idle GPU.
+
+For BeyondMimic, verify the saved configuration, motion reference and actual runner
+before choosing the tensor contract. A stateless PPO network can consume history
+already flattened by the environment; preserve that history and its reset behavior.
+Read [BeyondMimic export and archive](references/policy-export.md#beyondmimic-export-and-archive).
 
 ## Assess and advise
 
