@@ -148,6 +148,7 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):
         self.rewards.lazy_penalty.weight = -0.0
         self.rewards.same_foot_x_position.weight = -50.0
         self.rewards.feet_distance_y_exp.weight = 3.0
+        self.rewards.feet_distance_y_exp.params["std"] = 0.1
         self.rewards.feet_distance_penalize.weight = -100.0
         self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.496
         self.rewards.feet_distance_penalize.params["max_feet_distance"] = 0.536
