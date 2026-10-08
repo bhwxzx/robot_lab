@@ -183,7 +183,7 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands
         self.commands.motion.initialize_reset_targets = True
-        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/leg_to_wheel_transform_50hz.npz"
+        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-08/leg_to_wheel_transform_50hz.npz"
         self.commands.motion.anchor_body_name = "base_link"
         self.commands.motion.body_names = [ # 需要追踪的连杆
             "base_link",

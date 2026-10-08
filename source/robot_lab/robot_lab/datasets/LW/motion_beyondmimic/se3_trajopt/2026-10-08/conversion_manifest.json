@@ -1,0 +1,443 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-08T13:39:32.369932+00:00",
+  "task": "Import the 2026-10-08 original leg_to_wheel motion and generate its 50 Hz BeyondMimic NPZ using the existing converter.",
+  "authorization": {
+    "status": "user_approved_import_and_conversion",
+    "scope": [
+      "copy original 60 Hz CSV, README and audit.json",
+      "existing converter; isaacsim-5.1; one environment; headless; CPU simulation",
+      "preserve conversion log and provenance",
+      "verify output and preserve current training configuration"
+    ],
+    "user_reply": "批准导入并转换"
+  },
+  "source_repository": {
+    "path": "/home/young/liufengrong/LW_datasets",
+    "origin": "https://github.com/bhwxzx/LW_datasets.git",
+    "branch": "master",
+    "old_head": "4bf393185f9442e9f6cba4b7115befde0e5d709b",
+    "head": "4fdcda5959210b6f55aaca4569b520610daf47da",
+    "remote_master_verified_head": "4fdcda5959210b6f55aaca4569b520610daf47da",
+    "worktree_clean": true,
+    "latest_commit_subject": "归档 LW 腿转轮 2026-10-08 原始 60Hz 轨迹"
+  },
+  "source_directory": "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-10-08",
+  "destination_directory": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-08",
+  "original_files": [
+    {
+      "source_relative_path": "beyondmimic/leg_to_wheel/se3_trajopt/2026-10-08/README.md",
+      "destination_file": "README.md",
+      "bytes": 2857,
+      "sha256": "4c1d5a6f92ed5a7706d67d6dafcf917c5179544bde8447afc16bdfc1ff996d18",
+      "byte_exact_copy": true
+    },
+    {
+      "source_relative_path": "beyondmimic/leg_to_wheel/se3_trajopt/2026-10-08/audit.json",
+      "destination_file": "audit.json",
+      "bytes": 6276,
+      "sha256": "12fb1b7df9412e784a2d11fa599c21fc56d8866e387c27cf7c26c91d04a7080e",
+      "byte_exact_copy": true
+    },
+    {
+      "source_relative_path": "beyondmimic/leg_to_wheel/se3_trajopt/2026-10-08/leg_to_wheel_transform_60hz.csv",
+      "destination_file": "leg_to_wheel_transform_60hz.csv",
+      "bytes": 32671,
+      "sha256": "ef3ced90bda48a949c21e20cdc4e35cd105198746773471c424af171c1d7f4ad",
+      "byte_exact_copy": true
+    }
+  ],
+  "motion_format": {
+    "csv_header": false,
+    "csv_columns": [
+      "base_x",
+      "base_y",
+      "base_z",
+      "base_quat_x",
+      "base_quat_y",
+      "base_quat_z",
+      "base_quat_w",
+      "right_hip_joint",
+      "left_hip_joint",
+      "right_thigh_joint",
+      "left_thigh_joint",
+      "right_shank_joint",
+      "left_shank_joint",
+      "right_foot_joint",
+      "left_foot_joint",
+      "right_wheel_joint",
+      "left_wheel_joint"
+    ],
+    "csv_joint_unit": "rad",
+    "npz_quaternion_order": "wxyz",
+    "npz_native_joint_order": [
+      "left_hip_joint",
+      "right_hip_joint",
+      "left_thigh_joint",
+      "right_thigh_joint",
+      "left_shank_joint",
+      "right_shank_joint",
+      "left_foot_joint",
+      "left_wheel_joint",
+      "right_foot_joint",
+      "right_wheel_joint"
+    ],
+    "npz_native_body_order": [
+      "base_link",
+      "left_hip",
+      "right_hip",
+      "left_thigh",
+      "right_thigh",
+      "left_shank",
+      "right_shank",
+      "left_foot",
+      "left_wheel",
+      "right_foot",
+      "right_wheel"
+    ],
+    "sample_interval_s": 0.02,
+    "frame_range": "full CSV; no --frame_range cropping"
+  },
+  "output": {
+    "file": "leg_to_wheel_transform_50hz.npz",
+    "bytes": 112634,
+    "sha256": "8f5dec53148b5229b28055b8af968d18dc757e873f1a04bd423b0e8bfc6b2a6b"
+  },
+  "conversion_log": {
+    "file": "conversion.log",
+    "bytes": 28420,
+    "sha256": "829c2c9774dcf67f0f3eb11472487002190dba00efb57ec3b9bc6e58a094c213"
+  },
+  "conversion": {
+    "start_utc": "2026-10-08T13:35:53.451889+00:00",
+    "source_head": "4fdcda5959210b6f55aaca4569b520610daf47da",
+    "robot_lab_head": "314a8eb5955c6ac5da1ef3ebcf17260bfb8026b4",
+    "argv": [
+      "/home/young/miniconda3/condabin/conda",
+      "run",
+      "-n",
+      "isaacsim-5.1",
+      "--no-capture-output",
+      "python",
+      "-B",
+      "/home/young/liufengrong/robot_lab/scripts/tools/beyondmimic/csv_to_npz_LW.py",
+      "--input_file",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-08/leg_to_wheel_transform_60hz.csv",
+      "--input_fps",
+      "60",
+      "--output_fps",
+      "50",
+      "--robot",
+      "LW_Leg",
+      "--output_name",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-08/leg_to_wheel_transform_50hz.npz",
+      "--headless",
+      "--device",
+      "cpu"
+    ],
+    "simulation_device": "cpu",
+    "num_envs": 1,
+    "environment": {
+      "conda": "isaacsim-5.1",
+      "CUDA_VISIBLE_DEVICES": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "timeout_s": 300,
+    "estimated_additional_gpu_mib": 4096,
+    "reserved_free_gpu_mib": 3072,
+    "converter": {
+      "path": "/home/young/liufengrong/robot_lab/scripts/tools/beyondmimic/csv_to_npz_LW.py",
+      "sha256": "db5c5478ce28ee144c1ef4a97063eff14d0e5058201269cec1c38bd85c3f95f1"
+    },
+    "robot_usd_files_sha256": {
+      "source/robot_lab/data/Robots/LW/LW_description/LW.usd": "abaf00bafdecef29f51fa3c41dd06b41be95a55366266a6b6000017f3dc6d11a",
+      "source/robot_lab/data/Robots/LW/LW_description/configuration/LW_physics.usd": "2f86cffab0729467eed1ac15149c2df0feea5481b33b1b7b200df663ce532775",
+      "source/robot_lab/data/Robots/LW/LW_description/configuration/LW_base.usd": "2caccf13f76acaf5683fa5d570471aa85840ca1cc47993137764a7bed760e693",
+      "source/robot_lab/data/Robots/LW/LW_description/configuration/LW_robot.usd": "097beace5b47994990a69523dde7b8810ae6a92c6e9b8a4f405f0907a8ead86c",
+      "source/robot_lab/data/Robots/LW/LW_description/configuration/LW_sensor.usd": "bb634d41ca2fd95d26ff3fe543ae141ec7520e2ffed9763e58a997ca4ada7489"
+    },
+    "source_files_sha256": {
+      "README.md": "4c1d5a6f92ed5a7706d67d6dafcf917c5179544bde8447afc16bdfc1ff996d18",
+      "audit.json": "12fb1b7df9412e784a2d11fa599c21fc56d8866e387c27cf7c26c91d04a7080e",
+      "leg_to_wheel_transform_60hz.csv": "ef3ced90bda48a949c21e20cdc4e35cd105198746773471c424af171c1d7f4ad"
+    },
+    "protected_files_before_sha256": {
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-03-23/leg_to_wheel_transform_60hz.csv": "2c0799710578833c93b37773af7db7e7320662ddeea992fc5642080b73aceaba",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-10-01/leg_to_wheel_transform_60hz.csv": "57f969391b97ecd9274bf60add4b790f83e0d41e1ca1d7fdb373cd4811ad91ac",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-10-01/audit.json": "55b8fa82da768e1c9086e2814dc764563849a05bc1fb624a6f596a41e2f84b3d",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-10-01/README.md": "99335b49dfdd7c02d8c8d1603fc63b6410d4a38bae40e354ccb063ac2b99ecef",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-04-19/leg_to_wheel_transform_60hz.csv": "533554693f5fd66a8933cf0a339fe889d1b025d23c63a9e24e2692acac1f7268",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-04-18/leg_to_wheel_transform_60hz.csv": "ab94cc760adaa2df2a9864629f50a1bdd8966c1eaaaa396951814bba80f59ad0",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-09-29/leg_to_wheel_transform_60hz.csv": "33475c628ffc96d9c3c742bc46495eb9f45951444221ffeccd6280fc80351bf9",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-09-29/README.md": "cd34c6db0c79dc11efd0242b0d03b8d28be5e6dee262d6535c0052426fb91289",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-03-21/leg_to_wheel_transform_60hz.csv": "14653e818050e276cedcbbf299ffe0a1d8cdba8feec0f26d455ba7924820dff8",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/crocoddyl/leg_to_wheel_transform_60hz.csv": "63740c44f21df4a56ea9e637578ead43417cc687e4d79ce7aa1f2fd84ebd1dbe",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Leg/flat_env_cfg.py": "cee681c50339c6069fa6d830b37de41205892da0572f3af637640eac6c2cc67e",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/tracking_env_cfg.py": "a1efc65cf1d6bc5f4c30954facf1d7958a4bb6db260a9f4b1917666727fb4262",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/assets/LW.py": "efecd732278bd1e269ae6ccef49667a51751956594cd900ae1f3ed6a75089ec2",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/leg_to_wheel_transform_60hz.csv": "57f969391b97ecd9274bf60add4b790f83e0d41e1ca1d7fdb373cd4811ad91ac",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/audit.json": "55b8fa82da768e1c9086e2814dc764563849a05bc1fb624a6f596a41e2f84b3d",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/README.md": "99335b49dfdd7c02d8c8d1603fc63b6410d4a38bae40e354ccb063ac2b99ecef",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/leg_to_wheel_transform_50hz.npz": "9ff53e159acedd59f89179c75f08e1e2521af3573e267f0192d60e07586b3ec1",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-09-29/leg_to_wheel_transform_60hz.csv": "33475c628ffc96d9c3c742bc46495eb9f45951444221ffeccd6280fc80351bf9",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-09-29/README.md": "cd34c6db0c79dc11efd0242b0d03b8d28be5e6dee262d6535c0052426fb91289",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-09-29/leg_to_wheel_transform_50hz.npz": "48dd4ee594e132f447ee86cfda1c7b3d4fe2d87eb20e2c37a1ca84c24de31bda"
+    },
+    "training_before": {
+      "identity": {
+        "pid": 545862,
+        "start_ticks": "145749365",
+        "state": "R",
+        "argv": "python scripts/reinforcement_learning/rsl_rl/train.py --task=RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0 --log_project_name=LW_leg_beyondmimic --logger=wandb --num_envs=4096 --headless "
+      },
+      "progress": {
+        "event_path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-08_14-10-14/events.out.tfevents.1791439829.youngHit.545862.0",
+        "event_bytes": 114086246,
+        "event_mtime_ns": 1791466552873267189,
+        "latest_step": 31743,
+        "latest_wall_time": 1791466552.8748717,
+        "perf_scalars": {
+          "Perf/total_fps": {
+            "step": 31743,
+            "value": 117618.0
+          },
+          "Perf/collection time": {
+            "step": 31743,
+            "value": 0.7342565059661865
+          },
+          "Perf/learning_time": {
+            "step": 31743,
+            "value": 0.1015310287475586
+          }
+        }
+      }
+    },
+    "gpu_before": {
+      "at_utc": "2026-10-08T13:35:36.910793+00:00",
+      "index": 0,
+      "uuid": "GPU-eb541e47-8bb3-6c00-a892-797561f85790",
+      "total_mib": 16376,
+      "used_mib": 4809,
+      "free_mib": 11127,
+      "utilization_pct": 50,
+      "compute_apps_csv": "545862, python, 4484"
+    },
+    "gpu_samples": [
+      {
+        "at_utc": "2026-10-08T13:35:53.485806+00:00",
+        "index": 0,
+        "uuid": "GPU-eb541e47-8bb3-6c00-a892-797561f85790",
+        "total_mib": 16376,
+        "used_mib": 4810,
+        "free_mib": 11126,
+        "utilization_pct": 50,
+        "compute_apps_csv": "545862, python, 4484",
+        "elapsed_s": 0.033,
+        "protected_training_identity_matches": true
+      },
+      {
+        "at_utc": "2026-10-08T13:35:58.514502+00:00",
+        "index": 0,
+        "uuid": "GPU-eb541e47-8bb3-6c00-a892-797561f85790",
+        "total_mib": 16376,
+        "used_mib": 5182,
+        "free_mib": 10754,
+        "utilization_pct": 57,
+        "compute_apps_csv": "545862, python, 4484\n564666, python, 334",
+        "elapsed_s": 5.062,
+        "protected_training_identity_matches": true
+      }
+    ],
+    "stop_reason": null,
+    "launcher_pid": 564644,
+    "exit_code": 0,
+    "elapsed_s": 7.729,
+    "end_utc": "2026-10-08T13:36:01.181991+00:00",
+    "gpu_after": {
+      "at_utc": "2026-10-08T13:36:01.211385+00:00",
+      "index": 0,
+      "uuid": "GPU-eb541e47-8bb3-6c00-a892-797561f85790",
+      "total_mib": 16376,
+      "used_mib": 4814,
+      "free_mib": 11122,
+      "utilization_pct": 50,
+      "compute_apps_csv": "545862, python, 4484"
+    },
+    "training_after": {
+      "identity": {
+        "pid": 545862,
+        "start_ticks": "145749365",
+        "state": "R",
+        "argv": "python scripts/reinforcement_learning/rsl_rl/train.py --task=RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0 --log_project_name=LW_leg_beyondmimic --logger=wandb --num_envs=4096 --headless "
+      },
+      "progress": {
+        "event_path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-08_14-10-14/events.out.tfevents.1791439829.youngHit.545862.0",
+        "event_bytes": 114118835,
+        "event_mtime_ns": 1791466560852223794,
+        "latest_step": 31752,
+        "latest_wall_time": 1791466560.8536012,
+        "perf_scalars": {
+          "Perf/total_fps": {
+            "step": 31752,
+            "value": 116238.0
+          },
+          "Perf/collection time": {
+            "step": 31752,
+            "value": 0.7419962882995605
+          },
+          "Perf/learning_time": {
+            "step": 31752,
+            "value": 0.10371279716491699
+          }
+        }
+      }
+    },
+    "protected_files_after_sha256": {
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-03-23/leg_to_wheel_transform_60hz.csv": "2c0799710578833c93b37773af7db7e7320662ddeea992fc5642080b73aceaba",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-10-01/leg_to_wheel_transform_60hz.csv": "57f969391b97ecd9274bf60add4b790f83e0d41e1ca1d7fdb373cd4811ad91ac",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-10-01/audit.json": "55b8fa82da768e1c9086e2814dc764563849a05bc1fb624a6f596a41e2f84b3d",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-10-01/README.md": "99335b49dfdd7c02d8c8d1603fc63b6410d4a38bae40e354ccb063ac2b99ecef",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-04-19/leg_to_wheel_transform_60hz.csv": "533554693f5fd66a8933cf0a339fe889d1b025d23c63a9e24e2692acac1f7268",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-04-18/leg_to_wheel_transform_60hz.csv": "ab94cc760adaa2df2a9864629f50a1bdd8966c1eaaaa396951814bba80f59ad0",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-09-29/leg_to_wheel_transform_60hz.csv": "33475c628ffc96d9c3c742bc46495eb9f45951444221ffeccd6280fc80351bf9",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-09-29/README.md": "cd34c6db0c79dc11efd0242b0d03b8d28be5e6dee262d6535c0052426fb91289",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/se3_trajopt/2026-03-21/leg_to_wheel_transform_60hz.csv": "14653e818050e276cedcbbf299ffe0a1d8cdba8feec0f26d455ba7924820dff8",
+      "/home/young/liufengrong/LW_datasets/beyondmimic/leg_to_wheel/crocoddyl/leg_to_wheel_transform_60hz.csv": "63740c44f21df4a56ea9e637578ead43417cc687e4d79ce7aa1f2fd84ebd1dbe",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Leg/flat_env_cfg.py": "cee681c50339c6069fa6d830b37de41205892da0572f3af637640eac6c2cc67e",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/tracking_env_cfg.py": "a1efc65cf1d6bc5f4c30954facf1d7958a4bb6db260a9f4b1917666727fb4262",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/assets/LW.py": "efecd732278bd1e269ae6ccef49667a51751956594cd900ae1f3ed6a75089ec2",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/leg_to_wheel_transform_60hz.csv": "57f969391b97ecd9274bf60add4b790f83e0d41e1ca1d7fdb373cd4811ad91ac",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/audit.json": "55b8fa82da768e1c9086e2814dc764563849a05bc1fb624a6f596a41e2f84b3d",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/README.md": "99335b49dfdd7c02d8c8d1603fc63b6410d4a38bae40e354ccb063ac2b99ecef",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/leg_to_wheel_transform_50hz.npz": "9ff53e159acedd59f89179c75f08e1e2521af3573e267f0192d60e07586b3ec1",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-09-29/leg_to_wheel_transform_60hz.csv": "33475c628ffc96d9c3c742bc46495eb9f45951444221ffeccd6280fc80351bf9",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-09-29/README.md": "cd34c6db0c79dc11efd0242b0d03b8d28be5e6dee262d6535c0052426fb91289",
+      "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-09-29/leg_to_wheel_transform_50hz.npz": "48dd4ee594e132f447ee86cfda1c7b3d4fe2d87eb20e2c37a1ca84c24de31bda"
+    },
+    "protected_files_unchanged": true,
+    "protected_training_identity_matches_after": true,
+    "output_exists": true
+  },
+  "validation": {
+    "source_csv_shape": [
+      204,
+      17
+    ],
+    "npz_fields": {
+      "fps": {
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "finite": true
+      },
+      "joint_pos": {
+        "shape": [
+          170,
+          10
+        ],
+        "dtype": "float32",
+        "finite": true
+      },
+      "joint_vel": {
+        "shape": [
+          170,
+          10
+        ],
+        "dtype": "float32",
+        "finite": true
+      },
+      "body_pos_w": {
+        "shape": [
+          170,
+          11,
+          3
+        ],
+        "dtype": "float32",
+        "finite": true
+      },
+      "body_quat_w": {
+        "shape": [
+          170,
+          11,
+          4
+        ],
+        "dtype": "float32",
+        "finite": true
+      },
+      "body_lin_vel_w": {
+        "shape": [
+          170,
+          11,
+          3
+        ],
+        "dtype": "float32",
+        "finite": true
+      },
+      "body_ang_vel_w": {
+        "shape": [
+          170,
+          11,
+          3
+        ],
+        "dtype": "float32",
+        "finite": true
+      }
+    },
+    "input_fps": 60,
+    "output_fps": 50,
+    "output_frames": 170,
+    "source_duration_s": 3.3833333333333333,
+    "last_sample_s": 3.380000114440918,
+    "max_joint_position_error_rad": 0,
+    "max_joint_velocity_error_rad_s": 0,
+    "max_base_position_error_m": 1.1920928955078125e-07,
+    "max_base_quaternion_sign_invariant_error_against_converter": 1.8100236331974884e-07,
+    "max_body_quaternion_norm_error": 5.960464477539062e-07,
+    "independent_scipy_slerp_comparison": {
+      "max_orientation_difference_deg": 0.07425630948235686,
+      "max_difference_output_frame": 44,
+      "max_difference_sample_s": 0.8799999952316284,
+      "reason": "IsaacLab quat_slerp returns the first quaternion for a nearly identical input pair (float32 dot product within 4*eps of +/-1). This preserves the approved existing converter behavior.",
+      "isaaclab_math_path": "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/utils/math.py",
+      "isaaclab_math_sha256": "881ab27758816475e26d6721bab22c934fd70d0c064392266a90b06f5bbe4149",
+      "reference": "scipy.spatial.transform.Slerp with normalized float64 source quaternions",
+      "scope": "diagnostic comparison; no converter or output modification",
+      "max_difference_input_frame_pair": [
+        52,
+        53
+      ],
+      "source_quaternion_float32_dot": 0.9999997615814209,
+      "blend": 0.7999992370605469,
+      "first_quaternion_shortcut_confirmed": true
+    },
+    "npz_sha256": "8f5dec53148b5229b28055b8af968d18dc757e873f1a04bd423b0e8bfc6b2a6b",
+    "npz_bytes": 112634,
+    "conversion_elapsed_s": 7.729,
+    "training_steps": [
+      31743,
+      31752
+    ],
+    "gpu_sampled_minimum_free_mib": 10754,
+    "checks_passed": true
+  },
+  "final_preservation_check": {
+    "checked_at_utc": "2026-10-08T13:39:32.372390+00:00",
+    "robot_lab_head_unchanged": true,
+    "protected_file_count": 20,
+    "protected_files_unchanged": true,
+    "training_identity": {
+      "pid": 545862,
+      "start_ticks": "145749365",
+      "state": "S",
+      "argv": "python scripts/reinforcement_learning/rsl_rl/train.py --task=RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0 --log_project_name=LW_leg_beyondmimic --logger=wandb --num_envs=4096 --headless "
+    },
+    "protected_training_identity_unchanged": true,
+    "training_progress_advanced_during_conversion": true,
+    "current_training_reference": "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-01/leg_to_wheel_transform_50hz.npz",
+    "training_configuration_changed": false,
+    "new_training_or_policy_evaluation_started": false,
+    "git_commit_or_push_performed": false
+  },
+  "interpretation": "Conversion validation establishes data format and fidelity to the existing converter. It does not establish optimizer convergence, policy tracking performance, or physical execution safety. Source README and audit.json are copied unchanged."
+}
