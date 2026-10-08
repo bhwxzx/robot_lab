@@ -101,6 +101,9 @@ pair uses CPU and filesystem operations and needs no idle GPU.
 For BeyondMimic, verify the saved configuration, motion reference and actual runner
 before choosing the tensor contract. A stateless PPO network can consume history
 already flattened by the environment; preserve that history and its reset behavior.
+Archive the original CSV that generated the training NPZ alongside the models,
+preserving its bytes, filename, sampling rate and columns. Do not derive a CSV
+from NPZ or archive the NPZ file; retain its source path/hash in the manifest.
 Read [BeyondMimic export and archive](references/policy-export.md#beyondmimic-export-and-archive).
 
 ## Assess and advise
@@ -137,7 +140,8 @@ using the selected checkpoint's training run start time, formatted as
 Never use export time, archive time, or checkpoint modification time. For example,
 run `2026-09-11_17-04-10` maps to archive directory `2026-09-11-17-04-10`.
 Replacement requires separate
-approval binding all four existing hashes. Archive authorization does not authorize
+approval binding every existing file hash, including the original CSV when present.
+Archive authorization does not authorize
 Git commit/push. Every policy description must state:
 
 > 仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。

@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import ctypes
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -79,6 +81,67 @@ def _validated_artifact(item: Any, kind: str) -> tuple[Path, str]:
     if _sha256(path) != expected:
         raise ArchiveError(f"{kind} artifact SHA-256 changed")
     return path, expected
+
+
+def _validated_reference_csv(manifest: dict[str, Any]) -> dict[str, Any] | None:
+    """Validate the original CSV for byte-preserving copy, independently of NPZ fps."""
+    item = manifest.get("reference_csv")
+    if item is None:
+        if "beyondmimic" in manifest["task"].lower():
+            raise ArchiveError("BeyondMimic archive requires the original reference_csv")
+        return None
+    if not isinstance(item, dict) or not isinstance(item.get("path"), str):
+        raise ArchiveError("reference_csv must contain a source path")
+    path = Path(item["path"])
+    expected = item.get("sha256")
+    if not path.is_absolute() or path.is_symlink() or not path.is_file() or path.suffix.lower() != ".csv":
+        raise ArchiveError("reference_csv must be an absolute regular CSV file")
+    if not isinstance(expected, str) or not SHA256_RE.fullmatch(expected) or _sha256(path) != expected:
+        raise ArchiveError("reference_csv SHA-256 changed or is invalid")
+    fps = item.get("fps")
+    if isinstance(fps, bool) or not isinstance(fps, (int, float)) or not math.isfinite(fps) or fps <= 0:
+        raise ArchiveError("reference_csv.fps must be finite and positive")
+    for field in ("frames", "columns"):
+        value = item.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise ArchiveError(f"reference_csv.{field} must be a positive integer")
+    names = item.get("joint_names")
+    if (not isinstance(names, list) or not names
+            or any(not isinstance(name, str) or not name for name in names)
+            or len(set(names)) != len(names) or item["columns"] != 7 + len(names)):
+        raise ArchiveError("reference_csv columns must contain base xyz, quaternion and named joint positions")
+    if item.get("quaternion_order") != "xyzw":
+        raise ArchiveError("reference_csv quaternion_order must be xyzw")
+    generated_npz = item.get("generated_npz")
+    if (not isinstance(generated_npz, dict)
+            or generated_npz != manifest["parameters"].get("motion_reference")):
+        raise ArchiveError("reference_csv.generated_npz must match the training motion_reference")
+    if not isinstance(generated_npz.get("path"), str):
+        raise ArchiveError("reference_csv generated NPZ source path is invalid")
+    npz_path = Path(generated_npz.get("path", ""))
+    npz_hash = generated_npz.get("sha256")
+    if (not npz_path.is_absolute() or npz_path.is_symlink() or not npz_path.is_file()
+            or not isinstance(npz_hash, str) or not SHA256_RE.fullmatch(npz_hash)
+            or _sha256(npz_path) != npz_hash):
+        raise ArchiveError("reference_csv generated NPZ source/hash is invalid")
+    count = 0
+    try:
+        with path.open(encoding="utf-8", newline="") as stream:
+            for row in csv.reader(stream):
+                if not row:
+                    continue
+                if len(row) != item["columns"]:
+                    raise ArchiveError("reference_csv column count differs from metadata")
+                if not all(math.isfinite(float(value)) for value in row):
+                    raise ArchiveError("reference_csv contains non-finite values")
+                count += 1
+    except (UnicodeError, ValueError, csv.Error) as exc:
+        raise ArchiveError(f"reference_csv must contain headerless numeric rows: {exc}") from exc
+    if count != item["frames"]:
+        raise ArchiveError("reference_csv frame count differs from metadata")
+    if _sha256(path) != expected:
+        raise ArchiveError("reference_csv changed during validation")
+    return {**item, "archive_filename": path.name}
 
 
 def _validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -158,6 +221,7 @@ def _validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         "dirty": identity_source["dirty"],
     }:
         raise ArchiveError("manifest source differs from run identity")
+    export_validation["reference_csv"] = _validated_reference_csv(manifest)
     return export_validation
 
 
@@ -193,9 +257,17 @@ def _validate_replacement(
         "策略说明.txt",
         "archive_manifest.json",
     }
+    old_reference = _load(destination / "archive_manifest.json").get("reference_csv")
+    if old_reference is not None:
+        if not isinstance(old_reference, dict) or not isinstance(old_reference.get("path"), str):
+            raise ArchiveError("existing reference_csv metadata is invalid")
+        csv_name = Path(old_reference["path"]).name
+        if Path(csv_name).suffix.lower() != ".csv":
+            raise ArchiveError("existing reference_csv filename is invalid")
+        expected_names.add(csv_name)
     files = value["files"]
     if not isinstance(files, dict) or set(files) != expected_names:
-        raise ArchiveError("replace_existing must bind exactly four archive files")
+        raise ArchiveError("replace_existing must bind every archive file, including the original CSV")
     actual_names = {item.name for item in destination.iterdir()}
     if actual_names != expected_names:
         raise ArchiveError("replace_existing target contents differ from authorization")
@@ -273,6 +345,15 @@ def _description(manifest: dict[str, Any], destination_name: str) -> str:
         HARDWARE_NOTE,
         "",
     ]
+    reference = manifest.get("reference_csv")
+    if reference is not None:
+        position = lines.index("训练参数:")
+        lines[position:position] = [
+            "原始参考CSV（直接复制）:",
+            json.dumps(reference, indent=2, sort_keys=True, ensure_ascii=False),
+            "CSV保留原始采样率、帧数、列顺序和字节；NPZ仅记录来源路径与哈希，不归档文件。",
+            "",
+        ]
     return "\n".join(lines)
 
 
@@ -317,13 +398,22 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
         shutil.copy2(onnx_path, copied_onnx)
         if _sha256(copied_jit) != jit_hash or _sha256(copied_onnx) != onnx_hash:
             raise ArchiveError("copied artifact verification failed")
+        reference = export_validation["reference_csv"]
+        if reference is not None:
+            copied_csv = temporary / reference["archive_filename"]
+            shutil.copy2(Path(reference["path"]), copied_csv)
+            if _sha256(copied_csv) != reference["sha256"]:
+                raise ArchiveError("copied reference_csv verification failed")
+            _validated_reference_csv(manifest)
         archive_manifest = dict(manifest)
+        if reference is not None:
+            archive_manifest["reference_csv"] = reference
         archive_manifest["validated_export"] = export_validation["document"]
         archive_manifest["hardware_ready"] = False
         archive_manifest["archive_path"] = str(destination)
         archive_manifest["hardware_boundary"] = HARDWARE_NOTE
         (temporary / "策略说明.txt").write_text(
-            _description(manifest, destination_name), encoding="utf-8"
+            _description(archive_manifest, destination_name), encoding="utf-8"
         )
         (temporary / "archive_manifest.json").write_text(
             json.dumps(archive_manifest, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n",
@@ -337,7 +427,7 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
     finally:
         if temporary.exists():
             shutil.rmtree(temporary)
-    return {
+    receipt = {
         "version": 2,
         "archive_path": str(destination),
         "files": {
@@ -352,6 +442,12 @@ def archive_policy(manifest: dict[str, Any], *, timestamp: str | None = None) ->
         "hardware_boundary": HARDWARE_NOTE,
         "export_receipt": manifest["export_receipt"],
     }
+    if reference is not None:
+        receipt["files"]["reference_csv"] = {
+            "path": str(destination / reference["archive_filename"]),
+            "sha256": reference["sha256"],
+        }
+    return receipt
 
 
 def main() -> int:

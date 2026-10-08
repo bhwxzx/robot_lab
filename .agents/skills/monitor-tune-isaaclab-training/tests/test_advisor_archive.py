@@ -83,8 +83,8 @@ class AdvisorArchiveTests(unittest.TestCase):
             "description_notes": "supervised test candidate",
         }
 
-    def export_validation(self) -> dict:
-        manifest = self.manifest()
+    def export_validation(self, manifest: dict | None = None) -> dict:
+        manifest = manifest if manifest is not None else self.manifest()
         selection = {
             "task": manifest["task"],
             "algorithm": manifest["algorithm"],
@@ -116,7 +116,7 @@ class AdvisorArchiveTests(unittest.TestCase):
         with patch.object(
             MODULE,
             "validate_export_bundle",
-            return_value=self.export_validation(),
+            return_value=self.export_validation(manifest),
         ):
             return MODULE.archive_policy(manifest, timestamp=timestamp)
 
@@ -126,14 +126,113 @@ class AdvisorArchiveTests(unittest.TestCase):
             "path": str(destination),
             "files": {
                 name: sha(destination / name)
-                for name in (
-                    "policy.pt",
-                    "policy.onnx",
-                    "策略说明.txt",
-                    "archive_manifest.json",
-                )
+                for name in (path.name for path in destination.iterdir())
             },
         }
+
+    def beyondmimic_manifest(self) -> dict:
+        manifest = self.manifest()
+        manifest["task"] = "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0"
+        reference_csv = self.artifacts / "motion_60hz.csv"
+        reference_csv.write_bytes(
+            b"0,0,1,0,0,0,1,0.1,-0.2\r\n0,0,1,0,0,0,1,0.3,-0.4\r\n"
+        )
+        reference_npz = self.artifacts / "motion_50hz.npz"
+        reference_npz.write_bytes(b"training source; never copied")
+        manifest["parameters"].update({
+            "motion_reference": {"path": str(reference_npz), "sha256": sha(reference_npz)},
+            "motion_frequency_hz": 50,
+            "motion_frames": 1,
+        })
+        manifest["reference_csv"] = {
+            "path": str(reference_csv),
+            "sha256": sha(reference_csv),
+            "fps": 60,
+            "frames": 2,
+            "columns": 9,
+            "quaternion_order": "xyzw",
+            "joint_names": ["right_hip_joint", "left_hip_joint"],
+            "generated_npz": dict(manifest["parameters"]["motion_reference"]),
+        }
+        return manifest
+
+    def test_beyondmimic_requires_original_csv(self) -> None:
+        manifest = self.beyondmimic_manifest()
+        del manifest["reference_csv"]
+        with self.assertRaisesRegex(MODULE.ArchiveError, "requires the original reference_csv"):
+            self.archive(manifest, "2026-10-06-11-58-04")
+
+    def test_beyondmimic_copies_original_csv_bytes_without_npz(self) -> None:
+        manifest = self.beyondmimic_manifest()
+        original = Path(manifest["reference_csv"]["path"])
+        receipt = self.archive(manifest, "2026-10-06-11-58-04")
+        destination = Path(receipt["archive_path"])
+        self.assertEqual(
+            {path.name for path in destination.iterdir()},
+            {"policy.pt", "policy.onnx", "策略说明.txt", "archive_manifest.json", original.name},
+        )
+        self.assertEqual((destination / original.name).read_bytes(), original.read_bytes())
+        self.assertEqual(receipt["files"]["reference_csv"]["sha256"], sha(original))
+        archived = json.loads((destination / "archive_manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(archived["reference_csv"]["fps"], 60)
+        self.assertEqual(archived["reference_csv"]["frames"], 2)
+        self.assertEqual(archived["parameters"]["motion_frequency_hz"], 50)
+        self.assertEqual(archived["parameters"]["motion_frames"], 1)
+        self.assertIn("原始参考CSV（直接复制）", (destination / "策略说明.txt").read_text(encoding="utf-8"))
+
+    def test_beyondmimic_rejects_invalid_csv_metadata_and_nonfinite_values(self) -> None:
+        for field, value in (
+            ("sha256", "0" * 64), ("frames", 3), ("columns", 10),
+            ("fps", 0), ("fps", float("nan")), ("quaternion_order", "wxyz"),
+        ):
+            with self.subTest(field=field, value=value):
+                manifest = self.beyondmimic_manifest()
+                manifest["reference_csv"][field] = value
+                with self.assertRaises(MODULE.ArchiveError):
+                    self.archive(manifest, "2026-10-06-11-58-04")
+                self.assertFalse((self.storage / "LW/leg_loco/2026-10-06-11-58-04").exists())
+        manifest = self.beyondmimic_manifest()
+        original = Path(manifest["reference_csv"]["path"])
+        original.write_bytes(original.read_bytes().replace(b"0.1", b"nan"))
+        manifest["reference_csv"]["sha256"] = sha(original)
+        with self.assertRaisesRegex(MODULE.ArchiveError, "non-finite"):
+            self.archive(manifest, "2026-10-06-11-58-04")
+
+    def test_beyondmimic_csv_must_bind_training_npz(self) -> None:
+        manifest = self.beyondmimic_manifest()
+        manifest["reference_csv"]["generated_npz"]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.ArchiveError, "must match the training motion_reference"):
+            self.archive(manifest, "2026-10-06-11-58-04")
+        manifest = self.beyondmimic_manifest()
+        Path(manifest["parameters"]["motion_reference"]["path"]).write_bytes(b"changed source")
+        with self.assertRaisesRegex(MODULE.ArchiveError, "NPZ source/hash is invalid"):
+            self.archive(manifest, "2026-10-06-11-58-04")
+
+    def test_beyondmimic_replacement_binds_existing_csv_hash(self) -> None:
+        manifest = self.beyondmimic_manifest()
+        receipt = self.archive(manifest, "2026-10-06-11-58-04")
+        destination = Path(receipt["archive_path"])
+        replacement = self.replacement_contract(destination)
+        subprocess.run(["git", "-C", str(self.storage), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(self.storage), "commit", "-qm", "archive"], check=True)
+        original_name = Path(manifest["reference_csv"]["path"]).name
+        original_hash = replacement["files"][original_name]
+        self.jit.write_bytes(b"new-jit")
+        self.onnx.write_bytes(b"new-onnx")
+        manifest["artifacts"] = {
+            "jit": {"path": str(self.jit), "sha256": sha(self.jit)},
+            "onnx": {"path": str(self.onnx), "sha256": sha(self.onnx)},
+        }
+        manifest["replace_existing"] = replacement
+        replacement["files"][original_name] = "0" * 64
+        with self.assertRaisesRegex(MODULE.ArchiveError, "hash/type mismatch"):
+            self.archive(manifest, destination.name)
+        replacement["files"][original_name] = original_hash
+        replaced = self.archive(manifest, destination.name)
+        self.assertTrue(replaced["replaced_existing"])
+        self.assertEqual(len(list(destination.iterdir())), 5)
+        self.assertEqual(sha(destination / original_name), original_hash)
+        self.assertFalse(any(destination.parent.glob(".advisor-archive-*")))
 
     def test_archives_four_files_without_git_action(self) -> None:
         receipt = self.archive(self.manifest(), "2026-07-31-18-00-00")

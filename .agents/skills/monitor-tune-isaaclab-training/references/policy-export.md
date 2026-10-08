@@ -112,8 +112,38 @@ history, normalization and reset details in archive `parameters` and the policy
 description. Keep the selected run's source HEAD and dirty state, rather than
 substituting the current checkout's HEAD. For LW `leg_to_wheel`, use the authorized
 `LW/leg_to_wheel` collection; run `2026-10-06_11-58-04` maps to directory
-`2026-10-06-11-58-04` via explicit `--timestamp`. The standard bundle contains
-`policy.pt`, `policy.onnx`, `策略说明.txt` and `archive_manifest.json`.
+`2026-10-06-11-58-04` via explicit `--timestamp`. The base bundle contains
+`policy.pt`, `policy.onnx`, `策略说明.txt` and `archive_manifest.json`;
+BeyondMimic also requires the original reference CSV.
+
+Copy the original CSV used to generate the selected training NPZ, preserving its
+filename, bytes, line endings, sampling rate, frames, quaternion convention and
+joint-column order. Do not reconstruct CSV from NPZ, resample, reorder columns,
+normalize quaternions or archive the NPZ file. The NPZ remains a source path/hash
+in `parameters.motion_reference`. Identify the CSV from the reviewed conversion
+records and motion source, never from a similarly named historical archive.
+
+The version-2 archive manifest must include `reference_csv` with absolute source
+`path`, `sha256`, `fps`, `frames`, `columns`, `quaternion_order=xyzw`, ordered
+`joint_names`, and `generated_npz={path, sha256}` matching
+`parameters.motion_reference`. The supported source layout is headerless numeric
+base XYZ, quaternion XYZW, then joint positions. The archiver validates finite
+rows and declared dimensions, copies the CSV byte-for-byte, and records the source
+metadata and copied hash in the manifest, description and receipt. New BeyondMimic
+archives lacking this source CSV are rejected. CSV frequency and frame count are
+independent of the generated training NPZ; never require them to be equal.
+
+For the verified October 6 LW Leg run, the original source is
+`se3_trajopt/2026-10-01/leg_to_wheel_transform_60hz.csv`: 201 frames, 17 columns,
+60 Hz. Its generated training NPZ has 167 frames at 50 Hz. Archive the original
+60 Hz CSV directly. The resulting BeyondMimic bundle has five files and no NPZ.
+
+To supplement an existing validated archive, first inventory its file hashes,
+obtain authorization, then apply the clean-storage and fast-forward pull checks
+below. Add only the missing original CSV and update the manifest and description;
+preserve model bytes and immutable evaluation/export receipts. Record the prior
+archive hashes and final five-file hashes in a new supplement receipt. Reusing
+these validated artifacts requires no export or simulation rerun.
 
 ## GPU headroom and training overlap
 
@@ -318,8 +348,10 @@ this exact-shape object to the otherwise complete version-2 manifest:
 }
 ```
 
-Immediately after the required pull, recheck the exact four-file set and every
-old hash. The archiver builds and verifies the new bundle in a private sibling,
+The example binds the four base files. When the existing manifest includes a
+reference CSV, also bind its original filename and old SHA-256 in `files`.
+Immediately after the required pull, recheck the exact existing file set and
+every old hash. The archiver builds and verifies the new bundle in a private sibling,
 atomically exchanges the directories, and deletes only the displaced bundle.
 Any missing/extra file, symlink, changed hash, unavailable atomic exchange, or
 cleanup failure aborts the operation. The original tracked bundle remains
