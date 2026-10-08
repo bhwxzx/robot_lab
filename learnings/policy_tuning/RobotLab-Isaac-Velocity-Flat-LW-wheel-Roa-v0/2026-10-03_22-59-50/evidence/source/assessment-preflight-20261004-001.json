@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "created_at": "2026-10-04T13:58:30.766571+00:00",
+  "purpose": "Finite final wheel-flat ROA assessment",
+  "run_identity": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-03_22-59-50/provenance/context-38a50c3610d7b191acd00b852ed66a027cff24dd507445209fda373a3adad85f.json",
+    "sha256": "38a50c3610d7b191acd00b852ed66a027cff24dd507445209fda373a3adad85f"
+  },
+  "effective_config": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-03_22-59-50/provenance/config-589ab57be35e67198ec2ad47c3fbc2f9a3af72618d6dd9ede503225de10a192d.json",
+    "sha256": "589ab57be35e67198ec2ad47c3fbc2f9a3af72618d6dd9ede503225de10a192d"
+  },
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-03_22-59-50/model_49999.pt",
+    "sha256": "1101d72d83afd812ff780dee00da96da878c2892e6e6ee68f8a7ac75bf1c6c4f"
+  },
+  "baseline_contract": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/contract.json",
+    "sha256": "503ec9a4b37375890b5b162061f8c375e503f7837b2fa3859306c0606374e0c4"
+  },
+  "training_launch": {
+    "operator_confirmed_wrapper_argv": [
+      "bash",
+      "scripts/start_roa.sh",
+      "--terrain",
+      "Flat",
+      "--type",
+      "wheel"
+    ],
+    "inner_argv_from_verified_wrapper": [
+      "python",
+      "scripts/reinforcement_learning/rsl_rl/train.py",
+      "--task=RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0",
+      "--log_project_name=LW_wheel_locomotion_roa",
+      "--logger=wandb",
+      "--num_envs=4096",
+      "--headless"
+    ],
+    "hydra_overrides": [],
+    "resume": false,
+    "authority": "User confirmed --type wheel; wrapper source preserved",
+    "wrapper_source": {
+      "path": "/home/server/liufengrong/robot_lab/scripts/start_roa.sh",
+      "sha256": "1ea5a2877f95c9c09b8828fc6de69496230c3710a47e7b2415b775a2783d726c"
+    },
+    "wandb_metadata": {
+      "path": "/home/server/liufengrong/robot_lab/wandb/run-20261003_230002-cedxjaw0/files/wandb-metadata.json",
+      "sha256": "90b9ee736f20f3582bc47c176bce031e7cf3837529bac36e9c71b28830c0fc17"
+    },
+    "metadata": {
+      "os": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+      "python": "CPython 3.11.15",
+      "startedAt": "2026-10-03T15:00:02.595733Z",
+      "program": "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/train.py",
+      "codePath": "scripts/reinforcement_learning/rsl_rl/train.py",
+      "codePathLocal": "scripts/reinforcement_learning/rsl_rl/train.py",
+      "git": {
+        "remote": "https://github.com/bhwxzx/robot_lab.git",
+        "commit": "137bc5bc71d888117fb96d4da2da9b37ee0cacaf"
+      },
+      "email": "1044867193@qq.com",
+      "root": "/home/server/liufengrong/robot_lab",
+      "host": "server-System-Product-Name",
+      "executable": "/home/server/miniconda3/envs/isaacsim-5.1/bin/python",
+      "cpu_count": 20,
+      "cpu_count_logical": 20,
+      "gpu": "NVIDIA GeForce RTX 5090 D",
+      "gpu_count": 1,
+      "disk": {
+        "/": {
+          "total": "293039611904",
+          "used": "163664134144"
+        }
+      },
+      "memory": {
+        "total": "100464685056"
+      },
+      "gpu_nvidia": [
+        {
+          "name": "NVIDIA GeForce RTX 5090 D",
+          "memoryTotal": "34190917632",
+          "cudaCores": 21760,
+          "architecture": "Blackwell",
+          "uuid": "GPU-efbac165-9f40-c48a-652b-c663c8376005"
+        }
+      ],
+      "cudaVersion": "13.0",
+      "writerId": "ta6de8kr8gwd40majseunz4x3d2xnjyn"
+    },
+    "training_head": "137bc5bc71d888117fb96d4da2da9b37ee0cacaf",
+    "training_saved_diff": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-03_22-59-50/git/robot_lab.diff",
+      "sha256": "382f307c8cace3e970625ecdbf8f9e0b0434c3b2a9f564a528992e21baf6935d"
+    }
+  },
+  "repository": {
+    "head": "5580c93377f79217fa609cf2c4031cdcb150e0a2",
+    "branch": "main",
+    "tracked_status": "M source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py",
+    "training_to_current_committed_changes_in_relevant_scope": [],
+    "current_dirty_diff": "diff --git a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py\nindex d480ce0..f93d161 100644\n--- a/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py\n+++ b/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py\n@@ -148,6 +148,7 @@ class LWWheelFlatRoaEnvCfg(LWWheelRoughRoaEnvCfg):\n         self.rewards.lazy_penalty.weight = -0.0\n         self.rewards.same_foot_x_position.weight = -50.0\n         self.rewards.feet_distance_y_exp.weight = 3.0\n+        self.rewards.feet_distance_y_exp.params[\"std\"] = 0.1\n         self.rewards.feet_distance_penalize.weight = -100.0\n         self.rewards.feet_distance_penalize.params[\"min_feet_distance\"] = 0.496\n         self.rewards.feet_distance_penalize.params[\"max_feet_distance\"] = 0.536\n",
+    "protected_files": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/algorithms/roa_ppo.py",
+        "sha256": "55b9ff47aafe0374af6be3d45b816d78d6c7eac78f24dca77336f17208bcabea"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/modules/actor_critic_roa.py",
+        "sha256": "15dfbd940d500c67051e6112c17a159b775804804c8bd4fad2a1dce1565ae206"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/runners/on_policy_runner_roa.py",
+        "sha256": "32126bd72de289fd0e96e5be0819c9c21ea873f56ca6f2677964642a97a12e65"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/storage/rollout_storage_dwaq.py",
+        "sha256": "e11e5e5f0d8a9e853c9526fe4e9cb5cd360f93bf63b0a08c927647d2f9f06090"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/train.py",
+        "sha256": "95a4a317d71089d9658b85a8048c857fe3990ff5fbf8a558d5e258fdd308f808"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/scripts/start_roa.sh",
+        "sha256": "1ea5a2877f95c9c09b8828fc6de69496230c3710a47e7b2415b775a2783d726c"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/assets/LW.py",
+        "sha256": "efecd732278bd1e269ae6ccef49667a51751956594cd900ae1f3ed6a75089ec2"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/__init__.py",
+        "sha256": "6b6612fb65644f78d65667f305dc4ce754ea121ab4e72a53362359e675ef1274"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/agents/rsl_rl_roa_cfg.py",
+        "sha256": "2c6b049265d040cac08e7fbc3aa7ec28eb24681b5d2cbe807832d1d7a6be2c8f"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/flat_env_cfg.py",
+        "sha256": "a5ca27df14d4da551ce08b63ad938a98b58a9663046bdfeeacab8367e1f1a010"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Wheel/rough_env_cfg.py",
+        "sha256": "cb03d4fdfbb306bc94ad611636d133aeb53dce878541fa95b1d97e8c1a566053"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/__init__.py",
+        "sha256": "27d793de0b04c39a69d79296eea9691c00bb9460db0b42b4019bbd25be9fc4aa"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/commands.py",
+        "sha256": "cbef0be6f54f1310b1aad67dff32a8d9374570b428cc5ab55e116704b5ba9b59"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/curriculums.py",
+        "sha256": "3d059fe3fc5d137002b17281a5612a12b2268576457dae93e3899c2dce84c79b"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/events.py",
+        "sha256": "e7ae1658cf6995be7cacd5225f0a8bae7e6835b5e528916731324a9a02fc2857"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/noise.py",
+        "sha256": "fb28bee6a7afe57b63677667540f708a33f4fc9c5402bdb0045d245c9d738282"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/observations.py",
+        "sha256": "8c3c31d676dbe832110eafe7f57cd19223a9c68c4f79cab1118b9e4c14ab545e"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+        "sha256": "923d93ce089bd42e16b8a6187de494074e2789093e06c7c16b0f2fc2dfa1f80c"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/terminations.py",
+        "sha256": "e33a8a893e6d1ae12b06012b3cfaf3c741d1e2de72a09399b126cc6cbd01fde0"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/utils.py",
+        "sha256": "29a173d9b5ef76f4c77765358bc33fb959106d210c2b4319ca4151e7be6c2be3"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/velocity_env_cfg.py",
+        "sha256": "ee43a2023fc80eabb3932db0a22f1940c7e095670f78ada4b61dd0b7e99e925c"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-02_14-30-02/evaluations/wheel-flat-late-model45000-20261003-001/contract.json",
+        "sha256": "503ec9a4b37375890b5b162061f8c375e503f7837b2fa3859306c0606374e0c4"
+      }
+    ]
+  },
+  "finite_budget": {
+    "native_cases": 6,
+    "environments": 1,
+    "steps": 30000,
+    "simulated_seconds": 600,
+    "seed": 42,
+    "video": false,
+    "case_timeout_seconds": 600,
+    "static_new_policies": 1,
+    "static_max_input_vectors": 50000,
+    "static_CPU_threads": 1,
+    "static_timeout_seconds": 300
+  },
+  "authorization": "User requested assessment; no training, source edits, parameter edits, export or git actions",
+  "criteria": {
+    "status": "unapproved_or_missing",
+    "sufficiency": "insufficient_evidence",
+    "convergence": "indeterminate"
+  },
+  "policy_description_required": "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+}

@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "created_at": "2026-10-08T08:02:59.726377+00:00",
+  "status": "conditional_recommendation",
+  "recommended_iteration": 35000,
+  "recommended_checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-03_22-59-50/model_35000.pt",
+    "sha256": "8b6105ab017ebdb796b1b2ba185a1137e5ffbafff22a6765978cc176b9556673"
+  },
+  "run_id": "2026-10-03_22-59-50",
+  "preference": "站定漂移与双髋平顺优先，兼顾跟踪",
+  "comparison": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-03_22-59-50/evidence/analysis/checkpoint-sweep-comparison-20261008-001/metrics.json",
+    "sha256": "2ee74646fe0f10041555b3bda495604726bfee94ed8d0f84c7f858eb1e4f2807"
+  },
+  "all_five_eligible": true,
+  "pareto_nondominated": [
+    30000,
+    35000,
+    40000,
+    45000,
+    49999
+  ],
+  "universal_dominance": false,
+  "approved_numeric_acceptance_criteria": "unapproved_or_missing",
+  "convergence": "indeterminate",
+  "rationale": [
+    "35000 has the smallest worst-condition zero-command net displacement across noise-off/training-noise,0.862369m.",
+    "35000 has the lowest actual hip5-25Hz RMS mean across twelve motion case-stage cells,0.145049rad/s,and the lowest worst motion case-stage cell,0.168859rad/s.",
+    "35000 no-noise standing40-120s path0.008512m and net displacement0.001847m; training-noise standing is still imperfect,path4.603886m and net0.862369m.",
+    "Relative to45000,35000 has smaller training-noise hipHF0.088546 versus0.111085rad/s,smaller net drift,and better straight XY tracking;45000 has better turn and stop tracking,lower standing torque and less no-noise outward hip bias.",
+    "35000 retains motion tracking; however its turn XY RMSE0.100800m/s is worse than30000/40000/45000/49999; selection prioritizes standing and hip smoothness."
+  ],
+  "alternative_iteration": 45000,
+  "alternative_checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_flat_roa/2026-10-03_22-59-50/model_45000.pt",
+    "sha256": "7110fe0bce85f69d191c116f1c6527b3440f5c08d0e8efde7ba669961c8f47f7"
+  },
+  "comparison_vs_final49999": {
+    "motion_hip_HF_mean_reduction_percent": 13.520407277532309,
+    "hip_target_step_mean_reduction_percent": 20.203718686692284,
+    "turn_hip_HF_reduction_percent": 14.453314297004171,
+    "training_noise_standing_hip_HF_reduction_percent": 30.533750880148514
+  },
+  "selection_receipt": "not_created",
+  "export": "not_requested",
+  "training_or_parameter_change": "not_requested",
+  "source": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-10-03_22-59-50/evidence/source/checkpoint-sweep-report-controller-20261008-001.json",
+    "sha256": "4c299a79c892222d434f07d20f7e9ee8bd6c9b93eb18ebdb3909fdb356f65b0f"
+  },
+  "limitations": [
+    "One seed42 and one fixed reset per scenario; descriptive finite test comparison,not statistical generalization.",
+    "Frozen original Sep24 hardware inputs are approximate reconstruction,not live hardware behavior; no closed-loop stability inferred from static gain.",
+    "15ms and30ms cases averaged; foot and wheel30ms delay exceeds trained15ms and is supplemental stress.",
+    "All five are nondominated when all nine declared metrics are considered; recommendation follows the user's qualitative priority,without numerical weighted score."
+  ],
+  "policy_description_required": "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+}
