@@ -25,7 +25,14 @@ class LWActionsCfg:
 
 @configclass
 class LWLegRewardsCfg(RewardsCfg):
-    """Separate effort penalties for the LW Leg foot and shank joints."""
+    """LW Leg effort penalties and world-horizontal anchor roll tracking."""
+
+    # Keep the base level in roll throughout preparation, flight and wheel motion.
+    motion_anchor_roll_horizontal = RewTerm(
+        func=mdp.motion_anchor_roll_horizontal_error_exp,
+        weight=0.5,
+        params={"command_name": "motion", "std": 0.1},
+    )
 
     hip_pos_zero_l2 = RewTerm(
         func=mdp.joint_pos_zero_l2,
@@ -141,16 +148,16 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         # self.events.randomize_actuator_gains = None
         # rewards
         # Limit excess takeoff rotation before liftoff and during flight.
-        # Keep the old 50 ms post-landing offset for the new 1.6 s reference landing.
-        # Reference-time ramps: 1.0-1.1 s entry, 1.1-1.55 s full, 1.55-1.65 s exit.
+        # The 10/10 reference flies from 1.30 to 1.55 s; retain the 50 ms landing offset.
+        # Reference-time ramps: 1.0-1.1 s entry, 1.1-1.5 s full, 1.5-1.6 s exit.
         self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.03
         self.rewards.motion_takeoff_pitch_ang_vel.params["start_time_s"] = 1.0
-        self.rewards.motion_takeoff_pitch_ang_vel.params["end_time_s"] = 1.65
+        self.rewards.motion_takeoff_pitch_ang_vel.params["end_time_s"] = 1.6
         self.rewards.motion_takeoff_pitch_ang_vel.params["ramp_time_s"] = 0.1
         self.rewards.motion_takeoff_anchor_ori.weight = 0.5
         self.rewards.motion_takeoff_anchor_ori.params["std"] = 0.3
         self.rewards.motion_takeoff_anchor_ori.params["start_time_s"] = 1.0
-        self.rewards.motion_takeoff_anchor_ori.params["end_time_s"] = 1.65
+        self.rewards.motion_takeoff_anchor_ori.params["end_time_s"] = 1.6
         self.rewards.motion_takeoff_anchor_ori.params["ramp_time_s"] = 0.1
         self.rewards.action_rate_l2.weight = -0.2
         self.rewards.action_smoothness.weight = -0.075
@@ -165,27 +172,27 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
         self.rewards.joint_acc_wheel_l2.weight = 0.0
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
-        # Start wheel rewards 50 ms after reference landing; at 50 Hz this first activates at 1.66 s.
+        # Start wheel rewards 50 ms after reference landing, at frame 80 (1.60 s) at 50 Hz.
         self.rewards.wheel_contact_continuous.weight = 0.5
         self.rewards.wheel_contact_continuous.params["sensor_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
-        self.rewards.wheel_contact_continuous.params["start_time_s"] = 1.65
+        self.rewards.wheel_contact_continuous.params["start_time_s"] = 1.6
         self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
         self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
         # Blend wheel geometry constraints in after landing, independently of current contact.
         self.rewards.leg_symmetry.weight = 0.0
         self.rewards.leg_symmetry.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.leg_symmetry.params["std"] = 0.05
-        self.rewards.leg_symmetry.params["start_time_s"] = 1.65
+        self.rewards.leg_symmetry.params["start_time_s"] = 1.6
         self.rewards.leg_symmetry.params["ramp_time_s"] = 0.2
         self.rewards.same_foot_x_position.weight = -10.0
         self.rewards.same_foot_x_position.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
-        self.rewards.same_foot_x_position.params["start_time_s"] = 1.65
+        self.rewards.same_foot_x_position.params["start_time_s"] = 1.6
         self.rewards.same_foot_x_position.params["ramp_time_s"] = 0.2
         # terminations
         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands
         self.commands.motion.initialize_reset_targets = True
-        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-08/leg_to_wheel_transform_50hz.npz"
+        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-10/leg_to_wheel_transform_50hz.npz"
         self.commands.motion.anchor_body_name = "base_link"
         self.commands.motion.body_names = [ # 需要追踪的连杆
             "base_link",

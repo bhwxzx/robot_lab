@@ -36,6 +36,21 @@ def motion_global_anchor_orientation_error_exp(env: ManagerBasedRLEnv, command_n
     return torch.exp(-error / std**2)
 
 
+def motion_anchor_roll_horizontal_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
+    """Reward zero world-frame anchor roll throughout the motion with a positive weight.
+
+    Use the robot's normalized wxyz quaternion, independently of reference roll
+    and reference progress. The XYZ Euler roll and ``std`` are in radians;
+    pitch and yaw are free. The roll convention is singular at pitch +/- pi/2.
+    """
+    if not math.isfinite(std) or std <= 0.0:
+        raise ValueError("Horizontal roll reward requires a finite, positive standard deviation.")
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    qw, qx, qy, qz = command.robot_anchor_quat_w.unbind(dim=-1)
+    roll = torch.atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx.square() + qy.square()))
+    return torch.exp(-roll.square() / std**2)
+
+
 def _motion_phase_window_weight(
     env: ManagerBasedRLEnv,
     command_name: str,
