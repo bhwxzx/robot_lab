@@ -840,7 +840,8 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
         "run_identity": plan.run_identity,
         "scenario": {"contract": plan.scenario_contract, "sha256": plan.scenario_sha256},
         "effective_config": plan.effective_config, "scenario_evidence": plan.scenario_evidence,
-        "resource_mode": {"training_overlap": False, "idle_gpu_required": True,
+        "resource_mode": {"training_overlap": bool(args_cli.allow_training_overlap),
+                          "idle_gpu_required": bool(args_cli.require_idle_gpu),
                           "device": str(env_cfg.sim.device), "num_envs": 1, "video_requested": False,
                           "telemetry_requested": True, "telemetry_env_index": 0, "telemetry_stride": 1,
                           "follow_robot_camera": False},
@@ -860,7 +861,7 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
         "video_path": "", "telemetry_path": str(plan.telemetry_path),
         **{key: evidence[key] for key in ("telemetry_status", "missing_required_signals",
                                          "telemetry_required_for_complete_assessment")},
-        "telemetry": evidence, "training_overlap": False, "metrics": metrics,
+        "telemetry": evidence, "training_overlap": bool(args_cli.allow_training_overlap), "metrics": metrics,
         "metric_availability": availability, "motion_diagnostics": diagnostic,
     }
     if physics_window is not None:
@@ -900,9 +901,10 @@ def _evaluate(
     if motion_mode is not None:
         if (args_cli.artifact_kind != "native" or args_cli.num_envs != 1
                 or args_cli.telemetry_stride != 1 or evaluation_plan.telemetry_path is None
-                or evaluation_plan.batch_id is None or not args_cli.require_idle_gpu
+                or evaluation_plan.batch_id is None
+                or not (args_cli.require_idle_gpu or args_cli.allow_training_overlap)
                 or not args_cli.no_video or command_schedule or not hasattr(env_cfg.commands, "motion")):
-            raise ValueError("motion evaluation requires a Native idle-GPU batch, one env, stride 1, telemetry, no video/schedule")
+            raise ValueError("motion evaluation requires a Native batch with explicit resource mode, one env, stride 1, telemetry, no video/schedule")
     roa_mode = evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.roa_mode")
     dwaq_mode = evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.dwaq_mode")
     roa_velocity_enabled = getattr(agent_cfg.policy, "use_velocity_estimation", True)

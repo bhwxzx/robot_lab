@@ -964,10 +964,13 @@ def validate_motion_telemetry(result, telemetry, scenario):
     )
     diagnostic = result.get("motion_diagnostics", {})
     resource = result["inputs"]["resource_mode"]
+    modes = (resource.get("idle_gpu_required"), resource.get("training_overlap"))
     if (result.get("artifact") != "native" or result.get("runner") != "OnPolicyRunner"
             or scenario["num_envs"] != 1 or scenario["command_schedule"]
             or resource.get("telemetry_stride") != 1 or resource.get("video_requested")
-            or not resource.get("idle_gpu_required") or resource.get("training_overlap")):
+            or any(type(value) is not bool for value in modes)
+            or modes not in ((True, False), (False, True))
+            or (resource.get("training_overlap") and scenario["duration_steps"] > 2000)):
         raise EvaluationEvidenceError("invalid motion evaluation resource contract")
     if (diagnostic != telemetry.get("motion_diagnostics")
             or diagnostic.get("mode") != scenario["scenario_overrides"]["evaluation.motion_mode"]

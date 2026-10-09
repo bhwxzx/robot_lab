@@ -186,6 +186,61 @@ class EvaluationBatchTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate"):
             B.validate_contract(contract)
 
+    def test_default_idle_and_explicit_overlap_argv(self):
+        contract = self.contract(count=1)
+        case = contract['cases'][0]
+        case['scenario']['num_envs'] = 1
+        paths = {'play_result': '/tmp/result.json', 'telemetry': '/tmp/telemetry.json.gz'}
+        B.validate_contract(contract)
+        argv = B.evaluation_argv(contract, self.context, case, paths, self.source)
+        self.assertIn('--require_idle_gpu', argv)
+        self.assertNotIn('--allow_training_overlap', argv)
+        contract['resource_mode'] = 'training_overlap'
+        B.validate_contract(contract)
+        argv = B.evaluation_argv(contract, self.context, case, paths, self.source)
+        self.assertIn('--allow_training_overlap', argv)
+        self.assertNotIn('--require_idle_gpu', argv)
+
+    def test_overlap_limits_and_unknown_mode_rejected(self):
+        contract = self.contract(count=1)
+        contract['resource_mode'] = 'training_overlap'
+        contract['cases'][0]['scenario']['num_envs'] = 1
+        contract['cases'][0]['scenario']['command_schedule'] = []
+        for field, value in (('num_envs', 2), ('duration_steps', 2001)):
+            changed = copy.deepcopy(contract)
+            changed['cases'][0]['scenario'][field] = value
+            with self.assertRaisesRegex(ValueError, 'training-overlap'):
+                B.validate_contract(changed)
+        changed = copy.deepcopy(contract)
+        changed['cases'][0]['video'] = True
+        with self.assertRaisesRegex(ValueError, 'training-overlap'):
+            B.validate_contract(changed)
+        for mode in ('unchecked', None, []):
+            contract['resource_mode'] = mode
+            with self.assertRaisesRegex(ValueError, 'resource_mode'):
+                B.validate_contract(contract)
+
+    def test_batch_rejects_result_with_wrong_resource_mode(self):
+        self.active_contract = self.contract('overlap-mismatch-001', count=1)
+        self.active_contract['resource_mode'] = 'training_overlap'
+        self.active_contract['cases'][0]['scenario']['num_envs'] = 1
+        with patch.object(B, 'REPO_ROOT', self.repo_root), patch.dict(os.environ, {'CONDA_DEFAULT_ENV': 'isaacsim-5.1'}), patch.object(B, 'capture_evaluator_source', return_value=self.source):
+            receipt = B.run_batch(self.active_contract, execute=self.execute_fake)
+        batch = S.validate_batch(Path(receipt['batch']['path']))
+        self.assertFalse(receipt['all_completed'])
+        self.assertEqual(batch['cases'][0]['status'], 'failed')
+        self.assertIn('resource mode', batch['cases'][0]['reason'])
+
+    def test_supervisor_abort_preserves_unrun_cases(self):
+        contract = self.contract('supervisor-abort-001', count=2)
+        def abort(argv, console, timeout):
+            console.write_text('owned evaluator stopped by resource supervisor\n')
+            return -15, 'SupervisorAbort'
+        with patch.object(B, 'REPO_ROOT', self.repo_root), patch.dict(os.environ, {'CONDA_DEFAULT_ENV': 'isaacsim-5.1'}), patch.object(B, 'capture_evaluator_source', return_value=self.source):
+            receipt = B.run_batch(contract, execute=abort)
+        batch = S.validate_batch(Path(receipt['batch']['path']))
+        self.assertEqual([case['status'] for case in batch['cases']], ['failed', 'not_run'])
+
 
 if __name__ == "__main__":
     unittest.main()

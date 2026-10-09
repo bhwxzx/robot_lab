@@ -25,8 +25,12 @@ from policy_evaluation_evidence import validate_evaluation_bundle, validate_scen
 
 def validate_contract(contract: dict) -> dict:
     expected = {"version", "batch_id", "run_identity", "effective_config", "checkpoint", "cases"}
-    if not isinstance(contract, dict) or set(contract) != expected or contract["version"] != 1:
-        raise ValueError("batch contract must contain exactly version, batch_id, run_identity, effective_config, checkpoint, cases")
+    if (not isinstance(contract, dict) or set(contract) not in (expected, expected | {"resource_mode"})
+            or contract["version"] != 1):
+        raise ValueError("batch contract requires version, batch_id, run_identity, effective_config, checkpoint, cases; resource_mode is optional")
+    mode = contract.get("resource_mode", "idle_gpu")
+    if not isinstance(mode, str) or mode not in {"idle_gpu", "training_overlap"}:
+        raise ValueError("resource_mode must be idle_gpu or training_overlap")
     identifier(contract["batch_id"])
     identity = read_reference(contract["run_identity"])
     validate_run_identity(identity)
@@ -63,6 +67,9 @@ def validate_contract(contract: dict) -> dict:
             raise ValueError("case exceeds bounded evaluation limits")
         if not isinstance(case["video"], bool) or type(case["timeout_seconds"]) is not int or not 1 <= case["timeout_seconds"] <= 3600:
             raise ValueError("invalid video or timeout setting")
+        if mode == "training_overlap" and (
+                case["scenario"]["num_envs"] != 1 or case["scenario"]["duration_steps"] > 2000 or case["video"]):
+            raise ValueError("training-overlap batch requires one env, at most 2000 steps and no video")
     return identity
 
 
@@ -81,7 +88,9 @@ def evaluation_argv(contract: dict, identity: dict, case: dict, paths: dict, sce
                "--command_schedule_json", json.dumps(scenario["command_schedule"]),
                "--duration_steps", str(scenario["duration_steps"]), "--num_envs", str(scenario["num_envs"]),
                "--seed", str(scenario["seed"]), "--result_path", paths["play_result"],
-               "--telemetry_path", paths["telemetry"], "--telemetry_stride", "1", "--headless", "--device", "cuda:0", "--require_idle_gpu"]
+               "--telemetry_path", paths["telemetry"], "--telemetry_stride", "1", "--headless", "--device", "cuda:0"]
+    command.append("--allow_training_overlap" if contract.get("resource_mode", "idle_gpu") == "training_overlap"
+                   else "--require_idle_gpu")
     command += ["--video_path", paths["video"], "--follow_robot_camera"] if case["video"] else ["--no_video"]
     return command
 
@@ -155,10 +164,14 @@ def run_batch(contract: dict, *, execute=run_process) -> dict:
             scenario_ref = capture_scenario(identity, case["scenario"], source)
             validate_provenance(identity, contract["effective_config"], scenario_ref, case["scenario"], live=True)
             code, reason = execute(evaluation_argv(contract, identity, case, layout["paths"], scenario_ref), console, case["timeout_seconds"])
-            interrupted = reason == "KeyboardInterrupt"
+            interrupted = reason in {"KeyboardInterrupt", "SupervisorAbort"}
             if code != 0 or reason:
                 raise ValueError(f"evaluation exit={code}; {reason or 'see console log'}")
             validated = validate_evaluation_bundle(Path(layout["paths"]["play_result"]))
+            resource = read_reference(validated["result"])["inputs"]["resource_mode"]
+            overlap = contract.get("resource_mode", "idle_gpu") == "training_overlap"
+            if resource["training_overlap"] != overlap or resource["idle_gpu_required"] != (not overlap):
+                raise ValueError("evaluation resource mode differs from batch contract")
             item.update(status="completed", result=validated["result"])
         except (ValueError, OSError) as exc:
             if not console.exists():

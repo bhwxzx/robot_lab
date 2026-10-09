@@ -77,6 +77,27 @@ class MotionEvaluationTests(unittest.TestCase):
         with self.assertRaises(EvaluationEvidenceError):
             validate_motion_telemetry(self.result, self.telemetry, self.scenario)
 
+    def test_training_overlap_preserves_physics_validation(self):
+        self.result['inputs']['resource_mode'].update(idle_gpu_required=False, training_overlap=True)
+        self.add_physics()
+        validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+        self.telemetry['physics_samples'].pop()
+        with self.assertRaises(EvaluationEvidenceError):
+            validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
+    def test_invalid_resource_modes_rejected(self):
+        for idle, overlap in ((False, False), (True, True), (1, False), (False, None)):
+            with self.subTest(idle=idle, overlap=overlap):
+                self.result['inputs']['resource_mode'].update(idle_gpu_required=idle, training_overlap=overlap)
+                with self.assertRaisesRegex(EvaluationEvidenceError, 'resource contract'):
+                    validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
+    def test_training_overlap_duration_limit_rejected(self):
+        self.result['inputs']['resource_mode'].update(idle_gpu_required=False, training_overlap=True)
+        self.scenario['duration_steps'] = 2001
+        with self.assertRaisesRegex(EvaluationEvidenceError, 'resource contract'):
+            validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
     def test_frame_skip_rejected(self):
         self.samples[1]['frame_index'] = 2
         with self.assertRaises(EvaluationEvidenceError):
