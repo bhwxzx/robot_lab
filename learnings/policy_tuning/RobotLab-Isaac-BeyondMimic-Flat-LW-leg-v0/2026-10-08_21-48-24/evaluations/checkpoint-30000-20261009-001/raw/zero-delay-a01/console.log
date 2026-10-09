@@ -1,0 +1,70 @@
+{"argv": ["/home/young/miniconda3/envs/isaacsim-5.1/bin/python", "/home/young/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", "--task", "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0", "--run_id", "2026-10-08_21-48-24", "--batch_id", "checkpoint-30000-20261009-001", "--evaluation_id", "zero-delay-a01", "--candidate_id", "model_30000", "--checkpoint", "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-08_21-48-24/model_30000.pt", "--checkpoint_sha256", "fa83c9e1b19f627ac853472961b86569df80c967069d0454efcbc45a16ac184e", "--artifact_kind", "native", "--artifact_path", "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-08_21-48-24/model_30000.pt", "--artifact_sha256", "fa83c9e1b19f627ac853472961b86569df80c967069d0454efcbc45a16ac184e", "--run_identity_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/provenance/context-8ae1eb140f3dc2c4f3772360965167adf951394a69bc85f58eea4a788ea1b571.json", "--run_identity_file_sha256", "8ae1eb140f3dc2c4f3772360965167adf951394a69bc85f58eea4a788ea1b571", "--effective_config_reference_json", "{\"path\": \"/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/provenance/config-6bc3906349a38b20aca8bdde3f6e31cf111ec38e6277c0db84c1d1ec95f9b329.json\", \"sha256\": \"6bc3906349a38b20aca8bdde3f6e31cf111ec38e6277c0db84c1d1ec95f9b329\"}", "--scenario_evidence_reference_json", "{\"path\": \"/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/provenance/scenario-495d39b06fe3a8e2ff4ef1fec6b2714a7d5d4effb1505a4b8fc6125fd63ef790.json\", \"sha256\": \"495d39b06fe3a8e2ff4ef1fec6b2714a7d5d4effb1505a4b8fc6125fd63ef790\"}", "--scenario_id", "zero-delay", "--scenario_overrides_json", "{\"commands.motion.joint_position_range\": [0, 0], \"commands.motion.pose_range\": {}, \"commands.motion.velocity_range\": {}, \"evaluation.motion_mode\": \"randomized_start\", \"evaluation.motion_physics_window\": [0, 169], \"evaluation.motion_sha256\": \"8f5dec53148b5229b28055b8af968d18dc757e873f1a04bd423b0e8bfc6b2a6b\", \"events.add_joint_default_pos\": null, \"events.base_com\": null, \"events.physics_material\": null, \"events.push_robot\": null, \"events.randomize_actuator_gains\": null, \"events.randomize_rigid_body_mass_base\": null, \"events.randomize_rigid_body_mass_others\": null, \"observations.policy.enable_corruption\": false, \"rewards.leg_symmetry.params.start_time_s\": 1.6, \"rewards.motion_takeoff_anchor_ori.params.end_time_s\": 1.6, \"rewards.motion_takeoff_pitch_ang_vel.params.end_time_s\": 1.6, \"rewards.same_foot_x_position.params.start_time_s\": 1.6, \"rewards.wheel_contact_continuous.params.start_time_s\": 1.6, \"scene.robot.actuators.foots.max_delay\": 0, \"scene.robot.actuators.foots.min_delay\": 0, \"scene.robot.actuators.legs.max_delay\": 0, \"scene.robot.actuators.legs.min_delay\": 0, \"scene.robot.actuators.wheels.max_delay\": 0, \"scene.robot.actuators.wheels.min_delay\": 0}", "--command_schedule_json", "[]", "--duration_steps", "1000", "--num_envs", "1", "--seed", "42", "--result_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-001/raw/zero-delay-a01/result.json", "--telemetry_path", "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-001/raw/zero-delay-a01/telemetry.json.gz", "--telemetry_stride", "1", "--headless", "--device", "cuda:0", "--allow_training_overlap", "--no_video"]}
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/young/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.beyondmimic.config.LW_Leg.flat_env_cfg:LWLegBeyondMimicFlatEnvCfg
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.beyondmimic.config.LW_Leg.agents.rsl_rl_ppo_cfg:LWBeyondMimicFlatPPORunnerCfg
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-10-09_13-14-25.log[0m
+[36m======================================================================================[0m
+
+[33m13:14:25 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m13:14:25 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+/home/young/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/utils.py:338: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'policy' key. As an observation group with the name 'policy' was found, this is assumed to be the observation set. Consider adding the 'policy' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+/home/young/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/utils.py:376: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'critic' key. As an observation group with the name 'critic' was found, this is assumed to be the observation set. Consider adding the 'critic' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+Loading user config located at: '/home/young/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/young/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20261009_131420.log
+2026-10-09T05:14:20Z [103ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-10-09T05:14:20Z [416ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-10-09T05:14:20Z [421ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4080 SUPER    | Yes: 0 |     | 16376   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2702      | eb541e47.. |
+|     |                                  |        |     |            | 1         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-138-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: Intel(R) Core(TM) i7-14700KF
+| Cores: 20 | Logical Cores: 28
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 64085 | Free Memory: 51436
+| Total Page/Swap (MB): 2047 | Free Page/Swap: 2046
+|---------------------------------------------------------------------------------------------|
+2026-10-09T05:14:23Z [3,270ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-10-09T05:14:23Z [3,278ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-10-09T05:14:23Z [3,300ms] [Warning] [omni.kvdb.plugin] Disabling key-value database because another kit process is locking it
+2026-10-09T05:14:28Z [8,373ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/ContactSensor.
+2026-10-09T05:15:20Z [59,880ms] [Error] [carb] 
+
+../../../source/plugins/carb.tasking/Mutex.cpp(103): void carb::tasking::Mutex::lock()(): Assertion (m_recursive) failed: Recursion not allowed
+
+Assertion Failed!
+The following assertion condition failed in the process 602247:
+	'm_recursive'
+
+at the location:
+	'../../../source/plugins/carb.tasking/Mutex.cpp'
+	on line 103
+	 in void carb::tasking::Mutex::lock()()
+
+with the message:
+	"Recursion not allowed"
+
+Press ABORT to exit.
+Press RETRY to debug (attach a debugger first).
+Press IGNORE to attempt to continue.

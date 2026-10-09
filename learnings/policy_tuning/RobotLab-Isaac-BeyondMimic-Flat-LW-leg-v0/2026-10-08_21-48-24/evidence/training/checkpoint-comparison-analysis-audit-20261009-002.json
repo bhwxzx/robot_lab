@@ -1,0 +1,188 @@
+{
+  "analysis_driver": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-analysis-driver-20261009-002.json",
+    "sha256": "c5579ed4fd72945c4efc2eeb7ca7c9ea05b309f6e8486a6f251c6b1f7985e131"
+  },
+  "batch_manifests": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-001/manifest.json",
+      "sha256": "64187be68ed88cfb22f3f56e3b3b1bc71d0c0ba647a531cdd05f265f7097153c"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-002/manifest.json",
+      "sha256": "f642d4f87e6f8876204a79da9c5aef0064305eda9ae20954298c567108572107"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-35000-20261009-001/manifest.json",
+      "sha256": "94e74a1c53ff5a8991b35be74183f936ec99ec0fb88f62dc449b3847c4f5a883"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-40000-20261009-001/manifest.json",
+      "sha256": "2ab590e199ed0369e294e1396dae58a84d4ba534b1062fc53dc00bed2b0e1041"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-45000-20261009-001/manifest.json",
+      "sha256": "195de2d5dc8e91513b0081d2426ea72f1876be2afa8cfda9c5918edf1c43b551"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/history10-newref-20261009-001/manifest.json",
+      "sha256": "33e2691141fd3822e4656bd85260a4664e536aed9159b0dfa22623efd1db492a"
+    }
+  ],
+  "definitions": {
+    "eligibility": "Exactly five complete frame-zero successful cycles and no policy failed episodes for every matching scenario; censored tail retained separately.",
+    "flight": "Longest all-four-contact-Fz<10N interval near planned flight; positive normal contact threshold only. Duration comparison to 300 ms is operational contact timing.",
+    "impulse": "First any-wheel-contact detection bin and next nine consecutive 5ms bins: positive sum of both wheel normal Fz *0.005; includes support force; no friction or calibrated real peak.",
+    "landing_speed": "At each wheel first Fz>10N in [1.3,2.1), its wheel-center velocity before that physics step; downward component max(-vz,0). Maximum over both wheels and five cycles. Not whole-robot COM speed.",
+    "phase_windows": "preparation command frames [0,1.1); push-off [1.1,1.3); planned flight [1.3,1.6); landing [1.6,2.1). Boundaries follow original approved analysis.",
+    "physics_time": "frame/50 +(substep+1)*0.005, end of bin; torque/force sampled every physics substep",
+    "prep_foot_demand": "Computed requested joint torque >27 Nm; total 5 ms joint bins divided by complete cycles. Demand exceedance indicator, not every possible velocity-dependent clipping event.",
+    "resource_difference": "New cases explicitly overlap live training; historical 49999 cases idle. Fixed physics/control dt; wall FPS and real-time factor excluded from policy ranking.",
+    "shank_load": "Applied shank joint torque during push-off; not measured structural stress."
+  },
+  "evaluation_results": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-001/raw/play-equivalent-a01/result.json",
+      "sha256": "ad52cd109ec81e6a4aebed08aabab0e425fec7a495794963b096defef9e1dc07"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-002/raw/zero-delay-a02/result.json",
+      "sha256": "48c330c05c54227872b8cde8d640b54b8725c5c9e56514dadfc0c6bd52a27b4c"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-002/raw/fixed-15ms-a01/result.json",
+      "sha256": "78692d9060dad035eb17c9380f6af9917d4b65ce197e94a60460c77e0cae4a31"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-002/raw/legacy-randomized-no-push-a01/result.json",
+      "sha256": "2d7b434dc529d8f3428c6a6d50087a492cfabbc98719d245c60e2b1607ef0c25"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-002/raw/current-randomized-no-push-a01/result.json",
+      "sha256": "15887bab3868272d3021c17acf0574caa21812c9c26d6f6258049cc7cf93eacf"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-35000-20261009-001/raw/play-equivalent-a01/result.json",
+      "sha256": "e95e11ea4eef16e0aa32083c204e9f1bbbb963ebc5e1caea7bf430863e261476"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-35000-20261009-001/raw/zero-delay-a01/result.json",
+      "sha256": "83f7ae29cbe4f50e323282337f96d4ac92c640cb13c306a35506eabff1895a8a"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-35000-20261009-001/raw/fixed-15ms-a01/result.json",
+      "sha256": "7d537bb5f7b9ca372f0b0960563847f188d561c306032fe1f3d94546325b8d0e"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-35000-20261009-001/raw/legacy-randomized-no-push-a01/result.json",
+      "sha256": "e302f182fe3045c259865905fa80b1c39ef330dfffbf5e20d72e6abd06993792"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-35000-20261009-001/raw/current-randomized-no-push-a01/result.json",
+      "sha256": "4dc292ea8ad2bd938b6ce347a3ed97dd3371def2e1babeabf7430606962e0712"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-40000-20261009-001/raw/play-equivalent-a01/result.json",
+      "sha256": "96d22ee12467147f0183af2192c9adf904167ff96f3787346d1d2fea99925cec"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-40000-20261009-001/raw/zero-delay-a01/result.json",
+      "sha256": "0445cfc68d371bdabcec26bea7c39e08f208d9cfade0261a404df9afc2f7cd4d"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-40000-20261009-001/raw/fixed-15ms-a01/result.json",
+      "sha256": "d27e5cd636bce4e9ca30ff103fe9966fc3b93ffb59b2360c1eced236aa41ab1f"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-40000-20261009-001/raw/legacy-randomized-no-push-a01/result.json",
+      "sha256": "71106a70cec6ff16fd03164f9a2ebe45eff53a3257298973989147054015d7c5"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-40000-20261009-001/raw/current-randomized-no-push-a01/result.json",
+      "sha256": "74a0e48a375074a61bcc4522243c7f775db89d8c8198befcb5821606756e1c95"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-45000-20261009-001/raw/play-equivalent-a01/result.json",
+      "sha256": "86640a7742e98917f1672fcee277edf9be378f77153f90533f13995884f99637"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-45000-20261009-001/raw/zero-delay-a01/result.json",
+      "sha256": "ca685b417ceff9ae6011689a6b9ca114401bfb56cc198e5a4072b2b3c67c27ef"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-45000-20261009-001/raw/fixed-15ms-a01/result.json",
+      "sha256": "b4b75df805ba528488d5b6c2fca35158fea80ee508fc8639b5ea7d53f3081a8e"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-45000-20261009-001/raw/legacy-randomized-no-push-a01/result.json",
+      "sha256": "68de95a0de0ba0e21df6a732c951a6275740d269676e6c4f97af9037a633beac"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-45000-20261009-001/raw/current-randomized-no-push-a01/result.json",
+      "sha256": "55c106b7572af264d3081da98e677a6e13ada64b3339ebab268be8aa6532e976"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/history10-newref-20261009-001/raw/play-equivalent-a01/result.json",
+      "sha256": "6b7dad4a9db3d0a0b6df9fa1ee8f247df100a0f92b807b6da20ced7a49d5cbe9"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/history10-newref-20261009-001/raw/zero-delay-a01/result.json",
+      "sha256": "7b9cd0ff5c17d86ab20f828de43b3bfac514a65bd94e1e9556eaff72e7328976"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/history10-newref-20261009-001/raw/fixed-15ms-a01/result.json",
+      "sha256": "e527dfb1547e95656240bb66102fda4056e01f021c487c7cba134c08cb1b81e0"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/history10-newref-20261009-001/raw/legacy-randomized-no-push-a01/result.json",
+      "sha256": "d1bd85a6c64339806eb4114197a8eaf87ea041d95b4251fd9fd4cd76279aabca"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/history10-newref-20261009-001/raw/current-randomized-no-push-a01/result.json",
+      "sha256": "a78c82647b17715f3eb32f6139d35fa8bebb52154c4f53b83ff83c97d4ef57dc"
+    }
+  ],
+  "original_function_source": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/evaluation-analysis-driver-20261009-001.json",
+    "sha256": "a3e26d6fa7400de207c85589f967fef6ce0106566acb26460ea141cab3642094"
+  },
+  "outputs": {
+    "checkpoint-comparison-20261009-002.png": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-20261009-002.png",
+      "sha256": "58b4fa267ca99f57acd2f2927476910bf28ae4bfe4ba4adce1a3c6544d596586"
+    },
+    "checkpoint-comparison-candidate-aggregates-20261009-002.csv": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-candidate-aggregates-20261009-002.csv",
+      "sha256": "99d863302a49aeb47a4122e5cc7e88d598b9f82ea547517f3b564183d6f6ef6c"
+    },
+    "checkpoint-comparison-contact-timing-20261009-002.csv": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-contact-timing-20261009-002.csv",
+      "sha256": "1eeb81a87a567c2346a91b0487288616207996c485f8e9b0dcbecceba2025ce5"
+    },
+    "checkpoint-comparison-cycle-classification-20261009-002.csv": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-cycle-classification-20261009-002.csv",
+      "sha256": "42afb198284b612b69bdfadfb453ba7132bacbc5e3a676d35cb5d2f6e2a9f69c"
+    },
+    "checkpoint-comparison-joint-metrics-20261009-002.csv": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-joint-metrics-20261009-002.csv",
+      "sha256": "8f32217990ad93864fecde793bc7d37b1176b55963c6505b17da75936175160b"
+    },
+    "checkpoint-comparison-landing-events-20261009-002.csv": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-landing-events-20261009-002.csv",
+      "sha256": "0a916a9b083849803202687f27971de8ef3dc7cb67ce0257018fca2c96429e56"
+    },
+    "checkpoint-comparison-metrics-20261009-002.csv": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-metrics-20261009-002.csv",
+      "sha256": "6a8a870f5784d32deaf37361a96d794e05f698c66670036ca61486c2fcc193fc"
+    },
+    "checkpoint-comparison-metrics-20261009-002.json": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-metrics-20261009-002.json",
+      "sha256": "258ffffa7370ea84985e01023fb61b5021e51f789732fd74f6341edbf5cdfe04"
+    },
+    "checkpoint-comparison-phase-metrics-20261009-002.csv": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/training/checkpoint-comparison-phase-metrics-20261009-002.csv",
+      "sha256": "cd59b5fbaf1b92444674d4e22b89223967b524cf2398f64a6f3f392f6a1b5267"
+    }
+  },
+  "version": 1
+}
