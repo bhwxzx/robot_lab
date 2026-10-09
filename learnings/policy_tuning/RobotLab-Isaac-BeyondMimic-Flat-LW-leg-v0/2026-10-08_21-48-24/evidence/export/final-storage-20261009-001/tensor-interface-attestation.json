@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "recorded_at": "2026-10-09T06:21:53.952247+00:00",
+  "corrects": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/export/final-storage-20261009-001/preflight.json",
+    "sha256": "c037e6a0867222e69c140ce1036c968a3f39d3ee9e55cc53121b0ac30a2ae975",
+    "json_pointer": "/tensor_interface/flatten_order"
+  },
+  "previous_value": "time-major oldest to newest",
+  "verified_value": "concatenate term blocks; each block flattens its own 10 frames from oldest to newest",
+  "evidence": [
+    {
+      "path": "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/managers/observation_manager.py",
+      "sha256": "57539db34658e98f92961ea6a182d5b1326ec9c9ec5a1cc39e5c032bfdd2cf01"
+    },
+    {
+      "path": "/home/young/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/utils/buffers/circular_buffer.py",
+      "sha256": "7e3d298e9c43fb05edf96ff3bc9333ca1081faacba7d73b412e5edd5ca60198b"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evidence/export/final-storage-20261009-001/console.log",
+      "sha256": "0142a9ff2ff988060ed218f4e97559a267853f81f7355531a6e1e63586c24c16"
+    }
+  ],
+  "input_blocks": [
+    {
+      "name": "command",
+      "per_frame_width": 20,
+      "history_frames": 10,
+      "offset_start": 0,
+      "offset_end_exclusive": 200,
+      "temporal_order": "oldest_to_newest"
+    },
+    {
+      "name": "motion_anchor_ori_b",
+      "per_frame_width": 6,
+      "history_frames": 10,
+      "offset_start": 200,
+      "offset_end_exclusive": 260,
+      "temporal_order": "oldest_to_newest"
+    },
+    {
+      "name": "base_ang_vel",
+      "per_frame_width": 3,
+      "history_frames": 10,
+      "offset_start": 260,
+      "offset_end_exclusive": 290,
+      "temporal_order": "oldest_to_newest"
+    },
+    {
+      "name": "joint_pos",
+      "per_frame_width": 10,
+      "history_frames": 10,
+      "offset_start": 290,
+      "offset_end_exclusive": 390,
+      "temporal_order": "oldest_to_newest"
+    },
+    {
+      "name": "joint_vel",
+      "per_frame_width": 10,
+      "history_frames": 10,
+      "offset_start": 390,
+      "offset_end_exclusive": 490,
+      "temporal_order": "oldest_to_newest"
+    },
+    {
+      "name": "actions",
+      "per_frame_width": 10,
+      "history_frames": 10,
+      "offset_start": 490,
+      "offset_end_exclusive": 590,
+      "temporal_order": "oldest_to_newest"
+    }
+  ],
+  "scope": "documentation correction only; native observations and model/export bytes unchanged; immutable preflight retained"
+}
