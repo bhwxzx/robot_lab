@@ -1,0 +1,193 @@
+{
+  "comparison_id": "deployment-priority-all-joints-20261010-002",
+  "created_at": "2026-10-10T12:00:12.331412+08:00",
+  "criteria": {
+    "comparison_only": true,
+    "convergence_assessment": false,
+    "cross_reference_total_order": "not established",
+    "failure_priority": "policy failure/incomplete-ended cycles precede actuator comparison; process/resource aborts are not policy failures",
+    "hardware_acceptance_criteria_approved": false,
+    "hardware_limit_basis": "recorded simulation effort limits: first6 120Nm, feet27Nm, wheels40Nm; actual motor current/continuous/thermal limits are unknown",
+    "margin_keys": [
+      "max_computed_effort_ratio",
+      "foot_exceed_fraction",
+      "shank_applied_peak_nm"
+    ],
+    "margin_layer_method": "within the same motion hash, rank Pareto layers on worst normalized computed torque, foot computed-over-limit fraction, and worst applied shank torque; all minimize; retain ties with countermetrics",
+    "no_installed_packages": true,
+    "no_new_evaluations": true,
+    "no_reference_restoration": true,
+    "num_envs": 1,
+    "objective": "deployment_candidate_priority",
+    "old_randomized_alias": "randomized-no-push remains separately identified; its randomization is not assumed equal to current-randomized-no-push",
+    "peak_semantics": "force is average net normal force over5ms, excluding friction; PD drive torque excludes passive/internal impact loads",
+    "primary_duration_steps": 1000,
+    "primary_scenarios": [
+      "play-equivalent",
+      "zero-delay",
+      "fixed-15ms",
+      "current-randomized-no-push"
+    ],
+    "priority_confirmed_by_user": "failure risk and actuator headroom, then posture, landing load and tracking",
+    "relative_metric_limitations": "This normalized RMS gap is not a percent of failed samples and not a percentage relative to one side; low-amplitude pairs can have high relative gaps, absolute values are retained.",
+    "secondary_metrics": [
+      "roll peak/RMS",
+      "pre-wheel-contact downward axle speed",
+      "first50ms wheel normal impulse",
+      "body/anchor tracking"
+    ],
+    "seed": 42,
+    "sign_handling": "main ranking uses magnitude gap; signed gaps provided with descriptive reference-fit sign; zero reference does not establish physical mirror sign",
+    "symmetry_hardware_acceptance": "no numeric threshold approved; tiers are descriptive engineering advice, not hardware pass/fail",
+    "symmetry_keys": [
+      "phase_torque_gap_effort_ratio",
+      "full_velocity_relative_gap",
+      "touchdown_asymmetry_ms",
+      "wheel_speed_peak_rad_s"
+    ],
+    "symmetry_order": "retain approved failure/torque-margin priority and prior margin tiers; within each tier compare four worst-case symmetry/speed metrics; show all five joint pairs and their full vector as sensitivity, preserve countermetrics",
+    "symmetry_scope": "all ten joints, five left-right pairs; no joint type omitted",
+    "symmetry_vector_sensitivity": "Pareto check using five pair-specific phase torque gaps, five pair-specific velocity gaps, wheel contact asynchrony, and full-cycle wheel speed peak. It is not equivalent to all-metric optimality.",
+    "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0",
+    "timing_symmetry_metric": "worst full-cycle wheel contact time gap using existing 10N definition; 1N sensitivity retained",
+    "torque_symmetry_metric": "worst case and command phase RMS(abs(applied_left)-abs(applied_right))/recorded pair effort limit, maximum over all five pairs",
+    "velocity_symmetry_metric": "worst-case RMS(abs(left velocity)-abs(right velocity))/pooled pair RMS velocity; all five pairs; wheel uses only after both wheels first touchdown at10N, all other pairs use full successful cycle",
+    "wheel_speed_peak_metric": "max abs measured left/right wheel velocity over full successful cycles, including pre-landing; lower is preferred even below saturation, no hardware pass threshold supplied",
+    "wheel_velocity_difference_exclusion": "User explicitly excluded pre-landing differences. Only after the later of the two first10N wheel contacts enters wheel speed difference; full-cycle wheel absolute peak is retained separately."
+  },
+  "cross_reference_total_order_established": false,
+  "deployment_qualified": false,
+  "hardware_acceptance_thresholds_approved": false,
+  "input_validated_manifests": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-04-19_19-11-42/evaluations/apr19-replay-20260930-001/manifest.json",
+      "sha256": "05454d7a52d880d9bdc9077f5cb15921366b561e6e9ac707fa8820e2b192dc76"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-04-19_19-11-42/evaluations/apr19-replay-20260930-002/manifest.json",
+      "sha256": "63ca455b69ae6944379b23f51ff9e3a6f1e1f4cae5694ddc3a06af1ec4a727e1"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-03_15-01-21/evaluations/landing-contact-20261004-001/manifest.json",
+      "sha256": "386ba98e80147a0c2a704564878129fb22fcdd3812345f04190c02570b19040a"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-04_20-40-15/evaluations/landing-contact-20261005-001/manifest.json",
+      "sha256": "582216ba2f1a866e9bfb38475bfdd84e822bcdf5a56953cecadfe868da8bb01d"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-05_20-47-22/evaluations/landing-contact-20261006-001/manifest.json",
+      "sha256": "781214c644dd5f6a41f1244607359b1b9ef9526c8a44e6ed6de18798467199dc"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-06_11-58-04/evaluations/history10-landing-contact-20261006-001/manifest.json",
+      "sha256": "08b67ee3bf22dc1bd26172ba9e46084a4346f637cb017ec8ac361c86e5f4de30"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-07_00-51-40/evaluations/torque-power-history10-20261007-001/manifest.json",
+      "sha256": "071f1f85d237d3e4488b771658d0a578d8ff2545b23fe803e2cc296985b08359"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-07_15-57-49/evaluations/torque-margin-history10-20261008-001/manifest.json",
+      "sha256": "760cbfde99a116ab197686e0a32b4e86ea00b7cdc975126057cfcb35ac8727c7"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-001/manifest.json",
+      "sha256": "64187be68ed88cfb22f3f56e3b3b1bc71d0c0ba647a531cdd05f265f7097153c"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-30000-20261009-002/manifest.json",
+      "sha256": "f642d4f87e6f8876204a79da9c5aef0064305eda9ae20954298c567108572107"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-35000-20261009-001/manifest.json",
+      "sha256": "94e74a1c53ff5a8991b35be74183f936ec99ec0fb88f62dc449b3847c4f5a883"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-40000-20261009-001/manifest.json",
+      "sha256": "2ab590e199ed0369e294e1396dae58a84d4ba534b1062fc53dc00bed2b0e1041"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/checkpoint-45000-20261009-001/manifest.json",
+      "sha256": "195de2d5dc8e91513b0081d2426ea72f1876be2afa8cfda9c5918edf1c43b551"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-08_21-48-24/evaluations/history10-newref-20261009-001/manifest.json",
+      "sha256": "33e2691141fd3822e4656bd85260a4664e536aed9159b0dfa22623efd1db492a"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/final49999-four-scenarios-20261010-001/manifest.json",
+      "sha256": "f5d1f496c843a5702f16e4a2438f9c3e96467d6f40149d6c438135fd072b560e"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/final49999-quick-play-20261010-001/manifest.json",
+      "sha256": "fc15d61552daa115f65d708bc7f7b50723785efed397c8b00a71c116fb634fed"
+    }
+  ],
+  "kind": "cross_run_deployment_advice",
+  "native_evaluation_starts": 0,
+  "outputs": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-all-joints-20261010-002/analysis.json",
+      "sha256": "5515462c32e1aabcce66029265ff2d192081df14715690237d90edef44019fa4",
+      "size_bytes": 5929034
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-all-joints-20261010-002/ranking.csv",
+      "sha256": "9e6af53abc11badd33d00cb58e57fd86c23b0344ee092af28fe554f8b09fdbce",
+      "size_bytes": 5018
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-all-joints-20261010-002/joint_symmetry_summary.csv",
+      "sha256": "f1841f7c8ae3787d55e429239a8a6822d68dcba1358e013f5aeb95b95d3ae9cf",
+      "size_bytes": 13453
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-all-joints-20261010-002/joint_phase_metrics.csv",
+      "sha256": "2e79322364db7108a0a7b276cf34711e23cfbc4f1d98d3b70f07a1b804b8bff9",
+      "size_bytes": 1269512
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-all-joints-20261010-002/joint_cycle_metrics.csv",
+      "sha256": "bb5a75a4d21aa07bafe48ec32bdeb102558f33d6384af8f66f95cf8a1eb615be",
+      "size_bytes": 915812
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-all-joints-20261010-002/report.md",
+      "sha256": "2a30662a95bf79f2a991bb831a35a3c5547f2d0e651108c3d164200a38003d62",
+      "size_bytes": 10295
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-all-joints-20261010-002/validation.json",
+      "sha256": "41ed2a6b4fc555ed5082b0a069c23b35f105252b3eca650ca5568eef4d7d5c06",
+      "size_bytes": 798
+    }
+  ],
+  "prior_evidence_preserved": true,
+  "protected_file_count": 1714,
+  "recommended_review_order": [
+    {
+      "checkpoint": "model_45000.pt",
+      "margin_layer": 1,
+      "position": "priority_candidate",
+      "run": "2026-10-08_21-48-24"
+    },
+    {
+      "checkpoint": "model_49999.pt",
+      "margin_layer": 1,
+      "position": "alternative_candidate",
+      "run": "2026-10-08_21-48-24"
+    }
+  ],
+  "status": "sealed",
+  "supersedes_as_advice_only": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-20261010-001/comparison.json",
+    "sha256": "e331d3b1ef79ea60ccb1385a00a4ce4962a4b6085f0cb8dbebd9612254b2cc15"
+  },
+  "validation": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/comparisons/deployment-priority-all-joints-20261010-002/validation.json",
+    "sha256": "41ed2a6b4fc555ed5082b0a069c23b35f105252b3eca650ca5568eef4d7d5c06",
+    "size_bytes": 798
+  },
+  "version": 2
+}
