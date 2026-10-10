@@ -1,0 +1,61 @@
+{"argv": ["/home/server/miniconda3/envs/isaacsim-5.1/bin/python", "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", "--task", "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0", "--run_id", "2026-10-10_01-25-39", "--batch_id", "latest49999-reference1009-20261010-001", "--evaluation_id", "fixed-15ms-a01", "--candidate_id", "model_49999", "--checkpoint", "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-10_01-25-39/model_49999.pt", "--checkpoint_sha256", "b46799d67a3d0ad5e686257fe3832a0c41c5af29dc9a8e3cb1cef41ffc1c3d12", "--artifact_kind", "native", "--artifact_path", "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_beyongdmimic/2026-10-10_01-25-39/model_49999.pt", "--artifact_sha256", "b46799d67a3d0ad5e686257fe3832a0c41c5af29dc9a8e3cb1cef41ffc1c3d12", "--run_identity_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/provenance/context-76e09091681988239986b9e1ed36574d9892693c8042bcb3297115b7e1778442.json", "--run_identity_file_sha256", "76e09091681988239986b9e1ed36574d9892693c8042bcb3297115b7e1778442", "--effective_config_reference_json", "{\"path\": \"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/provenance/config-af14ff75f436ff28e8c227255ee5ea4a03ef2c5f8c4f2c6e9d820b11cc19b5a8.json\", \"sha256\": \"af14ff75f436ff28e8c227255ee5ea4a03ef2c5f8c4f2c6e9d820b11cc19b5a8\"}", "--scenario_evidence_reference_json", "{\"path\": \"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/provenance/scenario-89787536f5ffedc6620b139ffb0aecc69739cc32ff160d75aec280d351a80b85.json\", \"sha256\": \"89787536f5ffedc6620b139ffb0aecc69739cc32ff160d75aec280d351a80b85\"}", "--scenario_id", "fixed-15ms", "--scenario_overrides_json", "{\"commands.motion.motion_file\": \"source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-09/leg_to_wheel_transform_50hz.npz\", \"evaluation.motion_sha256\": \"47805c271159df64c6ebc0a40e283bfa2361333ee7de6d0698e33f371bd02293\", \"evaluation.motion_physics_window\": [0, 166], \"evaluation.motion_mode\": \"randomized_start\", \"observations.policy.enable_corruption\": false, \"commands.motion.pose_range\": {}, \"commands.motion.velocity_range\": {}, \"commands.motion.joint_position_range\": [0, 0], \"events.push_robot\": null, \"events.randomize_apply_external_force_torque\": null, \"events.add_joint_default_pos\": null, \"events.base_com\": null, \"events.physics_material\": null, \"events.randomize_rigid_body_mass_base\": null, \"events.randomize_rigid_body_mass_others\": null, \"events.randomize_actuator_gains\": null, \"scene.robot.actuators.legs.min_delay\": 3, \"scene.robot.actuators.legs.max_delay\": 3, \"scene.robot.actuators.wheels.min_delay\": 3, \"scene.robot.actuators.wheels.max_delay\": 3, \"scene.robot.actuators.foots.min_delay\": 3, \"scene.robot.actuators.foots.max_delay\": 3}", "--command_schedule_json", "[]", "--duration_steps", "2000", "--num_envs", "1", "--seed", "42", "--result_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-20261010-001/raw/fixed-15ms-a01/result.json", "--telemetry_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-20261010-001/raw/fixed-15ms-a01/telemetry.json.gz", "--telemetry_stride", "1", "--headless", "--device", "cuda:0", "--require_idle_gpu", "--no_video"]}
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/server/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.beyondmimic.config.LW_Leg.flat_env_cfg:LWLegBeyondMimicFlatEnvCfg
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.beyondmimic.config.LW_Leg.agents.rsl_rl_ppo_cfg:LWBeyondMimicFlatPPORunnerCfg
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab_tasks/isaaclab_tasks/utils/hydra.py", line 100, in hydra_main
+    func(env_cfg, agent_cfg, *args, **kwargs)
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1738, in main
+    _evaluate(env_cfg, agent_cfg, evaluation_publisher)
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 935, in _evaluate
+    _set_dotted(env_cfg, dotted_path, value)
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 281, in _set_dotted
+    raise ValueError(f"override path does not exist: {dotted_path}")
+ValueError: override path does not exist: events.randomize_apply_external_force_torque
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+Loading user config located at: '/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20261010_155904.log
+2026-10-10T07:59:04Z [50ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-10-10T07:59:05Z [298ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-10-10T07:59:05Z [303ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-10-10T07:59:07Z [2,810ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-10-10T07:59:07Z [2,810ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.173.02    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090 D        | Yes: 0 |     | 32607   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b87      | efbac165.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 71857   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 7.0.0-34-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101011 (1.21.1.11)
+| Processor: Intel(R) Core(TM) Ultra 7 265K
+| Cores: 20 | Logical Cores: 20
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 95810 | Free Memory: 87090
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-10-10T07:59:07Z [2,998ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-10-10T07:59:07Z [3,018ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-10-10T07:59:07Z [3,018ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1525.88 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   2.07 
+
+   CPU     0 
+     0   1.57 

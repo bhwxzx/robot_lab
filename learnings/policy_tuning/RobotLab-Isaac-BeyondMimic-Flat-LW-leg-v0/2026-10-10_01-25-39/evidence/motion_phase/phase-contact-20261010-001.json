@@ -1,0 +1,1900 @@
+{
+  "version": 1,
+  "kind": "derived_motion_phase_and_contact_analysis",
+  "batch_manifests": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-20261010-001/manifest.json",
+      "sha256": "1504008b3d4d38be56c0ac612ff0786991c0df9b3a0f8f203b17037bfab38357"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-retry-20261010-002/manifest.json",
+      "sha256": "bf2b4b06c8f84c9c3212f4dceae9a4acd1eec8ce3fc24df9aef4b1b841138d9c"
+    }
+  ],
+  "training_summary": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evidence/training/summary-latest49999-20261010-001.json",
+    "sha256": "88b5aa351ab847cb327a914867250e10b6d107cd42145654e78eb4ef0f73ff7f"
+  },
+  "method": {
+    "control_dt_s": 0.02,
+    "physics_dt_s": 0.005,
+    "phase_bounds_s_half_open": {
+      "preparation": [
+        0,
+        1.3
+      ],
+      "reference_flight": [
+        1.3,
+        1.55
+      ],
+      "landing": [
+        1.55,
+        1.8
+      ],
+      "wheel_motion": [
+        1.8,
+        3.34
+      ]
+    },
+    "physical_time": "frame_index*0.02+substep*0.005 denotes interval start; forces averaged over 5ms interval",
+    "airborne_detection": "longest contiguous interval in [1.0,1.9) with all four recorded contact body force norms < threshold; evaluated separately at 1,5,10N; no hardware or policy acceptance threshold",
+    "contact_scope": "right/left feet and wheels only; no other-body contact claim",
+    "body_position_error_semantics": "reference aligned to actual anchor XY and yaw, retains reference anchor Z; anchor_position_rmse measures unaligned global anchor displacement",
+    "wheel_contact_threshold_N": 5,
+    "planned_flight_s": [
+      1.3,
+      1.55
+    ],
+    "phase_metrics": "all collected samples including unfinished tail; airborne episode summary includes full frame-zero completed episodes only",
+    "torque": "PD computed/applied drive torque, excludes passive collision load",
+    "force": "simulator normal net contact force excluding friction, averaged over each physics step",
+    "statistical_scope": "single environment, seed42; randomized startup mass/friction/COM realization fixed per process, reset pose/vel/gains/noise/delay vary; repeated nominal cycles are deterministic"
+  },
+  "cases": {
+    "zero-delay": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-20261010-001/raw/zero-delay-a01/result.json",
+        "sha256": "dddcfbe780ac1a85159ccc97f477f71ae2135b7e32fc70f372e863bd1a03078f"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-20261010-001/raw/zero-delay-a01/telemetry.json.gz",
+        "sha256": "d86cfe2d26148d986f1562cfa1e19ecb39d98d84ebf9effd7c0f6799eae8a1e9"
+      },
+      "episodes": [
+        {
+          "episode_id": 0,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 1,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 2,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 3,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 4,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 5,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 6,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 7,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 8,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 9,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        },
+        {
+          "episode_id": 10,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 2435.2237854003906,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5810022354125977
+        }
+      ],
+      "phases": {
+        "preparation": {
+          "control_samples": 780,
+          "physics_samples": 3120,
+          "body_position_rmse_m": 0.023981848011352964,
+          "position_joint_rmse_rad": 0.08870249068687963,
+          "wheel_velocity_rmse_rad_s": 1.3722505701773149,
+          "anchor_orientation_rmse_rad": 0.04964013313870175,
+          "max_wheel_summed_Fz_N": 0.0,
+          "max_single_foot_force_norm_N": 340.19955444336244,
+          "both_wheels_contact_fraction": 0.0,
+          "any_wheel_contact_fraction": 0.0,
+          "any_foot_contact_fraction": 1.0,
+          "max_applied_effort_utilization": 0.7729025522867838,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "reference_flight": {
+          "control_samples": 156,
+          "physics_samples": 600,
+          "body_position_rmse_m": 0.07429358667349796,
+          "position_joint_rmse_rad": 0.3235991166573545,
+          "wheel_velocity_rmse_rad_s": 6.6516895223527435,
+          "anchor_orientation_rmse_rad": 0.09819029495745733,
+          "max_wheel_summed_Fz_N": 1597.2197265625,
+          "max_single_foot_force_norm_N": 54.44696044921924,
+          "both_wheels_contact_fraction": 0.0,
+          "any_wheel_contact_fraction": 0.04,
+          "any_foot_contact_fraction": 0.08,
+          "max_applied_effort_utilization": 0.6409569422403971,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "landing": {
+          "control_samples": 144,
+          "physics_samples": 600,
+          "body_position_rmse_m": 0.028719254022822466,
+          "position_joint_rmse_rad": 0.1444652878076529,
+          "wheel_velocity_rmse_rad_s": 2.917416212846943,
+          "anchor_orientation_rmse_rad": 0.06452962540663679,
+          "max_wheel_summed_Fz_N": 2435.2237854003906,
+          "max_single_foot_force_norm_N": 0.0,
+          "both_wheels_contact_fraction": 0.94,
+          "any_wheel_contact_fraction": 1.0,
+          "any_foot_contact_fraction": 0.0,
+          "max_applied_effort_utilization": 0.31058375040690106,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "wheel_motion": {
+          "control_samples": 920,
+          "physics_samples": 3680,
+          "body_position_rmse_m": 0.010006457978585792,
+          "position_joint_rmse_rad": 0.04871829022613751,
+          "wheel_velocity_rmse_rad_s": 0.5589028557882216,
+          "anchor_orientation_rmse_rad": 0.050957645114015584,
+          "max_wheel_summed_Fz_N": 341.5763854980469,
+          "max_single_foot_force_norm_N": 0.0,
+          "both_wheels_contact_fraction": 1.0,
+          "any_wheel_contact_fraction": 1.0,
+          "any_foot_contact_fraction": 0.0,
+          "max_applied_effort_utilization": 0.24075417518615722,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        }
+      },
+      "airborne_duration_s_by_threshold_N": {
+        "1": {
+          "min": 0.22,
+          "median": 0.22,
+          "max": 0.22
+        },
+        "5": {
+          "min": 0.22,
+          "median": 0.22,
+          "max": 0.22
+        },
+        "10": {
+          "min": 0.22,
+          "median": 0.22,
+          "max": 0.22
+        }
+      },
+      "wheel_Fz_peak_N_all_cycles": {
+        "min": 2435.2237854003906,
+        "median": 2435.2237854003906,
+        "max": 2435.2237854003906
+      },
+      "global_wheel_peak": {
+        "N": 2435.2237854003906,
+        "episode_id": 0,
+        "interval_start_s": 1.565
+      },
+      "computed_over_limit_by_joint": {
+        "left_hip_joint": 0,
+        "right_hip_joint": 0,
+        "left_thigh_joint": 0,
+        "right_thigh_joint": 0,
+        "left_shank_joint": 0,
+        "right_shank_joint": 0,
+        "left_foot_joint": 0,
+        "left_wheel_joint": 0,
+        "right_foot_joint": 0,
+        "right_wheel_joint": 0
+      },
+      "computed_over_limit_time_range_s": null,
+      "computed_over_limit_records": [],
+      "observation_history_reset_checks": 12
+    },
+    "play-equivalent": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-retry-20261010-002/raw/play-equivalent-a02/result.json",
+        "sha256": "2dae023090238027dc4bb86645868559249444159eb3f14a335479747b2cd0eb"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-retry-20261010-002/raw/play-equivalent-a02/telemetry.json.gz",
+        "sha256": "0867cc19a29fd11bb3dfb49b12de563d456c9a6ed1381e01b1d2ef827de1ff0e"
+      },
+      "episodes": [
+        {
+          "episode_id": 0,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.225
+            }
+          },
+          "wheel_Fz_peak_N": 2329.7677612304688,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5643160343170166
+        },
+        {
+          "episode_id": 1,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.225
+            }
+          },
+          "wheel_Fz_peak_N": 1542.1692199707031,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.573176860809326
+        },
+        {
+          "episode_id": 2,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.545,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2374.887664794922,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 2.8449864387512207
+        },
+        {
+          "episode_id": 3,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            }
+          },
+          "wheel_Fz_peak_N": 2162.530471801758,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 2.825796127319336
+        },
+        {
+          "episode_id": 4,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.545,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 1970.92724609375,
+          "wheel_Fz_peak_interval_start_s": 1.545,
+          "wheel_downward_speed_before_max_m_s": 2.6683876514434814
+        },
+        {
+          "episode_id": 5,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.325,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.225
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2447.3971252441406,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.012857675552368
+        },
+        {
+          "episode_id": 6,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.325,
+              "end_s": 1.545,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            }
+          },
+          "wheel_Fz_peak_N": 2552.0792846679688,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.677351713180542
+        },
+        {
+          "episode_id": 7,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.545,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2435.736328125,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.5625481605529785
+        },
+        {
+          "episode_id": 8,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.325,
+              "end_s": 1.545,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.545,
+              "duration_s": 0.225
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.545,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2364.3199462890625,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 2.665219783782959
+        },
+        {
+          "episode_id": 9,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.225
+            }
+          },
+          "wheel_Fz_peak_N": 2311.068115234375,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 2.5698258876800537
+        },
+        {
+          "episode_id": 10,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2651.529754638672,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.017632484436035
+        }
+      ],
+      "phases": {
+        "preparation": {
+          "control_samples": 780,
+          "physics_samples": 3120,
+          "body_position_rmse_m": 0.023038725203046753,
+          "position_joint_rmse_rad": 0.08461338071108883,
+          "wheel_velocity_rmse_rad_s": 1.3373164961140545,
+          "anchor_orientation_rmse_rad": 0.05000861978051681,
+          "max_wheel_summed_Fz_N": 0.0,
+          "max_single_foot_force_norm_N": 347.9857177734406,
+          "both_wheels_contact_fraction": 0.0,
+          "any_wheel_contact_fraction": 0.0,
+          "any_foot_contact_fraction": 1.0,
+          "max_applied_effort_utilization": 0.7911442438761394,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "reference_flight": {
+          "control_samples": 156,
+          "physics_samples": 600,
+          "body_position_rmse_m": 0.07146369262166491,
+          "position_joint_rmse_rad": 0.300177440603125,
+          "wheel_velocity_rmse_rad_s": 6.5854716231544845,
+          "anchor_orientation_rmse_rad": 0.10725116054405932,
+          "max_wheel_summed_Fz_N": 2009.389892578125,
+          "max_single_foot_force_norm_N": 170.37515258789216,
+          "both_wheels_contact_fraction": 0.0,
+          "any_wheel_contact_fraction": 0.02,
+          "any_foot_contact_fraction": 0.08,
+          "max_applied_effort_utilization": 0.7822603861490885,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "landing": {
+          "control_samples": 144,
+          "physics_samples": 600,
+          "body_position_rmse_m": 0.029358577208099916,
+          "position_joint_rmse_rad": 0.14741942515017817,
+          "wheel_velocity_rmse_rad_s": 2.561343718600921,
+          "anchor_orientation_rmse_rad": 0.06718661863395176,
+          "max_wheel_summed_Fz_N": 2651.529754638672,
+          "max_single_foot_force_norm_N": 0.0,
+          "both_wheels_contact_fraction": 0.9533333333333334,
+          "any_wheel_contact_fraction": 0.9966666666666667,
+          "any_foot_contact_fraction": 0.0,
+          "max_applied_effort_utilization": 0.43620738983154295,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "wheel_motion": {
+          "control_samples": 920,
+          "physics_samples": 3680,
+          "body_position_rmse_m": 0.012014118646431838,
+          "position_joint_rmse_rad": 0.06756779230678299,
+          "wheel_velocity_rmse_rad_s": 1.3423951365275428,
+          "anchor_orientation_rmse_rad": 0.05578771668492706,
+          "max_wheel_summed_Fz_N": 905.52587890625,
+          "max_single_foot_force_norm_N": 0.0,
+          "both_wheels_contact_fraction": 1.0,
+          "any_wheel_contact_fraction": 1.0,
+          "any_foot_contact_fraction": 0.0,
+          "max_applied_effort_utilization": 0.3807420094807943,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        }
+      },
+      "airborne_duration_s_by_threshold_N": {
+        "1": {
+          "min": 0.22,
+          "median": 0.225,
+          "max": 0.23
+        },
+        "5": {
+          "min": 0.22,
+          "median": 0.225,
+          "max": 0.23
+        },
+        "10": {
+          "min": 0.225,
+          "median": 0.23,
+          "max": 0.23
+        }
+      },
+      "wheel_Fz_peak_N_all_cycles": {
+        "min": 1542.1692199707031,
+        "median": 2364.3199462890625,
+        "max": 2651.529754638672
+      },
+      "global_wheel_peak": {
+        "N": 2651.529754638672,
+        "episode_id": 10,
+        "interval_start_s": 1.56
+      },
+      "computed_over_limit_by_joint": {
+        "left_hip_joint": 0,
+        "right_hip_joint": 0,
+        "left_thigh_joint": 0,
+        "right_thigh_joint": 0,
+        "left_shank_joint": 0,
+        "right_shank_joint": 0,
+        "left_foot_joint": 0,
+        "left_wheel_joint": 0,
+        "right_foot_joint": 0,
+        "right_wheel_joint": 0
+      },
+      "computed_over_limit_time_range_s": null,
+      "computed_over_limit_records": [],
+      "observation_history_reset_checks": 12
+    },
+    "fixed-15ms": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-retry-20261010-002/raw/fixed-15ms-a02/result.json",
+        "sha256": "110598bff0106f45012aecc71c44ba40cf895563df46547c331ac89eb2393640"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-retry-20261010-002/raw/fixed-15ms-a02/telemetry.json.gz",
+        "sha256": "94ae717c2725f7fcb4f52bb909e15fb8356e161568722b5eb0a38baf0aa99973"
+      },
+      "episodes": [
+        {
+          "episode_id": 0,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2435.923797607422,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.0242509841918945
+        },
+        {
+          "episode_id": 1,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 2,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 3,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 4,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 5,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 6,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 7,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 8,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 9,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        },
+        {
+          "episode_id": 10,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5499999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 2423.4931640625,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 3.023754835128784
+        }
+      ],
+      "phases": {
+        "preparation": {
+          "control_samples": 780,
+          "physics_samples": 3120,
+          "body_position_rmse_m": 0.02231880340081111,
+          "position_joint_rmse_rad": 0.08260197604262819,
+          "wheel_velocity_rmse_rad_s": 1.2692193137827565,
+          "anchor_orientation_rmse_rad": 0.05015634616618211,
+          "max_wheel_summed_Fz_N": 0.0,
+          "max_single_foot_force_norm_N": 345.1326599121125,
+          "both_wheels_contact_fraction": 0.0,
+          "any_wheel_contact_fraction": 0.0,
+          "any_foot_contact_fraction": 1.0,
+          "max_applied_effort_utilization": 0.7871411005655925,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "reference_flight": {
+          "control_samples": 156,
+          "physics_samples": 600,
+          "body_position_rmse_m": 0.06846686578119852,
+          "position_joint_rmse_rad": 0.27422545511586194,
+          "wheel_velocity_rmse_rad_s": 6.46996173092823,
+          "anchor_orientation_rmse_rad": 0.12329795113063859,
+          "max_wheel_summed_Fz_N": 0.0,
+          "max_single_foot_force_norm_N": 167.93423461914213,
+          "both_wheels_contact_fraction": 0.0,
+          "any_wheel_contact_fraction": 0.0,
+          "any_foot_contact_fraction": 0.08,
+          "max_applied_effort_utilization": 0.777798843383789,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "landing": {
+          "control_samples": 144,
+          "physics_samples": 600,
+          "body_position_rmse_m": 0.026225614664375577,
+          "position_joint_rmse_rad": 0.136710299256219,
+          "wheel_velocity_rmse_rad_s": 2.5091373894857782,
+          "anchor_orientation_rmse_rad": 0.018687419966385867,
+          "max_wheel_summed_Fz_N": 2435.923797607422,
+          "max_single_foot_force_norm_N": 0.0,
+          "both_wheels_contact_fraction": 0.96,
+          "any_wheel_contact_fraction": 1.0,
+          "any_foot_contact_fraction": 0.0,
+          "max_applied_effort_utilization": 0.26300085385640465,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "wheel_motion": {
+          "control_samples": 920,
+          "physics_samples": 3680,
+          "body_position_rmse_m": 0.012131677966927186,
+          "position_joint_rmse_rad": 0.06850387709057591,
+          "wheel_velocity_rmse_rad_s": 0.4466857341504843,
+          "anchor_orientation_rmse_rad": 0.016230030606612933,
+          "max_wheel_summed_Fz_N": 359.0587921142578,
+          "max_single_foot_force_norm_N": 0.0,
+          "both_wheels_contact_fraction": 1.0,
+          "any_wheel_contact_fraction": 1.0,
+          "any_foot_contact_fraction": 0.0,
+          "max_applied_effort_utilization": 0.18203539848327638,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        }
+      },
+      "airborne_duration_s_by_threshold_N": {
+        "1": {
+          "min": 0.23,
+          "median": 0.23,
+          "max": 0.23
+        },
+        "5": {
+          "min": 0.23,
+          "median": 0.23,
+          "max": 0.23
+        },
+        "10": {
+          "min": 0.23,
+          "median": 0.23,
+          "max": 0.23
+        }
+      },
+      "wheel_Fz_peak_N_all_cycles": {
+        "min": 2423.4931640625,
+        "median": 2423.4931640625,
+        "max": 2435.923797607422
+      },
+      "global_wheel_peak": {
+        "N": 2435.923797607422,
+        "episode_id": 0,
+        "interval_start_s": 1.56
+      },
+      "computed_over_limit_by_joint": {
+        "left_hip_joint": 0,
+        "right_hip_joint": 0,
+        "left_thigh_joint": 0,
+        "right_thigh_joint": 0,
+        "left_shank_joint": 0,
+        "right_shank_joint": 0,
+        "left_foot_joint": 0,
+        "left_wheel_joint": 0,
+        "right_foot_joint": 0,
+        "right_wheel_joint": 0
+      },
+      "computed_over_limit_time_range_s": null,
+      "computed_over_limit_records": [],
+      "observation_history_reset_checks": 12
+    },
+    "training-randomized": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-20261010-001/raw/training-randomized-a01/result.json",
+        "sha256": "96ae372ac0c478dee56d1f4dbbb50f7ded2a5f9fdee02329ea93a20e32764ba8"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evaluations/latest49999-reference1009-20261010-001/raw/training-randomized-a01/telemetry.json.gz",
+        "sha256": "65a224dcb8edefc831ea25f9fcdad25ac5ced26f395cd54c6e5151ee2f86df1a"
+      },
+      "episodes": [
+        {
+          "episode_id": 0,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.525,
+              "duration_s": 0.20500000000000002
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.525,
+              "duration_s": 0.20500000000000002
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.525,
+              "duration_s": 0.20500000000000002
+            }
+          },
+          "wheel_Fz_peak_N": 1384.7257080078125,
+          "wheel_Fz_peak_interval_start_s": 1.525,
+          "wheel_downward_speed_before_max_m_s": 3.448655843734741
+        },
+        {
+          "episode_id": 1,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.315,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.225
+            },
+            "5": {
+              "start_s": 1.315,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.225
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.225
+            }
+          },
+          "wheel_Fz_peak_N": 1937.300537109375,
+          "wheel_Fz_peak_interval_start_s": 1.54,
+          "wheel_downward_speed_before_max_m_s": 3.1535916328430176
+        },
+        {
+          "episode_id": 2,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.325,
+              "end_s": 1.5699999999999998,
+              "duration_s": 0.245
+            },
+            "5": {
+              "start_s": 1.325,
+              "end_s": 1.5699999999999998,
+              "duration_s": 0.245
+            },
+            "10": {
+              "start_s": 1.325,
+              "end_s": 1.5699999999999998,
+              "duration_s": 0.245
+            }
+          },
+          "wheel_Fz_peak_N": 2339.4142150878906,
+          "wheel_Fz_peak_interval_start_s": 1.58,
+          "wheel_downward_speed_before_max_m_s": 2.4211788177490234
+        },
+        {
+          "episode_id": 3,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.315,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.225
+            },
+            "5": {
+              "start_s": 1.31,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.23
+            },
+            "10": {
+              "start_s": 1.31,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.23
+            }
+          },
+          "wheel_Fz_peak_N": 1935.2783203125,
+          "wheel_Fz_peak_interval_start_s": 1.545,
+          "wheel_downward_speed_before_max_m_s": 2.9869706630706787
+        },
+        {
+          "episode_id": 4,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5599999999999998,
+              "duration_s": 0.24
+            },
+            "5": {
+              "start_s": 1.315,
+              "end_s": 1.5599999999999998,
+              "duration_s": 0.245
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.5599999999999998,
+              "duration_s": 0.245
+            }
+          },
+          "wheel_Fz_peak_N": 3106.907470703125,
+          "wheel_Fz_peak_interval_start_s": 1.565,
+          "wheel_downward_speed_before_max_m_s": 3.0213210582733154
+        },
+        {
+          "episode_id": 5,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.31,
+              "end_s": 1.5599999999999998,
+              "duration_s": 0.25
+            },
+            "5": {
+              "start_s": 1.31,
+              "end_s": 1.5599999999999998,
+              "duration_s": 0.25
+            },
+            "10": {
+              "start_s": 1.31,
+              "end_s": 1.5599999999999998,
+              "duration_s": 0.25
+            }
+          },
+          "wheel_Fz_peak_N": 3739.7044677734375,
+          "wheel_Fz_peak_interval_start_s": 1.56,
+          "wheel_downward_speed_before_max_m_s": 2.5439417362213135
+        },
+        {
+          "episode_id": 6,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.5799999999999998,
+              "duration_s": 0.26
+            },
+            "5": {
+              "start_s": 1.315,
+              "end_s": 1.5799999999999998,
+              "duration_s": 0.265
+            },
+            "10": {
+              "start_s": 1.315,
+              "end_s": 1.5799999999999998,
+              "duration_s": 0.265
+            }
+          },
+          "wheel_Fz_peak_N": 3536.9638671875,
+          "wheel_Fz_peak_interval_start_s": 1.58,
+          "wheel_downward_speed_before_max_m_s": 2.470684289932251
+        },
+        {
+          "episode_id": 7,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.33,
+              "end_s": 1.545,
+              "duration_s": 0.215
+            },
+            "5": {
+              "start_s": 1.33,
+              "end_s": 1.545,
+              "duration_s": 0.215
+            },
+            "10": {
+              "start_s": 1.33,
+              "end_s": 1.545,
+              "duration_s": 0.215
+            }
+          },
+          "wheel_Fz_peak_N": 2084.5933380126953,
+          "wheel_Fz_peak_interval_start_s": 1.57,
+          "wheel_downward_speed_before_max_m_s": 3.3004238605499268
+        },
+        {
+          "episode_id": 8,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.32,
+              "end_s": 1.555,
+              "duration_s": 0.23500000000000001
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.555,
+              "duration_s": 0.23500000000000001
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.555,
+              "duration_s": 0.23500000000000001
+            }
+          },
+          "wheel_Fz_peak_N": 1844.556640625,
+          "wheel_Fz_peak_interval_start_s": 1.555,
+          "wheel_downward_speed_before_max_m_s": 2.503493070602417
+        },
+        {
+          "episode_id": 9,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.325,
+              "end_s": 1.535,
+              "duration_s": 0.21
+            },
+            "5": {
+              "start_s": 1.325,
+              "end_s": 1.535,
+              "duration_s": 0.21
+            },
+            "10": {
+              "start_s": 1.325,
+              "end_s": 1.535,
+              "duration_s": 0.21
+            }
+          },
+          "wheel_Fz_peak_N": 1281.3133239746094,
+          "wheel_Fz_peak_interval_start_s": 1.555,
+          "wheel_downward_speed_before_max_m_s": 3.3190011978149414
+        },
+        {
+          "episode_id": 10,
+          "success": true,
+          "end_frame": 166,
+          "airborne_by_threshold_N": {
+            "1": {
+              "start_s": 1.33,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.21
+            },
+            "5": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            },
+            "10": {
+              "start_s": 1.32,
+              "end_s": 1.5399999999999998,
+              "duration_s": 0.22
+            }
+          },
+          "wheel_Fz_peak_N": 1811.2213134765625,
+          "wheel_Fz_peak_interval_start_s": 1.54,
+          "wheel_downward_speed_before_max_m_s": 3.158437967300415
+        }
+      ],
+      "phases": {
+        "preparation": {
+          "control_samples": 780,
+          "physics_samples": 3120,
+          "body_position_rmse_m": 0.05240927617103761,
+          "position_joint_rmse_rad": 0.15473016129493208,
+          "wheel_velocity_rmse_rad_s": 1.4722173873218656,
+          "anchor_orientation_rmse_rad": 0.14482942819969705,
+          "max_wheel_summed_Fz_N": 0.0,
+          "max_single_foot_force_norm_N": 1942.8032226562675,
+          "both_wheels_contact_fraction": 0.0,
+          "any_wheel_contact_fraction": 0.0,
+          "any_foot_contact_fraction": 0.9708333333333333,
+          "max_applied_effort_utilization": 1.0,
+          "computed_over_limit_joint_samples": 32,
+          "applied_at_limit_joint_samples": 32
+        },
+        "reference_flight": {
+          "control_samples": 156,
+          "physics_samples": 600,
+          "body_position_rmse_m": 0.07278882495584801,
+          "position_joint_rmse_rad": 0.2857421467311052,
+          "wheel_velocity_rmse_rad_s": 6.530392709559267,
+          "anchor_orientation_rmse_rad": 0.1607994676790409,
+          "max_wheel_summed_Fz_N": 1937.300537109375,
+          "max_single_foot_force_norm_N": 225.25524902343955,
+          "both_wheels_contact_fraction": 0.0033333333333333335,
+          "any_wheel_contact_fraction": 0.025,
+          "any_foot_contact_fraction": 0.08,
+          "max_applied_effort_utilization": 0.7879923502604167,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "landing": {
+          "control_samples": 144,
+          "physics_samples": 600,
+          "body_position_rmse_m": 0.031340330012305684,
+          "position_joint_rmse_rad": 0.1521045430503745,
+          "wheel_velocity_rmse_rad_s": 2.951578137336897,
+          "anchor_orientation_rmse_rad": 0.11829870622266114,
+          "max_wheel_summed_Fz_N": 3739.7044677734375,
+          "max_single_foot_force_norm_N": 189.97755676466048,
+          "both_wheels_contact_fraction": 0.94,
+          "any_wheel_contact_fraction": 0.9666666666666667,
+          "any_foot_contact_fraction": 0.0016666666666666668,
+          "max_applied_effort_utilization": 0.43751570383707683,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        },
+        "wheel_motion": {
+          "control_samples": 920,
+          "physics_samples": 3680,
+          "body_position_rmse_m": 0.011350034752869768,
+          "position_joint_rmse_rad": 0.07800419441340325,
+          "wheel_velocity_rmse_rad_s": 1.8246986330501316,
+          "anchor_orientation_rmse_rad": 0.08749538954688386,
+          "max_wheel_summed_Fz_N": 693.6553649902344,
+          "max_single_foot_force_norm_N": 0.0,
+          "both_wheels_contact_fraction": 1.0,
+          "any_wheel_contact_fraction": 1.0,
+          "any_foot_contact_fraction": 0.0,
+          "max_applied_effort_utilization": 0.33702227274576824,
+          "computed_over_limit_joint_samples": 0,
+          "applied_at_limit_joint_samples": 0
+        }
+      },
+      "airborne_duration_s_by_threshold_N": {
+        "1": {
+          "min": 0.20500000000000002,
+          "median": 0.225,
+          "max": 0.26
+        },
+        "5": {
+          "min": 0.20500000000000002,
+          "median": 0.23,
+          "max": 0.265
+        },
+        "10": {
+          "min": 0.20500000000000002,
+          "median": 0.23,
+          "max": 0.265
+        }
+      },
+      "wheel_Fz_peak_N_all_cycles": {
+        "min": 1281.3133239746094,
+        "median": 1937.300537109375,
+        "max": 3739.7044677734375
+      },
+      "global_wheel_peak": {
+        "N": 3739.7044677734375,
+        "episode_id": 5,
+        "interval_start_s": 1.56
+      },
+      "computed_over_limit_by_joint": {
+        "left_hip_joint": 0,
+        "right_hip_joint": 0,
+        "left_thigh_joint": 0,
+        "right_thigh_joint": 0,
+        "left_shank_joint": 12,
+        "right_shank_joint": 0,
+        "left_foot_joint": 14,
+        "left_wheel_joint": 0,
+        "right_foot_joint": 6,
+        "right_wheel_joint": 0
+      },
+      "computed_over_limit_time_range_s": {
+        "min": 0.09,
+        "median": 0.1825,
+        "max": 1.1749999999999998
+      },
+      "computed_over_limit_records": [
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.12,
+          "joint": "left_foot_joint",
+          "computed_Nm": 27.61948585510254,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.14,
+          "joint": "left_foot_joint",
+          "computed_Nm": 31.105854034423828,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.14500000000000002,
+          "joint": "left_foot_joint",
+          "computed_Nm": 31.31256103515625,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.15000000000000002,
+          "joint": "left_foot_joint",
+          "computed_Nm": 31.612369537353516,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.15500000000000003,
+          "joint": "left_foot_joint",
+          "computed_Nm": 32.6666259765625,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.16,
+          "joint": "left_foot_joint",
+          "computed_Nm": 33.92618179321289,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.165,
+          "joint": "left_foot_joint",
+          "computed_Nm": 34.408267974853516,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.17,
+          "joint": "left_foot_joint",
+          "computed_Nm": 35.1244010925293,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.175,
+          "joint": "left_foot_joint",
+          "computed_Nm": 35.76121139526367,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.18,
+          "joint": "left_foot_joint",
+          "computed_Nm": 34.08563232421875,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.185,
+          "joint": "left_foot_joint",
+          "computed_Nm": 34.39900207519531,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.19,
+          "joint": "left_foot_joint",
+          "computed_Nm": 34.46286392211914,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.195,
+          "joint": "left_foot_joint",
+          "computed_Nm": 34.63369369506836,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 0,
+          "interval_start_s": 0.2,
+          "joint": "left_foot_joint",
+          "computed_Nm": 27.082731246948242,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.105,
+          "joint": "left_shank_joint",
+          "computed_Nm": 121.09244537353516,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.125,
+          "joint": "left_shank_joint",
+          "computed_Nm": 134.97618103027344,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.1300000000000001,
+          "joint": "left_shank_joint",
+          "computed_Nm": 133.3046112060547,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.135,
+          "joint": "left_shank_joint",
+          "computed_Nm": 131.4919891357422,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.1400000000000001,
+          "joint": "left_shank_joint",
+          "computed_Nm": 129.78456115722656,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.145,
+          "joint": "left_shank_joint",
+          "computed_Nm": 141.24107360839844,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.1500000000000001,
+          "joint": "left_shank_joint",
+          "computed_Nm": 138.04150390625,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.155,
+          "joint": "left_shank_joint",
+          "computed_Nm": 135.4258575439453,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.16,
+          "joint": "left_shank_joint",
+          "computed_Nm": 133.25254821777344,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.1649999999999998,
+          "joint": "left_shank_joint",
+          "computed_Nm": 129.82347106933594,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.17,
+          "joint": "left_shank_joint",
+          "computed_Nm": 125.87832641601562,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 4,
+          "interval_start_s": 1.1749999999999998,
+          "joint": "left_shank_joint",
+          "computed_Nm": 123.01290130615234,
+          "applied_Nm": 120.0,
+          "limit_Nm": 120.0
+        },
+        {
+          "episode_id": 5,
+          "interval_start_s": 0.09,
+          "joint": "right_foot_joint",
+          "computed_Nm": 27.4322566986084,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 5,
+          "interval_start_s": 0.11,
+          "joint": "right_foot_joint",
+          "computed_Nm": 27.820085525512695,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 5,
+          "interval_start_s": 0.115,
+          "joint": "right_foot_joint",
+          "computed_Nm": 27.589202880859375,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 5,
+          "interval_start_s": 0.12,
+          "joint": "right_foot_joint",
+          "computed_Nm": 27.317188262939453,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 5,
+          "interval_start_s": 0.13,
+          "joint": "right_foot_joint",
+          "computed_Nm": 27.802515029907227,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        },
+        {
+          "episode_id": 5,
+          "interval_start_s": 0.135,
+          "joint": "right_foot_joint",
+          "computed_Nm": 27.25088119506836,
+          "applied_Nm": 27.0,
+          "limit_Nm": 27.0
+        }
+      ],
+      "observation_history_reset_checks": 12
+    }
+  },
+  "figure": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-10_01-25-39/evidence/motion_phase/contacts-pitch-effort-20261010-001.png",
+    "sha256": "5f6789b5abc31154702caf88af48ad964cf48ed62d7bbf49619a8431336ae039"
+  }
+}
