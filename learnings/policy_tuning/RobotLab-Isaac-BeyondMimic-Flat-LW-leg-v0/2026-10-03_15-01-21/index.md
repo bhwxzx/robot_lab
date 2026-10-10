@@ -5,6 +5,7 @@
 ## 评估批次
 
 - [landing-contact-20261004-001](<evaluations/landing-contact-20261004-001/report.md>)：4 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/landing-contact-20261004-001/manifest.json>)。
+- [unified-base1p5-pd0p9-model_49999-20261010-001](<evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/manifest.json>)。
 
 ## 原始记录与生命周期
 

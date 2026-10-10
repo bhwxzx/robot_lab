@@ -5,10 +5,12 @@
 ## 评估批次
 
 - [landing-contact-20261005-001](<evaluations/landing-contact-20261005-001/report.md>)：4 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/landing-contact-20261005-001/manifest.json>)。
+- [unified-base1p5-pd0p9-model_49999-20261010-001](<evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/manifest.json>)。
 
 ## 原始记录与生命周期
 
 - [provenance](<provenance>)
+- [events](<events>)
 - [evidence/source](<evidence/source>)
 
 旧版证据保持原位；本索引不会移动、压缩或重写已有结果。

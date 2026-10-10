@@ -10,6 +10,11 @@
 - [checkpoint-40000-20261009-001](<evaluations/checkpoint-40000-20261009-001/report.md>)：5 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/checkpoint-40000-20261009-001/manifest.json>)。
 - [checkpoint-45000-20261009-001](<evaluations/checkpoint-45000-20261009-001/report.md>)：5 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/checkpoint-45000-20261009-001/manifest.json>)。
 - [history10-newref-20261009-001](<evaluations/history10-newref-20261009-001/report.md>)：5 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/history10-newref-20261009-001/manifest.json>)。
+- [unified-base1p5-pd0p9-model_30000-20261010-001](<evaluations/unified-base1p5-pd0p9-model_30000-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/unified-base1p5-pd0p9-model_30000-20261010-001/manifest.json>)。
+- [unified-base1p5-pd0p9-model_35000-20261010-001](<evaluations/unified-base1p5-pd0p9-model_35000-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/unified-base1p5-pd0p9-model_35000-20261010-001/manifest.json>)。
+- [unified-base1p5-pd0p9-model_40000-20261010-001](<evaluations/unified-base1p5-pd0p9-model_40000-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/unified-base1p5-pd0p9-model_40000-20261010-001/manifest.json>)。
+- [unified-base1p5-pd0p9-model_45000-20261010-001](<evaluations/unified-base1p5-pd0p9-model_45000-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/unified-base1p5-pd0p9-model_45000-20261010-001/manifest.json>)。
+- [unified-base1p5-pd0p9-model_49999-20261010-001](<evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/manifest.json>)。
 
 ## 原始记录与生命周期
 
