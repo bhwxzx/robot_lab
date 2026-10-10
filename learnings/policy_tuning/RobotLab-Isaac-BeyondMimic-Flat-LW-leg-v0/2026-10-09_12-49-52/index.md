@@ -14,3 +14,8 @@
 - [events](<events>)
 
 旧版证据保持原位；本索引不会移动、压缩或重写已有结果。
+
+## 用户选择导出与归档
+
+- `model_49999.pt`（10/8参考、1.65s边界、原无roll奖励）：[选择凭证](<evidence/checkpoint_selection/selection-storage-20261010-001.json>)、[JIT/ONNX校验](<evidence/export/storage-20261010-001/receipt.json>)、[归档凭证](<evidence/export/storage-20261010-001/archive-receipt.json>)。
+- 归档位置：`policy_storage/LW/leg_to_wheel/2026-10-09-12-49-52`；包含原始60Hz CSV。
