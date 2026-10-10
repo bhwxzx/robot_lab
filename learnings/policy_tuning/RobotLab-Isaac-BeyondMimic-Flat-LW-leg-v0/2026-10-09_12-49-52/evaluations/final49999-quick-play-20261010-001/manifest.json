@@ -1,0 +1,98 @@
+{
+  "batch_id": "final49999-quick-play-20261010-001",
+  "cases": [
+    {
+      "attempt_id": "play-equivalent-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/final49999-quick-play-20261010-001/raw/play-equivalent-a01/console.log",
+        "sha256": "f8a5e76b8ace288bbcfa86a40252e38bf6f79922270487b0117480950beb8ab7"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/final49999-quick-play-20261010-001/raw/play-equivalent-a01/result.json",
+        "sha256": "72cd80e9de5b396229be06f6483186ee85bb2d2f030ba9c9bcdb872747f1e0b5"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 500,
+        "num_envs": 1,
+        "scenario_id": "play-equivalent",
+        "scenario_overrides": {
+          "commands.motion.joint_position_range": [
+            0,
+            0
+          ],
+          "commands.motion.motion_file": "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-08/leg_to_wheel_transform_50hz.npz",
+          "commands.motion.pose_range": {},
+          "commands.motion.velocity_range": {},
+          "evaluation.motion_mode": "randomized_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8f5dec53148b5229b28055b8af968d18dc757e873f1a04bd423b0e8bfc6b2a6b",
+          "events.add_joint_default_pos": null,
+          "events.base_com": null,
+          "events.physics_material": null,
+          "events.push_robot": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.leg_symmetry.params.start_time_s": 1.65,
+          "rewards.motion_anchor_roll_horizontal": null,
+          "rewards.motion_takeoff_anchor_ori.params.end_time_s": 1.65,
+          "rewards.motion_takeoff_pitch_ang_vel.params.end_time_s": 1.65,
+          "rewards.same_foot_x_position.params.start_time_s": 1.65,
+          "rewards.wheel_contact_continuous.params.start_time_s": 1.65
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/final49999-quick-play-20261010-001/contract.json",
+    "sha256": "ecdb1f16e2b4787dcd0c1f75f087cb26aafcfb1cdd0e7ec2c823aa77d9c6c452"
+  },
+  "layout_version": 2,
+  "notes": [
+    "这是 final49999 的单场景、单 seed、500步有限评估；不等同五场景正式比较或收敛判断。",
+    "原训练 HEAD 为 0eb1b88 加保存的 flat 配置 diff；本次评估 HEAD 为 2b2bb9e。运行时恢复10/8参考、五个1.65秒边界，并禁用后来新增的roll奖励；源码保持当前配置。",
+    "Play等效关闭观测噪声、起始扰动和事件随机化，保留原actuator delay；不等同零延迟组。",
+    "完整周期指标：{\"action_rate_rms\": 0.2047144288410587, \"anchor_orientation_rmse_rad\": 0.039723822824310986, \"anchor_position_rmse_m\": 0.04178712033297485, \"body_orientation_rmse_rad\": 0.08134083585164616, \"body_position_rmse_m\": 0.02836623194157289, \"censored_episodes\": 1, \"completed_episodes\": 2, \"failed_episodes\": 0, \"frame_zero_completed_episodes\": 2, \"frame_zero_success_fraction\": 1.0, \"frame_zero_successful_episodes\": 2, \"max_abs_action\": 14.469882011413574, \"max_abs_applied_torque\": 93.82344055175781, \"max_joint_effort_utilization\": 0.7818620045979817, \"mean_reward\": 0.10087057812511921, \"motion_success_fraction\": 1.0, \"position_joint_rmse_rad\": 0.11177788998950529, \"real_time_factor\": 0.3672154951051251, \"successful_motion_episodes\": 2, \"termination_count_anchor_ori\": 0, \"termination_count_anchor_pos\": 0, \"termination_count_ee_body_pos\": 0, \"termination_count_motion_finished\": 2, \"termination_count_time_out\": 0, \"torque_saturation_sample_fraction\": 0.0, \"wheel_velocity_rmse_rad_s\": 3.116299200204891}",
+    "分阶段遥测：{\"phase\": \"preparation\", \"reference_time_start_s\": 0.0, \"reference_time_end_s\": 1.0, \"physics_samples\": 400, \"control_samples\": 100, \"foot_max_abs_applied_nm\": 5.96064567565918, \"foot_max_abs_computed_nm\": 5.96064567565918, \"foot_computed_over_limit_fraction\": 0.0, \"shank_max_abs_applied_nm\": 33.638572692871094, \"max_single_foot_normal_force_n\": 167.20516967773588, \"max_summed_wheel_normal_force_z_n\": 0.0, \"max_abs_roll_deg\": 2.0295021367518165, \"roll_rms_deg\": 0.7016896745376103}",
+    "分阶段遥测：{\"phase\": \"push_off\", \"reference_time_start_s\": 1.0, \"reference_time_end_s\": 1.3, \"physics_samples\": 120, \"control_samples\": 30, \"foot_max_abs_applied_nm\": 9.078542709350586, \"foot_max_abs_computed_nm\": 9.078542709350586, \"foot_computed_over_limit_fraction\": 0.0, \"shank_max_abs_applied_nm\": 98.3580093383789, \"max_single_foot_normal_force_n\": 345.6741943359406, \"max_summed_wheel_normal_force_z_n\": 0.0, \"max_abs_roll_deg\": 2.8985611316102182, \"roll_rms_deg\": 1.757732435324136}",
+    "分阶段遥测：{\"phase\": \"reference_flight\", \"reference_time_start_s\": 1.3, \"reference_time_end_s\": 1.6, \"physics_samples\": 120, \"control_samples\": 30, \"foot_max_abs_applied_nm\": 9.710338592529297, \"foot_max_abs_computed_nm\": 9.710338592529297, \"foot_computed_over_limit_fraction\": 0.0, \"shank_max_abs_applied_nm\": 75.13914489746094, \"max_single_foot_normal_force_n\": 106.26186370849705, \"max_summed_wheel_normal_force_z_n\": 2448.6363220214844, \"max_abs_roll_deg\": 3.1879412026746405, \"roll_rms_deg\": 2.4589629800439456}",
+    "分阶段遥测：{\"phase\": \"landing\", \"reference_time_start_s\": 1.6, \"reference_time_end_s\": 1.8, \"physics_samples\": 80, \"control_samples\": 20, \"foot_max_abs_applied_nm\": 2.9407260417938232, \"foot_max_abs_computed_nm\": 2.9407260417938232, \"foot_computed_over_limit_fraction\": 0.0, \"shank_max_abs_applied_nm\": 38.10191345214844, \"max_single_foot_normal_force_n\": 0.0, \"max_summed_wheel_normal_force_z_n\": 617.7987670898438, \"max_abs_roll_deg\": 0.8661328821137091, \"roll_rms_deg\": 0.4729294444027822}",
+    "分阶段遥测：{\"phase\": \"wheel\", \"reference_time_start_s\": 1.8, \"reference_time_end_s\": null, \"physics_samples\": 640, \"control_samples\": 160, \"foot_max_abs_applied_nm\": 0.7792357206344604, \"foot_max_abs_computed_nm\": 0.7792357206344604, \"foot_computed_over_limit_fraction\": 0.0, \"shank_max_abs_applied_nm\": 16.104005813598633, \"max_single_foot_normal_force_n\": 0.0, \"max_summed_wheel_normal_force_z_n\": 468.98988342285156, \"max_abs_roll_deg\": 0.9855763518792697, \"roll_rms_deg\": 0.41539918004633614}",
+    "腾空操作定义与阈值敏感性：[{\"episode_id\": 0, \"threshold_n\": 1.0, \"duration_s\": 0.255, \"first_air_sample_reference_time_s\": 1.325}, {\"episode_id\": 0, \"threshold_n\": 10.0, \"duration_s\": 0.255, \"first_air_sample_reference_time_s\": 1.325}, {\"episode_id\": 1, \"threshold_n\": 1.0, \"duration_s\": 0.26, \"first_air_sample_reference_time_s\": 1.325}, {\"episode_id\": 1, \"threshold_n\": 10.0, \"duration_s\": 0.26, \"first_air_sample_reference_time_s\": 1.325}]",
+    "5 ms PhysX net normal contact forces; averages over the physics step, excluding friction. Not physical hardware impact peaks. PD applied/computed drive torque, excluding passive impact/internal loads."
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "根据本次完整周期和分阶段数据讨论参数候选；扩大到五场景或其他checkpoint需要另定范围。不能把训练完成或本次完成率视作全面最优。"
+  ],
+  "report": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/final49999-quick-play-20261010-001/report.md",
+    "sha256": "d3e866ddc0cd910c17f42740e223ee85d6ee5a0154d77707cb40a03406ea440f"
+  },
+  "repository_root": "/home/young/liufengrong/robot_lab",
+  "run_id": "2026-10-09_12-49-52",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evidence/training/quick-play-preflight-20261010-001.json",
+      "sha256": "035b81470cb49962f54a3fad98b38bfcc263797ff867719d840b8dc60a5c8cc0"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/final49999-quick-play-20261010-001/resource-observations.json",
+      "sha256": "ec429ba52e0f0c3a43696df07d241eafa92d4b28a3bf1677704a97a99310e0ab"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/final49999-quick-play-20261010-001/phase-analysis.json",
+      "sha256": "1ce13a7c48b616690b60f0da5c5fa81abd188b4540d40ea1d087fc6fb1090fd1"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0",
+  "version": 1
+}
