@@ -174,6 +174,8 @@ def wheel_contact_continuous(
     start_time_s: float,
     min_contact_force: float,
     stable_contact_time: float,
+    end_time_s: float | None = None,
+    ramp_time_s: float = 0.2,
 ) -> torch.Tensor:
     """Reward sustained bilateral wheel support in the reference's wheel phase.
 
@@ -182,6 +184,9 @@ def wheel_contact_continuous(
     world-z forces must also exceed the threshold on both wheels. The shorter
     contact duration ramps to one; larger forces and wheel speed earn no bonus.
     Requires exactly two sensor bodies and ``track_air_time=True``.
+    With an end time, fade support out over the final ``ramp_time_s`` instead
+    of rewarding support indefinitely after the start time. Set ``ramp_time_s``
+    to zero to switch off at the end time without a phase fade.
     """
     if start_time_s < 0.0 or min_contact_force < 0.0 or stable_contact_time <= 0.0:
         raise ValueError("Wheel contact reward requires nonnegative start/force and positive stable contact time.")
@@ -200,6 +205,14 @@ def wheel_contact_continuous(
     continuity = torch.clamp(contact_time.min(dim=-1).values / stable_contact_time, min=0.0, max=1.0)
     start_frame = math.ceil(start_time_s * command.motion.fps.item())
     wheel_phase = command.time_steps >= start_frame
+    if end_time_s is not None:
+        if not math.isfinite(end_time_s) or end_time_s <= start_time_s:
+            raise ValueError("Wheel contact reward requires a finite end time after the start.")
+        if ramp_time_s == 0.0:
+            end_frame = math.ceil(end_time_s * command.motion.fps.item())
+            wheel_phase = wheel_phase & (command.time_steps < end_frame)
+        else:
+            wheel_phase = _wheel_phase_weight(env, command_name, start_time_s, ramp_time_s, end_time_s)
     return continuity * both_supported * wheel_phase
 
 
@@ -208,18 +221,28 @@ def _wheel_phase_weight(
     command_name: str,
     start_time_s: float,
     ramp_time_s: float,
+    end_time_s: float | None = None,
 ) -> torch.Tensor:
-    """Blend wheel-phase terms using reference progress, including after contact loss."""
+    """Fade in after the start, or fade out before an optional end, in reference time."""
     if not math.isfinite(start_time_s) or start_time_s < 0.0:
         raise ValueError("Wheel phase rewards require a finite, nonnegative start time.")
     if not math.isfinite(ramp_time_s) or ramp_time_s <= 0.0:
         raise ValueError("Wheel phase rewards require a finite, positive ramp duration.")
+    if end_time_s is not None:
+        if not math.isfinite(end_time_s) or end_time_s <= start_time_s:
+            raise ValueError("Wheel phase rewards require a finite end time after the start.")
+        if ramp_time_s > end_time_s - start_time_s:
+            raise ValueError("Wheel phase fade-out must fit within the reward interval.")
 
     command: MotionCommand = env.command_manager.get_term(command_name)
     fps = float(command.motion.fps.item())
     if not math.isfinite(fps) or fps <= 0.0:
         raise ValueError("Wheel phase rewards require a finite, positive reference frame rate.")
     reference_time = command.time_steps / fps
+    if end_time_s is not None:
+        blend = torch.clamp((end_time_s - reference_time) / ramp_time_s, min=0.0, max=1.0)
+        start_frame = math.ceil(start_time_s * fps)
+        return blend.square() * (3.0 - 2.0 * blend) * (command.time_steps >= start_frame)
     blend = torch.clamp((reference_time - start_time_s) / ramp_time_s, min=0.0, max=1.0)
     return blend.square() * (3.0 - 2.0 * blend)
 
@@ -230,12 +253,13 @@ def _wheel_phase_geometry_weight(
     asset_cfg: SceneEntityCfg,
     start_time_s: float,
     ramp_time_s: float,
+    end_time_s: float | None = None,
 ) -> torch.Tensor:
-    """Select bilateral wheel geometry and blend it after the reference landing."""
+    """Select bilateral wheel geometry and apply its reference-time phase weight."""
     asset: Articulation = env.scene[asset_cfg.name]
     if asset.data.body_link_pos_w[:, asset_cfg.body_ids].shape[1] != 2:
         raise ValueError("Wheel geometry rewards require exactly two wheel bodies in asset_cfg.")
-    return _wheel_phase_weight(env, command_name, start_time_s, ramp_time_s)
+    return _wheel_phase_weight(env, command_name, start_time_s, ramp_time_s, end_time_s)
 
 
 def wheel_phase_joint_velocity_l2(
@@ -305,9 +329,10 @@ def wheel_phase_same_feet_x_position(
     asset_cfg: SceneEntityCfg,
     start_time_s: float,
     ramp_time_s: float,
+    end_time_s: float | None = None,
 ) -> torch.Tensor:
     """Penalize base-frame wheel fore-aft separation with a negative reward weight."""
-    blend = _wheel_phase_geometry_weight(env, command_name, asset_cfg, start_time_s, ramp_time_s)
+    blend = _wheel_phase_geometry_weight(env, command_name, asset_cfg, start_time_s, ramp_time_s, end_time_s)
     return blend * _locomotion_same_feet_x_position(env, asset_cfg=asset_cfg)
 
 

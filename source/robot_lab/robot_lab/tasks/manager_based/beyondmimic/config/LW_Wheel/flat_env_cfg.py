@@ -4,10 +4,11 @@
 import os
 
 from isaaclab.utils import configclass
+from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 
 from robot_lab.assets.LW import LW_WHEEL_CFG  
-from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import TrackingEnvCfg
+from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import RewardsCfg, TrackingEnvCfg
 import robot_lab.tasks.manager_based.beyondmimic.mdp as mdp
 from robot_lab.tasks.manager_based.locomotion.velocity.mdp.noise import UniformJointPositionNoiseCfg
 
@@ -23,9 +24,21 @@ class LWActionsCfg:
     )
 
 @configclass
+class LWWheelRewardsCfg(RewardsCfg):
+    """Hip alignment for the wheel-to-leg transition."""
+
+    hip_pos_zero_l2 = RewTerm(
+        func=mdp.joint_pos_zero_l2,
+        weight=-1.0,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_hip_joint", "left_hip_joint"])},
+    )
+
+
+@configclass
 class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
 
     actions: LWActionsCfg = LWActionsCfg()
+    rewards: LWWheelRewardsCfg = LWWheelRewardsCfg()
 
     base_link_name = "base_link"
     foot_link_name = ".*_foot_link"
@@ -50,6 +63,8 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         # scene
         self.scene.robot = LW_WHEEL_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         # observations
+        self.observations.policy.history_length = 10
+        self.observations.policy.flatten_history_dim = True
         self.observations.policy.motion_anchor_pos_b = None
         self.observations.policy.base_lin_vel = None
         self.observations.policy.joint_pos.func = mdp.joint_pos_rel_without_wheel
@@ -79,20 +94,62 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         # events
         self.events.add_joint_default_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.events.base_com.params["asset_cfg"].body_names = self.base_link_name
+        self.events.randomize_rigid_body_mass_base.params["asset_cfg"].body_names = [self.base_link_name]
+        # Keep link mass scaling from overwriting the base payload randomization.
+        self.events.randomize_rigid_body_mass_others.params["asset_cfg"].body_names = [
+            "right_hip_link",
+            "left_hip_link",
+            "right_thigh_link",
+            "left_thigh_link",
+            "right_shank_link",
+            "left_shank_link",
+            "right_foot_link",
+            "left_foot_link",
+            "right_wheel_link",
+            "left_wheel_link",
+        ]
+        self.events.push_robot = None
         # rewards
-        self.rewards.action_rate_l2.weight = -0.02
-        self.rewards.action_smoothness.weight = -0.02
+        # Track the reference attitude through takeoff and flight, fading out after landing.
+        self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.03
+        self.rewards.motion_takeoff_pitch_ang_vel.params["start_time_s"] = 1.0
+        self.rewards.motion_takeoff_pitch_ang_vel.params["end_time_s"] = 1.65
+        self.rewards.motion_takeoff_pitch_ang_vel.params["ramp_time_s"] = 0.1
+        self.rewards.motion_takeoff_anchor_ori.weight = 0.5
+        self.rewards.motion_takeoff_anchor_ori.params["std"] = 0.3
+        self.rewards.motion_takeoff_anchor_ori.params["start_time_s"] = 1.0
+        self.rewards.motion_takeoff_anchor_ori.params["end_time_s"] = 1.65
+        self.rewards.motion_takeoff_anchor_ori.params["ramp_time_s"] = 0.1
+        self.rewards.action_rate_l2.weight = -0.2
+        self.rewards.action_smoothness.weight = -0.075
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
-        self.rewards.torque_limit.weight = -0.1
-        self.rewards.joint_vel_wheel_l2.weight = -5e-2 # -5e-3
+        self.rewards.torque_limit.weight = -0.0
+        self.rewards.joint_vel_wheel_l2.weight = -0.0 # -5e-3
         self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
-        self.rewards.joint_acc_wheel_l2.weight = -1.5e-5
+        self.rewards.joint_acc_wheel_l2.weight = -0.0
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
+        # Wheel contact has no phase fade and switches off at reference time 1.25 s.
+        # At 50 Hz, frame 62 (1.24 s) is the last nonzero frame; frame 63 is disabled.
+        self.rewards.wheel_contact_continuous.weight = 0.5
+        self.rewards.wheel_contact_continuous.params["sensor_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
+        self.rewards.wheel_contact_continuous.params["start_time_s"] = 0.0
+        self.rewards.wheel_contact_continuous.params["end_time_s"] = 1.25
+        self.rewards.wheel_contact_continuous.params["ramp_time_s"] = 0.0
+        self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
+        self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
+        self.rewards.leg_symmetry.weight = 0.0
+        # Keep fore-aft alignment fading out from 1.05 s to 1.25 s.
+        self.rewards.same_foot_x_position.weight = -10.0
+        self.rewards.same_foot_x_position.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
+        self.rewards.same_foot_x_position.params["start_time_s"] = 0.0
+        self.rewards.same_foot_x_position.params["end_time_s"] = 1.25
+        self.rewards.same_foot_x_position.params["ramp_time_s"] = 0.2
         # terminations
         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands
-        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/wheel_to_leg_transform_60hz.npz"
+        self.commands.motion.initialize_reset_targets = True
+        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-20/wheel_to_leg_transform_50hz.npz"
         self.commands.motion.anchor_body_name = "base_link"
         self.commands.motion.body_names = [ # 需要追踪的连杆
             "base_link",
