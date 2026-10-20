@@ -1,21 +1,19 @@
-# 2026-10-09_12-49-52
+# RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0 / 2026-10-09_12-49-52
 
-此页可重新生成，仅用于导航；证据以各批次 manifest 及其校验链为准。
+保留策略：model_49999.pt
 
-## 评估批次
+训练 checkpoint SHA-256：8909d6a6c2db883fc3dd37843053fdb887f90b92ead76cff036f8341b5cdd2b1
 
-- [final49999-four-scenarios-20261010-001](<evaluations/final49999-four-scenarios-20261010-001/report.md>)：4 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/final49999-four-scenarios-20261010-001/manifest.json>)。
-- [final49999-quick-play-20261010-001](<evaluations/final49999-quick-play-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/final49999-quick-play-20261010-001/manifest.json>)。
-- [unified-base1p5-pd0p9-model_49999-20261010-001](<evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/manifest.json>)。
+2026-10-20 按用户要求，仅保留本策略自身记录；历史对照和其他模型记录已清理。原始封存报告未改写，其中指向历史对照的旧引用不再可用。
 
-## 原始记录与生命周期
+## 自身评估
 
-- [provenance](<provenance>)
-- [events](<events>)
+- [final49999-four-scenarios-20261010-001](evaluations/final49999-four-scenarios-20261010-001/report.md) · [manifest](evaluations/final49999-four-scenarios-20261010-001/manifest.json)
+- [final49999-quick-play-20261010-001](evaluations/final49999-quick-play-20261010-001/report.md) · [manifest](evaluations/final49999-quick-play-20261010-001/manifest.json)
+- [landing-pull-front-upper-20261011-001](evaluations/landing-pull-front-upper-20261011-001/report.md) · [manifest](evaluations/landing-pull-front-upper-20261011-001/manifest.json)
+- [tail-phase-failure-baseline-20261012-001](evaluations/tail-phase-failure-baseline-20261012-001/report.md) · [manifest](evaluations/tail-phase-failure-baseline-20261012-001/manifest.json)
+- [unified-base1p5-pd0p9-model_49999-20261010-001](evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/report.md) · [manifest](evaluations/unified-base1p5-pd0p9-model_49999-20261010-001/manifest.json)
 
-旧版证据保持原位；本索引不会移动、压缩或重写已有结果。
+## 导出记录
 
-## 用户选择导出与归档
-
-- `model_49999.pt`（10/8参考、1.65s边界、原无roll奖励）：[选择凭证](<evidence/checkpoint_selection/selection-storage-20261010-001.json>)、[JIT/ONNX校验](<evidence/export/storage-20261010-001/receipt.json>)、[归档凭证](<evidence/export/storage-20261010-001/archive-receipt.json>)。
-- 归档位置：`policy_storage/LW/leg_to_wheel/2026-10-09-12-49-52`；包含原始60Hz CSV。
+- [storage-20261010-001](evidence/export/storage-20261010-001/receipt.json)

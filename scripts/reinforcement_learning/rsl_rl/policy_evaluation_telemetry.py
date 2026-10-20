@@ -146,6 +146,80 @@ class RoaSensorDelay:
 
 
 MOTION_MODES = ("nominal_start", "randomized_start", "randomized_phase")
+
+
+class LandingPullPulse:
+    """One pulse after a recorded airborne interval and bilateral wheel contact.
+
+    Contact is observed after physics; the pulse starts on the NEXT substep.
+    Only episode zero is eligible, including for the zero-force control case.
+    """
+
+    def __init__(self, config, physics_dt):
+        self.config = config
+        self.dt = physics_dt
+        self.air_steps = math.ceil(config["airborne_time_s"] / physics_dt - 1e-9)
+        self.pulse_steps = round(config["duration_s"] / physics_dt)
+        if self.pulse_steps < 1 or not math.isclose(self.pulse_steps * physics_dt, config["duration_s"], abs_tol=1e-10):
+            raise ValueError("pull duration must be an integer number of physics steps")
+        self.air_count = 0
+        self.airborne_seen = False
+        self.start_step = None
+
+    def observe(self, physics_step, episode_id, contact_z):
+        if episode_id != 0 or self.start_step is not None:
+            return
+        threshold = self.config["contact_threshold_n"]
+        self.air_count = self.air_count + 1 if all(f < threshold for f in contact_z) else 0
+        self.airborne_seen |= self.air_count >= self.air_steps
+        if self.airborne_seen and all(f >= threshold for f in contact_z[2:]):
+            self.start_step = physics_step + 1
+
+    def active(self, physics_step, episode_id):
+        return (episode_id == 0 and self.start_step is not None
+                and self.start_step <= physics_step < self.start_step + self.pulse_steps)
+
+
+def summarize_landing_pull(records, config, physics_dt):
+    """Describe first-episode motion; omit unavailable post-withdrawal horizons."""
+    import numpy as np
+
+    first = [r for r in records if r["episode_id"] == 0]
+    scheduler = LandingPullPulse(config, physics_dt)
+    for r in first:
+        scheduler.observe(r["physics_step"], 0, np.asarray(r["contact_forces_w"]).reshape(4, 3)[:, 2])
+    if scheduler.start_step is None:
+        return {"status": "not_triggered", "airborne_seen": scheduler.airborne_seen}
+    start = scheduler.start_step
+    end = start + scheduler.pulse_steps
+    anchor = next(r for r in first if r["physics_step"] == start - 1)
+    heading = np.asarray(anchor["pull_forward_w"])
+    origin = np.asarray(anchor["root_position_w"])
+    eligible = [r for r in first if r["physics_step"] >= start]
+    forward_speed = lambda r: float(np.dot(r["root_linear_velocity_w"], heading))
+    displacement = lambda r: float(np.dot(np.asarray(r["root_position_w"]) - origin, heading))
+    active = [r for r in eligible if r["pull_active"]]
+    withdrawn = [r for r in eligible if r["physics_step"] >= end]
+    summary = {"status": "triggered", "airborne_seen": True,
+               "landing_observation_s": start * physics_dt,
+               "pulse_start_s": start * physics_dt, "withdrawal_s": end * physics_dt,
+               "applied_substeps": len(active), "expected_substeps": scheduler.pulse_steps,
+               "complete_pulse": len(active) == scheduler.pulse_steps,
+               "force_impulse_w_ns": (np.sum([r["pull_force_w"] for r in active], axis=0) * physics_dt).tolist(),
+               "speed_before_m_s": forward_speed(anchor),
+               "peak_forward_speed_m_s": max(map(forward_speed, eligible), default=forward_speed(anchor)),
+               "final_forward_speed_m_s": forward_speed(first[-1]),
+               "final_forward_displacement_m": displacement(first[-1]),
+               "post_withdrawal_observation_s": max(0., first[-1]["sim_time_seconds"] - end * physics_dt),
+               "horizons": {}}
+    for horizon in (.2, .5, 1.):
+        wanted = end * physics_dt + horizon
+        hit = next((r for r in withdrawn if r["sim_time_seconds"] >= wanted - 1e-9), None)
+        if hit is not None:
+            summary["horizons"][str(horizon)] = {"time_s": hit["sim_time_seconds"],
+                "forward_speed_m_s": forward_speed(hit), "forward_displacement_m": displacement(hit)}
+    return summary
+
 MOTION_VECTOR_WIDTHS = {
     "root_position_w": 3, "root_quaternion_w": 4,
     "root_linear_velocity_b": 3, "root_angular_velocity_b": 3,

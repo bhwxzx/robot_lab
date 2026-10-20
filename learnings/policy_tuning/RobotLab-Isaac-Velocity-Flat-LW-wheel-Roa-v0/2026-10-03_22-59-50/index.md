@@ -1,20 +1,15 @@
-# 2026-10-03_22-59-50
+# RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0 / 2026-10-03_22-59-50
 
-此页可重新生成，仅用于导航；证据以各批次 manifest 及其校验链为准。
+保留策略：model_35000.pt
 
-## 评估批次
+训练 checkpoint SHA-256：8b6105ab017ebdb796b1b2ba185a1137e5ffbafff22a6765978cc176b9556673
 
-- [wheel-flat-checkpoint-selection-20261008-001](<evaluations/wheel-flat-checkpoint-selection-20261008-001/report.md>)：30 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-checkpoint-selection-20261008-001/manifest.json>)。
-- [wheel-flat-checkpoint30000-20261008-001](<evaluations/wheel-flat-checkpoint30000-20261008-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-checkpoint30000-20261008-001/manifest.json>)。
-- [wheel-flat-checkpoint35000-20261008-001](<evaluations/wheel-flat-checkpoint35000-20261008-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-checkpoint35000-20261008-001/manifest.json>)。
-- [wheel-flat-checkpoint40000-20261008-001](<evaluations/wheel-flat-checkpoint40000-20261008-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-checkpoint40000-20261008-001/manifest.json>)。
-- [wheel-flat-checkpoint45000-20261008-001](<evaluations/wheel-flat-checkpoint45000-20261008-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-checkpoint45000-20261008-001/manifest.json>)。
-- [wheel-flat-final-std01-20261004-001](<evaluations/wheel-flat-final-std01-20261004-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-final-std01-20261004-001/manifest.json>)。
+2026-10-20 按用户要求，仅保留本策略自身记录；历史对照和其他模型记录已清理。原始封存报告未改写，其中指向历史对照的旧引用不再可用。
 
-## 原始记录与生命周期
+## 自身评估
 
-- [provenance](<provenance>)
-- [events](<events>)
-- [evidence/source](<evidence/source>)
+- [wheel-flat-checkpoint35000-20261008-001](evaluations/wheel-flat-checkpoint35000-20261008-001/report.md) · [manifest](evaluations/wheel-flat-checkpoint35000-20261008-001/manifest.json)
 
-旧版证据保持原位；本索引不会移动、压缩或重写已有结果。
+## 导出记录
+
+- [wheel35000-storage-20261008-001](evidence/export/wheel35000-storage-20261008-001/receipt.json)

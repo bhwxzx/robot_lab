@@ -9,15 +9,91 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "reinforcement_learning/rsl_rl"))
-from policy_evaluation_evidence import EvaluationEvidenceError, build_scenario_contract, validate_motion_telemetry
+from policy_evaluation_evidence import EvaluationEvidenceError, build_scenario_contract, validate_motion_telemetry, validate_scenario_contract
 from policy_evaluation_telemetry import (
     MOTION_REQUIRED_SIGNALS, MOTION_VECTOR_WIDTHS, MOTION_JOINT_SIGNALS,
     MOTION_BODY_SIGNALS, SignalLedger, telemetry_report, summarize_motion_samples,
     MOTION_PHYSICS_VECTOR_WIDTHS, MOTION_PHYSICS_JOINT_SIGNALS, summarize_motion_physics,
+    LandingPullPulse, summarize_landing_pull,
 )
 
 
 class MotionEvaluationTests(unittest.TestCase):
+    def pull_config(self):
+        path = Path(self.directory.name) / "motion.npz"
+        return {"delta_v_m_s": .5, "angle_deg": 45., "duration_s": .05,
+                "body_name": "base_link", "point_b_m": [.2015, 0., .1263],
+                "airborne_time_s": .05, "contact_threshold_n": 10.,
+                "geometry": {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}}
+
+    def test_pull_requires_airborne_then_both_wheels_and_next_step(self):
+        pulse = LandingPullPulse(self.pull_config(), .005)
+        pulse.observe(0, 0, [0, 0, 20, 20])
+        self.assertIsNone(pulse.start_step)
+        for step in range(1, 11):
+            pulse.observe(step, 0, [0, 0, 0, 0])
+        pulse.observe(11, 0, [0, 0, 20, 0])
+        self.assertIsNone(pulse.start_step)
+        pulse.observe(12, 0, [0, 0, 20, 20])
+        self.assertFalse(pulse.active(12, 0))
+        self.assertEqual([i for i in range(40) if pulse.active(i, 0)], list(range(13, 23)))
+        self.assertFalse(pulse.active(13, 1))
+        for step in range(40, 51):
+            pulse.observe(step, 1, [0, 0, 0, 0])
+        pulse.observe(51, 1, [0, 0, 20, 20])
+        self.assertEqual(pulse.start_step, 13)
+
+    def test_pull_rejects_fractional_physics_duration(self):
+        config = self.pull_config()
+        config["duration_s"] = .052
+        with self.assertRaisesRegex(ValueError, "integer"):
+            LandingPullPulse(config, .005)
+
+    def test_pull_contract_requires_full_physics_and_geometry_hash(self):
+        scenario = copy.deepcopy(self.scenario)
+        scenario["scenario_overrides"]["evaluation.landing_pull"] = self.pull_config()
+        with self.assertRaisesRegex(EvaluationEvidenceError, "full physics"):
+            validate_scenario_contract(scenario)
+        scenario["scenario_overrides"]["evaluation.motion_physics_window"] = [0, 2]
+        validate_scenario_contract(scenario)
+        scenario["scenario_overrides"]["evaluation.landing_pull"]["geometry"]["sha256"] = "0" * 64
+        with self.assertRaises(EvaluationEvidenceError):
+            validate_scenario_contract(scenario)
+
+    def test_pull_telemetry_rejects_force_after_withdrawal(self):
+        records = self.add_physics()
+        config = self.pull_config()
+        config.update(duration_s=.01, airborne_time_s=.005)
+        self.scenario["scenario_overrides"]["evaluation.landing_pull"] = config
+        self.telemetry["motion_diagnostics"]["initial_runtime"] = {"masses_kg": [1.]}
+        pulse = LandingPullPulse(config, .005)
+        force = np.array([1., 0., 1.]) / np.sqrt(2) * 50.
+        for r in records:
+            if 1 <= r["physics_step"] < 12:
+                r["contact_forces_w"] = [0.] * 8 + [20., 0., 0., 20.]
+            active = pulse.active(r["physics_step"], r["episode_id"])
+            applied = force if active else np.zeros(3)
+            r.update(pull_active=active, pull_forward_w=[1., 0., 0.],
+                     pull_force_w=applied.tolist(), pull_torque_w=np.cross(config["point_b_m"], applied).tolist(),
+                     pull_point_w=config["point_b_m"], pull_body_com_w=[0., 0., 0.],
+                     root_position_w=[0., 0., 0.], root_linear_velocity_w=[0., 0., 0.],
+                     root_quaternion_w=[1., 0., 0., 0.],
+                     joint_position_target=[0., 0.], joint_velocity_target=[0., 0.])
+            pulse.observe(r["physics_step"], r["episode_id"], np.asarray(r["contact_forces_w"]).reshape(4, 3)[:, 2])
+            if r["substep"] == 3:
+                self.samples[r["control_step"]]["contact_forces_w"] = r["contact_forces_w"]
+        diagnostic = {"config": config, "total_mass_kg": 1., "forward_w": [1., 0., 0.],
+                      "summary": summarize_landing_pull(records, config, .005)}
+        self.result["landing_pull"] = self.telemetry["landing_pull"] = diagnostic
+        self.result["metrics"] = summarize_motion_samples(self.samples, self.telemetry["joint_names"], [10, 10])
+        self.result["physics_window_metrics"] = summarize_motion_physics(records, [10, 10], .005)
+        validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+        self.assertEqual(diagnostic["summary"]["applied_substeps"], 2)
+        self.assertEqual(diagnostic["summary"]["horizons"], {})
+        records[4]["pull_force_w"][0] = 1.
+        with self.assertRaisesRegex(EvaluationEvidenceError, "force/torque/schedule"):
+            validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)

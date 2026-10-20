@@ -113,7 +113,7 @@ class WheelContactRewardTests(unittest.TestCase):
         self.assertIsNot(BASE_REWARD_CFG.params, REWARD_CFG.params)
         self.assertIsNot(BASE_REWARD_CFG.params["sensor_cfg"], REWARD_CFG.params["sensor_cfg"])
         self.assertEqual(REWARD_CFG.weight, 0.5)
-        self.assertEqual(REWARD_CFG.params["start_time_s"], 1.6)
+        self.assertEqual(REWARD_CFG.params["start_time_s"], 1.65)
         self.assertEqual(REWARD_CFG.params["min_contact_force"], 10.0)
         self.assertEqual(REWARD_CFG.params["stable_contact_time"], 0.1)
 
@@ -128,17 +128,17 @@ class WheelContactRewardTests(unittest.TestCase):
         torch.testing.assert_close(self.reward(), torch.zeros(3))
 
     def test_reference_phase_boundary_independent_of_episode_age(self):
-        self.command.time_steps[:] = torch.tensor([79, 80, 81])
+        self.command.time_steps[:] = torch.tensor([82, 83, 84])
         self.env.episode_length_buf[:] = torch.tensor([10000, 0, 1])
         torch.testing.assert_close(self.reward(), torch.tensor([0.0, 1.0, 1.0]))
 
     def test_phase_uses_reference_fps_and_rounds_start_frame_up(self):
         self.command.motion.fps = np.array([60.0])
-        self.command.time_steps[:] = torch.tensor([95, 96, 97])
+        self.command.time_steps[:] = torch.tensor([98, 99, 100])
         torch.testing.assert_close(self.reward(), torch.tensor([0.0, 1.0, 1.0]))
         self.command.motion.fps = np.array([50.0])
-        self.command.time_steps[:] = torch.tensor([79, 80, 81])
-        torch.testing.assert_close(self.reward(start_time_s=1.601), torch.tensor([0.0, 0.0, 1.0]))
+        self.command.time_steps[:] = torch.tensor([82, 83, 84])
+        torch.testing.assert_close(self.reward(start_time_s=1.661), torch.tensor([0.0, 0.0, 1.0]))
 
     def test_airborne_and_pre_phase_contacts_earn_zero(self):
         self.command.time_steps.fill_(75)
