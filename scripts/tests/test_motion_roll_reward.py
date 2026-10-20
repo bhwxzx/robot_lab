@@ -158,7 +158,7 @@ class ReferenceTimingTests(unittest.TestCase):
     def test_selected_reference_and_all_five_time_boundaries(self):
         self.assertEqual(
             CONFIG.commands.motion.motion_file,
-            "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/2026-10-08/leg_to_wheel_transform_50hz.npz",
+            "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/leg_to_wheel/2026-10-08/leg_to_wheel_transform_50hz.npz",
         )
         for name in PHASE_TERMS:
             with self.subTest(term=name):
