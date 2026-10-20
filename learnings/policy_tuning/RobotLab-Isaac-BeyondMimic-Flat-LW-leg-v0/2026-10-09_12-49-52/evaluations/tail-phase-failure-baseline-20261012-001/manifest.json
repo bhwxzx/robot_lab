@@ -1,0 +1,115 @@
+{
+  "batch_id": "tail-phase-failure-baseline-20261012-001",
+  "cases": [
+    {
+      "attempt_id": "uniform-clean-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/tail-phase-failure-baseline-20261012-001/raw/uniform-clean-a01/console.log",
+        "sha256": "9911d8c38a8381fabbafece3c1aa9acbf2f40dfe2d9f860ccf5894ee267a4dbe"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/tail-phase-failure-baseline-20261012-001/raw/uniform-clean-a01/result.json",
+        "sha256": "6ec3d13b5d2a0d6110939b4b7df92586fb917b5707bb0275fce30a061adc40f3"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1200,
+        "num_envs": 1,
+        "scenario_id": "uniform-clean",
+        "scenario_overrides": {
+          "commands.motion.adaptive_uniform_ratio": 1000000,
+          "commands.motion.joint_position_range": [
+            0,
+            0
+          ],
+          "commands.motion.pose_range": {},
+          "commands.motion.velocity_range": {},
+          "evaluation.motion_mode": "randomized_phase",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8f5dec53148b5229b28055b8af968d18dc757e873f1a04bd423b0e8bfc6b2a6b",
+          "events.add_joint_default_pos": null,
+          "events.base_com": null,
+          "events.physics_material": null,
+          "events.push_robot": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.joint_acc_wheel_l2.weight": 0,
+          "rewards.joint_vel_wheel_l2.weight": 0,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    },
+    {
+      "attempt_id": "uniform-training-randomized-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/tail-phase-failure-baseline-20261012-001/raw/uniform-training-randomized-a01/console.log",
+        "sha256": "42024833983c1a1cde7ab8326815ff3a55069e4df5ae7035523301741282d0c2"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/tail-phase-failure-baseline-20261012-001/raw/uniform-training-randomized-a01/result.json",
+        "sha256": "8403cdd8072ed96f939d1d16b77bacd20de38fffb9b5f01b39afbcf794f8cb65"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1200,
+        "num_envs": 1,
+        "scenario_id": "uniform-training-randomized",
+        "scenario_overrides": {
+          "commands.motion.adaptive_uniform_ratio": 1000000,
+          "evaluation.motion_mode": "randomized_phase",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8f5dec53148b5229b28055b8af968d18dc757e873f1a04bd423b0e8bfc6b2a6b",
+          "rewards.joint_acc_wheel_l2.weight": 0,
+          "rewards.joint_vel_wheel_l2.weight": 0
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/tail-phase-failure-baseline-20261012-001/contract.json",
+    "sha256": "b1f795d679766235802d8540f7cd8de1fa7dad86117cf9976633c3e0bf00fd33"
+  },
+  "layout_version": 2,
+  "notes": [
+    "User-authorized four-case offline tail-failure reproduction; each case 1 env,1200 control steps,seed42,no video,no retries. Near-uniform reference start sampling is an explicit evaluation-only override; it does not reproduce the collapsed training distribution.",
+    "Clean disables randomization/noise/push and uses zero actuator delay. Training-randomized uses the latest training randomization for both policies; baseline wheel-penalty weights are restored to zero. No Wheel-policy handoff is simulated.",
+    "The 10/11 exact launch script and absence of extra overrides were confirmed by the user; current source context is recorded independently of saved training YAML.",
+    "Tail episode details and first-failure snapshots are in tail_summary.json. Contact force is PhysX substep-averaged normal force, not a hardware impulse peak."
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "按批次报告检查失败项和动作表现；复测使用新的 batch_id 与 attempt_id。"
+  ],
+  "report": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/tail-phase-failure-baseline-20261012-001/report.md",
+    "sha256": "ac63c93b15b3ac2d31c7f52a02be9bb3a6947406392e37bfe306165b4ff9634d"
+  },
+  "repository_root": "/home/young/liufengrong/robot_lab",
+  "run_id": "2026-10-09_12-49-52",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0/2026-10-09_12-49-52/evaluations/tail-phase-failure-baseline-20261012-001/tail_summary.json",
+      "sha256": "0aeb98f6259bd7a2b95082b7a241b506eb3fcc8d855b66d5de68d3fcc571abdc"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-leg-v0",
+  "version": 1
+}

@@ -212,12 +212,19 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
                         or any(type(v) is not int for v in setting) or not 0 <= setting[0] <= setting[1]):
                     raise EvaluationEvidenceError("invalid motion physics frame window")
                 continue
+            if key == "evaluation.landing_pull":
+                validate_landing_pull_config(setting)
+                continue
             modes = {"evaluation.roa_mode": ROA_CONTROL_MODES,
                      "evaluation.dwaq_mode": DWAQ_CONTROL_MODES,
                      "evaluation.motion_mode": MOTION_MODES}
             if key not in modes or setting not in modes[key]:
                 raise EvaluationEvidenceError("invalid evaluation controller or unknown evaluation option")
     overrides = value["scenario_overrides"]
+    if "evaluation.landing_pull" in overrides and (
+            overrides.get("evaluation.motion_mode") != "nominal_start"
+            or "evaluation.motion_physics_window" not in overrides):
+        raise EvaluationEvidenceError("landing pull requires nominal motion and full physics capture")
     if "evaluation.motion_physics_window" in overrides and "evaluation.motion_mode" not in overrides:
         raise EvaluationEvidenceError("physics window requires motion diagnostics")
     if ("evaluation.motion_mode" in overrides) != ("evaluation.motion_sha256" in overrides):
@@ -956,6 +963,25 @@ def validate_evaluation_bundle(
     }
 
 
+def validate_landing_pull_config(config):
+    fields = {"delta_v_m_s", "angle_deg", "duration_s", "body_name", "point_b_m",
+              "contact_threshold_n", "airborne_time_s", "geometry"}
+    if not isinstance(config, dict) or set(config) != fields:
+        raise EvaluationEvidenceError("invalid landing pull fields")
+    for key in ("delta_v_m_s", "angle_deg", "duration_s", "contact_threshold_n", "airborne_time_s"):
+        if type(config[key]) not in (int, float) or not math.isfinite(config[key]):
+            raise EvaluationEvidenceError("nonfinite landing pull parameter")
+    if (not 0 <= config["delta_v_m_s"] <= 2 or not 0 <= config["angle_deg"] <= 90
+            or not 0 < config["duration_s"] <= .2 or config["contact_threshold_n"] <= 0
+            or config["airborne_time_s"] < .005 or config["body_name"] != "base_link"):
+        raise EvaluationEvidenceError("landing pull parameter out of bounded range")
+    point = config["point_b_m"]
+    if (not isinstance(point, list) or len(point) != 3
+            or any(type(v) not in (int, float) or not math.isfinite(v) for v in point)):
+        raise EvaluationEvidenceError("invalid landing pull attachment point")
+    _validate_reference(config["geometry"], label="pull attachment geometry")
+
+
 def validate_motion_telemetry(result, telemetry, scenario):
     """Recompute motion metrics and verify timing/completeness beyond output hashes."""
     from policy_evaluation_telemetry import (
@@ -1056,6 +1082,56 @@ def validate_motion_telemetry(result, telemetry, scenario):
         if type(actual) not in (int, float) or not math.isclose(actual, value, rel_tol=1e-10, abs_tol=1e-12):
             raise EvaluationEvidenceError(f"motion metric differs from telemetry: {name}")
     validate_motion_physics(result, telemetry, scenario)
+    validate_landing_pull_telemetry(result, telemetry, scenario)
+
+
+def validate_landing_pull_telemetry(result, telemetry, scenario):
+    from policy_evaluation_telemetry import LandingPullPulse, summarize_landing_pull
+    import numpy as np
+
+    config = scenario["scenario_overrides"].get("evaluation.landing_pull")
+    if config is None:
+        if "landing_pull" in result or "landing_pull" in telemetry:
+            raise EvaluationEvidenceError("unbound landing pull telemetry")
+        return
+    validate_landing_pull_config(config)
+    dt = telemetry["motion_diagnostics"]["physics_window"]["physics_dt_seconds"]
+    window = scenario["scenario_overrides"]["evaluation.motion_physics_window"]
+    if window != [0, telemetry["motion_diagnostics"]["frame_count"] - 1]:
+        raise EvaluationEvidenceError("landing pull requires all motion physics substeps")
+    diagnostic = telemetry.get("landing_pull", {})
+    if diagnostic != result.get("landing_pull") or diagnostic.get("config") != config:
+        raise EvaluationEvidenceError("landing pull binding mismatch")
+    mass = diagnostic.get("total_mass_kg")
+    runtime = telemetry["motion_diagnostics"]["initial_runtime"]
+    if type(mass) not in (float, int) or not mass > 0 or not math.isclose(mass, sum(runtime["masses_kg"]), abs_tol=1e-6):
+        raise EvaluationEvidenceError("landing pull mass mismatch")
+    scheduler = LandingPullPulse(config, dt)
+    records = telemetry["physics_samples"]
+    heading = np.asarray(diagnostic["forward_w"])
+    if heading.shape != (3,) or not np.all(np.isfinite(heading)) or not math.isclose(np.linalg.norm(heading), 1., abs_tol=1e-6) or abs(heading[2]) > 1e-6:
+        raise EvaluationEvidenceError("invalid pull forward direction")
+    angle = math.radians(config["angle_deg"])
+    force = mass * config["delta_v_m_s"] / config["duration_s"] * (heading * math.cos(angle) + np.array([0, 0, math.sin(angle)]))
+    widths = {"pull_forward_w": 3, "pull_force_w": 3, "pull_torque_w": 3, "pull_point_w": 3,
+              "pull_body_com_w": 3, "root_position_w": 3, "root_linear_velocity_w": 3,
+              "root_quaternion_w": 4, "joint_position_target": len(telemetry["joint_names"]),
+              "joint_velocity_target": len(telemetry["joint_names"])}
+    for r in records:
+        for key, width in widths.items():
+            a = r.get(key)
+            if not isinstance(a, list) or len(a) != width or not np.all(np.isfinite(a)):
+                raise EvaluationEvidenceError(f"invalid landing pull signal {key}")
+        active = scheduler.active(r["physics_step"], r["episode_id"])
+        expected_force = force if active else np.zeros(3)
+        if (type(r.get("pull_active")) is not bool or r["pull_active"] != active
+                or not np.allclose(r["pull_forward_w"], heading, atol=1e-7, rtol=0)
+                or not np.allclose(r["pull_force_w"], expected_force, atol=1e-4, rtol=1e-6)
+                or not np.allclose(r["pull_torque_w"], np.cross(np.asarray(r["pull_point_w"]) - r["pull_body_com_w"], expected_force), atol=1e-4, rtol=1e-6)):
+            raise EvaluationEvidenceError("landing pull force/torque/schedule mismatch")
+        scheduler.observe(r["physics_step"], r["episode_id"], np.asarray(r["contact_forces_w"]).reshape(4, 3)[:, 2])
+    if diagnostic.get("summary") != summarize_landing_pull(records, config, dt):
+        raise EvaluationEvidenceError("landing pull summary differs from telemetry")
 
 
 def validate_motion_physics(result, telemetry, scenario):

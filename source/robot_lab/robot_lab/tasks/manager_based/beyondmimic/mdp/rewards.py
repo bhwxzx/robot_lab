@@ -203,6 +203,27 @@ def wheel_contact_continuous(
     return continuity * both_supported * wheel_phase
 
 
+def _wheel_phase_weight(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    start_time_s: float,
+    ramp_time_s: float,
+) -> torch.Tensor:
+    """Blend wheel-phase terms using reference progress, including after contact loss."""
+    if not math.isfinite(start_time_s) or start_time_s < 0.0:
+        raise ValueError("Wheel phase rewards require a finite, nonnegative start time.")
+    if not math.isfinite(ramp_time_s) or ramp_time_s <= 0.0:
+        raise ValueError("Wheel phase rewards require a finite, positive ramp duration.")
+
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    fps = float(command.motion.fps.item())
+    if not math.isfinite(fps) or fps <= 0.0:
+        raise ValueError("Wheel phase rewards require a finite, positive reference frame rate.")
+    reference_time = command.time_steps / fps
+    blend = torch.clamp((reference_time - start_time_s) / ramp_time_s, min=0.0, max=1.0)
+    return blend.square() * (3.0 - 2.0 * blend)
+
+
 def _wheel_phase_geometry_weight(
     env: ManagerBasedRLEnv,
     command_name: str,
@@ -210,23 +231,57 @@ def _wheel_phase_geometry_weight(
     start_time_s: float,
     ramp_time_s: float,
 ) -> torch.Tensor:
-    """Blend wheel geometry terms using reference progress, including after contact loss."""
-    if not math.isfinite(start_time_s) or start_time_s < 0.0:
-        raise ValueError("Wheel geometry rewards require a finite, nonnegative start time.")
-    if not math.isfinite(ramp_time_s) or ramp_time_s <= 0.0:
-        raise ValueError("Wheel geometry rewards require a finite, positive ramp duration.")
-
+    """Select bilateral wheel geometry and blend it after the reference landing."""
     asset: Articulation = env.scene[asset_cfg.name]
     if asset.data.body_link_pos_w[:, asset_cfg.body_ids].shape[1] != 2:
         raise ValueError("Wheel geometry rewards require exactly two wheel bodies in asset_cfg.")
+    return _wheel_phase_weight(env, command_name, start_time_s, ramp_time_s)
 
-    command: MotionCommand = env.command_manager.get_term(command_name)
-    fps = float(command.motion.fps.item())
-    if not math.isfinite(fps) or fps <= 0.0:
-        raise ValueError("Wheel geometry rewards require a finite, positive reference frame rate.")
-    reference_time = command.time_steps / fps
-    blend = torch.clamp((reference_time - start_time_s) / ramp_time_s, min=0.0, max=1.0)
-    return blend.square() * (3.0 - 2.0 * blend)
+
+def wheel_phase_joint_velocity_l2(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    asset_cfg: SceneEntityCfg,
+    start_time_s: float,
+    ramp_time_s: float,
+    velocity_scale: float,
+) -> torch.Tensor:
+    """Penalize mean squared wheel speed after reference landing with a negative weight.
+
+    ``velocity_scale`` is in rad/s. Only the two selected wheel joints contribute;
+    reference progress, rather than episode age or current contact, gates the term.
+    """
+    if not math.isfinite(velocity_scale) or velocity_scale <= 0.0:
+        raise ValueError("Wheel velocity penalty requires a finite, positive velocity scale.")
+    blend = _wheel_phase_weight(env, command_name, start_time_s, ramp_time_s)
+    asset: Articulation = env.scene[asset_cfg.name]
+    velocity = asset.data.joint_vel[:, asset_cfg.joint_ids]
+    if velocity.shape[1] != 2:
+        raise ValueError("Wheel velocity penalty requires exactly two wheel joints in asset_cfg.")
+    return blend * (velocity / velocity_scale).square().mean(dim=-1)
+
+
+def wheel_phase_joint_acceleration_l2(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    asset_cfg: SceneEntityCfg,
+    start_time_s: float,
+    ramp_time_s: float,
+    acceleration_scale: float,
+) -> torch.Tensor:
+    """Penalize mean squared measured wheel acceleration with a negative weight.
+
+    ``acceleration_scale`` is in rad/s squared. Use IsaacLab's finite-difference
+    joint acceleration; no additional history or reset state is maintained here.
+    """
+    if not math.isfinite(acceleration_scale) or acceleration_scale <= 0.0:
+        raise ValueError("Wheel acceleration penalty requires a finite, positive acceleration scale.")
+    blend = _wheel_phase_weight(env, command_name, start_time_s, ramp_time_s)
+    asset: Articulation = env.scene[asset_cfg.name]
+    acceleration = asset.data.joint_acc[:, asset_cfg.joint_ids]
+    if acceleration.shape[1] != 2:
+        raise ValueError("Wheel acceleration penalty requires exactly two wheel joints in asset_cfg.")
+    return blend * (acceleration / acceleration_scale).square().mean(dim=-1)
 
 
 def wheel_phase_leg_symmetry(

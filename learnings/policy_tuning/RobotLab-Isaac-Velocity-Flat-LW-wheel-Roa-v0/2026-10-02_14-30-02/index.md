@@ -1,33 +1,15 @@
-# 2026-10-02_14-30-02
+# RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0 / 2026-10-02_14-30-02
 
-此页可重新生成，仅用于导航；证据以各批次 manifest 及其校验链为准。
+保留策略：model_45000.pt
 
-## 评估批次
+训练 checkpoint SHA-256：a6b097b83272657e9f1068cafc5c74ecb5e23e6d9e8ca06f9d472bc2fe36c85b
 
-- [overlap-native-model22000-20261003-004](<evaluations/overlap-native-model22000-20261003-004/report.md>)：1 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/overlap-native-model22000-20261003-004/manifest.json>)。
-- [overlap-native-short-model21000-20261003-003](<evaluations/overlap-native-short-model21000-20261003-003/report.md>)：1 完成 / 2 失败 / 0 未运行；[manifest](<evaluations/overlap-native-short-model21000-20261003-003/manifest.json>)。
-- [wheel-flat-final-delay30-20261003-001](<evaluations/wheel-flat-final-delay30-20261003-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-final-delay30-20261003-001/manifest.json>)。
-- [wheel-flat-late-model35000-20261003-001](<evaluations/wheel-flat-late-model35000-20261003-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-late-model35000-20261003-001/manifest.json>)。
-- [wheel-flat-late-model40000-20261003-001](<evaluations/wheel-flat-late-model40000-20261003-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-late-model40000-20261003-001/manifest.json>)。
-- [wheel-flat-late-model45000-20261003-001](<evaluations/wheel-flat-late-model45000-20261003-001/report.md>)：6 完成 / 0 失败 / 0 未运行；[manifest](<evaluations/wheel-flat-late-model45000-20261003-001/manifest.json>)。
-- [wheel-live-model21000-20261003-001](<evaluations/wheel-live-model21000-20261003-001/report.md>)：2 完成 / 2 失败 / 0 未运行；[manifest](<evaluations/wheel-live-model21000-20261003-001/manifest.json>)。
+2026-10-20 按用户要求，仅保留本策略自身记录；历史对照和其他模型记录已清理。原始封存报告未改写，其中指向历史对照的旧引用不再可用。
 
-## 原始记录与生命周期
+## 自身评估
 
-- [provenance](<provenance>)
-- [events](<events>)
-- [evidence/source](<evidence/source>)
+- [wheel-flat-late-model45000-20261003-001](evaluations/wheel-flat-late-model45000-20261003-001/report.md) · [manifest](evaluations/wheel-flat-late-model45000-20261003-001/manifest.json)
 
-旧版证据保持原位；本索引不会移动、压缩或重写已有结果。
+## 导出记录
 
-## 45000轮策略导出与发布
-
-- [用户选择](<evidence/checkpoint_selection/selection-model45000-storage-20261003-001.json>)
-- [Native/JIT/ONNX一致性验证](<evidence/export/model45000-storage-20261003-001/receipt.json>)
-- [归档记录](<evidence/archive/receipt-model45000-storage-20261003-001.json>)
-- [提交与推送验证](<evidence/archive/git-push-model45000-storage-20261003-001.json>)
-- [policy_storage / 2026-10-02-14-30-02](https://github.com/bhwxzx/policy_storage/tree/c106c92520661cfa3a5212c10935f3986e9ef3b7/LW/wheel_loco/2026-10-02-14-30-02)
-
-## 1003-01实机双髋慢偏置反馈
-
-- [数据核验与训练端方案](<evidence/feedback/sim2real-1003-01-hip-bias-20261003-001/report.md>)；模型快照匹配model45000，参数方案尚未实施。
+- [model45000-storage-20261003-001](evidence/export/model45000-storage-20261003-001/receipt.json)
