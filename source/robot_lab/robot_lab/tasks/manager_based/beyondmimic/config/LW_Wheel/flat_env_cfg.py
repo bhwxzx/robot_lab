@@ -131,7 +131,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
         # Wheel contact has no phase fade and switches off at reference time 1.25 s.
         # At 50 Hz, frame 62 (1.24 s) is the last nonzero frame; frame 63 is disabled.
-        self.rewards.wheel_contact_continuous.weight = 0.5
+        self.rewards.wheel_contact_continuous.weight = 0.0
         self.rewards.wheel_contact_continuous.params["sensor_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.wheel_contact_continuous.params["start_time_s"] = 0.0
         self.rewards.wheel_contact_continuous.params["end_time_s"] = 1.25
