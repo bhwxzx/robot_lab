@@ -31,6 +31,9 @@ SCENARIO_FIELDS = {
     "num_envs",
     "seed",
 }
+MOTION_GROUND_CONTACT_BODIES = (
+    "right_thigh_link", "left_thigh_link", "right_shank_link", "left_shank_link",
+)
 
 
 class EvaluationEvidenceError(ValueError):
@@ -212,6 +215,10 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
                         or any(type(v) is not int for v in setting) or not 0 <= setting[0] <= setting[1]):
                     raise EvaluationEvidenceError("invalid motion physics frame window")
                 continue
+            if key == "evaluation.motion_ground_contacts":
+                if setting is not True:
+                    raise EvaluationEvidenceError("motion ground contacts must be explicitly enabled")
+                continue
             if key == "evaluation.landing_pull":
                 validate_landing_pull_config(setting)
                 continue
@@ -221,6 +228,8 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
             if key not in modes or setting not in modes[key]:
                 raise EvaluationEvidenceError("invalid evaluation controller or unknown evaluation option")
     overrides = value["scenario_overrides"]
+    if "evaluation.motion_ground_contacts" in overrides and "evaluation.motion_physics_window" not in overrides:
+        raise EvaluationEvidenceError("motion ground contacts require physics capture")
     if "evaluation.landing_pull" in overrides and (
             overrides.get("evaluation.motion_mode") != "nominal_start"
             or "evaluation.motion_physics_window" not in overrides):
@@ -1082,7 +1091,54 @@ def validate_motion_telemetry(result, telemetry, scenario):
         if type(actual) not in (int, float) or not math.isclose(actual, value, rel_tol=1e-10, abs_tol=1e-12):
             raise EvaluationEvidenceError(f"motion metric differs from telemetry: {name}")
     validate_motion_physics(result, telemetry, scenario)
+    validate_motion_ground_contacts(telemetry, scenario)
     validate_landing_pull_telemetry(result, telemetry, scenario)
+
+
+def validate_motion_ground_contacts(telemetry, scenario):
+    """Require a complete normal-force balance with only robot and ground colliders."""
+    enabled = scenario["scenario_overrides"].get("evaluation.motion_ground_contacts", False)
+    diagnostic = telemetry["motion_diagnostics"].get("ground_contacts")
+    samples = telemetry.get("physics_samples", [])
+    fields = ("ground_contact_forces_w", "body_net_contact_forces_w",
+              "robot_self_contact_forces_w", "ground_contact_body_positions_w")
+    if not enabled:
+        if diagnostic is not None or any(any(k in s for k in fields) for s in samples):
+            raise EvaluationEvidenceError("unbound motion ground contacts")
+        return
+    if (not isinstance(diagnostic, dict) or diagnostic.get("version") != 1
+            or diagnostic.get("body_names") != list(MOTION_GROUND_CONTACT_BODIES)
+            or diagnostic.get("sampling_phase") != "after_scene_update_before_reset"
+            or diagnostic.get("sensor_type") != "net_minus_robot_self_contacts"
+            or diagnostic.get("terrain_type") != "plane"
+            or diagnostic.get("contact_positions_available") is not False
+            or diagnostic.get("self_filter_prim_paths_expr") != ["/World/envs/env_.*/Robot/.*"]):
+        raise EvaluationEvidenceError("invalid motion ground-contact diagnostics")
+    ground = diagnostic.get("ground_prim_path")
+    robot = diagnostic.get("robot_prim_path")
+    colliders = diagnostic.get("scene_collision_prim_paths")
+    if (not isinstance(ground, str) or not ground.startswith("/World/")
+            or robot != "/World/envs/env_0/Robot" or not samples
+            or not isinstance(colliders, list) or not colliders
+            or any(not isinstance(v, str) or not any(v.startswith(root + "/") or v == root
+                       for root in (ground, robot)) for v in colliders)
+            or not any(v.startswith(ground + "/") for v in colliders)):
+        raise EvaluationEvidenceError("force balance requires only robot and ground colliders")
+    for sample in samples:
+        for name in fields:
+            values = sample.get(name)
+            if (not isinstance(values, list) or len(values) != 12
+                    or any(type(v) not in (int, float) or not math.isfinite(v) for v in values)):
+                raise EvaluationEvidenceError(f"invalid ground-contact signal: {name}")
+        for ground_force, net, self_force in zip(*(sample[name] for name in fields[:3])):
+            if not math.isclose(ground_force, net - self_force, rel_tol=1e-6, abs_tol=1e-4):
+                raise EvaluationEvidenceError("ground force differs from net minus self contact")
+        forces = sample[fields[0]]
+        if any(abs(forces[i]) > .05 for i in range(12) if i % 3 != 2) or min(forces[2::3]) < -.05:
+            raise EvaluationEvidenceError("residual contact force is inconsistent with a horizontal plane")
+        error = sample.get("body_net_sensor_crosscheck_max_abs_error_n")
+        if type(error) not in (int, float) or not math.isfinite(error) or not 0 <= error <= .01:
+            raise EvaluationEvidenceError("body contact force views disagree")
 
 
 def validate_landing_pull_telemetry(result, telemetry, scenario):
