@@ -1,0 +1,101 @@
+SUPERVISOR_START {"at": "2026-10-22T17:01:55.082206+08:00", "python": "/home/server/miniconda3/envs/isaacsim-5.1/bin/python", "conda_env": "isaacsim-5.1", "source_sha256": "87e4995aec0d62a9c996fa9d476b0d4077d926e0ddd6731fe77de1ed78eefc77", "source": "import time, json, faulthandler, os, sys\nfaulthandler.enable()\nfaulthandler.dump_traceback_later(20, repeat=True)\nprint('DIAG_START', json.dumps({'pid': os.getpid(), 'python': sys.executable}), flush=True)\nfrom isaaclab.app import AppLauncher\nlauncher = AppLauncher(headless=True, device='cpu', kit_args='--/app/settings/persistent=false')\napp = launcher.app\nimport carb\nimport isaaclab.sim as sim_utils\nsettings = carb.settings.get_settings()\nsim = sim_utils.SimulationContext(sim_utils.SimulationCfg(dt=0.005, device='cpu'))\nsettings.set_int('/persistent/physics/numThreads', 1)\nkeys = ['/persistent/physics/numThreads', '/physics/physxDispatcher', '/plugins/carb.tasking.plugin/threadCount', '/app/asyncRendering', '/app/asyncRenderingLowLatency', '/app/settings/persistent']\nprint('ACTUAL_SETTINGS', json.dumps({k: settings.get(k) for k in keys}), flush=True)\nprint('ACTUAL_SIM_DEVICE', sim.device, flush=True)\nprint('BEFORE_RESET', flush=True)\nt = time.monotonic()\nsim.reset()\nprint('RESET_OK', time.monotonic() - t, flush=True)\nfor i in range(3):\n    sim.step(render=False)\n    print('STEP_OK', i + 1, flush=True)\nprint('PHYSICS_OK', flush=True)\nfaulthandler.cancel_dump_traceback_later()\napp.close()\nprint('CLOSE_OK', flush=True)\n", "bound_seconds": 40}
+PREFERENCE_BEFORE {"sha256": "993f07e8c0a9d1d19cb8c8a10719c0e12bf1950021bcff6b5f2e2a8252a301ea", "size": 115238, "mtime_ns": 1792659015531313404, "numThreads": 1}
+OWNED_DIAG_PID 8316
+DIAG_START {"pid": 8316, "python": "/home/server/miniconda3/envs/isaacsim-5.1/bin/python"}
+[INFO][AppLauncher]: Using device: cpu
+[INFO][AppLauncher]: Loading experience file: /home/server/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+Loading user config located at: '/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20261022_170155.log
+2026-10-22T09:01:55Z [49ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-10-22T09:01:55Z [297ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-10-22T09:01:55Z [302ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-10-22T09:01:58Z [2,906ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-10-22T09:01:58Z [2,907ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090 D        | Yes: 0 |     | 32607   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b87      | efbac165.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 71857   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 7.0.0-38-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101011 (1.21.1.11)
+| Processor: Intel(R) Core(TM) Ultra 7 265K
+| Cores: 20 | Logical Cores: 20
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 95810 | Free Memory: 88295
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-10-22T09:01:58Z [3,093ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-10-22T09:01:58Z [3,108ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-10-22T09:01:58Z [3,108ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1534.87 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   2.06 
+
+   CPU     0 
+     0   1.54 
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-10-22_17-01-58.log[0m
+[36m======================================================================================[0m
+
+[33m17:01:58 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+ACTUAL_SETTINGS {"/persistent/physics/numThreads": 1, "/physics/physxDispatcher": true, "/plugins/carb.tasking.plugin/threadCount": 20, "/app/asyncRendering": false, "/app/asyncRenderingLowLatency": false, "/app/settings/persistent": false}
+ACTUAL_SIM_DEVICE cpu
+BEFORE_RESET
+Timeout (0:00:20)!
+Thread 0x000078e4d9505600 (most recent call first):
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 239 in initialize_physics
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 166 in _warm_start
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 914 in play
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 644 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/sim/simulation_context.py", line 519 in reset
+  File "/dev/stdin", line 18 in <module>
+DIAGNOSTIC_TIMEOUT {"pid": 8316, "elapsed": 40.0000766390001}
+OWNED_PROCESS_AT_TIMEOUT {"cmdline": "/home/server/miniconda3/envs/isaacsim-5.1/bin/python -u /dev/stdin ", "wchan": "futex_do_wait"}
+Timeout (0:00:20)!
+Thread 0x000078e4d9505600 (most recent call first):
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 239 in initialize_physics
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 166 in _warm_start
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 914 in play
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 644 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/sim/simulation_context.py", line 519 in reset
+  File "/dev/stdin", line 18 in <module>
+DIAGNOSTIC_EXIT {"rc": -9, "timed_out": true, "elapsed": 43.36458121999999, "child_reaped": true}
+LOG_TAIL [36m======================================================================================[0m
+
+[33m17:01:58 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+ACTUAL_SETTINGS {"/persistent/physics/numThreads": 1, "/physics/physxDispatcher": true, "/plugins/carb.tasking.plugin/threadCount": 20, "/app/asyncRendering": false, "/app/asyncRenderingLowLatency": false, "/app/settings/persistent": false}
+ACTUAL_SIM_DEVICE cpu
+BEFORE_RESET
+Timeout (0:00:20)!
+Thread 0x000078e4d9505600 (most recent call first):
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 239 in initialize_physics
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 166 in _warm_start
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 914 in play
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 644 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/sim/simulation_context.py", line 519 in reset
+  File "/dev/stdin", line 18 in <module>
+Timeout (0:00:20)!
+Thread 0x000078e4d9505600 (most recent call first):
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 239 in initialize_physics
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 166 in _warm_start
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 914 in play
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 644 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/sim/simulation_context.py", line 519 in reset
+  File "/dev/stdin", line 18 in <module>
+PREFERENCE_AFTER {"sha256": "993f07e8c0a9d1d19cb8c8a10719c0e12bf1950021bcff6b5f2e2a8252a301ea", "byte_equal": true, "mtime_equal": true, "numThreads": 1}
+EVIDENCE_LOG /home/server/liufengrong/robot_lab/learnings/diagnostics/physx-initialization-20261022-1700/numthreads-1.log

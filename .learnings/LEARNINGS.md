@@ -1474,3 +1474,48 @@ Store future training-side replay, sensitivity and policy comparison results und
 - Related Files: learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/index.md
 
 ---
+
+## [LRN-20261022-001] correction
+
+**Logged**: 2026-10-22T17:28:04.302329+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+Isaac Sim 临时诊断参数可能改变 Git 之外的用户偏好，必须控制保存副作用并核验实际值。
+
+### Details
+将 `/persistent/physics/numThreads=1` 用于临时 CPU 评估时没有禁用偏好保存，
+且没有保留事前快照。server 随后持续加载值 1；受控空场景证明此值会触发初始化阻塞，
+0/8 可完成物理初始化。用户提供 younghit 的值 8 作为恢复参考并授权修复后，
+server 单字段改为 8，已通过无线程覆盖的新进程 wheel 构造/reset/3 步验证。
+跨机参考不能证明 server 的历史原值，当前有效值也不能替代修改前的字节证据。
+
+### Suggested Action
+1. 临时 Isaac Sim 诊断在启动前传入 `--/app/settings/persistent=false`，
+   并确认实际开关为 false；这不会阻止加载旧偏好。
+2. 从 Kit 日志 Applied configs 定位真实 user.config.json，记录诊断前后原始字节、
+   哈希和 mtime；发现变化时明确告知用户，不能把启动参数视为天然无持久副作用。
+3. 打印 SimulationContext 构造后的实际设置。CLI-only 且未打印实际值的实验不能排除参数问题。
+   使用有界、自有子进程完成测试，初始化核验避开策略加载和自动导出。
+4. 持久修复遵循已有授权范围：先备份、只改目标字段、保留其他字节，
+   再用无线程覆盖的全新进程确认配置被自动读取。不要重置整个偏好文件、删缓存或安装包来替代定位。
+
+### Metadata
+- Source: user_feedback
+- Related Files: .learnings/ERRORS.md; learnings/diagnostics/physx-preference-repair-20261022-1724/repair.json
+- Tags: isaacsim, physx, numThreads, persistent-preferences, diagnosis, side-effects
+- See Also: ERR-20261022-001
+- Pattern-Key: isaacsim.transient_diagnostics_must_not_persist_preferences
+- Recurrence-Count: 1
+- First-Seen: 2026-10-22
+- Last-Seen: 2026-10-22
+
+### Resolution
+- **Resolved**: 2026-10-22T17:28:04.302329+08:00
+- **Commit/PR**: N/A
+- **Notes**: 本次配置修复和验证已完成，错误事实及上述防范规则已记录。
+  仅追加本次条目，未修改旧记录、AGENTS.md 或技能实现。
+
+---
