@@ -79,6 +79,51 @@ def _motion_phase_window_weight(
     return entry.square() * (3.0 - 2.0 * entry) * exit.square() * (3.0 - 2.0 * exit)
 
 
+def motion_phase_anchor_vertical_velocity_error_huber(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    velocity_scale: float,
+    start_time_s: float,
+    end_time_s: float,
+    ramp_time_s: float,
+) -> torch.Tensor:
+    """Penalize world-z anchor COM velocity error with a negative weight.
+
+    Normalize the error by ``velocity_scale`` in m/s, then use Huber loss
+    with unit transition: quadratic near the target and linear farther away.
+    The reference stores COM velocities, matching ``body_com_lin_vel_w``.
+    """
+    if not math.isfinite(velocity_scale) or velocity_scale <= 0.0:
+        raise ValueError("Motion phase velocity reward requires a finite, positive velocity scale.")
+    blend = _motion_phase_window_weight(env, command_name, start_time_s, end_time_s, ramp_time_s)
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    robot_velocity_z = command.robot.data.body_com_lin_vel_w[:, command.robot_anchor_body_index, 2]
+    error = (robot_velocity_z - command.anchor_lin_vel_w[:, 2]) / velocity_scale
+    loss = torch.nn.functional.huber_loss(error, torch.zeros_like(error), reduction="none", delta=1.0)
+    return blend * loss
+
+
+def motion_phase_anchor_height_error_exp(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    std: float,
+    start_time_s: float,
+    end_time_s: float,
+    ramp_time_s: float,
+) -> torch.Tensor:
+    """Reward reference anchor link-origin height in a bounded motion phase.
+
+    Both anchor positions use world coordinates, including the environment
+    origin. Track only their z components; ``std`` is in meters.
+    """
+    if not math.isfinite(std) or std <= 0.0:
+        raise ValueError("Motion phase height reward requires a finite, positive standard deviation.")
+    blend = _motion_phase_window_weight(env, command_name, start_time_s, end_time_s, ramp_time_s)
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    error_z = command.robot_anchor_pos_w[:, 2] - command.anchor_pos_w[:, 2]
+    return blend * torch.exp(-(error_z / std).square())
+
+
 def motion_phase_anchor_pitch_angular_velocity_error_l2(
     env: ManagerBasedRLEnv,
     command_name: str,
