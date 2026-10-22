@@ -212,3 +212,63 @@ ValueError: Empty module name
   `.agents/...` 路径传给 `python -m unittest` 复现，随后改为直接执行并通过。
 
 ---
+
+## [ERR-20261022-001] isaacsim_persistent_physx_thread_setting
+
+**Logged**: 2026-10-22T17:28:04.302329+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+此前临时 CPU 评估使用了可持久化的 PhysX 线程参数且未禁用偏好保存；server 后续读取 numThreads=1，在初始化阶段阻塞。
+
+### Error
+在 2026-10-22 重启后的受控 CPU 空场景测试中，实际设置为
+`/persistent/physics/numThreads=1`、
+`/physics/physxDispatcher=true`、
+Carbonite threadCount=20 时，`SimulationContext.reset()` 40 秒未返回。
+堆栈停在 `SimulationManager.initialize_physics -> _physx_interface.update_simulation`。
+同一源程序仅将实际 numThreads 改为 0 或 8，reset 和 3 个物理步均通过。
+0/8 空场景另有默认 app.close 阶段超时，不能误报为所有关闭问题均已修复。
+
+### Context
+- 我此前发起的 CPU 评估命令明确包含
+  `--kit_args=--/plugins/carb.tasking.plugin/threadCount=2 --/persistent/physics/numThreads=1`，
+  未传 `--/app/settings/persistent=false`。随后 server 用户配置中的值为 1，重启后仍保留。
+- 操作错误是把可保存的用户偏好当成临时诊断参数，并缺少事前配置快照、实际值核验及事后字节检查。
+  没有故障前快照，不能严格断言 1 首次由哪次启动写入，或声称 server 故障前一定为 8。
+- 用户提供 younghit 机器该项为 8、其启动日志确认加载配置且启动成功的只读核验结果，
+  并明确批准 server 仅将 1 改为 8。这是用户提供的跨机参考，未从 server 独立访问 younghit。
+- 环境：conda `isaacsim-5.1`，IsaacLab 2.3.2，PhysX Core 107.3.26；
+  wheel task、腿部延迟 0..3、参考 NPZ 和策略导出文件不属于本次修改范围。
+
+### Suggested Fix
+临时 Isaac Sim 诊断应在启动前禁用偏好保存，定位 Applied configs 指向的真实配置文件，
+保存原始字节与 SHA-256，并在退出后确认不变。该开关仍会加载既有偏好，
+因此必须打印实际 numThreads、dispatcher 等值，不能只依据 CLI 参数推断。
+持久修复须获得用户授权、备份、只改目标字段，并用无线程覆盖的新进程复核。
+初始化诊断不应运行会加载/导出策略的完整 play 流程。
+
+### Metadata
+- Reproducible: yes
+- Related Files: /home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json; learnings/diagnostics/physx-initialization-20261022-1700/summary.json; learnings/diagnostics/physx-preference-repair-20261022-1724/repair.json; learnings/diagnostics/physx-preference-repair-20261022-1724/wheel-env-from-repaired-config.log; learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_11-01-24/evaluations/wheel-to-leg-live-cpu-review-20261022-001/raw/play-equivalent-a01/console.log
+- See Also: LRN-20261022-001
+
+### Resolution
+- **Resolved**: 2026-10-22T17:28:04.302329+08:00
+- **Commit/PR**: N/A
+- **Notes**: 按用户明确授权，在启动日志确认的 server user.config.json 中仅将
+  persistent.physics.numThreads 从 1 改为 8；只改变 1 个字节，保留其他字节、权限、
+  属主和 inode。原始文件备份为 `learnings/diagnostics/physx-preference-repair-20261022-1724/user.config.before.json`。
+  SHA-256 从 `993f07e8c0a9d1d19cb8c8a10719c0e12bf1950021bcff6b5f2e2a8252a301ea`
+  变为 `1ae98b6b715be429ab10ffb13fcfbd10bcc1497675297b02b09067ff1d7409dc`。
+  全新进程不传线程覆盖参数、也不调用线程 setter，直接从该配置读取实际值 8；
+  1 个 CUDA wheel 环境构造用时 9.796 秒、
+  reset 用时 0.205 秒，3 步观测和奖励均有限，
+  无终止/超时，子进程在 15.344 秒内以 rc=0 退出。
+  验证使用 app.close(wait_for_replicator=False)，未加载或导出策略；
+  配置在验证前后字节和修改时间不变，受保护源文件及旧证据哈希不变。
+  原生线程依赖为何在 1 下阻塞仍未定位，本记录不推断 SDK 历史默认值。
+
+---
