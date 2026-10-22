@@ -1,0 +1,778 @@
+{
+  "version": 1,
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-21_10-48-07/model_49999.pt",
+    "sha256": "4a8cfbaf37057ef942be44c3f4bea31ac37c16c14b243952e4ccadc4577ab957"
+  },
+  "supporting_jump_analysis": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evidence/training/jump-diagnostics-20261022-001.json",
+    "sha256": "0076e76be93c9e283674a4cdc67a3ee6f657f758738b4915dfd2ecb74adb6afc"
+  },
+  "reference": {
+    "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-20/wheel_to_leg_transform_50hz.npz",
+    "sha256": "4d17c9a09f1fd6201bf14d72a468eec9c8a58000b6f67777d93b964c387f5d62"
+  },
+  "stages_reference_frame_half_open": {
+    "crouch_1_00_to_1_20": [
+      50,
+      60
+    ],
+    "push_off_1_20_to_1_30": [
+      60,
+      65
+    ],
+    "flight_1_30_to_1_60": [
+      65,
+      80
+    ]
+  },
+  "reference_vz_prepare_peak_m_s": 2.2623584270477295,
+  "reference_velocity_vs_position_fd_rmse_m_s_1_10_to_1_30": 1.4026101098352228e-06,
+  "cases": {
+    "nominal-zero-delay-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/nominal-zero-delay-a01/result.json",
+        "sha256": "72325b93e687b496f3d03d3b269630f15423974c4da28e9e3238449604d212af"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/nominal-zero-delay-a01/telemetry.json.gz",
+        "sha256": "d850de38d3c24d27742feafcf9bb348bb838effa764bbd83ec4f4001ea0122e6"
+      },
+      "full_cycles": 5,
+      "stages": {
+        "crouch_1_00_to_1_20": {
+          "rmse_range_m_s": [
+            0.5974816276933416,
+            0.5974816276933416
+          ],
+          "bias_range_m_s": [
+            0.45223226123534593,
+            0.45223226123534593
+          ]
+        },
+        "push_off_1_20_to_1_30": {
+          "rmse_range_m_s": [
+            1.6493807654231787,
+            1.6493807654231787
+          ],
+          "bias_range_m_s": [
+            -1.3910494419823611,
+            -1.3910494419823611
+          ]
+        },
+        "flight_1_30_to_1_60": {
+          "rmse_range_m_s": [
+            0.7857732099807647,
+            0.7857732099807647
+          ],
+          "bias_range_m_s": [
+            -0.3469237680626326,
+            -0.3469237680626326
+          ]
+        }
+      },
+      "peak_actual_vz_range_m_s": [
+        0.5796801733542751,
+        0.5796801733542751
+      ],
+      "peak_leg_effort_utilization_range": [
+        0.4938159942626953,
+        0.4938159942626953
+      ],
+      "cycles": [
+        {
+          "episode_id": 0,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.5974816276933416,
+              "signed_velocity_error_mean_m_s": 0.45223226123534593,
+              "aligned_reward_mean": 0.08753045126795769
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.6493807654231787,
+              "signed_velocity_error_mean_m_s": -1.3910494419823611,
+              "aligned_reward_mean": 0.0695229448378086
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.7857732099807647,
+              "signed_velocity_error_mean_m_s": -0.3469237680626326,
+              "aligned_reward_mean": 0.06626010040442148
+            }
+          },
+          "prepare_peak_actual_vz": 0.5796801733542751,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.2,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.17503884105378614,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.62037007665138,
+          "prepare_peak_leg_effort_utilization": 0.4938159942626953,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.0333938122779636,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.03359864668726964,
+          "candidate_extra_reward_cycle_sum": -0.24288940562965927,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.4758271861685828,
+            "0.0": 1.6493807654231787,
+            "0.02": 1.6612016419950617
+          }
+        },
+        {
+          "episode_id": 1,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.5974816276933416,
+              "signed_velocity_error_mean_m_s": 0.45223226123534593,
+              "aligned_reward_mean": 0.08753045126795769
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.6493807654231787,
+              "signed_velocity_error_mean_m_s": -1.3910494419823611,
+              "aligned_reward_mean": 0.0695229448378086
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.7857732099807647,
+              "signed_velocity_error_mean_m_s": -0.3469237680626326,
+              "aligned_reward_mean": 0.06626010040442148
+            }
+          },
+          "prepare_peak_actual_vz": 0.5796801733542751,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.2,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.17503884105378614,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.62037007665138,
+          "prepare_peak_leg_effort_utilization": 0.4938159942626953,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.0333938122779636,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.03359864668726964,
+          "candidate_extra_reward_cycle_sum": -0.24288940562965927,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.4758271861685828,
+            "0.0": 1.6493807654231787,
+            "0.02": 1.6612016419950617
+          }
+        },
+        {
+          "episode_id": 2,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.5974816276933416,
+              "signed_velocity_error_mean_m_s": 0.45223226123534593,
+              "aligned_reward_mean": 0.08753045126795769
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.6493807654231787,
+              "signed_velocity_error_mean_m_s": -1.3910494419823611,
+              "aligned_reward_mean": 0.0695229448378086
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.7857732099807647,
+              "signed_velocity_error_mean_m_s": -0.3469237680626326,
+              "aligned_reward_mean": 0.06626010040442148
+            }
+          },
+          "prepare_peak_actual_vz": 0.5796801733542751,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.2,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.17503884105378614,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.62037007665138,
+          "prepare_peak_leg_effort_utilization": 0.4938159942626953,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.0333938122779636,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.03359864668726964,
+          "candidate_extra_reward_cycle_sum": -0.24288940562965927,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.4758271861685828,
+            "0.0": 1.6493807654231787,
+            "0.02": 1.6612016419950617
+          }
+        },
+        {
+          "episode_id": 3,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.5974816276933416,
+              "signed_velocity_error_mean_m_s": 0.45223226123534593,
+              "aligned_reward_mean": 0.08753045126795769
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.6493807654231787,
+              "signed_velocity_error_mean_m_s": -1.3910494419823611,
+              "aligned_reward_mean": 0.0695229448378086
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.7857732099807647,
+              "signed_velocity_error_mean_m_s": -0.3469237680626326,
+              "aligned_reward_mean": 0.06626010040442148
+            }
+          },
+          "prepare_peak_actual_vz": 0.5796801733542751,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.2,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.17503884105378614,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.62037007665138,
+          "prepare_peak_leg_effort_utilization": 0.4938159942626953,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.0333938122779636,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.03359864668726964,
+          "candidate_extra_reward_cycle_sum": -0.24288940562965927,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.4758271861685828,
+            "0.0": 1.6493807654231787,
+            "0.02": 1.6612016419950617
+          }
+        },
+        {
+          "episode_id": 4,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.5974816276933416,
+              "signed_velocity_error_mean_m_s": 0.45223226123534593,
+              "aligned_reward_mean": 0.08753045126795769
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.6493807654231787,
+              "signed_velocity_error_mean_m_s": -1.3910494419823611,
+              "aligned_reward_mean": 0.0695229448378086
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.7857732099807647,
+              "signed_velocity_error_mean_m_s": -0.3469237680626326,
+              "aligned_reward_mean": 0.06626010040442148
+            }
+          },
+          "prepare_peak_actual_vz": 0.5796801733542751,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.2,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.17503884105378614,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.62037007665138,
+          "prepare_peak_leg_effort_utilization": 0.4938159942626953,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.0333938122779636,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.03359864668726964,
+          "candidate_extra_reward_cycle_sum": -0.24288940562965927,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.4758271861685828,
+            "0.0": 1.6493807654231787,
+            "0.02": 1.6612016419950617
+          }
+        }
+      ]
+    },
+    "play-equivalent-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/play-equivalent-a01/result.json",
+        "sha256": "ed21f4469e4e9a68cdf7533e9d1a1598fcb8d8bb3d6b3e7a5ae38fda5818819f"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/play-equivalent-a01/telemetry.json.gz",
+        "sha256": "f095fcf9db4d9932d46db2956a37092fb7e887256f4abe0bc5b303a7635357ef"
+      },
+      "full_cycles": 5,
+      "stages": {
+        "crouch_1_00_to_1_20": {
+          "rmse_range_m_s": [
+            0.3263941869658586,
+            0.5120929827857694
+          ],
+          "bias_range_m_s": [
+            0.2995737167610964,
+            0.3780084579732015
+          ]
+        },
+        "push_off_1_20_to_1_30": {
+          "rmse_range_m_s": [
+            1.457523391744496,
+            1.6165264040285288
+          ],
+          "bias_range_m_s": [
+            -1.3662469512946278,
+            -1.2347183175699108
+          ]
+        },
+        "flight_1_30_to_1_60": {
+          "rmse_range_m_s": [
+            0.7729940342277493,
+            0.8240699968001983
+          ],
+          "bias_range_m_s": [
+            -0.40379477451056534,
+            -0.32308373410934893
+          ]
+        }
+      },
+      "peak_actual_vz_range_m_s": [
+        0.5438508395557524,
+        0.5909063592464957
+      ],
+      "peak_leg_effort_utilization_range": [
+        0.3900099754333496,
+        0.5502464294433593
+      ],
+      "cycles": [
+        {
+          "episode_id": 0,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.3263941869658586,
+              "signed_velocity_error_mean_m_s": 0.2995737167610964,
+              "aligned_reward_mean": 0.0963359072804451
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.457523391744496,
+              "signed_velocity_error_mean_m_s": -1.2347183175699108,
+              "aligned_reward_mean": 0.07496693059802055
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.7729940342277493,
+              "signed_velocity_error_mean_m_s": -0.40379477451056534,
+              "aligned_reward_mean": 0.06646940708160401
+            }
+          },
+          "prepare_peak_actual_vz": 0.5909063592464957,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.22,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.15863411061288715,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 3.980060603935753,
+          "prepare_peak_leg_effort_utilization": 0.4335719108581543,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.03149833059134959,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.02996440143502066,
+          "candidate_extra_reward_cycle_sum": -0.19217545771403532,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.300968809575629,
+            "0.0": 1.457523391744496,
+            "0.02": 1.4751438122685732
+          }
+        },
+        {
+          "episode_id": 1,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.37261187488821507,
+              "signed_velocity_error_mean_m_s": 0.33683325239216566,
+              "aligned_reward_mean": 0.0962906651198864
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.5112755164039609,
+              "signed_velocity_error_mean_m_s": -1.2822177329971816,
+              "aligned_reward_mean": 0.0770003467798233
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.8240699968001983,
+              "signed_velocity_error_mean_m_s": -0.39865517976856296,
+              "aligned_reward_mean": 0.06803640201687813
+            }
+          },
+          "prepare_peak_actual_vz": 0.5438508395557524,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.22,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.16944150866238547,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 3.9136181434433444,
+          "prepare_peak_leg_effort_utilization": 0.3900099754333496,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.0293484523682621,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.04887500447083726,
+          "candidate_extra_reward_cycle_sum": -0.21377381095970638,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.347349845318859,
+            "0.0": 1.5112755164039609,
+            "0.02": 1.5290923895544941
+          }
+        },
+        {
+          "episode_id": 2,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.4866496180772804,
+              "signed_velocity_error_mean_m_s": 0.3742897542466123,
+              "aligned_reward_mean": 0.09264808520674706
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.6112649322458494,
+              "signed_velocity_error_mean_m_s": -1.36464050785674,
+              "aligned_reward_mean": 0.07070871219038963
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.7764108854332721,
+              "signed_velocity_error_mean_m_s": -0.32308373410934893,
+              "aligned_reward_mean": 0.06637295757730802
+            }
+          },
+          "prepare_peak_actual_vz": 0.546686006573995,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.2,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.19834398679719265,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.490997162729643,
+          "prepare_peak_leg_effort_utilization": 0.4657869338989258,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.035506415046628985,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.026750052635907795,
+          "candidate_extra_reward_cycle_sum": -0.22729823835879476,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.4385605594364386,
+            "0.0": 1.6112649322458494,
+            "0.02": 1.6261487537873518
+          }
+        },
+        {
+          "episode_id": 3,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.35612180209291483,
+              "signed_velocity_error_mean_m_s": 0.32371539620048495,
+              "aligned_reward_mean": 0.0952731043100357
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.4857961424829622,
+              "signed_velocity_error_mean_m_s": -1.2539947419735784,
+              "aligned_reward_mean": 0.07719534188508988
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.7936852374616967,
+              "signed_velocity_error_mean_m_s": -0.3988538428507354,
+              "aligned_reward_mean": 0.06710314626495044
+            }
+          },
+          "prepare_peak_actual_vz": 0.5838154549012211,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.22,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.17391327633955414,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 3.924072135810602,
+          "prepare_peak_leg_effort_utilization": 0.3906286557515462,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.03721608559944754,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.03981709916916931,
+          "candidate_extra_reward_cycle_sum": -0.20243450024451093,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.329619892674988,
+            "0.0": 1.4857961424829622,
+            "0.02": 1.4993459380755925
+          }
+        },
+        {
+          "episode_id": 4,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.5120929827857694,
+              "signed_velocity_error_mean_m_s": 0.3780084579732015,
+              "aligned_reward_mean": 0.0901099182665348
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.6165264040285288,
+              "signed_velocity_error_mean_m_s": -1.3662469512946278,
+              "aligned_reward_mean": 0.06574680879712105
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.792037160905718,
+              "signed_velocity_error_mean_m_s": -0.3362151245985215,
+              "aligned_reward_mean": 0.06469738682111105
+            }
+          },
+          "prepare_peak_actual_vz": 0.5520720292770844,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.2,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.15896499903687622,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.529681996773962,
+          "prepare_peak_leg_effort_utilization": 0.5502464294433593,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.03534002201293821,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.023267667456863483,
+          "candidate_extra_reward_cycle_sum": -0.23275523535322162,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.4446837388123723,
+            "0.0": 1.6165264040285288,
+            "0.02": 1.629764450876561
+          }
+        }
+      ]
+    },
+    "training-random-start-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/training-random-start-a01/result.json",
+        "sha256": "6ae059b21325b4860877d454dc9ea6aea27466eeecb1275669d63ce616163403"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/training-random-start-a01/telemetry.json.gz",
+        "sha256": "8dd3a5ac4b9354ca80a5aca67725ef4fad6ec6a593fccaad51432d3294615584"
+      },
+      "full_cycles": 5,
+      "stages": {
+        "crouch_1_00_to_1_20": {
+          "rmse_range_m_s": [
+            0.31646171542073737,
+            0.44888592343392625
+          ],
+          "bias_range_m_s": [
+            0.2993598401058041,
+            0.4190395754593796
+          ]
+        },
+        "push_off_1_20_to_1_30": {
+          "rmse_range_m_s": [
+            1.3712187342329334,
+            1.6251807812898513
+          ],
+          "bias_range_m_s": [
+            -1.3975325799302105,
+            -1.1938048270776622
+          ]
+        },
+        "flight_1_30_to_1_60": {
+          "rmse_range_m_s": [
+            0.754111464183812,
+            0.935281171366822
+          ],
+          "bias_range_m_s": [
+            -0.5191392737818455,
+            -0.3060352390325327
+          ]
+        }
+      },
+      "peak_actual_vz_range_m_s": [
+        0.3766801126167589,
+        0.5367220002728142
+      ],
+      "peak_leg_effort_utilization_range": [
+        0.3060190518697103,
+        0.4514733632405599
+      ],
+      "cycles": [
+        {
+          "episode_id": 0,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.44888592343392625,
+              "signed_velocity_error_mean_m_s": 0.4190395754593796,
+              "aligned_reward_mean": 0.08965266570448875
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.6251807812898513,
+              "signed_velocity_error_mean_m_s": -1.3918095034021434,
+              "aligned_reward_mean": 0.06799870803952217
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.754111464183812,
+              "signed_velocity_error_mean_m_s": -0.3060352390325327,
+              "aligned_reward_mean": 0.0629998470346133
+            }
+          },
+          "prepare_peak_actual_vz": 0.4673945149436084,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.2,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.3211023478645812,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.636774308415079,
+          "prepare_peak_leg_effort_utilization": 0.38289766311645507,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.02799075262230389,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.020553734793139544,
+          "candidate_extra_reward_cycle_sum": -0.22188526062623257,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.446645841470726,
+            "0.0": 1.6251807812898513,
+            "0.02": 1.6439179818539629
+          }
+        },
+        {
+          "episode_id": 1,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.3919527715731658,
+              "signed_velocity_error_mean_m_s": 0.3573367352531688,
+              "aligned_reward_mean": 0.08826560452580452
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.3712187342329334,
+              "signed_velocity_error_mean_m_s": -1.1938048270776622,
+              "aligned_reward_mean": 0.07420634776353836
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.8677376884653912,
+              "signed_velocity_error_mean_m_s": -0.4279918757623777,
+              "aligned_reward_mean": 0.0667268139620622
+            }
+          },
+          "prepare_peak_actual_vz": 0.5367220002728142,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.24,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.004408355829796125,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 3.5999797686547654,
+          "prepare_peak_leg_effort_utilization": 0.4028559366861979,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.024753027375102345,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.10823382875213383,
+          "candidate_extra_reward_cycle_sum": -0.201716430505064,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.1970634389897756,
+            "0.0": 1.3712187342329334,
+            "0.02": 1.417999364980528
+          }
+        },
+        {
+          "episode_id": 2,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.31646171542073737,
+              "signed_velocity_error_mean_m_s": 0.2993598401058041,
+              "aligned_reward_mean": 0.07991321608424187
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.3729423992292866,
+              "signed_velocity_error_mean_m_s": -1.2483751850948381,
+              "aligned_reward_mean": 0.06950112953782081
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.935281171366822,
+              "signed_velocity_error_mean_m_s": -0.5053016186046305,
+              "aligned_reward_mean": 0.05849303752183914
+            }
+          },
+          "prepare_peak_actual_vz": 0.5271493503873957,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.24,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": 0.04989107354135385,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 3.355245955664594,
+          "prepare_peak_leg_effort_utilization": 0.3888307253519694,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.02491589583428135,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.1578644821470393,
+          "candidate_extra_reward_cycle_sum": -0.21637720981809366,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.15913485725205,
+            "0.0": 1.3729423992292866,
+            "0.02": 1.4568073242345507
+          }
+        },
+        {
+          "episode_id": 3,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.4113905543591214,
+              "signed_velocity_error_mean_m_s": 0.3923871965319386,
+              "aligned_reward_mean": 0.08568437844514847
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.5647420409611288,
+              "signed_velocity_error_mean_m_s": -1.3975325799302105,
+              "aligned_reward_mean": 0.06635332480072975
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.9315510807310711,
+              "signed_velocity_error_mean_m_s": -0.5191392737818455,
+              "aligned_reward_mean": 0.06571892773111661
+            }
+          },
+          "prepare_peak_actual_vz": 0.3766801126167589,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.22,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.21726327888543107,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 4.208381145182703,
+          "prepare_peak_leg_effort_utilization": 0.3060190518697103,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.022420027147092604,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.08601567330847815,
+          "candidate_extra_reward_cycle_sum": -0.24541172877164466,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.355430637981943,
+            "0.0": 1.5647420409611288,
+            "0.02": 1.6196396045634125
+          }
+        },
+        {
+          "episode_id": 4,
+          "stages": {
+            "crouch_1_00_to_1_20": {
+              "vertical_velocity_rmse_m_s": 0.38784122428602247,
+              "signed_velocity_error_mean_m_s": 0.3790549788707454,
+              "aligned_reward_mean": 0.09101516529917716
+            },
+            "push_off_1_20_to_1_30": {
+              "vertical_velocity_rmse_m_s": 1.4300690348955205,
+              "signed_velocity_error_mean_m_s": -1.245649076816336,
+              "aligned_reward_mean": 0.07415344715118408
+            },
+            "flight_1_30_to_1_60": {
+              "vertical_velocity_rmse_m_s": 0.8531579657553156,
+              "signed_velocity_error_mean_m_s": -0.44342050495404983,
+              "aligned_reward_mean": 0.06690070703625679
+            }
+          },
+          "prepare_peak_actual_vz": 0.513748099549992,
+          "prepare_peak_reference_vz": 2.2623584270477295,
+          "actual_peak_reference_time_s": 1.22,
+          "reference_peak_time_s": 1.26,
+          "vz_at_reference_takeoff_m_s": -0.04689651056215123,
+          "reference_vz_at_takeoff_m_s": 1.4943764209747314,
+          "push_leg_joint_velocity_rmse_rad_s": 3.6975993399925384,
+          "prepare_peak_leg_effort_utilization": 0.4514733632405599,
+          "prepare_leg_effort_saturation_frame_count": 0,
+          "velocity_vs_com_position_fd_rmse_m_s_1_10_to_1_30": 0.026334367817718547,
+          "raw_body_frame_vs_world_vz_max_difference_m_s_1_10_to_1_30": 0.08977146091600591,
+          "candidate_extra_reward_cycle_sum": -0.205792199460008,
+          "push_off_rmse_reference_shift_sensitivity": {
+            "-0.02": 1.2489451171542787,
+            "0.0": 1.4300690348955205,
+            "0.02": 1.474891688635638
+          }
+        }
+      ]
+    }
+  },
+  "existing_velocity_reward": {
+    "name": "motion_body_lin_vel",
+    "weight": 1.0,
+    "std_m_s": 1.0,
+    "body_count": 9,
+    "formula": "exp(-mean_body(sum_xyz((reference_COM_velocity_world - actual_COM_velocity_world)^2))/std^2)",
+    "exact_actual_reward_not_reconstructed": "Existing telemetry omits non-root body COM velocities; no finite-difference reconstruction is used to claim the exact reward."
+  },
+  "existing_takeoff_rewards": [
+    "anchor pitch angular velocity tracking",
+    "anchor orientation tracking"
+  ],
+  "candidate_not_installed": {
+    "name": "motion_takeoff_vertical_velocity",
+    "weight": -0.5,
+    "start_time_s": 1.1,
+    "end_time_s": 1.6,
+    "ramp_time_s": 0.05,
+    "formula": "phase_smoothstep * (reference_anchor_vz_world - actual_anchor_vz_world)^2; multiplied by negative weight and dt",
+    "purpose": "Focus only reference vertical velocity during push-off and flight; it does not reward unbounded upward velocity.",
+    "counterfactual_only": true,
+    "training_effect_unknown": true
+  },
+  "limitations": [
+    "Root COM velocity is rotated from body frame into world coordinates.",
+    "Control state is post-physics and its matched reference frame is the frame used for reward; one-control-frame reference shifts are reported as sensitivity only.",
+    "Only observed torque saturation is excluded; this does not prove that all actuator bandwidth constraints are absent.",
+    "No new checkpoint or new training is produced."
+  ],
+  "code_changed": false,
+  "training_started": false
+}
