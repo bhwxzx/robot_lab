@@ -1,0 +1,96 @@
+{"argv": ["/home/server/miniconda3/envs/isaacsim-5.1/bin/python", "-c", "import faulthandler,runpy,sys,pathlib; faulthandler.dump_traceback_later(35,repeat=True); script=sys.argv.pop(1); sys.path.insert(0,str(pathlib.Path(script).parent)); sys.argv[0]=script; runpy.run_path(script,run_name='__main__')", "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", "--task", "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0", "--run_id", "2026-10-22_11-01-24", "--batch_id", "wheel-to-leg-live-lean-review-20261022-002", "--evaluation_id", "play-equivalent-a01", "--candidate_id", "model_18000", "--checkpoint", "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_11-01-24/model_18000.pt", "--checkpoint_sha256", "a7d7cd0936ce9687f9497e255bfd7699ca7f80459765628dab2f335b5b6a40ae", "--artifact_kind", "native", "--artifact_path", "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_11-01-24/model_18000.pt", "--artifact_sha256", "a7d7cd0936ce9687f9497e255bfd7699ca7f80459765628dab2f335b5b6a40ae", "--run_identity_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_11-01-24/provenance/context-39c63075b25f60b3cfe64ff409e7ec67d4cb0bfa571ec336fddc9be303c1350e.json", "--run_identity_file_sha256", "39c63075b25f60b3cfe64ff409e7ec67d4cb0bfa571ec336fddc9be303c1350e", "--effective_config_reference_json", "{\"path\": \"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_11-01-24/provenance/config-2b8138a9140d4981c43c123827efa551ad634ed8a5541ffdef4da69136065cd8.json\", \"sha256\": \"2b8138a9140d4981c43c123827efa551ad634ed8a5541ffdef4da69136065cd8\"}", "--scenario_evidence_reference_json", "{\"path\": \"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_11-01-24/provenance/scenario-f5873ada7323275516c77556440645e7db9a9bdc42e392b5dc6fe1da6088773d.json\", \"sha256\": \"f5873ada7323275516c77556440645e7db9a9bdc42e392b5dc6fe1da6088773d\"}", "--scenario_id", "play-equivalent-lean", "--scenario_overrides_json", "{\"commands.motion.joint_position_range\": [0, 0], \"commands.motion.pose_range\": {}, \"commands.motion.velocity_range\": {}, \"evaluation.motion_mode\": \"randomized_start\", \"evaluation.motion_physics_window\": [50, 90], \"evaluation.motion_sha256\": \"4d17c9a09f1fd6201bf14d72a468eec9c8a58000b6f67777d93b964c387f5d62\", \"events.add_joint_default_pos\": null, \"events.base_com\": null, \"events.physics_material\": null, \"events.push_robot\": null, \"events.randomize_actuator_gains\": null, \"events.randomize_rigid_body_mass_base\": null, \"events.randomize_rigid_body_mass_others\": null, \"observations.policy.enable_corruption\": false, \"rewards.wheel_contact_continuous.weight\": 0.5, \"scene.contact_forces.debug_vis\": false}", "--command_schedule_json", "[]", "--duration_steps", "340", "--num_envs", "1", "--seed", "42", "--result_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_11-01-24/evaluations/wheel-to-leg-live-lean-review-20261022-002/raw/play-equivalent-a01/result.json", "--telemetry_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_11-01-24/evaluations/wheel-to-leg-live-lean-review-20261022-002/raw/play-equivalent-a01/telemetry.json.gz", "--telemetry_stride", "1", "--headless", "--device", "cuda:0", "--allow_training_overlap", "--no_video"]}
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/server/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.beyondmimic.config.LW_Wheel.flat_env_cfg:LWWheelBeyondMimicFlatEnvCfg
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.beyondmimic.config.LW_Wheel.agents.rsl_rl_ppo_cfg:LWBeyondMimicFlatPPORunnerCfg
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-10-22_15-29-29.log[0m
+[36m======================================================================================[0m
+
+[33m15:29:29 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m15:29:29 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+Timeout (0:00:35)!
+Thread 0x000070f5ea558600 (most recent call first):
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 239 in initialize_physics
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 166 in _warm_start
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 914 in play
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 644 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/sim/simulation_context.py", line 519 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/manager_based_env.py", line 173 in __init__
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/manager_based_rl_env.py", line 80 in __init__
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/gymnasium/envs/registration.py", line 734 in make
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1101 in _evaluate
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1872 in main
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab_tasks/isaaclab_tasks/utils/hydra.py", line 100 in hydra_main
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/core/utils.py", line 186 in run_job
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/hydra.py", line 119 in run
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 458 in <lambda>
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 220 in run_and_report
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 457 in _run_app
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 394 in _run_hydra
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/main.py", line 94 in decorated_main
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab_tasks/isaaclab_tasks/utils/hydra.py", line 103 in wrapper
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1877 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 98 in _run_module_code
+  File "<frozen runpy>", line 291 in run_path
+  File "<string>", line 1 in <module>
+Timeout (0:00:35)!
+Thread 0x000070f5ea558600 (most recent call first):
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 239 in initialize_physics
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 166 in _warm_start
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 914 in play
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 644 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/sim/simulation_context.py", line 519 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/manager_based_env.py", line 173 in __init__
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/manager_based_rl_env.py", line 80 in __init__
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/gymnasium/envs/registration.py", line 734 in make
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1101 in _evaluate
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1872 in main
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab_tasks/isaaclab_tasks/utils/hydra.py", line 100 in hydra_main
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/core/utils.py", line 186 in run_job
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/hydra.py", line 119 in run
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 458 in <lambda>
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 220 in run_and_report
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 457 in _run_app
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 394 in _run_hydra
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/main.py", line 94 in decorated_main
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab_tasks/isaaclab_tasks/utils/hydra.py", line 103 in wrapper
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1877 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 98 in _run_module_code
+  File "<frozen runpy>", line 291 in run_path
+  File "<string>", line 1 in <module>
+Timeout (0:00:35)!
+Thread 0x000070f5ea558600 (most recent call first):
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 239 in initialize_physics
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.simulation_manager/isaacsim/core/simulation_manager/impl/simulation_manager.py", line 166 in _warm_start
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 914 in play
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.api/isaacsim/core/api/simulation_context/simulation_context.py", line 644 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/sim/simulation_context.py", line 519 in reset
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/manager_based_env.py", line 173 in __init__
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab/isaaclab/envs/manager_based_rl_env.py", line 80 in __init__
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/gymnasium/envs/registration.py", line 734 in make
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1101 in _evaluate
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1872 in main
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab_tasks/isaaclab_tasks/utils/hydra.py", line 100 in hydra_main
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/core/utils.py", line 186 in run_job
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/hydra.py", line 119 in run
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 458 in <lambda>
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 220 in run_and_report
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 457 in _run_app
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/_internal/utils.py", line 394 in _run_hydra
+  File "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/hydra/main.py", line 94 in decorated_main
+  File "/home/server/liufengrong/IsaacLab-2.3.2/source/isaaclab_tasks/isaaclab_tasks/utils/hydra.py", line 103 in wrapper
+  File "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", line 1877 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 98 in _run_module_code
+  File "<frozen runpy>", line 291 in run_path
+  File "<string>", line 1 in <module>
