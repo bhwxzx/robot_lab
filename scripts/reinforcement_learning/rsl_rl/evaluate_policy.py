@@ -42,6 +42,7 @@ from policy_evaluation_telemetry import (
 from policy_evaluation_evidence import (
     EvaluationEvidenceError,
     EvaluationPublisher,
+    MOTION_GROUND_CONTACT_BODIES,
     build_scenario_contract,
     close_evaluation_resources,
     preflight_evaluation,
@@ -230,6 +231,7 @@ from isaaclab.envs import (
     ManagerBasedRLEnvCfg,
     multi_agent_to_single_agent,
 )
+from isaaclab.sensors import ContactSensorCfg
 from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg, RslRlVecEnvWrapper
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
@@ -698,6 +700,38 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
             "velocity_semantics": "wheel link origin (axle center) velocity in world frame; negative z means descending",
             "torque_semantics": "PD computed/applied drive torque for the just-completed physics step; excludes passive impact load",
         }
+    ground_sensors = []
+    ground_body_ids = []
+    if plan.scenario_contract["scenario_overrides"].get("evaluation.motion_ground_contacts"):
+        import omni.usd
+        from pxr import Usd, UsdPhysics
+
+        ground_body_ids, found = robot.find_bodies(list(MOTION_GROUND_CONTACT_BODIES), preserve_order=True)
+        ground_sensor_ids, sensor_found = sensor.find_bodies(list(MOTION_GROUND_CONTACT_BODIES), preserve_order=True)
+        if list(found) != list(MOTION_GROUND_CONTACT_BODIES) or list(sensor_found) != list(found):
+            raise ValueError("ground contact capture requires named thighs and shanks")
+        ground_sensors = [raw.scene[f"motion_self_{body}"] for body in MOTION_GROUND_CONTACT_BODIES]
+        ground_root = env_cfg.scene.terrain.prim_path
+        robot_root = "/World/envs/env_0/Robot"
+        stage = omni.usd.get_context().get_stage()
+        colliders = sorted(str(p.GetPath()) for p in Usd.PrimRange(
+            stage.GetPseudoRoot(), Usd.TraverseInstanceProxies()) if p.HasAPI(UsdPhysics.CollisionAPI))
+        if not colliders or any(not any(p == root or p.startswith(root + "/") for root in
+                                         (ground_root, robot_root)) for p in colliders):
+            raise ValueError("ground force balance requires only robot and ground colliders")
+        for body, probe in zip(MOTION_GROUND_CONTACT_BODIES, ground_sensors):
+            if probe.body_names != [body] or probe.contact_physx_view.filter_count < 1:
+                raise ValueError("self-contact force view must match the named robot body")
+        diagnostic["ground_contacts"] = {
+            "version": 1, "body_names": list(MOTION_GROUND_CONTACT_BODIES),
+            "sensor_type": "net_minus_robot_self_contacts", "terrain_type": env_cfg.scene.terrain.terrain_type,
+            "ground_prim_path": ground_root, "robot_prim_path": robot_root,
+            "scene_collision_prim_paths": colliders,
+            "self_filter_prim_paths_expr": list(ground_sensors[0].cfg.filter_prim_paths_expr),
+            "sampling_phase": "after_scene_update_before_reset",
+            "force_semantics": "net normal contact force minus robot-filtered self-contact normal force; only robot and ground colliders permitted",
+            "contact_positions_available": False,
+        }
     ledger = SignalLedger({name: args_cli.duration_steps for name in MOTION_REQUIRED_SIGNALS},
                           required_signals=MOTION_REQUIRED_SIGNALS)
     pending = {}
@@ -781,6 +815,22 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
                   "episode_start_frame": start_frame}
         for name, value in tensors.items():
             record[name] = _tensor_row(value.reshape(1, -1), 0)
+        if ground_sensors:
+            net = sensor.data.net_forces_w[:, ground_sensor_ids].reshape(1, -1)
+            probes = torch.cat([p.data.net_forces_w.reshape(1, 3) for p in ground_sensors], dim=1)
+            error = float(torch.max(torch.abs(probes - net)).item())
+            if error > .01:
+                raise RuntimeError("independent body contact views disagree")
+            self_forces = torch.cat([p.data.force_matrix_w.sum(dim=2).reshape(1, 3)
+                                     for p in ground_sensors], dim=1)
+            record["body_net_contact_forces_w"] = _tensor_row(net, 0)
+            record["robot_self_contact_forces_w"] = _tensor_row(self_forces, 0)
+            record["ground_contact_forces_w"] = _tensor_row(net - self_forces, 0)
+            record["body_net_sensor_crosscheck_max_abs_error_n"] = error
+            record["ground_contact_body_positions_w"] = _tensor_row(
+                robot.data.body_link_pos_w[:, ground_body_ids].reshape(1, -1), 0)
+            if step == 0 and substep_count == 1:
+                print(f"[INFO] Body contact force view crosscheck error: {error} N", flush=True)
         if pull is not None:
             record.update(applied_pull)
             for name, value in {
@@ -1003,6 +1053,7 @@ def _evaluate(
         if dotted_path in (
             "evaluation.roa_mode", "evaluation.dwaq_mode", ROA_SENSOR_DELAY_OPTION,
             "evaluation.motion_mode", "evaluation.motion_sha256", "evaluation.motion_physics_window",
+            "evaluation.motion_ground_contacts",
             "evaluation.landing_pull",
         ):
             continue
@@ -1022,6 +1073,15 @@ def _evaluate(
             for actuator in env_cfg.scene.robot.actuators.values():
                 if hasattr(actuator, "min_delay"):
                     actuator.min_delay = actuator.max_delay = 0
+        if evaluation_plan.scenario_contract["scenario_overrides"].get("evaluation.motion_ground_contacts"):
+            if env_cfg.scene.terrain.terrain_type != "plane":
+                raise ValueError("ground contact capture currently requires plane terrain")
+            for body in MOTION_GROUND_CONTACT_BODIES:
+                setattr(env_cfg.scene, f"motion_self_{body}", ContactSensorCfg(
+                    prim_path=f"{{ENV_REGEX_NS}}/Robot/{body}", history_length=0,
+                    filter_prim_paths_expr=["{ENV_REGEX_NS}/Robot/.*"],
+                    update_period=0.0, debug_vis=False,
+                ))
     if command_schedule:
         command_cfg = env_cfg.commands.base_velocity
         command_cfg.resampling_time_range = (1.0e9, 1.0e9)
