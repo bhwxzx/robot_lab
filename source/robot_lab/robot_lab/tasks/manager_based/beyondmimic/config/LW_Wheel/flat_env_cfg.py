@@ -25,12 +25,35 @@ class LWActionsCfg:
 
 @configclass
 class LWWheelRewardsCfg(RewardsCfg):
-    """Hip alignment for the wheel-to-leg transition."""
+    """Wheel transition, takeoff and flight tracking rewards."""
 
     hip_pos_zero_l2 = RewTerm(
         func=mdp.joint_pos_zero_l2,
         weight=-1.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_hip_joint", "left_hip_joint"])},
+    )
+
+    motion_takeoff_vertical_velocity = RewTerm(
+        func=mdp.motion_phase_anchor_vertical_velocity_error_huber,
+        weight=-2.0,
+        params={
+            "command_name": "motion",
+            "velocity_scale": 1.0,
+            "start_time_s": 1.10,
+            "end_time_s": 1.36,
+            "ramp_time_s": 0.04,
+        },
+    )
+    motion_flight_height = RewTerm(
+        func=mdp.motion_phase_anchor_height_error_exp,
+        weight=2.0,
+        params={
+            "command_name": "motion",
+            "std": 0.10,
+            "start_time_s": 1.20,
+            "end_time_s": 1.70,
+            "ramp_time_s": 0.05,
+        },
     )
 
 
