@@ -1,0 +1,380 @@
+{
+  "version": 1,
+  "question": "Did both wheel-to-leg checkpoints contact the ground near the knees?",
+  "force_threshold_n": 1.0,
+  "physics_dt_s": 0.005,
+  "phase_time_semantics": "control reference frame/fps; substep durations use 5 ms",
+  "ground_force_method": "measured net normal force minus robot-filtered self-contact normal force, with a verified scene containing only robot and ground colliders",
+  "contact_points_measured": false,
+  "geometry_meshes": {
+    "right": {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/data/Robots/LW/LW_description/meshes/right_thigh.stl",
+      "sha256": "22f3f46e572e5528996225679f8683db71b30029f77fd1f912272138fe32ad66"
+    },
+    "left": {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/data/Robots/LW/LW_description/meshes/left_thigh.stl",
+      "sha256": "728b0b7f1d745ecdebc37f22e0f594883a4412065180fa26814b3bcf7116165c"
+    }
+  },
+  "runs": {
+    "2026-10-20_19-31-57": {
+      "checkpoint": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-20_19-31-57/model_49999.pt",
+        "sha256": "668eddb7697bca0cb70a73d5121744f28b39453adacc572e32205dd3c2b3f82e"
+      },
+      "manifest": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-20_19-31-57/evaluations/wheel-to-leg-knee-ground-20261022-005/manifest.json",
+        "sha256": "85f605cfcaeb11f65be0362accb182f70461de6c558aada6e000ab979dc55ca2"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-20_19-31-57/evaluations/wheel-to-leg-knee-ground-20261022-005/raw/play-ground-a01/result.json",
+        "sha256": "adc77d63c020ddb88fe91576506dd2499bbf1be88e341425d1802e3ec3d8b2be"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-20_19-31-57/evaluations/wheel-to-leg-knee-ground-20261022-005/raw/play-ground-a01/telemetry.json.gz",
+        "sha256": "5fae053cd896b23fef0753e4f0c214b4412082eb987f4318c2fe6fb57b1de984"
+      },
+      "previous_play_telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-20_19-31-57/evaluations/wheel-to-leg-jump-review-20261021-001/raw/play-equivalent-a01/telemetry.json.gz",
+        "sha256": "e364e5175e43557a3804553b557b8d5e975feee2569bc6d04c10dd1278595b22"
+      },
+      "wheel_contact_reward_weight": 0.5,
+      "physics_samples": 4000,
+      "full_cycles": 5,
+      "cycles_with_leg_ground_contact": 5,
+      "body_peaks_n": {
+        "right_thigh_link": 4973.046875000045,
+        "left_thigh_link": 4190.324218750038,
+        "right_shank_link": 0.0,
+        "left_shank_link": 0.0
+      },
+      "contact_duration_range_s": [
+        0.045,
+        0.06
+      ],
+      "contact_reference_frame_time_range_s": [
+        1.54,
+        1.6
+      ],
+      "max_self_contact_normal_force_n": 0.0,
+      "max_ground_horizontal_normal_force_n": 0.0006681727827526629,
+      "min_ground_z_normal_force_n": 0.0,
+      "independent_contact_view_max_error_n": 0.0,
+      "initial_physical_parameters_equal_previous_play": true,
+      "root_position_max_abs_difference_from_previous_play_m": 0.0,
+      "geometry_localization": [
+        {
+          "side": "right",
+          "control_reference_frame_time_s": 1.54,
+          "lowest_visual_mesh_vertex_world_m": [
+            0.19969276898132962,
+            -0.17330905333035554,
+            -0.001432620016434627
+          ],
+          "knee_joint_center_world_m": [
+            0.19972017407417297,
+            -0.19345645606517792,
+            0.05788077414035797
+          ],
+          "mesh_vertex_distance_to_knee_center_m": 0.06264181761728566,
+          "method": "STL visual mesh transformed by recorded thigh-link pose at the control endpoint; not a measured contact point"
+        },
+        {
+          "side": "left",
+          "control_reference_frame_time_s": 1.56,
+          "lowest_visual_mesh_vertex_world_m": [
+            0.21322680576028352,
+            0.16764186325332647,
+            -0.0004120239715095786
+          ],
+          "knee_joint_center_world_m": [
+            0.21621963381767273,
+            0.18650788068771362,
+            0.059246353805065155
+          ],
+          "mesh_vertex_distance_to_knee_center_m": 0.06264188433107837,
+          "method": "STL visual mesh transformed by recorded thigh-link pose at the control endpoint; not a measured contact point"
+        }
+      ],
+      "cycles": [
+        {
+          "episode_id": 0,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 2044.156616210956,
+            "left_thigh_link": 4048.7194824219114,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.045,
+          "longest_contact_interval_s": 0.045,
+          "contact_reference_frame_time_range_s": [
+            1.56,
+            1.6
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.08,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.08,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.02
+        },
+        {
+          "episode_id": 1,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 1400.8419189453252,
+            "left_thigh_link": 4190.324218750038,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.05,
+          "longest_contact_interval_s": 0.05,
+          "contact_reference_frame_time_range_s": [
+            1.56,
+            1.6
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.085,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.085,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.01
+        },
+        {
+          "episode_id": 2,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 4880.362792968794,
+            "left_thigh_link": 2385.3964843750214,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.055,
+          "longest_contact_interval_s": 0.055,
+          "contact_reference_frame_time_range_s": [
+            1.54,
+            1.6
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.09,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.085,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.005
+        },
+        {
+          "episode_id": 3,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 2455.9494628906473,
+            "left_thigh_link": 3138.080322265653,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.045,
+          "longest_contact_interval_s": 0.045,
+          "contact_reference_frame_time_range_s": [
+            1.56,
+            1.6
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.08,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.08,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.025
+        },
+        {
+          "episode_id": 4,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 4973.046875000045,
+            "left_thigh_link": 2733.2736816406496,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.06,
+          "longest_contact_interval_s": 0.06,
+          "contact_reference_frame_time_range_s": [
+            1.54,
+            1.6
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.09,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.08,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.01
+        }
+      ]
+    },
+    "2026-10-21_10-48-07": {
+      "checkpoint": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-21_10-48-07/model_49999.pt",
+        "sha256": "4a8cfbaf37057ef942be44c3f4bea31ac37c16c14b243952e4ccadc4577ab957"
+      },
+      "manifest": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-knee-ground-20261022-005/manifest.json",
+        "sha256": "d5f41d120ee7652921e4030b7e6cd69cc89336e1fdbebcf80dc0b19160c78679"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-knee-ground-20261022-005/raw/play-ground-a01/result.json",
+        "sha256": "083b90cbc9a593b216cc75c53e86f40baa4cb18d43c5cba6f88f297670b03fef"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-knee-ground-20261022-005/raw/play-ground-a01/telemetry.json.gz",
+        "sha256": "3d77ce1d0ca25a24e797361d418f040ca120249a2f4678a05793a145bdb5c0b8"
+      },
+      "previous_play_telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/play-equivalent-a01/telemetry.json.gz",
+        "sha256": "f095fcf9db4d9932d46db2956a37092fb7e887256f4abe0bc5b303a7635357ef"
+      },
+      "wheel_contact_reward_weight": 0.0,
+      "physics_samples": 4000,
+      "full_cycles": 5,
+      "cycles_with_leg_ground_contact": 5,
+      "body_peaks_n": {
+        "right_thigh_link": 1927.9591064453298,
+        "left_thigh_link": 4505.940429687541,
+        "right_shank_link": 0.0,
+        "left_shank_link": 0.0
+      },
+      "contact_duration_range_s": [
+        0.08,
+        0.105
+      ],
+      "contact_reference_frame_time_range_s": [
+        1.54,
+        1.64
+      ],
+      "max_self_contact_normal_force_n": 0.0,
+      "max_ground_horizontal_normal_force_n": 0.0006054129335097969,
+      "min_ground_z_normal_force_n": 0.0,
+      "independent_contact_view_max_error_n": 0.0,
+      "initial_physical_parameters_equal_previous_play": true,
+      "root_position_max_abs_difference_from_previous_play_m": 0.0,
+      "geometry_localization": [
+        {
+          "side": "right",
+          "control_reference_frame_time_s": 1.56,
+          "lowest_visual_mesh_vertex_world_m": [
+            0.04214334860268425,
+            -0.16500341565098922,
+            -0.0026600810474239345
+          ],
+          "knee_joint_center_world_m": [
+            0.04779982566833496,
+            -0.186692014336586,
+            0.05583442002534866
+          ],
+          "mesh_vertex_distance_to_knee_center_m": 0.06264182070703005,
+          "method": "STL visual mesh transformed by recorded thigh-link pose at the control endpoint; not a measured contact point"
+        },
+        {
+          "side": "left",
+          "control_reference_frame_time_s": 1.54,
+          "lowest_visual_mesh_vertex_world_m": [
+            0.08280796091568443,
+            0.1538585767583693,
+            -0.0006428215980668339
+          ],
+          "knee_joint_center_world_m": [
+            0.08337269723415375,
+            0.17542800307273865,
+            0.058165669441223145
+          ],
+          "mesh_vertex_distance_to_knee_center_m": 0.06264182067084782,
+          "method": "STL visual mesh transformed by recorded thigh-link pose at the control endpoint; not a measured contact point"
+        }
+      ],
+      "cycles": [
+        {
+          "episode_id": 0,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 1768.5657958984534,
+            "left_thigh_link": 4049.9184570312864,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.08,
+          "longest_contact_interval_s": 0.05,
+          "contact_reference_frame_time_range_s": [
+            1.56,
+            1.64
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.06,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.025,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.05
+        },
+        {
+          "episode_id": 1,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 1778.0426025390786,
+            "left_thigh_link": 4202.702148437538,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.085,
+          "longest_contact_interval_s": 0.085,
+          "contact_reference_frame_time_range_s": [
+            1.54,
+            1.62
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.065,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.015,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.05
+        },
+        {
+          "episode_id": 2,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 1883.5899658203296,
+            "left_thigh_link": 4505.940429687541,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.08,
+          "longest_contact_interval_s": 0.065,
+          "contact_reference_frame_time_range_s": [
+            1.54,
+            1.62
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.075,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.01,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.065
+        },
+        {
+          "episode_id": 3,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 1636.3677978515773,
+            "left_thigh_link": 4116.693359375037,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.08,
+          "longest_contact_interval_s": 0.08,
+          "contact_reference_frame_time_range_s": [
+            1.54,
+            1.62
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.06,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.015,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.045
+        },
+        {
+          "episode_id": 4,
+          "touched": true,
+          "body_peaks_n": {
+            "right_thigh_link": 1927.9591064453298,
+            "left_thigh_link": 4235.241699218788,
+            "right_shank_link": 0.0,
+            "left_shank_link": 0.0
+          },
+          "total_contact_duration_s": 0.105,
+          "longest_contact_interval_s": 0.105,
+          "contact_reference_frame_time_range_s": [
+            1.54,
+            1.64
+          ],
+          "four_foot_wheel_unloaded_longest_s_at_10n": 0.065,
+          "eight_tracked_bodies_unloaded_longest_s_at_10n": 0.01,
+          "longest_four_support_unloaded_while_leg_loaded_s": 0.065
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Reported contact points are unavailable on this GPU plane path. Mesh lowest vertices localize the knee region geometrically, not as measured contact points.",
+    "One seed, one play-equivalent scenario, 5 complete cycles per checkpoint; censored tail excluded from cycle counts.",
+    "No training configuration or checkpoint was changed."
+  ]
+}

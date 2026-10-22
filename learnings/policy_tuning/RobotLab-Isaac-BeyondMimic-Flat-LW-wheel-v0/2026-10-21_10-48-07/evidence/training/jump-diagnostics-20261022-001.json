@@ -1,0 +1,890 @@
+{
+  "version": 2,
+  "question": "Does removing the wheel contact reward improve the latest wheel-to-leg jump?",
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-21_10-48-07/model_49999.pt",
+    "sha256": "4a8cfbaf37057ef942be44c3f4bea31ac37c16c14b243952e4ccadc4577ab957"
+  },
+  "batch_manifest": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/manifest.json",
+    "sha256": "c931721f3ae22a353fd2fc699f0453f3adee0b2be16bf087878093ebc6769932"
+  },
+  "reference": {
+    "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-20/wheel_to_leg_transform_50hz.npz",
+    "sha256": "4d17c9a09f1fd6201bf14d72a468eec9c8a58000b6f67777d93b964c387f5d62"
+  },
+  "host_id": "server-System-Product-Name",
+  "baseline_analysis": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-20_19-31-57/evidence/training/jump-diagnostics-20261021-001.json",
+    "sha256": "bf6c693674d2d45d825417407c15171225f64e0b1217f2c4a75ce4d7b57a1d50"
+  },
+  "baseline_manifest": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-20_19-31-57/evaluations/wheel-to-leg-jump-review-20261021-001/manifest.json",
+    "sha256": "5c9c5266722cadb3d30ecc048bd4c2db3f241ef6e63db734df35bf89c0911fe7"
+  },
+  "reference_timing_s": {
+    "takeoff": 1.3,
+    "landing": 1.6,
+    "planned_flight_duration": 0.3
+  },
+  "reference_vz_at_1_30_s": 1.4943764209747314,
+  "reference_prepare_vz_peak_1_10_to_1_30_s": 2.2623584270477295,
+  "measurement_definition": {
+    "support_bodies": [
+      "right_foot_link",
+      "left_foot_link",
+      "right_wheel_link",
+      "left_wheel_link"
+    ],
+    "unloaded_condition": "all four world-z contact forces < 10 N, sampled every 5 ms; other-body contact is not directly captured",
+    "window_reference_s": [
+      0.8,
+      1.82
+    ],
+    "contiguous_rule": "any support-force sample >= threshold breaks interval; no minimum-duration filter",
+    "time_coordinates": "force sample occurs after physics at frame/fps + (substep+1)*0.005 s; control state at frame/fps + 0.02 s",
+    "completion_is_not_jump_success": true,
+    "censored_segments_count_as_success": false
+  },
+  "cases": {
+    "nominal-zero-delay-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/nominal-zero-delay-a01/result.json",
+        "sha256": "72325b93e687b496f3d03d3b269630f15423974c4da28e9e3238449604d212af"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/nominal-zero-delay-a01/telemetry.json.gz",
+        "sha256": "d850de38d3c24d27742feafcf9bb348bb838effa764bbd83ec4f4001ea0122e6"
+      },
+      "telemetry_status": "complete",
+      "completed_segments": 5,
+      "failed_segments": 0,
+      "frame_zero_completed_cycles": 5,
+      "censored_segments": 1,
+      "longest_contiguous_unloaded_s_range": [
+        0.08,
+        0.08
+      ],
+      "vz_at_1_30_s_range": [
+        -0.17503884105378614,
+        -0.17503884105378614
+      ],
+      "flight_height_deficit_max_m_range": [
+        0.2046842873096466,
+        0.2046842873096466
+      ],
+      "original_metrics": {
+        "action_rate_rms": 0.17640789139588373,
+        "anchor_orientation_rmse_rad": 0.05243311613907539,
+        "anchor_position_rmse_m": 0.07898591490275622,
+        "body_orientation_rmse_rad": 0.11574157112903369,
+        "body_position_rmse_m": 0.052177447944067736,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 11.453948020935059,
+        "max_abs_applied_torque": 62.024356842041016,
+        "max_joint_effort_utilization": 0.5168696403503418,
+        "mean_reward": 0.09199422888457776,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.14658160645830112,
+        "real_time_factor": 0.8357439313296993,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 5.57221992152724
+      },
+      "physics_window_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 0,
+        "max_abs_applied_torque_by_joint_nm": [
+          29.160554885864258,
+          20.843008041381836,
+          30.69399642944336,
+          34.35360336303711,
+          43.977073669433594,
+          62.024356842041016,
+          6.099638938903809,
+          3.545250415802002,
+          3.9657623767852783,
+          3.4492263793945312
+        ],
+        "max_abs_applied_torque_nm": 62.024356842041016,
+        "max_abs_computed_torque_nm": 62.024356842041016,
+        "max_applied_effort_utilization": 0.5168696403503418,
+        "max_single_foot_normal_force_n": 1146.8425292968855,
+        "max_single_wheel_normal_force_n": 676.8010253906311,
+        "max_summed_wheel_normal_force_z_n": 676.801025390625,
+        "max_wheel_downward_speed_before_m_s": 0.676138699054718,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "cycles": [
+        {
+          "episode_id": 0,
+          "longest_contiguous_support_unloaded_s": 0.08,
+          "total_support_unloaded_s": 0.095,
+          "longest_interval_first_force_sample_reference_s": 1.525,
+          "longest_interval_last_force_sample_reference_s": 1.6,
+          "reference_flight_support_present_fraction": 0.7,
+          "root_world_vz_at_reference_1_30_s": -0.17503884105378614,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5796801733542751,
+          "reference_flight_max_height_deficit_m": 0.2046842873096466,
+          "mean_body_position_reward_factor_during_reference_flight": 0.79337010910227,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.08,
+            "5.0": 0.08,
+            "10.0": 0.08,
+            "20.0": 0.08
+          }
+        },
+        {
+          "episode_id": 1,
+          "longest_contiguous_support_unloaded_s": 0.08,
+          "total_support_unloaded_s": 0.095,
+          "longest_interval_first_force_sample_reference_s": 1.525,
+          "longest_interval_last_force_sample_reference_s": 1.6,
+          "reference_flight_support_present_fraction": 0.7,
+          "root_world_vz_at_reference_1_30_s": -0.17503884105378614,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5796801733542751,
+          "reference_flight_max_height_deficit_m": 0.2046842873096466,
+          "mean_body_position_reward_factor_during_reference_flight": 0.79337010910227,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.08,
+            "5.0": 0.08,
+            "10.0": 0.08,
+            "20.0": 0.08
+          }
+        },
+        {
+          "episode_id": 2,
+          "longest_contiguous_support_unloaded_s": 0.08,
+          "total_support_unloaded_s": 0.095,
+          "longest_interval_first_force_sample_reference_s": 1.525,
+          "longest_interval_last_force_sample_reference_s": 1.6,
+          "reference_flight_support_present_fraction": 0.7,
+          "root_world_vz_at_reference_1_30_s": -0.17503884105378614,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5796801733542751,
+          "reference_flight_max_height_deficit_m": 0.2046842873096466,
+          "mean_body_position_reward_factor_during_reference_flight": 0.79337010910227,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.08,
+            "5.0": 0.08,
+            "10.0": 0.08,
+            "20.0": 0.08
+          }
+        },
+        {
+          "episode_id": 3,
+          "longest_contiguous_support_unloaded_s": 0.08,
+          "total_support_unloaded_s": 0.095,
+          "longest_interval_first_force_sample_reference_s": 1.525,
+          "longest_interval_last_force_sample_reference_s": 1.6,
+          "reference_flight_support_present_fraction": 0.7,
+          "root_world_vz_at_reference_1_30_s": -0.17503884105378614,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5796801733542751,
+          "reference_flight_max_height_deficit_m": 0.2046842873096466,
+          "mean_body_position_reward_factor_during_reference_flight": 0.79337010910227,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.08,
+            "5.0": 0.08,
+            "10.0": 0.08,
+            "20.0": 0.08
+          }
+        },
+        {
+          "episode_id": 4,
+          "longest_contiguous_support_unloaded_s": 0.08,
+          "total_support_unloaded_s": 0.095,
+          "longest_interval_first_force_sample_reference_s": 1.525,
+          "longest_interval_last_force_sample_reference_s": 1.6,
+          "reference_flight_support_present_fraction": 0.7,
+          "root_world_vz_at_reference_1_30_s": -0.17503884105378614,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5796801733542751,
+          "reference_flight_max_height_deficit_m": 0.2046842873096466,
+          "mean_body_position_reward_factor_during_reference_flight": 0.79337010910227,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.08,
+            "5.0": 0.08,
+            "10.0": 0.08,
+            "20.0": 0.08
+          }
+        }
+      ]
+    },
+    "play-equivalent-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/play-equivalent-a01/result.json",
+        "sha256": "ed21f4469e4e9a68cdf7533e9d1a1598fcb8d8bb3d6b3e7a5ae38fda5818819f"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/play-equivalent-a01/telemetry.json.gz",
+        "sha256": "f095fcf9db4d9932d46db2956a37092fb7e887256f4abe0bc5b303a7635357ef"
+      },
+      "telemetry_status": "complete",
+      "completed_segments": 5,
+      "failed_segments": 0,
+      "frame_zero_completed_cycles": 5,
+      "censored_segments": 1,
+      "longest_contiguous_unloaded_s_range": [
+        0.06,
+        0.075
+      ],
+      "vz_at_1_30_s_range": [
+        -0.19834398679719265,
+        -0.15863411061288715
+      ],
+      "flight_height_deficit_max_m_range": [
+        0.19076499342918396,
+        0.20502260327339172
+      ],
+      "original_metrics": {
+        "action_rate_rms": 0.17454813094927155,
+        "anchor_orientation_rmse_rad": 0.051020047017095366,
+        "anchor_position_rmse_m": 0.07243554626591661,
+        "body_orientation_rmse_rad": 0.12294065232243791,
+        "body_position_rmse_m": 0.05246268203668016,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 11.529243469238281,
+        "max_abs_applied_torque": 65.84982299804688,
+        "max_joint_effort_utilization": 0.548748524983724,
+        "mean_reward": 0.09254584021493792,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.15094480126918117,
+        "real_time_factor": 0.8308107959966583,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 5.451316071028662
+      },
+      "physics_window_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 0,
+        "max_abs_applied_torque_by_joint_nm": [
+          31.42428970336914,
+          23.44745445251465,
+          46.54539108276367,
+          39.332759857177734,
+          53.75746154785156,
+          66.02957153320312,
+          11.132665634155273,
+          4.298399925231934,
+          10.547344207763672,
+          13.718938827514648
+        ],
+        "max_abs_applied_torque_nm": 66.02957153320312,
+        "max_abs_computed_torque_nm": 66.02957153320312,
+        "max_applied_effort_utilization": 0.5502464294433593,
+        "max_single_foot_normal_force_n": 1294.562866210949,
+        "max_single_wheel_normal_force_n": 1048.8498535156343,
+        "max_summed_wheel_normal_force_z_n": 1048.849853515625,
+        "max_wheel_downward_speed_before_m_s": 0.644307553768158,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "cycles": [
+        {
+          "episode_id": 0,
+          "longest_contiguous_support_unloaded_s": 0.06,
+          "total_support_unloaded_s": 0.08499999999999999,
+          "longest_interval_first_force_sample_reference_s": 1.555,
+          "longest_interval_last_force_sample_reference_s": 1.61,
+          "reference_flight_support_present_fraction": 0.75,
+          "root_world_vz_at_reference_1_30_s": -0.15863411061288715,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5909063592464957,
+          "reference_flight_max_height_deficit_m": 0.19076499342918396,
+          "mean_body_position_reward_factor_during_reference_flight": 0.8163764785505745,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.05,
+            "5.0": 0.05,
+            "10.0": 0.06,
+            "20.0": 0.065
+          }
+        },
+        {
+          "episode_id": 1,
+          "longest_contiguous_support_unloaded_s": 0.065,
+          "total_support_unloaded_s": 0.065,
+          "longest_interval_first_force_sample_reference_s": 1.54,
+          "longest_interval_last_force_sample_reference_s": 1.6,
+          "reference_flight_support_present_fraction": 0.7833333333333333,
+          "root_world_vz_at_reference_1_30_s": -0.16944150866238547,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5438508395557524,
+          "reference_flight_max_height_deficit_m": 0.19579389691352844,
+          "mean_body_position_reward_factor_during_reference_flight": 0.8089491537188229,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.065,
+            "5.0": 0.065,
+            "10.0": 0.065,
+            "20.0": 0.065
+          }
+        },
+        {
+          "episode_id": 2,
+          "longest_contiguous_support_unloaded_s": 0.075,
+          "total_support_unloaded_s": 0.075,
+          "longest_interval_first_force_sample_reference_s": 1.545,
+          "longest_interval_last_force_sample_reference_s": 1.615,
+          "reference_flight_support_present_fraction": 0.8,
+          "root_world_vz_at_reference_1_30_s": -0.19834398679719265,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.546686006573995,
+          "reference_flight_max_height_deficit_m": 0.19185161590576172,
+          "mean_body_position_reward_factor_during_reference_flight": 0.8023486435760939,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.075,
+            "5.0": 0.075,
+            "10.0": 0.075,
+            "20.0": 0.08
+          }
+        },
+        {
+          "episode_id": 3,
+          "longest_contiguous_support_unloaded_s": 0.06,
+          "total_support_unloaded_s": 0.06,
+          "longest_interval_first_force_sample_reference_s": 1.545,
+          "longest_interval_last_force_sample_reference_s": 1.6,
+          "reference_flight_support_present_fraction": 0.8,
+          "root_world_vz_at_reference_1_30_s": -0.17391327633955414,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5838154549012211,
+          "reference_flight_max_height_deficit_m": 0.19390615820884705,
+          "mean_body_position_reward_factor_during_reference_flight": 0.8105299249213449,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.06,
+            "5.0": 0.06,
+            "10.0": 0.06,
+            "20.0": 0.06
+          }
+        },
+        {
+          "episode_id": 4,
+          "longest_contiguous_support_unloaded_s": 0.065,
+          "total_support_unloaded_s": 0.08,
+          "longest_interval_first_force_sample_reference_s": 1.545,
+          "longest_interval_last_force_sample_reference_s": 1.605,
+          "reference_flight_support_present_fraction": 0.75,
+          "root_world_vz_at_reference_1_30_s": -0.15896499903687622,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5520720292770844,
+          "reference_flight_max_height_deficit_m": 0.20502260327339172,
+          "mean_body_position_reward_factor_during_reference_flight": 0.7910245374430722,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.065,
+            "5.0": 0.065,
+            "10.0": 0.065,
+            "20.0": 0.085
+          }
+        }
+      ]
+    },
+    "training-random-phase-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/training-random-phase-a01/result.json",
+        "sha256": "925c62a0b056fdd7144f5a138724d048089014264303e832217a117766c03315"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/training-random-phase-a01/telemetry.json.gz",
+        "sha256": "51302b77387219dfc06149a9306b08d413ea1c1b268d56864c0750e7bbb1ecf5"
+      },
+      "telemetry_status": "complete",
+      "completed_segments": 12,
+      "failed_segments": 0,
+      "frame_zero_completed_cycles": 0,
+      "censored_segments": 1,
+      "longest_contiguous_unloaded_s_range": null,
+      "vz_at_1_30_s_range": null,
+      "flight_height_deficit_max_m_range": null,
+      "original_metrics": {
+        "action_rate_rms": 0.23518241366175754,
+        "anchor_orientation_rmse_rad": 0.11319242706837171,
+        "anchor_position_rmse_m": 0.14054868367864615,
+        "body_orientation_rmse_rad": 0.13855833622491542,
+        "body_position_rmse_m": 0.05346386975463794,
+        "censored_episodes": 1,
+        "completed_episodes": 12,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 0,
+        "frame_zero_successful_episodes": 0,
+        "max_abs_action": 11.988211631774902,
+        "max_abs_applied_torque": 118.59691619873047,
+        "max_joint_effort_utilization": 1.0,
+        "mean_reward": 0.08509096871502697,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.1544776233813275,
+        "real_time_factor": 0.8285151635699779,
+        "successful_motion_episodes": 12,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 12,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0003,
+        "wheel_velocity_rmse_rad_s": 4.921668574917139
+      },
+      "physics_window_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          12,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 12,
+        "max_abs_applied_torque_by_joint_nm": [
+          46.45622253417969,
+          30.09555435180664,
+          61.203792572021484,
+          80.93021392822266,
+          119.1108627319336,
+          78.16791534423828,
+          27.0,
+          5.266548156738281,
+          22.750240325927734,
+          6.899749279022217
+        ],
+        "max_abs_applied_torque_nm": 119.1108627319336,
+        "max_abs_computed_torque_nm": 119.1108627319336,
+        "max_applied_effort_utilization": 1.0,
+        "max_single_foot_normal_force_n": 1345.8824462890746,
+        "max_single_wheel_normal_force_n": 1834.5361328125166,
+        "max_summed_wheel_normal_force_z_n": 2188.9591674804688,
+        "max_wheel_downward_speed_before_m_s": 1.8215378522872925,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "cycles": []
+    },
+    "training-random-start-a01": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/training-random-start-a01/result.json",
+        "sha256": "6ae059b21325b4860877d454dc9ea6aea27466eeecb1275669d63ce616163403"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evaluations/wheel-to-leg-zero-contact-review-20261022-001/raw/training-random-start-a01/telemetry.json.gz",
+        "sha256": "8dd3a5ac4b9354ca80a5aca67725ef4fad6ec6a593fccaad51432d3294615584"
+      },
+      "telemetry_status": "complete",
+      "completed_segments": 5,
+      "failed_segments": 0,
+      "frame_zero_completed_cycles": 5,
+      "censored_segments": 1,
+      "longest_contiguous_unloaded_s_range": [
+        0.05,
+        0.09
+      ],
+      "vz_at_1_30_s_range": [
+        -0.3211023478645812,
+        0.04989107354135385
+      ],
+      "flight_height_deficit_max_m_range": [
+        0.17221114039421082,
+        0.22003570199012756
+      ],
+      "original_metrics": {
+        "action_rate_rms": 0.24035489648002625,
+        "anchor_orientation_rmse_rad": 0.12445305880309528,
+        "anchor_position_rmse_m": 0.23596655307728087,
+        "body_orientation_rmse_rad": 0.15026944142084162,
+        "body_position_rmse_m": 0.05454763518966186,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 18.47943878173828,
+        "max_abs_applied_torque": 69.18146514892578,
+        "max_joint_effort_utilization": 0.5765122095743815,
+        "mean_reward": 0.08540816479548811,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.1706050833400669,
+        "real_time_factor": 0.8147239163267717,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 5.48171201670255
+      },
+      "physics_window_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 0,
+        "max_abs_applied_torque_by_joint_nm": [
+          33.15779113769531,
+          48.34780502319336,
+          45.51099395751953,
+          38.54889678955078,
+          69.3115234375,
+          61.24260711669922,
+          18.27621078491211,
+          8.09779167175293,
+          10.242898941040039,
+          6.323939800262451
+        ],
+        "max_abs_applied_torque_nm": 69.3115234375,
+        "max_abs_computed_torque_nm": 69.3115234375,
+        "max_applied_effort_utilization": 0.6768966957374856,
+        "max_single_foot_normal_force_n": 1251.6387939453236,
+        "max_single_wheel_normal_force_n": 1433.1824951172005,
+        "max_summed_wheel_normal_force_z_n": 1488.1785278320312,
+        "max_wheel_downward_speed_before_m_s": 0.8760963082313538,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "cycles": [
+        {
+          "episode_id": 0,
+          "longest_contiguous_support_unloaded_s": 0.05,
+          "total_support_unloaded_s": 0.085,
+          "longest_interval_first_force_sample_reference_s": 1.57,
+          "longest_interval_last_force_sample_reference_s": 1.615,
+          "reference_flight_support_present_fraction": 0.7666666666666667,
+          "root_world_vz_at_reference_1_30_s": -0.3211023478645812,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.4673945149436084,
+          "reference_flight_max_height_deficit_m": 0.17221114039421082,
+          "mean_body_position_reward_factor_during_reference_flight": 0.8087672678121142,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.05,
+            "5.0": 0.05,
+            "10.0": 0.05,
+            "20.0": 0.05
+          }
+        },
+        {
+          "episode_id": 1,
+          "longest_contiguous_support_unloaded_s": 0.09,
+          "total_support_unloaded_s": 0.14,
+          "longest_interval_first_force_sample_reference_s": 1.53,
+          "longest_interval_last_force_sample_reference_s": 1.615,
+          "reference_flight_support_present_fraction": 0.5833333333333334,
+          "root_world_vz_at_reference_1_30_s": -0.004408355829796125,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5367220002728142,
+          "reference_flight_max_height_deficit_m": 0.19932743906974792,
+          "mean_body_position_reward_factor_during_reference_flight": 0.8197171087523848,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.09,
+            "5.0": 0.09,
+            "10.0": 0.09,
+            "20.0": 0.09
+          }
+        },
+        {
+          "episode_id": 2,
+          "longest_contiguous_support_unloaded_s": 0.065,
+          "total_support_unloaded_s": 0.075,
+          "longest_interval_first_force_sample_reference_s": 1.53,
+          "longest_interval_last_force_sample_reference_s": 1.59,
+          "reference_flight_support_present_fraction": 0.75,
+          "root_world_vz_at_reference_1_30_s": 0.04989107354135385,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.5271493503873957,
+          "reference_flight_max_height_deficit_m": 0.22003570199012756,
+          "mean_body_position_reward_factor_during_reference_flight": 0.795190639408036,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.065,
+            "5.0": 0.065,
+            "10.0": 0.065,
+            "20.0": 0.065
+          }
+        },
+        {
+          "episode_id": 3,
+          "longest_contiguous_support_unloaded_s": 0.05,
+          "total_support_unloaded_s": 0.09,
+          "longest_interval_first_force_sample_reference_s": 1.545,
+          "longest_interval_last_force_sample_reference_s": 1.59,
+          "reference_flight_support_present_fraction": 0.7,
+          "root_world_vz_at_reference_1_30_s": -0.21726327888543107,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.3766801126167589,
+          "reference_flight_max_height_deficit_m": 0.21120178699493408,
+          "mean_body_position_reward_factor_during_reference_flight": 0.8060868657581288,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.05,
+            "5.0": 0.05,
+            "10.0": 0.05,
+            "20.0": 0.06
+          }
+        },
+        {
+          "episode_id": 4,
+          "longest_contiguous_support_unloaded_s": 0.075,
+          "total_support_unloaded_s": 0.075,
+          "longest_interval_first_force_sample_reference_s": 1.545,
+          "longest_interval_last_force_sample_reference_s": 1.615,
+          "reference_flight_support_present_fraction": 0.8,
+          "root_world_vz_at_reference_1_30_s": -0.04689651056215123,
+          "prepare_root_world_vz_peak_1_10_to_1_30_s": 0.513748099549992,
+          "reference_flight_max_height_deficit_m": 0.19598126411437988,
+          "mean_body_position_reward_factor_during_reference_flight": 0.8152161345328357,
+          "longest_unloaded_s_force_threshold_sensitivity": {
+            "1.0": 0.07,
+            "5.0": 0.07,
+            "10.0": 0.075,
+            "20.0": 0.08
+          }
+        }
+      ]
+    }
+  },
+  "paired_comparison": {
+    "nominal-zero-delay-a01": {
+      "scenarios_identical": true,
+      "initial_runtime_equal": true,
+      "old_contact_weight": 0.5,
+      "new_contact_weight": 0.0,
+      "old_checkpoint_sha256": "668eddb7697bca0cb70a73d5121744f28b39453adacc572e32205dd3c2b3f82e",
+      "new_checkpoint_sha256": "4a8cfbaf37057ef942be44c3f4bea31ac37c16c14b243952e4ccadc4577ab957",
+      "old_longest_contiguous_unloaded_s_range": [
+        0.085,
+        0.085
+      ],
+      "new_longest_contiguous_unloaded_s_range": [
+        0.08,
+        0.08
+      ],
+      "old_body_position_rmse_m": 0.05165482406806868,
+      "new_body_position_rmse_m": 0.052177447944067736,
+      "old_vz_at_1_30_s_range": [
+        -0.025562536177702752,
+        -0.025562536177702752
+      ],
+      "new_vz_at_1_30_s_range": [
+        -0.17503884105378614,
+        -0.17503884105378614
+      ],
+      "old_full_cycles": 5,
+      "new_full_cycles": 5
+    },
+    "play-equivalent-a01": {
+      "scenarios_identical": true,
+      "initial_runtime_equal": true,
+      "old_contact_weight": 0.5,
+      "new_contact_weight": 0.0,
+      "old_checkpoint_sha256": "668eddb7697bca0cb70a73d5121744f28b39453adacc572e32205dd3c2b3f82e",
+      "new_checkpoint_sha256": "4a8cfbaf37057ef942be44c3f4bea31ac37c16c14b243952e4ccadc4577ab957",
+      "old_longest_contiguous_unloaded_s_range": [
+        0.08,
+        0.09
+      ],
+      "new_longest_contiguous_unloaded_s_range": [
+        0.06,
+        0.075
+      ],
+      "old_body_position_rmse_m": 0.05054124873998994,
+      "new_body_position_rmse_m": 0.05246268203668016,
+      "old_vz_at_1_30_s_range": [
+        -0.037423610676859356,
+        0.12116093531699704
+      ],
+      "new_vz_at_1_30_s_range": [
+        -0.19834398679719265,
+        -0.15863411061288715
+      ],
+      "old_full_cycles": 5,
+      "new_full_cycles": 5
+    },
+    "training-random-phase-a01": {
+      "scenarios_identical": true,
+      "initial_runtime_equal": true,
+      "old_contact_weight": 0.5,
+      "new_contact_weight": 0.0,
+      "old_checkpoint_sha256": "668eddb7697bca0cb70a73d5121744f28b39453adacc572e32205dd3c2b3f82e",
+      "new_checkpoint_sha256": "4a8cfbaf37057ef942be44c3f4bea31ac37c16c14b243952e4ccadc4577ab957",
+      "old_longest_contiguous_unloaded_s_range": null,
+      "new_longest_contiguous_unloaded_s_range": null,
+      "old_body_position_rmse_m": 0.05103390843857432,
+      "new_body_position_rmse_m": 0.05346386975463794,
+      "old_vz_at_1_30_s_range": null,
+      "new_vz_at_1_30_s_range": null,
+      "old_full_cycles": 0,
+      "new_full_cycles": 0
+    },
+    "training-random-start-a01": {
+      "scenarios_identical": true,
+      "initial_runtime_equal": true,
+      "old_contact_weight": 0.5,
+      "new_contact_weight": 0.0,
+      "old_checkpoint_sha256": "668eddb7697bca0cb70a73d5121744f28b39453adacc572e32205dd3c2b3f82e",
+      "new_checkpoint_sha256": "4a8cfbaf37057ef942be44c3f4bea31ac37c16c14b243952e4ccadc4577ab957",
+      "old_longest_contiguous_unloaded_s_range": [
+        0.07,
+        0.125
+      ],
+      "new_longest_contiguous_unloaded_s_range": [
+        0.05,
+        0.09
+      ],
+      "old_body_position_rmse_m": 0.05296394439827181,
+      "new_body_position_rmse_m": 0.05454763518966186,
+      "old_vz_at_1_30_s_range": [
+        -0.303947264186682,
+        0.13336435140482034
+      ],
+      "new_vz_at_1_30_s_range": [
+        -0.3211023478645812,
+        0.04989107354135385
+      ],
+      "old_full_cycles": 5,
+      "new_full_cycles": 5
+    }
+  },
+  "saved_config_differences": {
+    "env": [
+      {
+        "path": "/log_dir",
+        "old": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-20_19-31-57",
+        "new": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-21_10-48-07"
+      },
+      {
+        "path": "/rewards/wheel_contact_continuous/weight",
+        "old": "0.5",
+        "new": "0.0"
+      }
+    ],
+    "agent": []
+  },
+  "training_summary": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evidence/training/summary-20261022-001.json",
+    "sha256": "b6be62abb0b5a4281d3de8b9c30dac286a2734e3ebf378a4b98d2c4e4251308d"
+  },
+  "training_windows": {
+    "47997-48996": {
+      "mean_reward": 7.08126,
+      "mean_episode_length": 86.45098,
+      "metrics_motion_error_anchor_pos": 0.1406774,
+      "metrics_motion_error_body_pos": 0.0194297,
+      "metrics_motion_error_anchor_lin_vel": 0.12488719999999999,
+      "episode_termination_motion_finished": 0.9965685,
+      "metrics_motion_sampling_top1_prob": 0.5107885999999999,
+      "episode_reward_action_rate_l2": -0.052536700000000006,
+      "episode_reward_action_smoothness": -0.0121596
+    },
+    "48997-49996": {
+      "mean_reward": 6.93146,
+      "mean_episode_length": 84.74289999999999,
+      "metrics_motion_error_anchor_pos": 0.1393037,
+      "metrics_motion_error_body_pos": 0.0198248,
+      "metrics_motion_error_anchor_lin_vel": 0.1286851,
+      "episode_termination_motion_finished": 0.9966406,
+      "metrics_motion_sampling_top1_prob": 0.49007870000000003,
+      "episode_reward_action_rate_l2": -0.0526853,
+      "episode_reward_action_smoothness": -0.011816100000000001
+    }
+  },
+  "tensorboard_tail": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-21_10-48-07/evidence/training/tensorboard-tail-20261022-001.json",
+    "sha256": "a27f343446a9cbfcd4d7913e1128e769c2cb03e21c0ed5ac8ae96552ac7c54b9"
+  },
+  "training_source": {
+    "reported_start_commit": "15a860fe05741d26fc57fde851b69ec52c9c6d42",
+    "saved_diff": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-21_10-48-07/git/robot_lab.diff",
+      "sha256": "57565539f4495ded27fd22b60d5505f35ed87792918d86627638c76de5edca96"
+    },
+    "current_head": "fce0d814fc8dc7449dacb02b7007897f7cd0ae52",
+    "verified_source_blobs": {
+      "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py": {
+        "current_blob": "54bafbcdca30e17496a55ab4c4ece4d5b02b2f09",
+        "training_record_blob_prefix": "54bafbc",
+        "matches": true
+      },
+      "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/agents/rsl_rl_ppo_cfg.py": {
+        "current_blob": "c1d59e9b57b5499ec7084e55d2ae393d52468d0c",
+        "training_record_blob_prefix": "c1d59e9b57b5499ec7084e55d2ae393d52468d0c",
+        "matches": true
+      },
+      "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/tracking_env_cfg.py": {
+        "current_blob": "d37c43edbf65be16c58c797ebd36a1b64d6cfd97",
+        "training_record_blob_prefix": "d37c43edbf65be16c58c797ebd36a1b64d6cfd97",
+        "matches": true
+      },
+      "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py": {
+        "current_blob": "bf323477499405663ca0d8f72d45ae2669e1481b",
+        "training_record_blob_prefix": "bf323477499405663ca0d8f72d45ae2669e1481b",
+        "matches": true
+      },
+      "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/commands.py": {
+        "current_blob": "24f1336dbab8fb5dbbeec8a5ed8061108ca7e2f6",
+        "training_record_blob_prefix": "24f1336dbab8fb5dbbeec8a5ed8061108ca7e2f6",
+        "matches": true
+      },
+      "source/robot_lab/robot_lab/assets/LW.py": {
+        "current_blob": "3ef9dd51e71467dd27e20d161a514f237c8315b6",
+        "training_record_blob_prefix": "3ef9dd51e71467dd27e20d161a514f237c8315b6",
+        "matches": true
+      }
+    }
+  },
+  "training_command_provenance": "Reused the standard launch command previously confirmed in this session; new W&B metadata does not independently store argv; effective saved env and agent compared against the prior run.",
+  "observations": [
+    "Contact reward is zero in the saved training environment; saved agent is unchanged and only reward weight plus log path differ.",
+    "Nominal zero-delay and play-equivalent tests still do not reproduce the planned 0.30-second flight.",
+    "The matched single-seed comparison shows no improvement of continuous unloading after removing the contact reward.",
+    "Reference completion does not establish jump success."
+  ],
+  "causal_limits": [
+    "One paired seed and one final checkpoint do not prove effects across all seeds or exclude interactions.",
+    "Total rewards are not directly ranked because reward definitions differ."
+  ],
+  "convergence": "indeterminate",
+  "approved_convergence_criteria_available": false,
+  "training_modified": false,
+  "additional_training_started": false
+}

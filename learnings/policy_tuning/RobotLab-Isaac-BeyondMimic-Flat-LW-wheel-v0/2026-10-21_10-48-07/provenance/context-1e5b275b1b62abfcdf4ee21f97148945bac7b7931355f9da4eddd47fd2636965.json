@@ -1,0 +1,75 @@
+{
+  "algorithm": "PPO",
+  "backend": "rsl_rl",
+  "config_files": [
+    {
+      "path": "scripts/start_beyondmimic.sh",
+      "sha256": "70d5ba8bd1141a475d54cbfccdc587897c0136977e021481686d310f38818d77"
+    },
+    {
+      "path": "scripts/start_play_beyondmimic.sh",
+      "sha256": "a7f530d55793783520079a20dac95b5f7c090d196ce71b3665496c67bce25c51"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/assets/LW.py",
+      "sha256": "efecd732278bd1e269ae6ccef49667a51751956594cd900ae1f3ed6a75089ec2"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/agents/rsl_rl_ppo_cfg.py",
+      "sha256": "95177ac8d4b171d968b1d660f0eb286056509c8faa24b5550eddef1eb5e31723"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py",
+      "sha256": "0c0e5a5e3220bb07243415106aedda8ebe3ac3148cbd3455fdb67870f0b5c101"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/commands.py",
+      "sha256": "fce82adca89dfe693fe7a331d12f9a7dd5b8324324a82327a6a4d4441a96e065"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/observations.py",
+      "sha256": "325cbafcd9de75479b545229772d24f271beb2f26a6f3523d4710c6854020872"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py",
+      "sha256": "00cd3aa92a7f14e88abf5384dcf8429136ae6d91816a8c5ba49004461013dc36"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/tracking_env_cfg.py",
+      "sha256": "a1efc65cf1d6bc5f4c30954facf1d7958a4bb6db260a9f4b1917666727fb4262"
+    }
+  ],
+  "host_id": "server-System-Product-Name",
+  "identity_sha256": "fefa079f214e39aca2e9b39427f8683fa0cc7b5720b3140f2ca4ef45d6926a4f",
+  "run_id": "2026-10-21_10-48-07",
+  "runner": "OnPolicyRunner",
+  "seed": 42,
+  "source": {
+    "branch": "main",
+    "diff_sha256": null,
+    "dirty": false,
+    "dirty_paths": [],
+    "head": "fce0d814fc8dc7449dacb02b7007897f7cd0ae52",
+    "patch_evidence": null,
+    "repository_root": "/home/server/liufengrong/robot_lab"
+  },
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "training": {
+    "command": [
+      "conda",
+      "run",
+      "--no-capture-output",
+      "-n",
+      "isaacsim-5.1",
+      "python",
+      "scripts/reinforcement_learning/rsl_rl/train.py",
+      "--task=RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+      "--log_project_name=LW_wheel_beyondmimic",
+      "--logger=wandb",
+      "--num_envs=4096",
+      "--headless"
+    ],
+    "hydra_overrides": []
+  },
+  "version": 2
+}
