@@ -1,0 +1,121 @@
+{
+  "batch_id": "wheel-to-leg-latest-20261023-001",
+  "cases": [
+    {
+      "attempt_id": "play-ground-a01",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evaluations/wheel-to-leg-latest-20261023-001/raw/play-ground-a01/console.log",
+        "sha256": "6ac299af23ab91dd5d64063419fa38f4257a76d30b7b623cb84a1f51b1c847e7"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evaluations/wheel-to-leg-latest-20261023-001/raw/play-ground-a01/result.json",
+        "sha256": "3ee3719106fc873140db8740a0094ccbdf59472964c18fa609d932e44ab2593e"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "play-ground",
+        "scenario_overrides": {
+          "commands.motion.joint_position_range": [
+            0,
+            0
+          ],
+          "commands.motion.pose_range": {},
+          "commands.motion.velocity_range": {},
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "randomized_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "4d17c9a09f1fd6201bf14d72a468eec9c8a58000b6f67777d93b964c387f5d62",
+          "events.add_joint_default_pos": null,
+          "events.base_com": null,
+          "events.physics_material": null,
+          "events.push_robot": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.wheel_contact_continuous.weight": 0.5
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    },
+    {
+      "attempt_id": "training-random-phase-a01",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evaluations/wheel-to-leg-latest-20261023-001/raw/training-random-phase-a01/console.log",
+        "sha256": "a197d1c60ab5f86359bc8f16148760ac0f17e76fa498a2b8fa8d8838ef9cd505"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evaluations/wheel-to-leg-latest-20261023-001/raw/training-random-phase-a01/result.json",
+        "sha256": "45bd86fe03a63e0516431a7f4eba02d17d47bd745f027eccd1ce95bd80caba61"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "training-random-phase",
+        "scenario_overrides": {
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "randomized_phase",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "4d17c9a09f1fd6201bf14d72a468eec9c8a58000b6f67777d93b964c387f5d62"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evaluations/wheel-to-leg-latest-20261023-001/contract.json",
+    "sha256": "bb544d7686ffd54d64c5113ff8b39a4b15aeeb0260f3db507dac30c86f5abd2a"
+  },
+  "layout_version": 2,
+  "notes": [
+    "play-ground-a01：{\"完成周期\": 5, \"失败周期\": 0, \"起跳峰值vz\": {\"mean\": 1.7475657741760515, \"min\": 1.650631080355652, \"max\": 1.7835173369458388}, \"速度RMSE_1p20_1p30\": {\"mean\": 0.32650976304408535, \"min\": 0.30058714266572273, \"max\": 0.3898081330860635}, \"高度RMSE_1p20_1p70\": {\"mean\": 0.02129859648546669, \"min\": 0.018352966808621096, \"max\": 0.02630216898611576}, \"连续无支撑接触时间\": {\"mean\": 0.281, \"min\": 0.275, \"max\": 0.28500000000000003}, \"大腿对地接触周期数\": 0, \"统计周期范围\": \"complete_frame_zero\"}",
+    "training-random-phase-a01：{\"完成周期\": 12, \"失败周期\": 0, \"起跳峰值vz\": {\"mean\": 1.5969317879394822, \"min\": 1.5124474376646584, \"max\": 1.6866518858906971}, \"速度RMSE_1p20_1p30\": {\"mean\": 0.4166750115601586, \"min\": 0.34536045560514583, \"max\": 0.44733976847417994}, \"高度RMSE_1p20_1p70\": {\"mean\": 0.022394767169312702, \"min\": 0.008557199268290712, \"max\": 0.036555199370383165}, \"连续无支撑接触时间\": {\"mean\": 0.24166666666666667, \"min\": 0.1, \"max\": 0.32}, \"大腿对地接触周期数\": 2, \"统计周期范围\": \"completed_partial_phase\"}",
+    "全部评估子进程显式传入 --/app/settings/persistent=false；退出后用户配置字节及 mtime 不变，checkpoint、有效 YAML、已有导出文件哈希不变。",
+    "本次训练源自 W&B 记录的旧 HEAD 加保存的补丁；已验证相关源码与当前提交一致。",
+    "接触阈值 1 N 用于测量定义，不是用户批准的收敛判据。完整轨迹完成率不等同于成功跳跃。",
+    "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "按起跳速度、高度、接触力与动作/力矩指标共同审查策略；不得仅凭总奖励或 motion_finished 判定跳跃成功。",
+    "本次不更改训练参数、不启动训练；缺少本运行批准的判据，不作收敛认证。"
+  ],
+  "report": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evaluations/wheel-to-leg-latest-20261023-001/report.md",
+    "sha256": "0fe057b2cd5159a3c63279efaa77c06341920da12eede0cd499dde57d497db73"
+  },
+  "repository_root": "/home/server/liufengrong/robot_lab",
+  "run_id": "2026-10-22_17-40-29",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evidence/training/training-origin-20261023-001.json",
+      "sha256": "2cf76c0bf3363c4f96b0abac7c2c6da9f2a11b37c920e65778d03e405fc603bd"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evidence/training/jump-analysis-20261023-001.json",
+      "sha256": "7ce2b3aececdbb2a05a56be10ff3c25dfb858caa333ab6d69ec29bbdfdb7d4a3"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evidence/training/jump-comparison-20261023-001.png",
+      "sha256": "f5f1b47d83a8f054b687e2b0a63d4e744ab5c78aa68375bf00b7a4e9a7096d7f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_17-40-29/evidence/training/training-tail-20261023-001.json",
+      "sha256": "452da8d058393173fe7cca03d6c28a34d9a140d5582d8ba8820cbfb767a846ec"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "version": 1
+}

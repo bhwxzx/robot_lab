@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "recorded_at": "2026-10-23T10:15:37.564975+08:00",
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "run_id": "2026-10-22_17-40-29",
+  "host_id": "server-System-Product-Name",
+  "user_confirmed_wrapper_command": "bash scripts/start_beyondmimic.sh --type wheel",
+  "expanded_training_argv": [
+    "python",
+    "scripts/reinforcement_learning/rsl_rl/train.py",
+    "--task=RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+    "--log_project_name=LW_wheel_beyondmimic",
+    "--logger=wandb",
+    "--num_envs=4096",
+    "--headless"
+  ],
+  "hydra_overrides": [],
+  "wandb_metadata": {
+    "path": "/home/server/liufengrong/robot_lab/wandb/run-20261022_174040-ojki5uys/files/wandb-metadata.json",
+    "sha256": "498e7902bc1f8cbfab7e9d44ea375ea05b9d6116340501ba926ecfa891b7e721",
+    "startedAt": "2026-10-22T09:40:40.283259Z",
+    "program": "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/train.py",
+    "git": {
+      "remote": "https://github.com/bhwxzx/robot_lab.git",
+      "commit": "232f9f089c5772420a2534918b248ff0b73620ca"
+    },
+    "executable": "/home/server/miniconda3/envs/isaacsim-5.1/bin/python"
+  },
+  "training_git_snapshot": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_17-40-29/git/robot_lab.diff",
+    "sha256": "66d39a9b683a42e957b706cf3d69e151dfa94448aebc96a17b855991e8a93a64",
+    "content": "--- git status ---\nOn branch main\nYour branch is up to date with 'origin/main'.\n\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   .learnings/ERRORS.md\n\tmodified:   .learnings/LEARNINGS.md\n\tmodified:   source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\n\tmodified:   source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\tlearnings/diagnostics/\n\tlearnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_11-01-24/\n\tscripts/tests/test_motion_vertical_rewards.py\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\") \n\n\n--- git diff ---\ndiff --git a/.learnings/ERRORS.md b/.learnings/ERRORS.md\nindex 4158c74..ebf4052 100644\n--- a/.learnings/ERRORS.md\n+++ b/.learnings/ERRORS.md\n@@ -212,3 +212,63 @@ ValueError: Empty module name\n   `.agents/...` 路径传给 `python -m unittest` 复现，随后改为直接执行并通过。\n \n ---\n+\n+## [ERR-20261022-001] isaacsim_persistent_physx_thread_setting\n+\n+**Logged**: 2026-10-22T17:28:04.302329+08:00\n+**Priority**: high\n+**Status**: resolved\n+**Area**: config\n+\n+### Summary\n+此前临时 CPU 评估使用了可持久化的 PhysX 线程参数且未禁用偏好保存；server 后续读取 numThreads=1，在初始化阶段阻塞。\n+\n+### Error\n+在 2026-10-22 重启后的受控 CPU 空场景测试中，实际设置为\n+`/persistent/physics/numThreads=1`、\n+`/physics/physxDispatcher=true`、\n+Carbonite threadCount=20 时，`SimulationContext.reset()` 40 秒未返回。\n+堆栈停在 `SimulationManager.initialize_physics -> _physx_interface.update_simulation`。\n+同一源程序仅将实际 numThreads 改为 0 或 8，reset 和 3 个物理步均通过。\n+0/8 空场景另有默认 app.close 阶段超时，不能误报为所有关闭问题均已修复。\n+\n+### Context\n+- 我此前发起的 CPU 评估命令明确包含\n+  `--kit_args=--/plugins/carb.tasking.plugin/threadCount=2 --/persistent/physics/numThreads=1`，\n+  未传 `--/app/settings/persistent=false`。随后 server 用户配置中的值为 1，重启后仍保留。\n+- 操作错误是把可保存的用户偏好当成临时诊断参数，并缺少事前配置快照、实际值核验及事后字节检查。\n+  没有故障前快照，不能严格断言 1 首次由哪次启动写入，或声称 server 故障前一定为 8。\n+- 用户提供 younghit 机器该项为 8、其启动日志确认加载配置且启动成功的只读核验结果，\n+  并明确批准 server 仅将 1 改为 8。这是用户提供的跨机参考，未从 server 独立访问 younghit。\n+- 环境：conda `isaacsim-5.1`，IsaacLab 2.3.2，PhysX Core 107.3.26；\n+  wheel task、腿部延迟 0..3、参考 NPZ 和策略导出文件不属于本次修改范围。\n+\n+### Suggested Fix\n+临时 Isaac Sim 诊断应在启动前禁用偏好保存，定位 Applied configs 指向的真实配置文件，\n+保存原始字节与 SHA-256，并在退出后确认不变。该开关仍会加载既有偏好，\n+因此必须打印实际 numThreads、dispatcher 等值，不能只依据 CLI 参数推断。\n+持久修复须获得用户授权、备份、只改目标字段，并用无线程覆盖的新进程复核。\n+初始化诊断不应运行会加载/导出策略的完整 play 流程。\n+\n+### Metadata\n+- Reproducible: yes\n+- Related Files: /home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json; learnings/diagnostics/physx-initialization-20261022-1700/summary.json; learnings/diagnostics/physx-preference-repair-20261022-1724/repair.json; learnings/diagnostics/physx-preference-repair-20261022-1724/wheel-env-from-repaired-config.log; learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_11-01-24/evaluations/wheel-to-leg-live-cpu-review-20261022-001/raw/play-equivalent-a01/console.log\n+- See Also: LRN-20261022-001\n+\n+### Resolution\n+- **Resolved**: 2026-10-22T17:28:04.302329+08:00\n+- **Commit/PR**: N/A\n+- **Notes**: 按用户明确授权，在启动日志确认的 server user.config.json 中仅将\n+  persistent.physics.numThreads 从 1 改为 8；只改变 1 个字节，保留其他字节、权限、\n+  属主和 inode。原始文件备份为 `learnings/diagnostics/physx-preference-repair-20261022-1724/user.config.before.json`。\n+  SHA-256 从 `993f07e8c0a9d1d19cb8c8a10719c0e12bf1950021bcff6b5f2e2a8252a301ea`\n+  变为 `1ae98b6b715be429ab10ffb13fcfbd10bcc1497675297b02b09067ff1d7409dc`。\n+  全新进程不传线程覆盖参数、也不调用线程 setter，直接从该配置读取实际值 8；\n+  1 个 CUDA wheel 环境构造用时 9.796 秒、\n+  reset 用时 0.205 秒，3 步观测和奖励均有限，\n+  无终止/超时，子进程在 15.344 秒内以 rc=0 退出。\n+  验证使用 app.close(wait_for_replicator=False)，未加载或导出策略；\n+  配置在验证前后字节和修改时间不变，受保护源文件及旧证据哈希不变。\n+  原生线程依赖为何在 1 下阻塞仍未定位，本记录不推断 SDK 历史默认值。\n+\n+---\ndiff --git a/.learnings/LEARNINGS.md b/.learnings/LEARNINGS.md\nindex b675dde..41c45dd 100644\n--- a/.learnings/LEARNINGS.md\n+++ b/.learnings/LEARNINGS.md\n@@ -1474,3 +1474,48 @@ Store future training-side replay, sensitivity and policy comparison results und\n - Related Files: learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-wheel-Roa-v0/2026-09-16_15-12-04/index.md\n \n ---\n+\n+## [LRN-20261022-001] correction\n+\n+**Logged**: 2026-10-22T17:28:04.302329+08:00\n+**Priority**: high\n+**Status**: resolved\n+**Area**: config\n+\n+### Summary\n+Isaac Sim 临时诊断参数可能改变 Git 之外的用户偏好，必须控制保存副作用并核验实际值。\n+\n+### Details\n+将 `/persistent/physics/numThreads=1` 用于临时 CPU 评估时没有禁用偏好保存，\n+且没有保留事前快照。server 随后持续加载值 1；受控空场景证明此值会触发初始化阻塞，\n+0/8 可完成物理初始化。用户提供 younghit 的值 8 作为恢复参考并授权修复后，\n+server 单字段改为 8，已通过无线程覆盖的新进程 wheel 构造/reset/3 步验证。\n+跨机参考不能证明 server 的历史原值，当前有效值也不能替代修改前的字节证据。\n+\n+### Suggested Action\n+1. 临时 Isaac Sim 诊断在启动前传入 `--/app/settings/persistent=false`，\n+   并确认实际开关为 false；这不会阻止加载旧偏好。\n+2. 从 Kit 日志 Applied configs 定位真实 user.config.json，记录诊断前后原始字节、\n+   哈希和 mtime；发现变化时明确告知用户，不能把启动参数视为天然无持久副作用。\n+3. 打印 SimulationContext 构造后的实际设置。CLI-only 且未打印实际值的实验不能排除参数问题。\n+   使用有界、自有子进程完成测试，初始化核验避开策略加载和自动导出。\n+4. 持久修复遵循已有授权范围：先备份、只改目标字段、保留其他字节，\n+   再用无线程覆盖的全新进程确认配置被自动读取。不要重置整个偏好文件、删缓存或安装包来替代定位。\n+\n+### Metadata\n+- Source: user_feedback\n+- Related Files: .learnings/ERRORS.md; learnings/diagnostics/physx-preference-repair-20261022-1724/repair.json\n+- Tags: isaacsim, physx, numThreads, persistent-preferences, diagnosis, side-effects\n+- See Also: ERR-20261022-001\n+- Pattern-Key: isaacsim.transient_diagnostics_must_not_persist_preferences\n+- Recurrence-Count: 1\n+- First-Seen: 2026-10-22\n+- Last-Seen: 2026-10-22\n+\n+### Resolution\n+- **Resolved**: 2026-10-22T17:28:04.302329+08:00\n+- **Commit/PR**: N/A\n+- **Notes**: 本次配置修复和验证已完成，错误事实及上述防范规则已记录。\n+  仅追加本次条目，未修改旧记录、AGENTS.md 或技能实现。\n+\n+---\ndiff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\nindex a2db201..ada09c4 100644\n--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\n+++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\n@@ -25,7 +25,7 @@ class LWActionsCfg:\n \n @configclass\n class LWWheelRewardsCfg(RewardsCfg):\n-    \"\"\"Hip alignment for the wheel-to-leg transition.\"\"\"\n+    \"\"\"Wheel transition, takeoff and flight tracking rewards.\"\"\"\n \n     hip_pos_zero_l2 = RewTerm(\n         func=mdp.joint_pos_zero_l2,\n@@ -33,6 +33,29 @@ class LWWheelRewardsCfg(RewardsCfg):\n         params={\"asset_cfg\": SceneEntityCfg(\"robot\", joint_names=[\"right_hip_joint\", \"left_hip_joint\"])},\n     )\n \n+    motion_takeoff_vertical_velocity = RewTerm(\n+        func=mdp.motion_phase_anchor_vertical_velocity_error_huber,\n+        weight=-2.0,\n+        params={\n+            \"command_name\": \"motion\",\n+            \"velocity_scale\": 1.0,\n+            \"start_time_s\": 1.10,\n+            \"end_time_s\": 1.36,\n+            \"ramp_time_s\": 0.04,\n+        },\n+    )\n+    motion_flight_height = RewTerm(\n+        func=mdp.motion_phase_anchor_height_error_exp,\n+        weight=2.0,\n+        params={\n+            \"command_name\": \"motion\",\n+            \"std\": 0.10,\n+            \"start_time_s\": 1.20,\n+            \"end_time_s\": 1.70,\n+            \"ramp_time_s\": 0.05,\n+        },\n+    )\n+\n \n @configclass\n class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):\ndiff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py\nindex bf32347..d00273c 100644\n--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py\n+++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py\n@@ -79,6 +79,51 @@ def _motion_phase_window_weight(\n     return entry.square() * (3.0 - 2.0 * entry) * exit.square() * (3.0 - 2.0 * exit)\n \n \n+def motion_phase_anchor_vertical_velocity_error_huber(\n+    env: ManagerBasedRLEnv,\n+    command_name: str,\n+    velocity_scale: float,\n+    start_time_s: float,\n+    end_time_s: float,\n+    ramp_time_s: float,\n+) -> torch.Tensor:\n+    \"\"\"Penalize world-z anchor COM velocity error with a negative weight.\n+\n+    Normalize the error by ``velocity_scale`` in m/s, then use Huber loss\n+    with unit transition: quadratic near the target and linear farther away.\n+    The reference stores COM velocities, matching ``body_com_lin_vel_w``.\n+    \"\"\"\n+    if not math.isfinite(velocity_scale) or velocity_scale <= 0.0:\n+        raise ValueError(\"Motion phase velocity reward requires a finite, positive velocity scale.\")\n+    blend = _motion_phase_window_weight(env, command_name, start_time_s, end_time_s, ramp_time_s)\n+    command: MotionCommand = env.command_manager.get_term(command_name)\n+    robot_velocity_z = command.robot.data.body_com_lin_vel_w[:, command.robot_anchor_body_index, 2]\n+    error = (robot_velocity_z - command.anchor_lin_vel_w[:, 2]) / velocity_scale\n+    loss = torch.nn.functional.huber_loss(error, torch.zeros_like(error), reduction=\"none\", delta=1.0)\n+    return blend * loss\n+\n+\n+def motion_phase_anchor_height_error_exp(\n+    env: ManagerBasedRLEnv,\n+    command_name: str,\n+    std: float,\n+    start_time_s: float,\n+    end_time_s: float,\n+    ramp_time_s: float,\n+) -> torch.Tensor:\n+    \"\"\"Reward reference anchor link-origin height in a bounded motion phase.\n+\n+    Both anchor positions use world coordinates, including the environment\n+    origin. Track only their z components; ``std`` is in meters.\n+    \"\"\"\n+    if not math.isfinite(std) or std <= 0.0:\n+        raise ValueError(\"Motion phase height reward requires a finite, positive standard deviation.\")\n+    blend = _motion_phase_window_weight(env, command_name, start_time_s, end_time_s, ramp_time_s)\n+    command: MotionCommand = env.command_manager.get_term(command_name)\n+    error_z = command.robot_anchor_pos_w[:, 2] - command.anchor_pos_w[:, 2]\n+    return blend * torch.exp(-(error_z / std).square())\n+\n+\n def motion_phase_anchor_pitch_angular_velocity_error_l2(\n     env: ManagerBasedRLEnv,\n     command_name: str,",
+    "base_head": "232f9f089c5772420a2534918b248ff0b73620ca",
+    "code_equivalence_to_current": {
+      "current_head": "0d8478be9ab68352c1bb4989f41df8618c64739b",
+      "changed_config_paths": [
+        "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py",
+        "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py"
+      ],
+      "saved_source_patch_reverse_check_passed": true,
+      "check_added_terminal_newline_in_memory": true,
+      "other_listed_config_files_equal_to_training_base": true
+    }
+  },
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_17-40-29/model_49999.pt",
+    "sha256": "9b42606f73222fd18d17949be0aa829fde37758ec2c99f23774722bd8cf0b952",
+    "iteration": 49999,
+    "keys": [
+      "model_state_dict",
+      "optimizer_state_dict",
+      "iter",
+      "infos"
+    ],
+    "first_layer_shapes": {
+      "actor.0.weight": [
+        512,
+        590
+      ],
+      "critic.0.weight": [
+        512,
+        146
+      ]
+    }
+  },
+  "protected_inputs": {
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_17-40-29/model_49999.pt": "9b42606f73222fd18d17949be0aa829fde37758ec2c99f23774722bd8cf0b952",
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_17-40-29/params/env.yaml": "0d681d912907cdd9938d5d094212177ec82072f716a76fa14ac5ec05ee7d1fbb",
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_17-40-29/params/agent.yaml": "b0d443b000e29edd9c891ca0b8c148c9805becb60de3bd332e7bcb10c6782fed",
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_17-40-29/exported/policy.pt": "2ec0424f5d2b2303e6014a7c9368ee684ba700e38ff1c73ffd81a6223acb6c1c",
+    "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-22_17-40-29/exported/policy.onnx": "9e0ad26b4f9f5ed9d188ef0850de79d58c5014655e1a6b2a04e5dc4fbf3340a9"
+  },
+  "preference_before": {
+    "path": "/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json",
+    "sha256": "a2f3d49e6f0c02adbe497a916de3483a1768f1ed94c8af837597b1504ef28513",
+    "mtime_ns": 1792721068480091031,
+    "numThreads": 8
+  },
+  "limitations": [
+    "Evaluation context records current committed checkout. Training began at the W&B base HEAD plus saved tracked patch; source equivalence is checked separately.",
+    "No run-specific approved convergence criteria supplied; report measured behavior without certifying convergence."
+  ]
+}
