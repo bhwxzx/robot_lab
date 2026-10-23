@@ -1,0 +1,1180 @@
+{
+  "version": 2,
+  "run_id": "2026-10-22_20-03-44",
+  "checkpoint_sha256": "ef63b2dfa8107b9fa1d8f136f2c9031fca34f609d3e85ca83386f01effe4e818",
+  "reference": {
+    "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-20/wheel_to_leg_transform_50hz.npz",
+    "sha256": "4d17c9a09f1fd6201bf14d72a468eec9c8a58000b6f67777d93b964c387f5d62"
+  },
+  "definitions": {
+    "control_dt_s": 0.02,
+    "physics_dt_s": 0.005,
+    "phase_time": "frame_index/fps; physics samples additionally use (substep+1)*0.005 s",
+    "takeoff_window_s": [
+      1.1,
+      1.36
+    ],
+    "velocity_rmse_window_s": [
+      1.2,
+      1.3
+    ],
+    "height_rmse_window_s": [
+      1.2,
+      1.7
+    ],
+    "unloaded_window_s": [
+      0.8,
+      1.82
+    ],
+    "unloaded_threshold_n": 1.0,
+    "unloaded_bodies": "four foot/wheel net vertical forces and four thigh/shank ground-only vertical forces, all below threshold; this does not measure base/hip contact",
+    "complete_jump_window_eligible": "completed motion, start_frame <= 55, and frame 169 observed; frame-zero complete cycles reported separately",
+    "random_phase_warning": "completed partial-phase segments are not full motion or jump attempts",
+    "forces": "5 ms average vertical normal forces on a horizontal plane; not instantaneous impact or passive joint reaction torque",
+    "convergence": "indeterminate; no approved convergence criteria",
+    "leg_ground_contact_count_window": "whole observed episode, threshold >1 N; the narrower 0.8–1.82 s window flag is retained separately"
+  },
+  "cases": {
+    "play-ground-a01": {
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_20-03-44/evaluations/wheel-to-leg-local-20261023-001/raw/play-ground-a01/result.json",
+        "sha256": "2dec94cfd6911aedaa17a259e5c6801b10b459673ad6832aeca58bfbb94dba29"
+      },
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_20-03-44/evaluations/wheel-to-leg-local-20261023-001/raw/play-ground-a01/telemetry.json.gz",
+        "sha256": "50458390e796d0d94d5ca6b41f2e434488ce1022557f0652067495fbfb39541c"
+      },
+      "metrics": {
+        "action_rate_rms": 0.16266410129866535,
+        "anchor_orientation_rmse_rad": 0.09247904720569054,
+        "anchor_position_rmse_m": 0.05502138275862723,
+        "body_orientation_rmse_rad": 0.1441714391657609,
+        "body_position_rmse_m": 0.04832672934859201,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 9.058476448059082,
+        "max_abs_applied_torque": 93.79345703125,
+        "max_joint_effort_utilization": 0.8389508989122179,
+        "mean_reward": 0.18145077302306892,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.15823694602576807,
+        "real_time_factor": 0.9030682788044888,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 2.9053289245021467
+      },
+      "physics_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 0,
+        "max_abs_applied_torque_by_joint_nm": [
+          37.390647888183594,
+          41.22240447998047,
+          60.31996154785156,
+          26.53539276123047,
+          95.46842193603516,
+          51.171775817871094,
+          22.651674270629883,
+          2.4500138759613037,
+          19.658588409423828,
+          3.698413133621216
+        ],
+        "max_abs_applied_torque_nm": 95.46842193603516,
+        "max_abs_computed_torque_nm": 95.46842193603516,
+        "max_applied_effort_utilization": 0.8389508989122179,
+        "max_single_foot_normal_force_n": 1308.1628417968868,
+        "max_single_wheel_normal_force_n": 532.931213378911,
+        "max_summed_wheel_normal_force_z_n": 921.9823303222656,
+        "max_wheel_downward_speed_before_m_s": 1.8098844289779663,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "completed_segments": 5,
+      "frame_zero_completed_cycles": 5,
+      "jump_window_eligible_completed_segments": 5,
+      "completed_segments_with_leg_ground_contact": 5,
+      "full_cycles_with_leg_ground_contact": 5,
+      "cycles": [
+        {
+          "episode_id": 0,
+          "start_frame": 0,
+          "completed": true,
+          "frame_zero_complete": true,
+          "jump_window_eligible": true,
+          "prepare_peak_vz_m_s": 1.01230037609539,
+          "prepare_peak_vz_reference_time_s": 1.24,
+          "push_velocity_rmse_m_s": 0.9867755694248915,
+          "height_rmse_m": 0.08978010241836029,
+          "flight_min_height_error_m": -0.13948574662208557,
+          "prepare_min_base_z_m": 0.5402889847755432,
+          "vz_at_1_30_m_s": 0.4022838842104264,
+          "height_error_at_1_30_m": -0.0011636614799499512,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.305,
+              "last_sample_s": 1.355,
+              "duration_s": 0.055
+            },
+            {
+              "first_sample_s": 1.53,
+              "last_sample_s": 1.57,
+              "duration_s": 0.045
+            }
+          ],
+          "longest_unloaded_s": 0.055,
+          "longest_unloaded_s_10n": 0.055,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 4486.25048828125,
+          "leg_ground_contact_duration_s": 0.05,
+          "leg_first_last_sample_s": [
+            1.605,
+            1.65
+          ],
+          "foot_sum_peak_n": 1466.158187866211,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 4486.25048828125,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.36,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              170.57009887695312,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 1,
+          "start_frame": 0,
+          "completed": true,
+          "frame_zero_complete": true,
+          "jump_window_eligible": true,
+          "prepare_peak_vz_m_s": 1.0915257698506484,
+          "prepare_peak_vz_reference_time_s": 1.24,
+          "push_velocity_rmse_m_s": 0.9330957129045132,
+          "height_rmse_m": 0.09103338179955411,
+          "flight_min_height_error_m": -0.13466525077819824,
+          "prepare_min_base_z_m": 0.5274370908737183,
+          "vz_at_1_30_m_s": 0.4602528186195919,
+          "height_error_at_1_30_m": -0.007949888706207275,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.305,
+              "last_sample_s": 1.3800000000000001,
+              "duration_s": 0.08
+            },
+            {
+              "first_sample_s": 1.565,
+              "last_sample_s": 1.575,
+              "duration_s": 0.015
+            },
+            {
+              "first_sample_s": 1.585,
+              "last_sample_s": 1.59,
+              "duration_s": 0.01
+            }
+          ],
+          "longest_unloaded_s": 0.08,
+          "longest_unloaded_s_10n": 0.08,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 3732.45458984375,
+          "leg_ground_contact_duration_s": 0.065,
+          "leg_first_last_sample_s": [
+            1.615,
+            1.6749999999999998
+          ],
+          "foot_sum_peak_n": 1499.698745727539,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 3732.45458984375,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.3849999999999998,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              487.5357971191406,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 2,
+          "start_frame": 0,
+          "completed": true,
+          "frame_zero_complete": true,
+          "jump_window_eligible": true,
+          "prepare_peak_vz_m_s": 1.120773674193229,
+          "prepare_peak_vz_reference_time_s": 1.24,
+          "push_velocity_rmse_m_s": 0.8657509415230314,
+          "height_rmse_m": 0.08717171965365729,
+          "flight_min_height_error_m": -0.1275448203086853,
+          "prepare_min_base_z_m": 0.5321815013885498,
+          "vz_at_1_30_m_s": 0.5384116772476439,
+          "height_error_at_1_30_m": -0.007139384746551514,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.315,
+              "last_sample_s": 1.375,
+              "duration_s": 0.065
+            },
+            {
+              "first_sample_s": 1.575,
+              "last_sample_s": 1.595,
+              "duration_s": 0.025
+            }
+          ],
+          "longest_unloaded_s": 0.065,
+          "longest_unloaded_s_10n": 0.065,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 3870.89990234375,
+          "leg_ground_contact_duration_s": 0.065,
+          "leg_first_last_sample_s": [
+            1.62,
+            1.68
+          ],
+          "foot_sum_peak_n": 1265.5240478515625,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 3870.89990234375,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.3800000000000001,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              203.5316162109375,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 3,
+          "start_frame": 0,
+          "completed": true,
+          "frame_zero_complete": true,
+          "jump_window_eligible": true,
+          "prepare_peak_vz_m_s": 1.0860715078509389,
+          "prepare_peak_vz_reference_time_s": 1.24,
+          "push_velocity_rmse_m_s": 0.8924710475719676,
+          "height_rmse_m": 0.0841710308489553,
+          "flight_min_height_error_m": -0.12182420492172241,
+          "prepare_min_base_z_m": 0.5329363346099854,
+          "vz_at_1_30_m_s": 0.5361587425131514,
+          "height_error_at_1_30_m": -0.007273435592651367,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.315,
+              "last_sample_s": 1.3849999999999998,
+              "duration_s": 0.075
+            },
+            {
+              "first_sample_s": 1.575,
+              "last_sample_s": 1.595,
+              "duration_s": 0.025
+            }
+          ],
+          "longest_unloaded_s": 0.075,
+          "longest_unloaded_s_10n": 0.075,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 4085.142578125,
+          "leg_ground_contact_duration_s": 0.06,
+          "leg_first_last_sample_s": [
+            1.62,
+            1.6749999999999998
+          ],
+          "foot_sum_peak_n": 1194.4842529296875,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 4085.142578125,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.39,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              84.31246185302734,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 4,
+          "start_frame": 0,
+          "completed": true,
+          "frame_zero_complete": true,
+          "jump_window_eligible": true,
+          "prepare_peak_vz_m_s": 1.0948941664986693,
+          "prepare_peak_vz_reference_time_s": 1.24,
+          "push_velocity_rmse_m_s": 0.9026914330303402,
+          "height_rmse_m": 0.08724118024760577,
+          "flight_min_height_error_m": -0.1267346441745758,
+          "prepare_min_base_z_m": 0.5299078226089478,
+          "vz_at_1_30_m_s": 0.5134898378958949,
+          "height_error_at_1_30_m": -0.007606625556945801,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.31,
+              "last_sample_s": 1.375,
+              "duration_s": 0.07
+            },
+            {
+              "first_sample_s": 1.57,
+              "last_sample_s": 1.595,
+              "duration_s": 0.03
+            }
+          ],
+          "longest_unloaded_s": 0.07,
+          "longest_unloaded_s_10n": 0.07,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 4015.5537109375,
+          "leg_ground_contact_duration_s": 0.07,
+          "leg_first_last_sample_s": [
+            1.615,
+            1.68
+          ],
+          "foot_sum_peak_n": 1185.870849609375,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 4015.5537109375,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.3800000000000001,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              157.8348388671875,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 5,
+          "start_frame": 0,
+          "completed": false,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": 1.1588815457346429,
+          "prepare_peak_vz_reference_time_s": 1.24,
+          "push_velocity_rmse_m_s": 0.8398700195020714,
+          "height_rmse_m": 0.08034175984583275,
+          "flight_min_height_error_m": -0.11257857084274292,
+          "prepare_min_base_z_m": 0.5355212688446045,
+          "vz_at_1_30_m_s": 0.551407844925716,
+          "height_error_at_1_30_m": -0.0053299665451049805,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.32,
+              "last_sample_s": 1.4,
+              "duration_s": 0.085
+            },
+            {
+              "first_sample_s": 1.58,
+              "last_sample_s": 1.6,
+              "duration_s": 0.025
+            }
+          ],
+          "longest_unloaded_s": 0.085,
+          "longest_unloaded_s_10n": 0.085,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 4086.452880859375,
+          "leg_ground_contact_duration_s": 0.055,
+          "leg_first_last_sample_s": [
+            1.625,
+            1.6749999999999998
+          ],
+          "foot_sum_peak_n": 959.0325317382812,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 4086.452880859375,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.4049999999999998,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              467.89056396484375,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "full_cycle_summary": {
+        "prepare_peak_vz_m_s": {
+          "n": 5,
+          "mean": 1.081113098897775,
+          "min": 1.01230037609539,
+          "max": 1.120773674193229
+        },
+        "push_velocity_rmse_m_s": {
+          "n": 5,
+          "mean": 0.9161569408909488,
+          "min": 0.8657509415230314,
+          "max": 0.9867755694248915
+        },
+        "height_rmse_m": {
+          "n": 5,
+          "mean": 0.08787948299362655,
+          "min": 0.0841710308489553,
+          "max": 0.09103338179955411
+        },
+        "longest_unloaded_s": {
+          "n": 5,
+          "mean": 0.069,
+          "min": 0.055,
+          "max": 0.08
+        },
+        "vz_at_1_30_m_s": {
+          "n": 5,
+          "mean": 0.4901193920973417,
+          "min": 0.4022838842104264,
+          "max": 0.5384116772476439
+        },
+        "height_error_at_1_30_m": {
+          "n": 5,
+          "mean": -0.006226599216461182,
+          "min": -0.007949888706207275,
+          "max": -0.0011636614799499512
+        },
+        "prepare_min_base_z_m": {
+          "n": 5,
+          "mean": 0.5325503468513488,
+          "min": 0.5274370908737183,
+          "max": 0.5402889847755432
+        },
+        "foot_sum_peak_n": {
+          "n": 5,
+          "mean": 1322.347216796875,
+          "min": 1185.870849609375,
+          "max": 1499.698745727539
+        }
+      },
+      "eligible_window_summary": {
+        "prepare_peak_vz_m_s": {
+          "n": 5,
+          "mean": 1.081113098897775,
+          "min": 1.01230037609539,
+          "max": 1.120773674193229
+        },
+        "longest_unloaded_s": {
+          "n": 5,
+          "mean": 0.069,
+          "min": 0.055,
+          "max": 0.08
+        }
+      },
+      "stage_pose_full_cycles": {
+        "prepare": {
+          "max_abs_roll_deg": 0.8387979707297604,
+          "max_abs_pitch_deg": 11.094066779711259,
+          "max_abs_hip_mirror_residual_deg": 3.98491865452804,
+          "hip_mirror_residual_rms_deg": 1.5666942063754896
+        },
+        "push": {
+          "max_abs_roll_deg": 5.182036678027711,
+          "max_abs_pitch_deg": 8.160247487890835,
+          "max_abs_hip_mirror_residual_deg": 7.237015113896412,
+          "hip_mirror_residual_rms_deg": 4.768655463274278
+        },
+        "landing": {
+          "max_abs_roll_deg": 4.7510976714401165,
+          "max_abs_pitch_deg": 4.114139038728298,
+          "max_abs_hip_mirror_residual_deg": 11.08877322412405,
+          "hip_mirror_residual_rms_deg": 3.798832302900985
+        }
+      },
+      "mass_kg": 26.73119854927063,
+      "foot_sum_peak_all_n": 1499.698745727539,
+      "foot_sum_peak_reference_s": 1.68,
+      "leg_ground_force_peak_all_n": 4486.25048828125,
+      "leg_ground_force_peak_reference_s": 1.605,
+      "leg_ground_force_peak_body": "right_thigh_link",
+      "preparation_both_wheels_above_1n_fraction": 1.0,
+      "preparation_both_wheels_above_10n_fraction": 1.0
+    },
+    "training-random-phase-a01": {
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_20-03-44/evaluations/wheel-to-leg-local-20261023-001/raw/training-random-phase-a01/result.json",
+        "sha256": "a8eaa5a84da90f62991aee6707046de415848e23d7649a33b0959591264ef28c"
+      },
+      "telemetry": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_20-03-44/evaluations/wheel-to-leg-local-20261023-001/raw/training-random-phase-a01/telemetry.json.gz",
+        "sha256": "91a71f34b0d647a0f45471a012f4d560fadee4fbfde193d374b930347d5aec82"
+      },
+      "metrics": {
+        "action_rate_rms": 0.2789903072008684,
+        "anchor_orientation_rmse_rad": 0.11080407155041032,
+        "anchor_position_rmse_m": 0.08392359827894867,
+        "body_orientation_rmse_rad": 0.1478070196079245,
+        "body_position_rmse_m": 0.04835422071374047,
+        "censored_episodes": 1,
+        "completed_episodes": 12,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 0,
+        "frame_zero_successful_episodes": 0,
+        "max_abs_action": 13.722776412963867,
+        "max_abs_applied_torque": 117.09471130371094,
+        "max_joint_effort_utilization": 1.0,
+        "mean_reward": 0.168768605703488,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.15273539413143686,
+        "real_time_factor": 0.8958220055572599,
+        "successful_motion_episodes": 12,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 12,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0006,
+        "wheel_velocity_rmse_rad_s": 3.079725609599082
+      },
+      "physics_metrics": {
+        "applied_over_limit_joint_samples": 0,
+        "computed_over_limit_counts_by_joint": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          19,
+          0,
+          0,
+          0
+        ],
+        "computed_over_limit_joint_samples": 19,
+        "max_abs_applied_torque_by_joint_nm": [
+          53.18009948730469,
+          37.28265380859375,
+          75.39933013916016,
+          69.63744354248047,
+          117.09471130371094,
+          76.02455139160156,
+          27.0,
+          9.324992179870605,
+          21.90294075012207,
+          5.910789489746094
+        ],
+        "max_abs_applied_torque_nm": 117.09471130371094,
+        "max_abs_computed_torque_nm": 117.09471130371094,
+        "max_applied_effort_utilization": 1.0,
+        "max_single_foot_normal_force_n": 1467.7570800781384,
+        "max_single_wheel_normal_force_n": 1926.5356445312675,
+        "max_summed_wheel_normal_force_z_n": 2221.710418701172,
+        "max_wheel_downward_speed_before_m_s": 1.8897207975387573,
+        "physics_dt_seconds": 0.005,
+        "sample_count": 4000
+      },
+      "completed_segments": 12,
+      "frame_zero_completed_cycles": 0,
+      "jump_window_eligible_completed_segments": 2,
+      "completed_segments_with_leg_ground_contact": 5,
+      "full_cycles_with_leg_ground_contact": 0,
+      "cycles": [
+        {
+          "episode_id": 0,
+          "start_frame": 22,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": true,
+          "prepare_peak_vz_m_s": 1.0570933493967982,
+          "prepare_peak_vz_reference_time_s": 1.26,
+          "push_velocity_rmse_m_s": 0.8678670668738253,
+          "height_rmse_m": 0.0803981402046185,
+          "flight_min_height_error_m": -0.11609968543052673,
+          "prepare_min_base_z_m": 0.5289161801338196,
+          "vz_at_1_30_m_s": 0.8229111928503379,
+          "height_error_at_1_30_m": -0.0255698561668396,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.32,
+              "last_sample_s": 1.3949999999999998,
+              "duration_s": 0.08
+            },
+            {
+              "first_sample_s": 1.555,
+              "last_sample_s": 1.59,
+              "duration_s": 0.04
+            },
+            {
+              "first_sample_s": 1.54,
+              "last_sample_s": 1.545,
+              "duration_s": 0.01
+            }
+          ],
+          "longest_unloaded_s": 0.08,
+          "longest_unloaded_s_10n": 0.08,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 3864.05078125,
+          "leg_ground_contact_duration_s": 0.04,
+          "leg_first_last_sample_s": [
+            1.62,
+            1.6549999999999998
+          ],
+          "foot_sum_peak_n": 1225.9019775390625,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 3864.05078125,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.4,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              235.9886474609375,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 1,
+          "start_frame": 58,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": 1.0410996648351591,
+          "prepare_peak_vz_reference_time_s": 1.26,
+          "push_velocity_rmse_m_s": 0.8433278263761299,
+          "height_rmse_m": 0.10275984086248283,
+          "flight_min_height_error_m": -0.159339040517807,
+          "prepare_min_base_z_m": 0.4823816418647766,
+          "vz_at_1_30_m_s": 0.8319859223275748,
+          "height_error_at_1_30_m": -0.05418425798416138,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.515,
+              "last_sample_s": 1.555,
+              "duration_s": 0.045
+            },
+            {
+              "first_sample_s": 1.34,
+              "last_sample_s": 1.34,
+              "duration_s": 0.005
+            }
+          ],
+          "longest_unloaded_s": 0.045,
+          "longest_unloaded_s_10n": 0.045,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 3430.7255859375,
+          "leg_ground_contact_duration_s": 0.03,
+          "leg_first_last_sample_s": [
+            1.595,
+            1.62
+          ],
+          "foot_sum_peak_n": 1467.757080078125,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 3430.7255859375,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.56,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              1467.757080078125,
+              0.0,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 2,
+          "start_frame": 100,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": null,
+          "prepare_peak_vz_reference_time_s": null,
+          "push_velocity_rmse_m_s": null,
+          "height_rmse_m": null,
+          "flight_min_height_error_m": null,
+          "prepare_min_base_z_m": null,
+          "vz_at_1_30_m_s": null,
+          "height_error_at_1_30_m": null,
+          "unloaded_intervals_1n": [],
+          "longest_unloaded_s": 0,
+          "longest_unloaded_s_10n": 0,
+          "leg_ground_contact": false,
+          "leg_ground_contact_peak_n": 0.0,
+          "leg_ground_contact_duration_s": 0.0,
+          "leg_first_last_sample_s": null,
+          "foot_sum_peak_n": null,
+          "leg_ground_contact_in_analysis_window": false,
+          "leg_ground_contact_peak_in_analysis_window_n": null
+        },
+        {
+          "episode_id": 3,
+          "start_frame": 130,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": null,
+          "prepare_peak_vz_reference_time_s": null,
+          "push_velocity_rmse_m_s": null,
+          "height_rmse_m": null,
+          "flight_min_height_error_m": null,
+          "prepare_min_base_z_m": null,
+          "vz_at_1_30_m_s": null,
+          "height_error_at_1_30_m": null,
+          "unloaded_intervals_1n": [],
+          "longest_unloaded_s": 0,
+          "longest_unloaded_s_10n": 0,
+          "leg_ground_contact": false,
+          "leg_ground_contact_peak_n": 0.0,
+          "leg_ground_contact_duration_s": 0.0,
+          "leg_first_last_sample_s": null,
+          "foot_sum_peak_n": null,
+          "leg_ground_contact_in_analysis_window": false,
+          "leg_ground_contact_peak_in_analysis_window_n": null
+        },
+        {
+          "episode_id": 4,
+          "start_frame": 69,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": null,
+          "prepare_peak_vz_reference_time_s": null,
+          "push_velocity_rmse_m_s": null,
+          "height_rmse_m": 0.006697259301260186,
+          "flight_min_height_error_m": -0.012088596820831299,
+          "prepare_min_base_z_m": null,
+          "vz_at_1_30_m_s": null,
+          "height_error_at_1_30_m": null,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.3849999999999998,
+              "last_sample_s": 1.58,
+              "duration_s": 0.2
+            }
+          ],
+          "longest_unloaded_s": 0.2,
+          "longest_unloaded_s_10n": 0.2,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 1206.5450439453125,
+          "leg_ground_contact_duration_s": 0.035,
+          "leg_first_last_sample_s": [
+            1.82,
+            1.85
+          ],
+          "foot_sum_peak_n": 1213.2792053222656,
+          "leg_ground_contact_in_analysis_window": false,
+          "leg_ground_contact_peak_in_analysis_window_n": 0.0,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.585,
+            "foot_wheel_vertical_forces_n": [
+              1111.2928466796875,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 5,
+          "start_frame": 102,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": null,
+          "prepare_peak_vz_reference_time_s": null,
+          "push_velocity_rmse_m_s": null,
+          "height_rmse_m": null,
+          "flight_min_height_error_m": null,
+          "prepare_min_base_z_m": null,
+          "vz_at_1_30_m_s": null,
+          "height_error_at_1_30_m": null,
+          "unloaded_intervals_1n": [],
+          "longest_unloaded_s": 0,
+          "longest_unloaded_s_10n": 0,
+          "leg_ground_contact": false,
+          "leg_ground_contact_peak_n": 0.0,
+          "leg_ground_contact_duration_s": 0.0,
+          "leg_first_last_sample_s": null,
+          "foot_sum_peak_n": null,
+          "leg_ground_contact_in_analysis_window": false,
+          "leg_ground_contact_peak_in_analysis_window_n": null
+        },
+        {
+          "episode_id": 6,
+          "start_frame": 110,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": null,
+          "prepare_peak_vz_reference_time_s": null,
+          "push_velocity_rmse_m_s": null,
+          "height_rmse_m": null,
+          "flight_min_height_error_m": null,
+          "prepare_min_base_z_m": null,
+          "vz_at_1_30_m_s": null,
+          "height_error_at_1_30_m": null,
+          "unloaded_intervals_1n": [],
+          "longest_unloaded_s": 0,
+          "longest_unloaded_s_10n": 0,
+          "leg_ground_contact": false,
+          "leg_ground_contact_peak_n": 0.0,
+          "leg_ground_contact_duration_s": 0.0,
+          "leg_first_last_sample_s": null,
+          "foot_sum_peak_n": null,
+          "leg_ground_contact_in_analysis_window": false,
+          "leg_ground_contact_peak_in_analysis_window_n": null
+        },
+        {
+          "episode_id": 7,
+          "start_frame": 166,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": null,
+          "prepare_peak_vz_reference_time_s": null,
+          "push_velocity_rmse_m_s": null,
+          "height_rmse_m": null,
+          "flight_min_height_error_m": null,
+          "prepare_min_base_z_m": null,
+          "vz_at_1_30_m_s": null,
+          "height_error_at_1_30_m": null,
+          "unloaded_intervals_1n": [],
+          "longest_unloaded_s": 0,
+          "longest_unloaded_s_10n": 0,
+          "leg_ground_contact": false,
+          "leg_ground_contact_peak_n": 0.0,
+          "leg_ground_contact_duration_s": 0.0,
+          "leg_first_last_sample_s": null,
+          "foot_sum_peak_n": null,
+          "leg_ground_contact_in_analysis_window": false,
+          "leg_ground_contact_peak_in_analysis_window_n": null
+        },
+        {
+          "episode_id": 8,
+          "start_frame": 75,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": null,
+          "prepare_peak_vz_reference_time_s": null,
+          "push_velocity_rmse_m_s": null,
+          "height_rmse_m": 0.01645297504872408,
+          "flight_min_height_error_m": 0.00434952974319458,
+          "prepare_min_base_z_m": null,
+          "vz_at_1_30_m_s": null,
+          "height_error_at_1_30_m": null,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.505,
+              "last_sample_s": 1.59,
+              "duration_s": 0.09
+            }
+          ],
+          "longest_unloaded_s": 0.09,
+          "longest_unloaded_s_10n": 0.09,
+          "leg_ground_contact": false,
+          "leg_ground_contact_peak_n": 0.0,
+          "leg_ground_contact_duration_s": 0.0,
+          "leg_first_last_sample_s": null,
+          "foot_sum_peak_n": 1286.9181671142578,
+          "leg_ground_contact_in_analysis_window": false,
+          "leg_ground_contact_peak_in_analysis_window_n": 0.0,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.595,
+            "foot_wheel_vertical_forces_n": [
+              754.5094604492188,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 9,
+          "start_frame": 155,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": null,
+          "prepare_peak_vz_reference_time_s": null,
+          "push_velocity_rmse_m_s": null,
+          "height_rmse_m": null,
+          "flight_min_height_error_m": null,
+          "prepare_min_base_z_m": null,
+          "vz_at_1_30_m_s": null,
+          "height_error_at_1_30_m": null,
+          "unloaded_intervals_1n": [],
+          "longest_unloaded_s": 0,
+          "longest_unloaded_s_10n": 0,
+          "leg_ground_contact": false,
+          "leg_ground_contact_peak_n": 0.0,
+          "leg_ground_contact_duration_s": 0.0,
+          "leg_first_last_sample_s": null,
+          "foot_sum_peak_n": null,
+          "leg_ground_contact_in_analysis_window": false,
+          "leg_ground_contact_peak_in_analysis_window_n": null
+        },
+        {
+          "episode_id": 10,
+          "start_frame": 58,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": 1.0749254320736568,
+          "prepare_peak_vz_reference_time_s": 1.22,
+          "push_velocity_rmse_m_s": 0.9206296229580015,
+          "height_rmse_m": 0.10121093692361383,
+          "flight_min_height_error_m": -0.14680206775665283,
+          "prepare_min_base_z_m": 0.48323532938957214,
+          "vz_at_1_30_m_s": 0.5780752834342792,
+          "height_error_at_1_30_m": -0.04122960567474365,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.325,
+              "last_sample_s": 1.345,
+              "duration_s": 0.025
+            }
+          ],
+          "longest_unloaded_s": 0.025,
+          "longest_unloaded_s_10n": 0.03,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 5690.859375,
+          "leg_ground_contact_duration_s": 0.085,
+          "leg_first_last_sample_s": [
+            1.6,
+            1.6849999999999998
+          ],
+          "foot_sum_peak_n": 1145.1407470703125,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 5690.859375,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.35,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              63.37353515625,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 11,
+          "start_frame": 50,
+          "completed": true,
+          "frame_zero_complete": false,
+          "jump_window_eligible": true,
+          "prepare_peak_vz_m_s": 0.9826740430017347,
+          "prepare_peak_vz_reference_time_s": 1.24,
+          "push_velocity_rmse_m_s": 0.9320358811217857,
+          "height_rmse_m": 0.09147476921224106,
+          "flight_min_height_error_m": -0.1369076669216156,
+          "prepare_min_base_z_m": 0.536795437335968,
+          "vz_at_1_30_m_s": 0.5387423408633523,
+          "height_error_at_1_30_m": -0.011348485946655273,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.545,
+              "last_sample_s": 1.57,
+              "duration_s": 0.03
+            },
+            {
+              "first_sample_s": 1.58,
+              "last_sample_s": 1.58,
+              "duration_s": 0.005
+            }
+          ],
+          "longest_unloaded_s": 0.03,
+          "longest_unloaded_s_10n": 0.03,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 4063.405517578125,
+          "leg_ground_contact_duration_s": 0.075,
+          "leg_first_last_sample_s": [
+            1.615,
+            1.6849999999999998
+          ],
+          "foot_sum_peak_n": 1038.352783203125,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 4063.405517578125,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.575,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              0.0,
+              63.153194427490234,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "episode_id": 12,
+          "start_frame": 33,
+          "completed": false,
+          "frame_zero_complete": false,
+          "jump_window_eligible": false,
+          "prepare_peak_vz_m_s": 0.8795398123702227,
+          "prepare_peak_vz_reference_time_s": 1.26,
+          "push_velocity_rmse_m_s": 1.0140137686521056,
+          "height_rmse_m": 0.08951530058172535,
+          "flight_min_height_error_m": -0.12212222814559937,
+          "prepare_min_base_z_m": 0.5315775871276855,
+          "vz_at_1_30_m_s": 0.47344795411376106,
+          "height_error_at_1_30_m": -0.021949827671051025,
+          "unloaded_intervals_1n": [
+            {
+              "first_sample_s": 1.565,
+              "last_sample_s": 1.595,
+              "duration_s": 0.035
+            },
+            {
+              "first_sample_s": 1.305,
+              "last_sample_s": 1.305,
+              "duration_s": 0.005
+            }
+          ],
+          "longest_unloaded_s": 0.035,
+          "longest_unloaded_s_10n": 0.035,
+          "leg_ground_contact": true,
+          "leg_ground_contact_peak_n": 4229.36767578125,
+          "leg_ground_contact_duration_s": 0.075,
+          "leg_first_last_sample_s": [
+            1.625,
+            1.6949999999999998
+          ],
+          "foot_sum_peak_n": 1526.2360382080078,
+          "leg_ground_contact_in_analysis_window": true,
+          "leg_ground_contact_peak_in_analysis_window_n": 4229.36767578125,
+          "first_sample_after_longest_unloading": {
+            "reference_s": 1.6,
+            "foot_wheel_vertical_forces_n": [
+              0.0,
+              324.6827697753906,
+              0.0,
+              0.0
+            ],
+            "thigh_shank_ground_vertical_forces_n": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "full_cycle_summary": {
+        "prepare_peak_vz_m_s": null,
+        "push_velocity_rmse_m_s": null,
+        "height_rmse_m": null,
+        "longest_unloaded_s": null,
+        "vz_at_1_30_m_s": null,
+        "height_error_at_1_30_m": null,
+        "prepare_min_base_z_m": null,
+        "foot_sum_peak_n": null
+      },
+      "eligible_window_summary": {
+        "prepare_peak_vz_m_s": {
+          "n": 2,
+          "mean": 1.0198836961992663,
+          "min": 0.9826740430017347,
+          "max": 1.0570933493967982
+        },
+        "longest_unloaded_s": {
+          "n": 2,
+          "mean": 0.055,
+          "min": 0.03,
+          "max": 0.08
+        }
+      },
+      "stage_pose_full_cycles": {},
+      "mass_kg": 27.88558739423752,
+      "foot_sum_peak_all_n": 1526.2360382080078,
+      "foot_sum_peak_reference_s": 1.7,
+      "leg_ground_force_peak_all_n": 5690.859375,
+      "leg_ground_force_peak_reference_s": 1.6,
+      "leg_ground_force_peak_body": "left_thigh_link"
+    }
+  },
+  "artifacts": {
+    "joint_table": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_20-03-44/evaluations/wheel-to-leg-local-20261023-001/derived/joint-peak-rms.csv",
+      "sha256": "b0a690efbb6a8e4efb49e2dc987486b48b5d4863b9ea50844ccda465b1b5ff7d"
+    },
+    "plot": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-22_20-03-44/evaluations/wheel-to-leg-local-20261023-001/derived/jump-and-contact.png",
+      "sha256": "a6ffc3bb1809be658d20a545055ef8f2d593e372ee651e6440dfe2ab41cd5aae"
+    }
+  },
+  "clarification": "Leg ground-contact counts now cover each entire observed episode; version 1 counted only the 0.8–1.82 s analysis window. Unloading durations retain their explicit window."
+}

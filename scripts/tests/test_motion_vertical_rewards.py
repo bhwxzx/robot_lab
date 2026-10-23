@@ -50,6 +50,9 @@ def load_functions_and_config():
 
 
 CONFIG = load_functions_and_config()
+# Test function scaling independently of the disabled training weights.
+VELOCITY_TEST_WEIGHT = -2.0
+HEIGHT_TEST_WEIGHT = 2.0
 
 
 def make_env(frames, fps=50.0):
@@ -84,14 +87,14 @@ def reward(term, env, **overrides):
 
 
 class MotionVerticalRewardTests(unittest.TestCase):
-    def test_wheel_only_registration_matches_approved_weights_and_windows(self):
+    def test_wheel_only_registration_matches_disabled_weights_and_windows(self):
         velocity, height = (CONFIG[name] for name in TERMS)
-        self.assertEqual(velocity.weight, -2.0)
+        self.assertEqual(velocity.weight, 0.0)
         self.assertEqual(velocity.params, {
             "command_name": "motion", "velocity_scale": 1.0,
             "start_time_s": 1.10, "end_time_s": 1.36, "ramp_time_s": 0.04,
         })
-        self.assertEqual(height.weight, 2.0)
+        self.assertEqual(height.weight, 0.0)
         self.assertEqual(height.params, {
             "command_name": "motion", "std": 0.10,
             "start_time_s": 1.20, "end_time_s": 1.70, "ramp_time_s": 0.05,
@@ -109,7 +112,7 @@ class MotionVerticalRewardTests(unittest.TestCase):
         command.robot.data.body_com_lin_vel_w[:, 1, 2] = command.anchor_lin_vel_w[:, 2] + errors
         expected = torch.tensor([4.5, 0.5, 0.125, 0.0, 0.125, 0.5, 4.5], dtype=torch.float64)
         torch.testing.assert_close(reward(TERMS[0], env), expected)
-        torch.testing.assert_close(CONFIG[TERMS[0]].weight * reward(TERMS[0], env), -2.0 * expected)
+        torch.testing.assert_close(VELOCITY_TEST_WEIGHT * reward(TERMS[0], env), VELOCITY_TEST_WEIGHT * expected)
 
     def test_velocity_normalizes_error_before_huber(self):
         env, command = make_env([63])
@@ -132,7 +135,7 @@ class MotionVerticalRewardTests(unittest.TestCase):
         command.robot_anchor_pos_w[:, 2] = torch.tensor([0.0, 0.1, -0.1, 0.2, -0.2])
         expected = torch.tensor([1.0, math.exp(-1.0), math.exp(-1.0), math.exp(-4.0), math.exp(-4.0)], dtype=torch.float64)
         torch.testing.assert_close(reward(TERMS[1], env), expected)
-        torch.testing.assert_close(CONFIG[TERMS[1]].weight * reward(TERMS[1], env), 2.0 * expected)
+        torch.testing.assert_close(HEIGHT_TEST_WEIGHT * reward(TERMS[1], env), HEIGHT_TEST_WEIGHT * expected)
 
     def test_height_ignores_xy_and_common_world_origin_offset(self):
         env, command = make_env([75, 75])
@@ -176,7 +179,7 @@ class MotionVerticalRewardTests(unittest.TestCase):
         env, command = make_env([63] * 4)
         errors = torch.tensor([-2.0, -0.25, 0.25, 2.0], dtype=torch.float64, requires_grad=True)
         command.robot.data.body_com_lin_vel_w[:, 1, 2] = command.anchor_lin_vel_w[:, 2] + errors
-        (CONFIG[TERMS[0]].weight * reward(TERMS[0], env)).sum().backward()
+        (VELOCITY_TEST_WEIGHT * reward(TERMS[0], env)).sum().backward()
         torch.testing.assert_close(errors.grad, torch.tensor([2.0, 0.5, -0.5, -2.0], dtype=torch.float64))
 
     def test_invalid_scales_fail_explicitly(self):
