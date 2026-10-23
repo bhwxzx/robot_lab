@@ -1,8 +1,9 @@
 """CPU tests for phase-gated takeoff velocity and flight height rewards.
 
 Run: conda run -n isaacsim-5.1 python -B scripts/tests/test_motion_vertical_rewards.py
-Execute production functions and wheel registrations from their AST without
-launching Isaac Sim or changing its user preferences.
+Execute production functions from their AST with independent test parameters,
+and verify that the optional rewards are not registered in task configurations.
+No Isaac Sim launch or user preference changes are needed.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ TASK_ROOT = Path(__file__).resolve().parents[2] / "source/robot_lab/robot_lab/ta
 TERMS = ("motion_takeoff_vertical_velocity", "motion_flight_height")
 
 
-def load_functions_and_config():
+def load_reward_functions():
     path = TASK_ROOT / "mdp/rewards.py"
     names = {
         "_motion_phase_window_weight",
@@ -36,21 +37,27 @@ def load_functions_and_config():
     namespace = {"math": math, "torch": torch}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), namespace)
 
-    path = TASK_ROOT / "config/LW_Wheel/flat_env_cfg.py"
-    tree = ast.parse(path.read_text())
-    rewards = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "LWWheelRewardsCfg")
-    registrations = [
-        node for node in rewards.body
-        if isinstance(node, ast.Assign)
-        and any(isinstance(target, ast.Name) and target.id in TERMS for target in node.targets)
-    ]
-    config_namespace = {"mdp": SimpleNamespace(**{name: namespace[name] for name in names}), "RewTerm": SimpleNamespace}
-    exec(compile(ast.Module(body=registrations, type_ignores=[]), str(path), "exec"), config_namespace)
-    return {name: config_namespace[name] for name in TERMS}
+    return namespace
 
 
-CONFIG = load_functions_and_config()
-# Test function scaling independently of the disabled training weights.
+FUNCTIONS = load_reward_functions()
+CONFIG = {
+    TERMS[0]: SimpleNamespace(
+        func=FUNCTIONS["motion_phase_anchor_vertical_velocity_error_huber"],
+        params={
+            "command_name": "motion", "velocity_scale": 1.0,
+            "start_time_s": 1.10, "end_time_s": 1.36, "ramp_time_s": 0.04,
+        },
+    ),
+    TERMS[1]: SimpleNamespace(
+        func=FUNCTIONS["motion_phase_anchor_height_error_exp"],
+        params={
+            "command_name": "motion", "std": 0.10,
+            "start_time_s": 1.20, "end_time_s": 1.70, "ramp_time_s": 0.05,
+        },
+    ),
+}
+# Test helper scaling independently of task reward registration.
 VELOCITY_TEST_WEIGHT = -2.0
 HEIGHT_TEST_WEIGHT = 2.0
 
@@ -87,19 +94,10 @@ def reward(term, env, **overrides):
 
 
 class MotionVerticalRewardTests(unittest.TestCase):
-    def test_wheel_only_registration_matches_disabled_weights_and_windows(self):
-        velocity, height = (CONFIG[name] for name in TERMS)
-        self.assertEqual(velocity.weight, 0.0)
-        self.assertEqual(velocity.params, {
-            "command_name": "motion", "velocity_scale": 1.0,
-            "start_time_s": 1.10, "end_time_s": 1.36, "ramp_time_s": 0.04,
-        })
-        self.assertEqual(height.weight, 0.0)
-        self.assertEqual(height.params, {
-            "command_name": "motion", "std": 0.10,
-            "start_time_s": 1.20, "end_time_s": 1.70, "ramp_time_s": 0.05,
-        })
-        for relative in ("tracking_env_cfg.py", "config/LW_Leg/flat_env_cfg.py"):
+    def test_optional_rewards_are_not_registered_in_task_configs(self):
+        for relative in (
+            "tracking_env_cfg.py", "config/LW_Wheel/flat_env_cfg.py", "config/LW_Leg/flat_env_cfg.py",
+        ):
             identifiers = {
                 node.id for node in ast.walk(ast.parse((TASK_ROOT / relative).read_text()))
                 if isinstance(node, ast.Name)
