@@ -35,7 +35,7 @@ class LWWheelRewardsCfg(RewardsCfg):
 
     motion_takeoff_vertical_velocity = RewTerm(
         func=mdp.motion_phase_anchor_vertical_velocity_error_huber,
-        weight=-2.0,
+        weight=0.0,
         params={
             "command_name": "motion",
             "velocity_scale": 1.0,
@@ -46,7 +46,7 @@ class LWWheelRewardsCfg(RewardsCfg):
     )
     motion_flight_height = RewTerm(
         func=mdp.motion_phase_anchor_height_error_exp,
-        weight=2.0,
+        weight=0.0,
         params={
             "command_name": "motion",
             "std": 0.10,
@@ -135,6 +135,10 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         ]
         self.events.push_robot = None
         # rewards
+        # Strengthen trajectory tracking while retaining the action regularization weights.
+        self.rewards.motion_global_anchor_pos.weight = 2.0
+        self.rewards.motion_body_pos.weight = 2.0
+        self.rewards.motion_body_lin_vel.weight = 3.0
         # Track the reference attitude through takeoff and flight, fading out after landing.
         self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.03
         self.rewards.motion_takeoff_pitch_ang_vel.params["start_time_s"] = 1.0
