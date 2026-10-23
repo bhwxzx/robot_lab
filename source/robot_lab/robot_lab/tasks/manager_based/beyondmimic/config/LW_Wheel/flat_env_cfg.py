@@ -33,29 +33,6 @@ class LWWheelRewardsCfg(RewardsCfg):
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_hip_joint", "left_hip_joint"])},
     )
 
-    motion_takeoff_vertical_velocity = RewTerm(
-        func=mdp.motion_phase_anchor_vertical_velocity_error_huber,
-        weight=0.0,
-        params={
-            "command_name": "motion",
-            "velocity_scale": 1.0,
-            "start_time_s": 1.10,
-            "end_time_s": 1.36,
-            "ramp_time_s": 0.04,
-        },
-    )
-    motion_flight_height = RewTerm(
-        func=mdp.motion_phase_anchor_height_error_exp,
-        weight=0.0,
-        params={
-            "command_name": "motion",
-            "std": 0.10,
-            "start_time_s": 1.20,
-            "end_time_s": 1.70,
-            "ramp_time_s": 0.05,
-        },
-    )
-
 
 @configclass
 class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
@@ -135,10 +112,6 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         ]
         self.events.push_robot = None
         # rewards
-        # Strengthen trajectory tracking while retaining the action regularization weights.
-        self.rewards.motion_global_anchor_pos.weight = 2.0
-        self.rewards.motion_body_pos.weight = 2.0
-        self.rewards.motion_body_lin_vel.weight = 3.0
         # Track the reference attitude through takeoff and flight, fading out after landing.
         self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.03
         self.rewards.motion_takeoff_pitch_ang_vel.params["start_time_s"] = 1.0
@@ -178,7 +151,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands
         self.commands.motion.initialize_reset_targets = True
-        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-20/wheel_to_leg_transform_50hz.npz"
+        self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz"
         self.commands.motion.anchor_body_name = "base_link"
         self.commands.motion.body_names = [ # 需要追踪的连杆
             "base_link",
