@@ -1,0 +1,80 @@
+{
+  "batch_id": "wheel-to-leg-reference-control-20261024-002",
+  "cases": [
+    {
+      "attempt_id": "play-ground-20000-a01",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-23_17-15-35/evaluations/wheel-to-leg-reference-control-20261024-002/raw/play-ground-20000-a01/console.log",
+        "sha256": "29e5df8b1af04d296c786a3fbf5db37ebf841ea98b930f8c963d3dda3cf574b8"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-23_17-15-35/evaluations/wheel-to-leg-reference-control-20261024-002/raw/play-ground-20000-a01/result.json",
+        "sha256": "8a2e2fb7b3309196a373c9a8f59311e5d60ed2af53622906672e7d0bdf9b6228"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "play-ground",
+        "scenario_overrides": {
+          "commands.motion.joint_position_range": [
+            0,
+            0
+          ],
+          "commands.motion.pose_range": {},
+          "commands.motion.velocity_range": {},
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "randomized_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03",
+          "events.add_joint_default_pos": null,
+          "events.base_com": null,
+          "events.physics_material": null,
+          "events.push_robot": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.wheel_contact_continuous.weight": 0.5
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-23_17-15-35/evaluations/wheel-to-leg-reference-control-20261024-002/contract.json",
+    "sha256": "a47e99e029fb9eec8269b2ccc7157895943541151b14a19039a47ad732979c35"
+  },
+  "layout_version": 2,
+  "notes": [
+    "按用户问题进行参考轨迹对照；两个训练运行保存的 agent.yaml 完全相同，env.yaml 仅 motion_file 和日志目录不同；腿部 delay 均为 0–3。使用各自 model_20000.pt 匹配训练轮数。",
+    "新旧均采用固定 frame-zero 开始、1000 控制步、1 环境、seed 42，无观测噪声和事件随机化；保留执行器延迟；物理步 5 ms；不录视频、不训练、不修改代码。",
+    "本运行 20000 轮：完整周期 5，非 motion_finished 终止 0；平均竖直峰值 0.735 m/s，对应参考 1.967 m/s，比例 37.3%；速度 RMSE 1.003 m/s，高度 RMSE 11.33 cm；连续无记录支撑均值 48.0 ms。",
+    "准备阶段俯仰峰值 4.13°、横滚 4.02°、髋镜像残差 7.14°；双轮 ≥1 N 比例均值 100.0%。大腿触地 5/5；单连杆峰值 3.123 kN，落地记录竖直合力峰值 3.393 kN。",
+    "新旧参考目标不同，不能将更低跟踪误差直接视作更强起跳；单 seed 不能证明普遍成功率，未提供批准的收敛判据。",
+    "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "结合相同训练轮数的起跳、姿态、接触和冲击共同判断；本次仅做有限测试，不调整奖励参数。"
+  ],
+  "report": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-23_17-15-35/evaluations/wheel-to-leg-reference-control-20261024-002/report.md",
+    "sha256": "943c6905b71f2616940e90a62921bff1d6478e4385cbcd71a67d8d83279e27a0"
+  },
+  "repository_root": "/home/server/liufengrong/robot_lab",
+  "run_id": "2026-10-23_17-15-35",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-23_17-15-35/evaluations/wheel-to-leg-reference-control-20261024-002/derived/reference-comparison.json",
+      "sha256": "8620cd1c84a961afb0aa1432fe1554f88a1cc2648e057e020d3e4abaf2b4c656"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "version": 1
+}
