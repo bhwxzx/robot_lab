@@ -122,7 +122,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.motion_takeoff_anchor_ori.params["start_time_s"] = 1.0
         self.rewards.motion_takeoff_anchor_ori.params["end_time_s"] = 1.65
         self.rewards.motion_takeoff_anchor_ori.params["ramp_time_s"] = 0.1
-        self.rewards.action_rate_l2.weight = -0.15
+        self.rewards.action_rate_l2.weight = -0.2
         self.rewards.action_smoothness.weight = -0.075
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
@@ -148,6 +148,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.same_foot_x_position.params["end_time_s"] = 1.25
         self.rewards.same_foot_x_position.params["ramp_time_s"] = 0.2
         # terminations
+        self.terminations.anchor_pos.params["threshold"] = 0.15
         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
         # commands
         self.commands.motion.initialize_reset_targets = True
