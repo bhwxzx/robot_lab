@@ -171,12 +171,12 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.wheel_contact_continuous.params["start_time_s"] = 1.65
         self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
         self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
-        # Blend wheel geometry constraints in after landing, independently of current contact.
-        self.rewards.leg_symmetry.weight = 0.0
-        self.rewards.leg_symmetry.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
-        self.rewards.leg_symmetry.params["std"] = 0.05
-        self.rewards.leg_symmetry.params["start_time_s"] = 1.65
-        self.rewards.leg_symmetry.params["ramp_time_s"] = 0.2
+        # Full-reference joint mirror cost; enable with a negative weight after comparison.
+        self.rewards.joint_symmetry.weight = 0.0
+        self.rewards.joint_symmetry.params["asset_cfg"] = SceneEntityCfg(
+            "robot", joint_names=self.joint_names_without_wheels, preserve_order=True,
+        )
+        # Blend wheel fore-aft alignment in after landing, independently of current contact.
         self.rewards.same_foot_x_position.weight = -10.0
         self.rewards.same_foot_x_position.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.same_foot_x_position.params["start_time_s"] = 1.65

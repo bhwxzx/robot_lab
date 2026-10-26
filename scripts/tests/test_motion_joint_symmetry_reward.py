@@ -1,4 +1,4 @@
-"""CPU contracts for LW joint-reference symmetry and the legacy geometry mode.
+"""CPU contracts for LW reference-joint symmetry and its task registration.
 
 Run: conda run -n isaacsim-5.1 python -B scripts/tests/test_motion_joint_symmetry_reward.py
 Production reward functions are loaded from AST; Isaac Sim is not started.
@@ -31,10 +31,7 @@ SCALES = (0.1, 0.2, 0.2, 0.2)
 
 def load_functions():
     path = TASK / "mdp/rewards.py"
-    selected = {
-        "_joint_reference_mirror_error_huber", "wheel_phase_leg_symmetry",
-        "_wheel_phase_weight", "_wheel_phase_geometry_weight",
-    }
+    selected = {"joint_symmetry"}
     nodes = [node for node in ast.parse(path.read_text()).body if (
         isinstance(node, ast.ImportFrom) and node.module == "__future__"
     ) or (isinstance(node, ast.FunctionDef) and node.name in selected)]
@@ -44,13 +41,12 @@ def load_functions():
 
 
 FUNCTIONS = load_functions()
-REWARD = FUNCTIONS["wheel_phase_leg_symmetry"]
+REWARD = FUNCTIONS["joint_symmetry"]
 
 
 def make_env(count=3, physical_names=PHYSICAL_NAMES):
     asset = SimpleNamespace(data=SimpleNamespace(
         joint_pos=torch.zeros(count, 10, dtype=torch.float64),
-        body_link_pos_w=torch.zeros(count, 2, 3, dtype=torch.float64),
     ))
     command = SimpleNamespace(
         robot=asset,
@@ -65,13 +61,13 @@ def make_env(count=3, physical_names=PHYSICAL_NAMES):
     sensor_cfg = SimpleNamespace(
         name="robot", joint_names=ORDERED_NAMES.copy(),
         joint_ids=[physical_names.index(name) for name in ORDERED_NAMES],
-        preserve_order=True, body_ids=[0, 1],
+        preserve_order=True,
     )
     return env, asset, command, sensor_cfg
 
 
-def mirror(env, cfg, scales=SCALES, **kwargs):
-    return REWARD(env, "motion", cfg, mode="joint_reference_mirror", joint_scales=scales, **kwargs)
+def mirror(env, cfg, scales=SCALES):
+    return REWARD(env, "motion", cfg, joint_scales=scales)
 
 
 class JointReferenceSymmetryTests(unittest.TestCase):
@@ -120,7 +116,7 @@ class JointReferenceSymmetryTests(unittest.TestCase):
     def test_full_reference_coverage_and_reset_without_state_leak(self):
         env, asset, command, cfg = make_env()
         asset.data.joint_pos[:, cfg.joint_ids[0]] = 0.1
-        # Frames 0, 30, 100 all contribute; geometry gating is irrelevant.
+        # Frames 0, 30, 100 all contribute throughout the reference.
         torch.testing.assert_close(mirror(env, cfg), torch.full((3,), 0.125, dtype=torch.float64))
         command.time_steps[1] = 0
         command.joint_pos[1].copy_(asset.data.joint_pos[1])
@@ -165,44 +161,40 @@ class JointReferenceSymmetryTests(unittest.TestCase):
             torch.testing.assert_close(current, original)
         self.assertEqual(vars(cfg), config_before)
 
-    def test_default_legacy_mode_preserves_geometry_reward_and_phase_ramp(self):
-        env, _, command, cfg = make_env()
-        command.time_steps = torch.tensor([80, 85, 90])
-        calls = []
-
-        def geometry(env, std, asset_cfg):
-            calls.append((std, asset_cfg))
-            return torch.full((3,), 0.8)
-
-        FUNCTIONS["_locomotion_leg_symmetry"] = geometry
-        values = REWARD(env, "motion", cfg, std=0.05, start_time_s=1.6, ramp_time_s=0.2)
-        torch.testing.assert_close(values, torch.tensor([0.0, 0.4, 0.8]), atol=1e-6, rtol=1e-5)
-        self.assertEqual(calls, [(0.05, cfg)])
-        with self.assertRaises(ValueError):
-            REWARD(env, "motion", cfg, mode="misspelled")
-
-    def test_wheel_config_selects_joint_mode_but_retains_zero_weight(self):
-        path = TASK / "config/LW_Wheel/flat_env_cfg.py"
+    def test_registered_joint_symmetry_has_valid_zero_weight_config_for_both_lw_tasks(self):
+        path = TASK / "tracking_env_cfg.py"
         tree = ast.parse(path.read_text())
-        cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "LWWheelBeyondMimicFlatEnvCfg")
-        joint_names = next(ast.literal_eval(n.value) for n in cls.body if isinstance(n, ast.Assign)
-                           and any(isinstance(t, ast.Name) and t.id == "joint_names_without_wheels" for t in n.targets))
-        post_init = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "__post_init__")
-        nodes = [n for n in post_init.body if isinstance(n, ast.Assign) and any(
-            ast.unparse(t) in ("self.rewards.leg_symmetry.weight", "self.rewards.leg_symmetry.params") for t in n.targets)]
-        cfg = SimpleNamespace(joint_names_without_wheels=joint_names,
-                              rewards=SimpleNamespace(leg_symmetry=SimpleNamespace()))
-        exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), {
-            "self": cfg, "SceneEntityCfg": lambda name, **kwargs: SimpleNamespace(name=name, **kwargs),
-        })
-        term = cfg.rewards.leg_symmetry
-        self.assertEqual(term.weight, 0.0)
-        self.assertEqual(term.params["mode"], "joint_reference_mirror")
-        self.assertEqual(term.params["asset_cfg"].joint_names, ORDERED_NAMES)
-        self.assertTrue(term.params["asset_cfg"].preserve_order)
-        self.assertEqual(term.params["joint_scales"], SCALES)
-        self.assertNotIn("start_time_s", term.params)
-        inspect.signature(REWARD).bind(None, **term.params)
+        rewards = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "RewardsCfg")
+        registration = next(n for n in rewards.body if isinstance(n, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id == "joint_symmetry" for t in n.targets))
+        factory = lambda name, **kwargs: SimpleNamespace(name=name, **kwargs)
+        namespace = {"mdp": SimpleNamespace(joint_symmetry=REWARD), "RewTerm": SimpleNamespace,
+                     "SceneEntityCfg": factory}
+        exec(compile(ast.Module(body=[registration], type_ignores=[]), str(path), "exec"), namespace)
+        for task, cls_name in (("LW_Wheel", "LWWheelBeyondMimicFlatEnvCfg"),
+                               ("LW_Leg", "LWLegBeyondMimicFlatEnvCfg")):
+            with self.subTest(task=task):
+                path = TASK / f"config/{task}/flat_env_cfg.py"
+                tree = ast.parse(path.read_text())
+                cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls_name)
+                joint_names = next(ast.literal_eval(n.value) for n in cls.body if isinstance(n, ast.Assign)
+                                   and any(isinstance(t, ast.Name) and t.id == "joint_names_without_wheels" for t in n.targets))
+                post_init = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "__post_init__")
+                nodes = [n for n in post_init.body if isinstance(n, ast.Assign) and any(
+                    ast.unparse(t).startswith("self.rewards.joint_symmetry.") for t in n.targets)]
+                cfg = SimpleNamespace(joint_names_without_wheels=joint_names,
+                                      rewards=SimpleNamespace(joint_symmetry=copy.deepcopy(namespace["joint_symmetry"])))
+                exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), {
+                    "self": cfg, "SceneEntityCfg": factory,
+                })
+                term = cfg.rewards.joint_symmetry
+                self.assertIs(term.func, REWARD)
+                self.assertEqual(term.weight, 0.0)
+                self.assertEqual(set(term.params), {"command_name", "asset_cfg", "joint_scales"})
+                self.assertEqual(term.params["asset_cfg"].joint_names, ORDERED_NAMES)
+                self.assertTrue(term.params["asset_cfg"].preserve_order)
+                self.assertEqual(term.params["joint_scales"], SCALES)
+                inspect.signature(REWARD).bind(None, **term.params)
 
 
 if __name__ == "__main__":

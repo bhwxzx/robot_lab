@@ -22,7 +22,6 @@ PHASE_TERMS = (
     "motion_takeoff_pitch_ang_vel",
     "motion_takeoff_anchor_ori",
     "wheel_contact_continuous",
-    "leg_symmetry",
     "same_foot_x_position",
 )
 
@@ -155,7 +154,7 @@ class ReferenceTimingTests(unittest.TestCase):
         self.env, self.command = make_env(quaternion())
         self.command.motion = SimpleNamespace(fps=torch.tensor([50.0]))
 
-    def test_selected_reference_and_all_five_time_boundaries(self):
+    def test_selected_reference_and_all_phase_time_boundaries(self):
         self.assertEqual(
             CONFIG.commands.motion.motion_file,
             "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/leg_to_wheel/2026-10-08/leg_to_wheel_transform_50hz.npz",
@@ -179,7 +178,7 @@ class ReferenceTimingTests(unittest.TestCase):
     def test_wheel_geometry_ramp_begins_after_landing(self):
         self.command.time_steps = torch.tensor([79, 82, 83, 88, 93, 94])
         self.env.scene = {"robot": SimpleNamespace(data=SimpleNamespace(body_link_pos_w=torch.zeros(6, 2, 3)))}
-        for name in ("leg_symmetry", "same_foot_x_position"):
+        for name in ("same_foot_x_position",):
             with self.subTest(term=name):
                 params = getattr(CONFIG.rewards, name).params
                 blend = FUNCTIONS["_wheel_phase_geometry_weight"](
