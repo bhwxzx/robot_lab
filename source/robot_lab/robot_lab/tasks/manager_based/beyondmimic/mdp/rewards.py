@@ -12,7 +12,6 @@ from isaaclab.assets import Articulation
 
 from robot_lab.tasks.manager_based.beyondmimic.mdp.commands import MotionCommand
 from robot_lab.tasks.manager_based.locomotion.velocity.mdp.rewards import (
-    leg_symmetry as _locomotion_leg_symmetry,
     same_feet_x_position as _locomotion_same_feet_x_position,
 )
 
@@ -353,14 +352,16 @@ def wheel_phase_joint_acceleration_l2(
     return blend * (acceleration / acceleration_scale).square().mean(dim=-1)
 
 
-def _joint_reference_mirror_error_huber(
+def joint_symmetry(
     env: ManagerBasedRLEnv,
     command_name: str,
     asset_cfg: SceneEntityCfg,
-    joint_scales: tuple[float, ...] | None,
+    joint_scales: tuple[float, ...],
 ) -> torch.Tensor:
-    """Mean normalized mirror error for the selected LW right/left joint pairs.
+    """Mean normalized Huber mirror cost for selected LW right/left joint pairs.
 
+    This nonnegative cost applies throughout the reference; use a negative
+    reward weight when enabling it. Scales are radians, one per joint pair.
     Joint positions in MotionCommand use the robot's physical joint order.
     Resolve the same ordered indices for actual and reference positions; the
     command property already selects each environment's current reference frame.
@@ -394,33 +395,6 @@ def _joint_reference_mirror_error_huber(
     scales = actual.new_tensor(joint_scales)
     error = residual / scales
     return torch.nn.functional.huber_loss(error, torch.zeros_like(error), reduction="none", delta=1.0).mean(dim=-1)
-
-
-def wheel_phase_leg_symmetry(
-    env: ManagerBasedRLEnv,
-    command_name: str,
-    asset_cfg: SceneEntityCfg,
-    std: float = 0.05,
-    start_time_s: float = 1.6,
-    ramp_time_s: float = 0.2,
-    mode: str = "wheel_geometry",
-    joint_scales: tuple[float, ...] | None = None,
-) -> torch.Tensor:
-    """Existing symmetry term with an opt-in LW joint-reference mode.
-
-    ``wheel_geometry`` preserves the positive, phase-gated geometry reward.
-    ``joint_reference_mirror`` returns a nonnegative Huber cost at every reference
-    phase; use a negative weight when enabling it. Geometry std/time parameters
-    apply only to the default mode; joint_scales are in radians in pair order.
-    """
-    if mode == "joint_reference_mirror":
-        return _joint_reference_mirror_error_huber(env, command_name, asset_cfg, joint_scales)
-    if mode != "wheel_geometry":
-        raise ValueError(f"Unknown leg symmetry mode: {mode!r}")
-    if not math.isfinite(std) or std <= 0.0:
-        raise ValueError("Wheel symmetry reward requires a finite, positive standard deviation.")
-    blend = _wheel_phase_geometry_weight(env, command_name, asset_cfg, start_time_s, ramp_time_s)
-    return blend * _locomotion_leg_symmetry(env, std=std, asset_cfg=asset_cfg)
 
 
 def wheel_phase_same_feet_x_position(

@@ -154,13 +154,12 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
         self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
         # Full-reference joint mirror cost; enable with a negative weight after comparison.
-        self.rewards.leg_symmetry.weight = 0.0
-        self.rewards.leg_symmetry.params = {
+        self.rewards.joint_symmetry.weight = 0.0
+        self.rewards.joint_symmetry.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=self.joint_names_without_wheels, preserve_order=True,
             ),
-            "mode": "joint_reference_mirror",
             "joint_scales": (0.1, 0.2, 0.2, 0.2),  # hip, thigh, shank, foot; radians
         }
         # Keep fore-aft alignment fading out from 1.05 s to 1.25 s.

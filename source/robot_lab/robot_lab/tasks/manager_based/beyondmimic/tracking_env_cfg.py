@@ -349,15 +349,13 @@ class RewardsCfg:
             "stable_contact_time": 0.1,
         },
     )
-    leg_symmetry = RewTerm(
-        func=mdp.wheel_phase_leg_symmetry,
+    joint_symmetry = RewTerm(
+        func=mdp.joint_symmetry,
         weight=0.0,
         params={
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot"),
-            "std": 0.05,
-            "start_time_s": 1.6,
-            "ramp_time_s": 0.2,
+            "joint_scales": (0.1, 0.2, 0.2, 0.2),  # hip, thigh, shank, foot; radians
         },
     )
     same_foot_x_position = RewTerm(
