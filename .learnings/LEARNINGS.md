@@ -1519,3 +1519,33 @@ server 单字段改为 8，已通过无线程覆盖的新进程 wheel 构造/res
   仅追加本次条目，未修改旧记录、AGENTS.md 或技能实现。
 
 ---
+
+## [LRN-20261025-CGF] correction
+
+**Logged**: 2026-10-25T04:11:53.027721+00:00
+**Priority**: medium
+**Status**: resolved
+**Area**: config
+
+### Summary
+Before adding self-contact subtraction for LW ground termination, inspect composed USD collision groups and check their runtime effect.
+
+### Details
+The user pointed out existing USD self-collision filtering after four extra filtered sensors were implemented. Read-only inspection of the current LW.usd composition confirms all 11 CollisionAPI shapes are covered by GroupBase, GroupFoot, GroupWheel, or GroupOthers. Both thighs and shanks are in GroupOthers, whose filteredGroups targets all four groups including itself. Thus these links are configured not to collide with any robot collision group. LW.py enables articulation self-collision at spawn despite the authored USD articulation flag being false; this does not by itself establish that group filtering is absent. Earlier validation logs contain collision-group replication warnings, so static authoring alone does not prove filters work in replicated environments. At the time of this initial entry, runtime simplification had not yet been approved or verified.
+
+### Suggested Action
+Verify remaining thigh/shank self-contact pairs in replicated runtime before simplifying termination to the existing contact sensor. Centralize termination configuration in tracking_env_cfg.py as requested, while preserving wheel-only activation, 1 N threshold, full control-step history, existing user changes, and prior evidence. Obtain approval for the concrete revised code plan.
+
+### Metadata
+- Source: user_feedback
+- Related Files: source/robot_lab/data/Robots/LW/LW_description/LW.usd, source/robot_lab/robot_lab/assets/LW.py, source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/tracking_env_cfg.py
+- Tags: usd, collision-groups, ground-contact, inspect-before-change
+- Pattern-Key: simplify.inspect-usd-collision-filters-first
+
+### Resolution
+- **Resolved**: 2026-10-25T04:16:37.813224+00:00
+- **Notes**: After explicit user approval, a replicated four-environment overlap test showed zero thigh/shank self-contact force with USD groups intact (code validation 006), and nonzero force on all four links in all environments when group filters were cleared only in memory (007). Centralized the DoneTerm in LWWheelTerminationsCfg in tracking_env_cfg.py, enabled that subclass only in LW_Wheel, reused contact_forces with four physics frames, and removed extra filtered sensors. Eight CPU regressions and the four-environment ground-termination/reset smoke passed (008). USD assets and Isaac Sim persistent preferences were unchanged. Existing evidence was retained.
+- **Evidence**: learnings/code_validation/wheel-thigh-shank-ground-contact-20261025-006.json, learnings/code_validation/wheel-thigh-shank-ground-contact-20261025-007.json, learnings/code_validation/wheel-thigh-shank-ground-contact-20261025-008.json
+
+
+---

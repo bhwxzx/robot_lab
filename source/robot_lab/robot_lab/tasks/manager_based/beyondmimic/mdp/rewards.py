@@ -353,15 +353,70 @@ def wheel_phase_joint_acceleration_l2(
     return blend * (acceleration / acceleration_scale).square().mean(dim=-1)
 
 
+def _joint_reference_mirror_error_huber(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    asset_cfg: SceneEntityCfg,
+    joint_scales: tuple[float, ...] | None,
+) -> torch.Tensor:
+    """Mean normalized mirror error for the selected LW right/left joint pairs.
+
+    Joint positions in MotionCommand use the robot's physical joint order.
+    Resolve the same ordered indices for actual and reference positions; the
+    command property already selects each environment's current reference frame.
+    """
+    if not joint_scales or any(not math.isfinite(scale) or scale <= 0.0 for scale in joint_scales):
+        raise ValueError("Joint mirror error requires finite, positive scales in radians.")
+    names = asset_cfg.joint_names
+    if (
+        not isinstance(names, (list, tuple))
+        or len(names) != 2 * len(joint_scales)
+        or len(set(names)) != len(names)
+        or not asset_cfg.preserve_order
+    ):
+        raise ValueError("Joint mirror error requires distinct right/left pairs with preserve_order=True.")
+    for right, left in zip(names[::2], names[1::2]):
+        if not right.startswith("right_") or left != "left_" + right.removeprefix("right_") or "wheel" in right:
+            raise ValueError("Joint mirror error requires ordered LW right/left pairs, excluding wheel joints.")
+
+    asset: Articulation = env.scene[asset_cfg.name]
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    if command.robot is not asset:
+        raise ValueError("Joint mirror reference and actual positions must use the same robot.")
+    actual = asset.data.joint_pos[:, asset_cfg.joint_ids]
+    reference = command.joint_pos[:, asset_cfg.joint_ids]
+    if actual.ndim != 2 or actual.shape[1] != len(names) or reference.shape != actual.shape:
+        raise ValueError("Joint mirror positions must match the resolved joint pair order and batch shape.")
+
+    # All four LW non-wheel pairs use q_right + q_left for mirror symmetry.
+    # Subtracting the reference sum also permits reference-authored asymmetry.
+    residual = (actual - reference).reshape(actual.shape[0], len(joint_scales), 2).sum(dim=-1)
+    scales = actual.new_tensor(joint_scales)
+    error = residual / scales
+    return torch.nn.functional.huber_loss(error, torch.zeros_like(error), reduction="none", delta=1.0).mean(dim=-1)
+
+
 def wheel_phase_leg_symmetry(
     env: ManagerBasedRLEnv,
     command_name: str,
     asset_cfg: SceneEntityCfg,
-    std: float,
-    start_time_s: float,
-    ramp_time_s: float,
+    std: float = 0.05,
+    start_time_s: float = 1.6,
+    ramp_time_s: float = 0.2,
+    mode: str = "wheel_geometry",
+    joint_scales: tuple[float, ...] | None = None,
 ) -> torch.Tensor:
-    """Reward lateral wheel symmetry in the base frame after the reference landing."""
+    """Existing symmetry term with an opt-in LW joint-reference mode.
+
+    ``wheel_geometry`` preserves the positive, phase-gated geometry reward.
+    ``joint_reference_mirror`` returns a nonnegative Huber cost at every reference
+    phase; use a negative weight when enabling it. Geometry std/time parameters
+    apply only to the default mode; joint_scales are in radians in pair order.
+    """
+    if mode == "joint_reference_mirror":
+        return _joint_reference_mirror_error_huber(env, command_name, asset_cfg, joint_scales)
+    if mode != "wheel_geometry":
+        raise ValueError(f"Unknown leg symmetry mode: {mode!r}")
     if not math.isfinite(std) or std <= 0.0:
         raise ValueError("Wheel symmetry reward requires a finite, positive standard deviation.")
     blend = _wheel_phase_geometry_weight(env, command_name, asset_cfg, start_time_s, ramp_time_s)

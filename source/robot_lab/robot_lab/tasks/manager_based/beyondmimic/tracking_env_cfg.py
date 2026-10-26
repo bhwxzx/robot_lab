@@ -406,6 +406,23 @@ class TerminationsCfg:
 
 
 @configclass
+class LWWheelTerminationsCfg(TerminationsCfg):
+    """LW wheel terms using the robot's USD self-collision group filters."""
+
+    thigh_shank_ground_contact = DoneTerm(
+        func=mdp.thigh_shank_ground_contact,
+        params={
+            "sensor_cfg": SceneEntityCfg(
+                "contact_forces",
+                body_names=["right_thigh_link", "left_thigh_link", "right_shank_link", "left_shank_link"],
+            ),
+            "threshold": 1.0,
+        },
+        time_out=False,
+    )
+
+
+@configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 

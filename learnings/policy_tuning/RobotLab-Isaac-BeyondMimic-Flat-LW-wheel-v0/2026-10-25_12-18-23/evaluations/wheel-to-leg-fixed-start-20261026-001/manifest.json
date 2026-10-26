@@ -1,0 +1,119 @@
+{
+  "batch_id": "wheel-to-leg-fixed-start-20261026-001",
+  "cases": [
+    {
+      "attempt_id": "fixed-start-nominal-a01",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/raw/fixed-start-nominal-a01/console.log",
+        "sha256": "004af8fc6f9686d880af76b5e4827608eac6dad5a2f829aa89305cc37152c13f"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/raw/fixed-start-nominal-a01/result.json",
+        "sha256": "01a770ea88189f0c98241b01f9912bbb196396c4341b92f3da206f8235dbfb47"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "fixed-start-nominal",
+        "scenario_overrides": {
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "nominal_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    },
+    {
+      "attempt_id": "fixed-start-randomized-a01",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/raw/fixed-start-randomized-a01/console.log",
+        "sha256": "516444026f8977e1edcd4580534f06a5a549ad77cf1a30775cff15acc9e12410"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/raw/fixed-start-randomized-a01/result.json",
+        "sha256": "e21ed3dae8156a44e02f1d626197f009fd4b448fea23a5d4ff8e0514bcb006de"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "fixed-start-randomized",
+        "scenario_overrides": {
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "randomized_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/contract.json",
+    "sha256": "13ebc2a5bd486fda0bc3e2113b60dc0bd7c6ee831c16d1d7be149a49eb9e351d"
+  },
+  "layout_version": 2,
+  "notes": [
+    "fixed-start-nominal-a01：1000控制步、4000物理步；5个完整参考周期、0个失败终止、另有1个未完成尾段。所有重置均从frame0开始，遥测complete；终止项计数{\"motion_finished\": 5}。",
+    "fixed-start-nominal-a01已到达起跳窗口的6段：竖直速度峰值1.293–1.293m/s；参考同窗口峰值1.967m/s。分段指标见analysis.json，提前终止后的窗口不是零误差。",
+    "fixed-start-nominal-a01：接触视图交叉误差最大0N；全程驱动力矩最大限幅比0.8763、饱和物理样本0；关节速度最大名义限值比1.0545。",
+    "fixed-start-randomized-a01：1000控制步、4000物理步；5个完整参考周期、0个失败终止、另有1个未完成尾段。所有重置均从frame0开始，遥测complete；终止项计数{\"motion_finished\": 5}。",
+    "fixed-start-randomized-a01已到达起跳窗口的6段：竖直速度峰值1.224–1.643m/s；参考同窗口峰值1.967m/s。分段指标见analysis.json，提前终止后的窗口不是零误差。",
+    "fixed-start-randomized-a01：接触视图交叉误差最大0N；全程驱动力矩最大限幅比1.0000、饱和物理样本1；关节速度最大名义限值比1.0042。",
+    "名义组nominal_start关闭噪声、重置扰动、材质/质量/COM/增益随机化并将执行延迟设为0。随机化组randomized_start仅固定参考起始相位为0，保留训练随机化和0..3步延迟；两组均为确定性策略推理。",
+    "测试使用训练保存配置对应源码：基座位置/连杆位置/线速度权重2/2/3、undesired_contacts=-0.1、anchor_pos高度阈值0.15m，以及大腿/小腿触地>1N失败终止。未关闭新触地终止项。随机起始相位不参与本批次。",
+    "5ms物理遥测包含4个足/轮连杆净法向力和4个大腿/小腿对地法向力。八连杆失载并非全机器人腾空的直接证明，base/hip未单独测量；净力不包含摩擦。applied_torque仅为驱动输出，不包含接触被动反力矩。",
+    "失败终止会截断后续落地过程：不得把未观察到的高度、冲击或接触按零处理，也不能直接以较低冲击证明训练改善。名义重复不是独立种子试验，单环境startup随机化也不覆盖全部物理参数组合。",
+    "所有模型、训练YAML、既有导出、USD、参考NPZ、相关源码及Isaac Sim持久配置字节与mtime均未变动。实际评估argv含进程内--/app/settings/persistent=false。未启动训练、导出、部署、安装、删除或Git提交。",
+    "没有用户批准的收敛判据，收敛结论为indeterminate。本批次只支持有限仿真观察；仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "按分段数据审查真实起跳、准备轮子支撑、姿态与落地触地终止；保持现有配置和证据，不自动调整训练参数。"
+  ],
+  "report": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/report.md",
+    "sha256": "8d809655c72e837d0d17df86b0725a158a58fe353c54c61bf495369511d9e58a"
+  },
+  "repository_root": "/home/server/liufengrong/robot_lab",
+  "run_id": "2026-10-25_12-18-23",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/derived/analysis.json",
+      "sha256": "d02d88d45f959bb1a73e021c75d99893d3752dc1aa8ca79b3227cfcbd43d9e0d"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/derived/joint-peak-rms.csv",
+      "sha256": "b167740d68097b64a615fba12ddea165b99781b9e4b1626dc7326b0b06c430c1"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evaluations/wheel-to-leg-fixed-start-20261026-001/derived/fixed-start-motion-contact.png",
+      "sha256": "0850744f776cd0536358b24e6993b117de5d93fd1132408097e19a219adfd934"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evidence/training/protection-before-20261026-001.json",
+      "sha256": "f168fd7f679239af94babcf3a5f18bb53b8fc4eb445ea4f60de5fb3858707b14"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evidence/training/protection-after-20261026-001.json",
+      "sha256": "f49df8770650c612be19755ad8dd7e795f7c9430441d6e931c5fcf9b85e3dc18"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-25_12-18-23/evidence/training/training-origin-20261026-001.json",
+      "sha256": "22793dc0f6ae19a80a2907769c6888c6ac014604ede63514eb4017c1d24aa521"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "version": 1
+}

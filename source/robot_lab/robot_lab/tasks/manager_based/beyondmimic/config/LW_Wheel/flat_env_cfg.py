@@ -8,7 +8,9 @@ from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 
 from robot_lab.assets.LW import LW_WHEEL_CFG  
-from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import RewardsCfg, TrackingEnvCfg
+from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import (
+    LWWheelTerminationsCfg, RewardsCfg, TrackingEnvCfg,
+)
 import robot_lab.tasks.manager_based.beyondmimic.mdp as mdp
 from robot_lab.tasks.manager_based.locomotion.velocity.mdp.noise import UniformJointPositionNoiseCfg
 
@@ -39,6 +41,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
 
     actions: LWActionsCfg = LWActionsCfg()
     rewards: LWWheelRewardsCfg = LWWheelRewardsCfg()
+    terminations: LWWheelTerminationsCfg = LWWheelTerminationsCfg()
 
     base_link_name = "base_link"
     foot_link_name = ".*_foot_link"
@@ -64,6 +67,10 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.scene.robot = LW_WHEEL_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.robot.actuators["legs"].min_delay = 0
         self.scene.robot.actuators["legs"].max_delay = 3
+        # The USD groups exclude thigh/shank self-contact; the only other collider is the plane.
+        if self.scene.terrain.terrain_type != "plane":
+            raise ValueError("LW wheel ground-contact termination requires the robot-and-ground flat scene.")
+        self.scene.contact_forces.history_length = self.decimation
         # observations
         self.observations.policy.history_length = 10
         self.observations.policy.flatten_history_dim = True
@@ -113,7 +120,9 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.events.push_robot = None
         # rewards
         self.rewards.motion_global_anchor_pos.weight = 2.0
+        self.rewards.motion_global_anchor_ori.weight = 1.0
         self.rewards.motion_body_pos.weight = 2.0
+        self.rewards.motion_body_ori.weight = 2.0
         self.rewards.motion_body_lin_vel.weight = 3.0
         # Track the reference attitude through takeoff and flight, fading out after landing.
         self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.03
@@ -127,7 +136,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.motion_takeoff_anchor_ori.params["ramp_time_s"] = 0.1
         self.rewards.action_rate_l2.weight = -0.2
         self.rewards.action_smoothness.weight = -0.075
-        self.rewards.undesired_contacts.weight = -1.0
+        self.rewards.undesired_contacts.weight = -0.1
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.0
@@ -144,7 +153,16 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.wheel_contact_continuous.params["ramp_time_s"] = 0.0
         self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
         self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
+        # Full-reference joint mirror cost; enable with a negative weight after comparison.
         self.rewards.leg_symmetry.weight = 0.0
+        self.rewards.leg_symmetry.params = {
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg(
+                "robot", joint_names=self.joint_names_without_wheels, preserve_order=True,
+            ),
+            "mode": "joint_reference_mirror",
+            "joint_scales": (0.1, 0.2, 0.2, 0.2),  # hip, thigh, shank, foot; radians
+        }
         # Keep fore-aft alignment fading out from 1.05 s to 1.25 s.
         self.rewards.same_foot_x_position.weight = -10.0
         self.rewards.same_foot_x_position.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
