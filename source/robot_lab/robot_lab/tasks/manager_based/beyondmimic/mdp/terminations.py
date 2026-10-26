@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import torch
 from typing import TYPE_CHECKING
 
@@ -13,6 +15,25 @@ from isaaclab.managers import SceneEntityCfg
 
 from robot_lab.tasks.manager_based.beyondmimic.mdp.commands import MotionCommand
 from robot_lab.tasks.manager_based.beyondmimic.mdp.rewards import _get_body_indexes
+
+
+def thigh_shank_ground_contact(
+    env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, threshold: float = 1.0
+) -> torch.Tensor:
+    """Terminate when an LW thigh/shank ground force exceeds the threshold.
+
+    Requires the LW robot-and-plane scene: USD collision groups exclude all
+    robot self-contact for these links, so their net normal force is ground
+    force. The sensor history must cover every physics frame of a control step.
+    Other scenes or collision-filter changes require revisiting this assumption.
+    """
+    if not math.isfinite(threshold) or threshold <= 0.0:
+        raise ValueError("Ground contact termination requires a finite, positive force threshold.")
+    forces = env.scene[sensor_cfg.name].data.net_forces_w_history
+    if forces.ndim != 4 or forces.shape[1] < env.cfg.decimation:
+        raise RuntimeError("Ground contact termination requires a full control-step contact history.")
+    contact = torch.linalg.vector_norm(forces[:, :, sensor_cfg.body_ids], dim=-1) > threshold
+    return contact.flatten(start_dim=1).any(dim=1)
 
 
 def bad_anchor_pos(env: ManagerBasedRLEnv, command_name: str, threshold: float) -> torch.Tensor:
