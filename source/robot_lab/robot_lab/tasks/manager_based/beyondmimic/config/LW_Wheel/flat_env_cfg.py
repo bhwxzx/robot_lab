@@ -154,7 +154,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
         self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
         # Full-reference joint mirror cost; enable with a negative weight after comparison.
-        self.rewards.joint_symmetry.weight = 0.0
+        self.rewards.joint_symmetry.weight = -0.5
         self.rewards.joint_symmetry.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg(
