@@ -1,0 +1,59 @@
+{
+  "checkpoint": {
+    "mtime_ns": "1793032239827035758",
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-26_13-25-00/model_49999.pt",
+    "sha256": "9e5c55bca25a9c0ca243082a52bf7b85eb37387577326139d17ecabe9a07a6f2",
+    "size": 8513599
+  },
+  "current_head": "95edeaad7f9efdc465c7cf997e2de7486a85fc48",
+  "effective_joint_symmetry_weight": 0.0,
+  "evaluation_reward_overrides": {
+    "rewards.motion_body_lin_vel.weight": 3.0,
+    "rewards.motion_body_ori.weight": 2.0,
+    "rewards.motion_body_pos.weight": 2.0,
+    "rewards.motion_global_anchor_ori.weight": 1.0,
+    "rewards.motion_global_anchor_pos.weight": 2.0
+  },
+  "expanded_training_argv": [
+    "python",
+    "scripts/reinforcement_learning/rsl_rl/train.py",
+    "--task=RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+    "--log_project_name=LW_wheel_beyondmimic",
+    "--logger=wandb",
+    "--num_envs=4096",
+    "--headless"
+  ],
+  "hydra_overrides": [],
+  "launcher_confirmed_by_user": [
+    "bash",
+    "scripts/start_beyondmimic.sh",
+    "--type",
+    "wheel"
+  ],
+  "motion": {
+    "mtime_ns": "1792745174345670646",
+    "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz",
+    "sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03",
+    "size": 112634
+  },
+  "other_listed_sources_equal_compatible_commit": true,
+  "profile_id": "rsl-rl-ppo",
+  "source_verification": [
+    {
+      "difference": "five commented reward weight assignments restored in evaluation scenario",
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py"
+    }
+  ],
+  "training_diff": {
+    "mtime_ns": "1792992319522259892",
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-26_13-25-00/git/robot_lab.diff",
+    "sha256": "343a789fad6dec1a4595490488d23ae66529e1ac3990018e61551ccfa91b8531",
+    "size": 193
+  },
+  "training_source_commit_limit": "W&B metadata reports 974b011, whereas saved git status is clean and one commit ahead of its upstream. ba27b4a matches the saved joint_symmetry interface and all listed implementation/assets, with only five reward assignments commented in the current checkout. Do not treat W&B metadata alone as proof of the exact training HEAD.",
+  "training_source_compatible_commit": "ba27b4a4b515ff618d1dfec2a3ae5deea6d1463b",
+  "wandb_git_metadata": {
+    "commit": "974b011d8d6460b0e624a221f84ce93a3ab94b58",
+    "remote": "https://github.com/bhwxzx/robot_lab.git"
+  }
+}
