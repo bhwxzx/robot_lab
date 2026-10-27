@@ -119,11 +119,11 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         ]
         self.events.push_robot = None
         # rewards
-        self.rewards.motion_global_anchor_pos.weight = 2.0
-        self.rewards.motion_global_anchor_ori.weight = 1.0
-        self.rewards.motion_body_pos.weight = 2.0
-        self.rewards.motion_body_ori.weight = 2.0
-        self.rewards.motion_body_lin_vel.weight = 3.0
+        # self.rewards.motion_global_anchor_pos.weight = 2.0
+        # self.rewards.motion_global_anchor_ori.weight = 1.0
+        # self.rewards.motion_body_pos.weight = 2.0
+        # self.rewards.motion_body_ori.weight = 2.0
+        # self.rewards.motion_body_lin_vel.weight = 3.0
         # Track the reference attitude through takeoff and flight, fading out after landing.
         self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.03
         self.rewards.motion_takeoff_pitch_ang_vel.params["start_time_s"] = 1.0
