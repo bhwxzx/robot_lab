@@ -5,7 +5,7 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 @configclass
 class LWBeyondMimicFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 25000
+    max_iterations = 50000
     save_interval = 1000
     experiment_name = "LW_leg_beyongdmimic"
     policy = RslRlPpoActorCriticCfg(
