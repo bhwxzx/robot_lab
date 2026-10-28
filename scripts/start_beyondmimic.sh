@@ -26,5 +26,5 @@ conda run --no-capture-output -n isaacsim-5.1 python scripts/reinforcement_learn
     --task="RobotLab-Isaac-BeyondMimic-Flat-LW-${TYPE}-v0" \
     --log_project_name="LW_${TYPE}_beyondmimic" \
     --logger=wandb \
-    --num_envs=8192 \
+    --num_envs=4096 \
     --headless
