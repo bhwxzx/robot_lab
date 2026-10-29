@@ -31,7 +31,7 @@ class LWWheelRewardsCfg(RewardsCfg):
 
     hip_pos_zero_l2 = RewTerm(
         func=mdp.joint_pos_zero_l2,
-        weight=-2.0,
+        weight=-3.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_hip_joint", "left_hip_joint"])},
     )
 
@@ -125,11 +125,11 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         # self.rewards.motion_body_ori.weight = 2.0
         # self.rewards.motion_body_lin_vel.weight = 3.0
         # Track the reference attitude through takeoff and flight, fading out after landing.
-        self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.0
+        self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.03
         self.rewards.motion_takeoff_pitch_ang_vel.params["start_time_s"] = 1.0
         self.rewards.motion_takeoff_pitch_ang_vel.params["end_time_s"] = 1.65
         self.rewards.motion_takeoff_pitch_ang_vel.params["ramp_time_s"] = 0.1
-        self.rewards.motion_takeoff_anchor_ori.weight = 0.0
+        self.rewards.motion_takeoff_anchor_ori.weight = 0.5
         self.rewards.motion_takeoff_anchor_ori.params["std"] = 0.3
         self.rewards.motion_takeoff_anchor_ori.params["start_time_s"] = 1.0
         self.rewards.motion_takeoff_anchor_ori.params["end_time_s"] = 1.65
