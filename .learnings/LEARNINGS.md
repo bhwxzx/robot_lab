@@ -1549,3 +1549,60 @@ Verify remaining thigh/shank self-contact pairs in replicated runtime before sim
 
 
 ---
+
+## [LRN-20261028-W2L] training_feedback
+
+**Logged**: 2026-10-28T15:01:37.768590+08:00
+**Priority**: high
+**Status**: pending
+**Area**: config
+
+### Summary
+本机最新 wheel-to-leg 场次 2026-10-28_13-14-04 疑似陷入局部最优或策略退化；用户描述“训练崩溃”，目前未证实数值崩溃或进程异常退出原因。
+
+### Details
+用户原话：“记录最新wheel to leg训练似乎出现了陷入局部最优，训练崩溃”。保留“似乎”的不确定性，不将局部最优或崩溃原因写成已确认事实。
+
+- 对应任务：RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0；本机场次：2026-10-28_13-14-04；W&B run：run-20261028_131415-lqfgz3rt。
+- 保存配置：PPO / OnPolicyRunner / ActorCritic，seed42，4096环境，rollout24，max_iterations50000，resume=false。
+- W&B 训练源码记录：823cd5cc612f87ba707ea941898d938923feef7f；保存 git/robot_lab.diff 显示启动时工作区干净。该身份不同于上一次已完成并评估的 2026-10-27_20-05-57。
+- 日志共7004条迭代记录，最后为7003/50000；最新保存checkpoint为model_7000.pt。最后总采样步数688521216。当前没有train.py进程或GPU计算进程；退出原因未知。
+- 本次完整扫描 output.log 未发现 Traceback、CUDA error/OOM、FloatingPointError、NaN、KeyboardInterrupt、RuntimeError 或 Training time 正常完成行。日志末尾有限值不能证明数值崩溃，也不能证明策略健康。
+
+末尾第7003轮：Mean reward=0.14，Mean episode length=3.94步，action noise std=0.08；motion_finished=0.0979，ee_body_pos=0.9081；sampling_entropy=0.0031，sampling_top1_prob=0.9996，sampling_top1_bin=0.75。
+终止指标允许同时触发，不视为互斥概率；motion_finished是在自适应随机起始相位下的训练指标，不是frame0完整动作成功率。
+
+相邻历史窗口用于描述停滞趋势：
+
+| 迭代窗口 | Mean reward均值 | 回合长度均值/步 | 动作噪声std均值 | ee_body_pos均值 | sampling_top1_prob均值 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1000–1099 | 0.2820 | 6.5553 | 0.1990 | 0.857551 | 0.900080 |
+| 3000–3099 | 0.1405 | 3.9019 | 0.0800 | 0.910343 | 0.999420 |
+| 6904–7003 | 0.1404 | 3.9034 | 0.0800 | 0.910262 | 0.999597 |
+
+这些数据支持“长期低回报、短回合、足端高度终止频繁、起始采样高度集中”的观察。是否为局部最优、探索退化或采样/终止反馈环的根因仍待验证；不宣称已证明数学上的局部最优。
+
+有效配置以本轮保存 params/env.yaml 为准：joint_symmetry=-0.5，hip_pos_zero_l2=-1.0，action_rate_l2=-0.2，action_smoothness=-0.075；wheel_contact_continuous=0.5，end_time_s=1.25，ramp_time_s=0.0；motion_takeoff_pitch_ang_vel=-0.03，motion_takeoff_anchor_ori=0.5。
+
+当前用户工作区另有未提交修改：hip_pos_zero_l2=-2.0，两项起跳专项权重为0，双轮接触end_time_s=1.30、ramp_time_s=0.2。保存YAML并非这组值，不能用当前源码解释本轮训练，也不能将本轮结果视为先前建议整组权重的验证。本次记录保留这些用户修改，未改动配置。
+
+### Suggested Action
+1. 保留本场次checkpoint、原始训练日志、TensorBoard及params快照，后续恢复本事件时优先复核上述来源和哈希。
+2. 在另行授权的诊断中，核对采样集中与ee_body_pos短回合的出现顺序，比较早期与后期checkpoint；区分策略退化、局部停滞、数值崩溃和进程退出。
+3. 修改或新训练前给出具体方案并获批准；本次仅记录反馈，没有新增评估、训练控制、导出部署、安装删除、Git提交或推送。
+
+### Metadata
+- Source: user_feedback
+- Related Files: logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-28_13-14-04/params/env.yaml; logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-28_13-14-04/params/agent.yaml; logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-28_13-14-04/model_7000.pt; wandb/run-20261028_131415-lqfgz3rt/files/output.log; source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+- Tags: wheel-to-leg, suspected-local-optimum, policy-degradation, short-episodes, adaptive-sampling, unverified-root-cause
+- Pattern-Key: training.wheel_to_leg_20261028_131404_suspected_collapse
+- Numerical-Crash-Confirmed: false
+- Process-Exit-Cause: unknown
+- Direct-Parameter-Change-Supported: false
+
+- SHA256 wandb/run-20261028_131415-lqfgz3rt/files/output.log: cc06e31df829b2d9dc9501bef751ee87342927db158c83c035ba3b3ef2dcebeb
+- SHA256 logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-28_13-14-04/model_7000.pt: 1be300072126a0d899365698740b6a364f9d84d430a181f2d04dc40de32c5945
+- SHA256 logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-28_13-14-04/params/env.yaml: 21bec8abf0315f299cbf0a338ba04f8ddb1d53f9066d7666e43ed6392e8650a8
+- SHA256 logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-28_13-14-04/params/agent.yaml: b0d443b000e29edd9c891ca0b8c148c9805becb60de3bd332e7bcb10c6782fed
+
+---

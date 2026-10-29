@@ -31,7 +31,7 @@ class LWWheelRewardsCfg(RewardsCfg):
 
     hip_pos_zero_l2 = RewTerm(
         func=mdp.joint_pos_zero_l2,
-        weight=-1.0,
+        weight=-2.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_hip_joint", "left_hip_joint"])},
     )
 
@@ -125,11 +125,11 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         # self.rewards.motion_body_ori.weight = 2.0
         # self.rewards.motion_body_lin_vel.weight = 3.0
         # Track the reference attitude through takeoff and flight, fading out after landing.
-        self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.03
+        self.rewards.motion_takeoff_pitch_ang_vel.weight = -0.0
         self.rewards.motion_takeoff_pitch_ang_vel.params["start_time_s"] = 1.0
         self.rewards.motion_takeoff_pitch_ang_vel.params["end_time_s"] = 1.65
         self.rewards.motion_takeoff_pitch_ang_vel.params["ramp_time_s"] = 0.1
-        self.rewards.motion_takeoff_anchor_ori.weight = 0.5
+        self.rewards.motion_takeoff_anchor_ori.weight = 0.0
         self.rewards.motion_takeoff_anchor_ori.params["std"] = 0.3
         self.rewards.motion_takeoff_anchor_ori.params["start_time_s"] = 1.0
         self.rewards.motion_takeoff_anchor_ori.params["end_time_s"] = 1.65
@@ -149,8 +149,8 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.wheel_contact_continuous.weight = 0.5
         self.rewards.wheel_contact_continuous.params["sensor_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.wheel_contact_continuous.params["start_time_s"] = 0.0
-        self.rewards.wheel_contact_continuous.params["end_time_s"] = 1.25
-        self.rewards.wheel_contact_continuous.params["ramp_time_s"] = 0.0
+        self.rewards.wheel_contact_continuous.params["end_time_s"] = 1.30
+        self.rewards.wheel_contact_continuous.params["ramp_time_s"] = 0.2
         self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
         self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
         # Full-reference joint mirror cost; enable with a negative weight after comparison.

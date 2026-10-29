@@ -1,0 +1,123 @@
+{
+  "batch_id": "wheel-to-leg-fixed-start-20261029-001",
+  "cases": [
+    {
+      "attempt_id": "fixed-start-nominal-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/raw/fixed-start-nominal-a01/console.log",
+        "sha256": "0fedcdb28b204f471254b2adffc3676a60ccda633011b48e81d593db95546d33"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/raw/fixed-start-nominal-a01/result.json",
+        "sha256": "726e7c60bbb467935db57b819a6082b9aafea08e7b56623d6fcecbd27fe4ff21"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "fixed-start-nominal",
+        "scenario_overrides": {
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "nominal_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    },
+    {
+      "attempt_id": "fixed-start-randomized-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/raw/fixed-start-randomized-a01/console.log",
+        "sha256": "a8163294858430b9c82ef4ebc16454d8b4e87ab8dc9b2d44cfd18d8107e4c723"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/raw/fixed-start-randomized-a01/result.json",
+        "sha256": "272fd024a9ffa32747bae99ef96b7c8a9af3f433cefb4f2c093e455368f4435a"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "fixed-start-randomized",
+        "scenario_overrides": {
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "randomized_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/contract.json",
+    "sha256": "afb83bd45883bbe67a114da9eebbdea19040be8a5e4bf2c8e08a6c9011d106e0"
+  },
+  "layout_version": 2,
+  "notes": [
+    "本机younghit场次2026-10-28_15-03-01/model_49999.pt，4096环境训练50000轮完成；与13-14-04疑似退化场次分开。",
+    "两组均固定frame0、seed42、1环境、1000控制步、Native无视频；名义组关闭随机化，随机化组保留训练随机化和0..3物理步延迟。",
+    "当前Wheel配置与保存训练配置相同：hip_pos_zero_l2=-2，joint_symmetry=-0.5，action_rate=-0.2，action_smoothness=-0.075，双轮接触权重0.5、结束1.30s、ramp0.2s，两项起跳专项为0；没有运行时奖励覆盖。",
+    "actor消费环境按term展开的10帧历史，共590维；检查重置后历史一致性。实际argv追加--kit_args=--/app/settings/persistent=false。",
+    "对照上一完成场次2026-10-27_20-05-57：多个参数及训练环境数同时变化（8192到4096），相同轮数的采样量减半；不得据此单独归因某项权重。",
+    "单seed、随机化组一次startup物性抽样；重复名义周期不等于独立试验。八连杆失载不覆盖base/hip，驱动力矩不含全部被动碰撞载荷。",
+    "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。",
+    "nominal完整周期统计及包含尾段的风险极值：{\"all_samples_extrema\": {\"anchor_xy_error_m\": {\"control_step\": 65, \"episode\": 0, \"reference_phase_s\": 1.3, \"value\": 0.06504718337876282}, \"anchor_z_error_m\": {\"control_step\": 57, \"episode\": 0, \"reference_phase_s\": 1.14, \"value\": -0.07383722066879272}, \"contact_view_crosscheck_error_n\": 0.0, \"foot_z_error_peak_m\": {\"left\": {\"control_step\": 66, \"episode\": 0, \"reference_phase_s\": 1.32, \"value\": -0.046479880809783936}, \"right\": {\"control_step\": 74, \"episode\": 0, \"reference_phase_s\": 1.48, \"value\": -0.10703429579734802}}, \"fz_sum_peak_n\": {\"control_step\": 78, \"episode\": 0, \"reference_phase_s\": 1.57, \"substep\": 1, \"value\": 893.1290893554688}, \"mirror_residual_deg\": {\"foot\": {\"control_step\": 70, \"episode\": 0, \"reference_phase_s\": 1.4, \"value\": 9.632195729835027}, \"hip\": {\"control_step\": 66, \"episode\": 0, \"reference_phase_s\": 1.32, \"value\": -6.752733704246896}, \"shank\": {\"control_step\": 69, \"episode\": 0, \"reference_phase_s\": 1.38, \"value\": -41.741063574679416}, \"thigh\": {\"control_step\": 68, \"episode\": 0, \"reference_phase_s\": 1.36, \"value\": 16.97420021610422}}, \"pitch_deg\": {\"control_step\": 61, \"episode\": 0, \"reference_phase_s\": 1.22, \"value\": -14.409429560229295}, \"raw_joint_sum_deg\": {\"foot\": {\"control_step\": 70, \"episode\": 0, \"reference_phase_s\": 1.4, \"value\": 9.630078371192322}, \"hip\": {\"control_step\": 66, \"episode\": 0, \"reference_phase_s\": 1.32, \"value\": -6.750269980308078}, \"shank\": {\"control_step\": 69, \"episode\": 0, \"reference_phase_s\": 1.38, \"value\": -41.74022687650609}, \"thigh\": {\"control_step\": 68, \"episode\": 0, \"reference_phase_s\": 1.36, \"value\": 16.981245556233084}}, \"roll_deg\": {\"control_step\": 65, \"episode\": 0, \"reference_phase_s\": 1.3, \"value\": -7.505778558379672}, \"self_contact_force_peak_n\": 0.0, \"thigh_shank_ground_peak_n\": 0.0}, \"summary_complete_cycles\": {\"base_height_peak_m\": {\"count\": 5, \"max\": 0.708531379699707, \"mean\": 0.708531379699707, \"min\": 0.708531379699707}, \"censored_tails\": 1, \"complete_cycles\": 5, \"eight_links_longest_unloaded_s\": {\"count\": 5, \"max\": 0.225, \"mean\": 0.225, \"min\": 0.225}, \"failed_terminations\": 0, \"flight_height_rmse_m\": {\"count\": 5, \"max\": 0.03978709016125355, \"mean\": 0.03978709016125355, \"min\": 0.03978709016125355}, \"landing_force_after_unloading_peak_n\": {\"count\": 5, \"max\": 893.1290893554688, \"mean\": 893.1290893554688, \"min\": 893.1290893554688}, \"landing_min_height_m\": {\"count\": 5, \"max\": 0.4597991406917572, \"mean\": 0.4597991406917572, \"min\": 0.4597991406917572}, \"pitch_peak_deg\": {\"count\": 5, \"max\": 14.409429560229295, \"mean\": 14.409429560229295, \"min\": 14.409429560229295}, \"preparation_min_height_m\": {\"count\": 5, \"max\": 0.5617238879203796, \"mean\": 0.5617238879203796, \"min\": 0.5617238879203796}, \"roll_peak_deg\": {\"count\": 5, \"max\": 7.505778558379672, \"mean\": 7.505778558379672, \"min\": 7.505778558379672}, \"takeoff_peak_vz_m_s\": {\"count\": 5, \"max\": 1.0910868111627807, \"mean\": 1.0910868111627807, \"min\": 1.0910868111627807}}}",
+    "nominal关节驱动统计：{\"peaks\": {\"left_foot_joint\": {\"torque_peak_nm\": 18.5721492767334, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 7.769553184509277}, \"left_hip_joint\": {\"torque_peak_nm\": 27.60582733154297, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 2.0880160331726074}, \"left_shank_joint\": {\"torque_peak_nm\": 91.72222900390625, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 12.258973121643066}, \"left_thigh_joint\": {\"torque_peak_nm\": 30.929061889648438, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 8.635485649108887}, \"left_wheel_joint\": {\"torque_peak_nm\": 4.323925971984863, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 7.3328375816345215}, \"right_foot_joint\": {\"torque_peak_nm\": 17.681123733520508, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 4.245254993438721}, \"right_hip_joint\": {\"torque_peak_nm\": 26.07881736755371, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 2.818082809448242}, \"right_shank_joint\": {\"torque_peak_nm\": 64.71784210205078, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 8.432499885559082}, \"right_thigh_joint\": {\"torque_peak_nm\": 25.66092872619629, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 6.030865669250488}, \"right_wheel_joint\": {\"torque_peak_nm\": 3.219723701477051, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 6.711269378662109}}, \"torque_saturated_physics_samples\": 0}",
+    "randomized完整周期统计及包含尾段的风险极值：{\"all_samples_extrema\": {\"anchor_xy_error_m\": {\"control_step\": 916, \"episode\": 5, \"reference_phase_s\": 1.32, \"value\": 0.32365471637145815}, \"anchor_z_error_m\": {\"control_step\": 566, \"episode\": 3, \"reference_phase_s\": 1.12, \"value\": -0.09450948238372803}, \"contact_view_crosscheck_error_n\": 0.0, \"foot_z_error_peak_m\": {\"left\": {\"control_step\": 73, \"episode\": 0, \"reference_phase_s\": 1.46, \"value\": 0.1449742317199707}, \"right\": {\"control_step\": 412, \"episode\": 2, \"reference_phase_s\": 1.44, \"value\": -0.10271188616752625}}, \"fz_sum_peak_n\": {\"control_step\": 418, \"episode\": 2, \"reference_phase_s\": 1.57, \"substep\": 1, \"value\": 2680.310302734375}, \"mirror_residual_deg\": {\"foot\": {\"control_step\": 240, \"episode\": 1, \"reference_phase_s\": 1.4, \"value\": 17.649656192703585}, \"hip\": {\"control_step\": 405, \"episode\": 2, \"reference_phase_s\": 1.3, \"value\": -14.515422481503997}, \"shank\": {\"control_step\": 239, \"episode\": 1, \"reference_phase_s\": 1.38, \"value\": -45.33436547909424}, \"thigh\": {\"control_step\": 408, \"episode\": 2, \"reference_phase_s\": 1.36, \"value\": 20.172726791445825}}, \"pitch_deg\": {\"control_step\": 15, \"episode\": 0, \"reference_phase_s\": 0.3, \"value\": -30.56783177296114}, \"raw_joint_sum_deg\": {\"foot\": {\"control_step\": 240, \"episode\": 1, \"reference_phase_s\": 1.4, \"value\": 17.64753883406088}, \"hip\": {\"control_step\": 405, \"episode\": 2, \"reference_phase_s\": 1.3, \"value\": -14.513130659552766}, \"shank\": {\"control_step\": 239, \"episode\": 1, \"reference_phase_s\": 1.38, \"value\": -45.333528780920915}, \"thigh\": {\"control_step\": 408, \"episode\": 2, \"reference_phase_s\": 1.36, \"value\": 20.179772131574694}}, \"roll_deg\": {\"control_step\": 405, \"episode\": 2, \"reference_phase_s\": 1.3, \"value\": -12.881447569829806}, \"self_contact_force_peak_n\": 0.0, \"thigh_shank_ground_peak_n\": 0.0}, \"summary_complete_cycles\": {\"base_height_peak_m\": {\"count\": 5, \"max\": 0.7262901067733765, \"mean\": 0.712529468536377, \"min\": 0.6973344087600708}, \"censored_tails\": 1, \"complete_cycles\": 5, \"eight_links_longest_unloaded_s\": {\"count\": 5, \"max\": 0.23, \"mean\": 0.22400000000000003, \"min\": 0.215}, \"failed_terminations\": 0, \"flight_height_rmse_m\": {\"count\": 5, \"max\": 0.042152698857307914, \"mean\": 0.030861177302572224, \"min\": 0.02329665522074643}, \"landing_force_after_unloading_peak_n\": {\"count\": 5, \"max\": 2680.310302734375, \"mean\": 1451.7438903808593, \"min\": 1054.401123046875}, \"landing_min_height_m\": {\"count\": 5, \"max\": 0.4850703775882721, \"mean\": 0.4676559329032898, \"min\": 0.4559454917907715}, \"pitch_peak_deg\": {\"count\": 5, \"max\": 30.56783177296114, \"mean\": 21.28867595848192, \"min\": 13.064585533591885}, \"preparation_min_height_m\": {\"count\": 5, \"max\": 0.5707090497016907, \"mean\": 0.5455955743789673, \"min\": 0.5175964832305908}, \"roll_peak_deg\": {\"count\": 5, \"max\": 12.881447569829806, \"mean\": 10.36666561606925, \"min\": 7.965431850852426}, \"takeoff_peak_vz_m_s\": {\"count\": 5, \"max\": 1.3776433051334804, \"mean\": 1.1813503605863473, \"min\": 1.0012087451613711}}}",
+    "randomized关节驱动统计：{\"peaks\": {\"left_foot_joint\": {\"torque_peak_nm\": 26.161827087402344, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 1, \"velocity_peak_rad_s\": 10.010119438171387}, \"left_hip_joint\": {\"torque_peak_nm\": 38.16815185546875, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 3.455127239227295}, \"left_shank_joint\": {\"torque_peak_nm\": 114.97540283203125, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 15.823068618774414}, \"left_thigh_joint\": {\"torque_peak_nm\": 54.216495513916016, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 13.296611785888672}, \"left_wheel_joint\": {\"torque_peak_nm\": 8.604296684265137, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 11.910862922668457}, \"right_foot_joint\": {\"torque_peak_nm\": 19.295753479003906, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 1, \"velocity_peak_rad_s\": 10.613794326782227}, \"right_hip_joint\": {\"torque_peak_nm\": 34.215972900390625, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 3.3481881618499756}, \"right_shank_joint\": {\"torque_peak_nm\": 67.0936050415039, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 8.485726356506348}, \"right_thigh_joint\": {\"torque_peak_nm\": 37.720733642578125, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 6.960169792175293}, \"right_wheel_joint\": {\"torque_peak_nm\": 4.294512748718262, \"torque_saturated_samples\": 0, \"velocity_over_nominal_samples\": 0, \"velocity_peak_rad_s\": 9.215826988220215}}, \"torque_saturated_physics_samples\": 0}",
+    "与上一完成场次按相同公式重新计算的对照：{\"nominal\": {\"baseline\": {\"base_height_peak_m\": {\"count\": 5, \"max\": 0.7086160778999329, \"mean\": 0.7086160778999329, \"min\": 0.7086160778999329}, \"censored_tails\": 1, \"complete_cycles\": 5, \"eight_links_longest_unloaded_s\": {\"count\": 5, \"max\": 0.23, \"mean\": 0.23000000000000004, \"min\": 0.23}, \"failed_terminations\": 0, \"flight_height_rmse_m\": {\"count\": 5, \"max\": 0.02879819311687589, \"mean\": 0.02879819311687589, \"min\": 0.02879819311687589}, \"landing_force_after_unloading_peak_n\": {\"count\": 5, \"max\": 1257.755630493164, \"mean\": 1257.755630493164, \"min\": 1257.755630493164}, \"landing_min_height_m\": {\"count\": 5, \"max\": 0.45412254333496094, \"mean\": 0.45412254333496094, \"min\": 0.45412254333496094}, \"pitch_peak_deg\": {\"count\": 5, \"max\": 12.355362108028245, \"mean\": 12.355362108028245, \"min\": 12.355362108028245}, \"preparation_min_height_m\": {\"count\": 5, \"max\": 0.5385286808013916, \"mean\": 0.5385286808013916, \"min\": 0.5385286808013916}, \"roll_peak_deg\": {\"count\": 5, \"max\": 9.042905168163186, \"mean\": 9.042905168163186, \"min\": 9.042905168163186}, \"takeoff_peak_vz_m_s\": {\"count\": 5, \"max\": 1.2980716391190685, \"mean\": 1.2980716391190685, \"min\": 1.2980716391190685}}, \"current\": {\"base_height_peak_m\": {\"count\": 5, \"max\": 0.708531379699707, \"mean\": 0.708531379699707, \"min\": 0.708531379699707}, \"censored_tails\": 1, \"complete_cycles\": 5, \"eight_links_longest_unloaded_s\": {\"count\": 5, \"max\": 0.225, \"mean\": 0.225, \"min\": 0.225}, \"failed_terminations\": 0, \"flight_height_rmse_m\": {\"count\": 5, \"max\": 0.03978709016125355, \"mean\": 0.03978709016125355, \"min\": 0.03978709016125355}, \"landing_force_after_unloading_peak_n\": {\"count\": 5, \"max\": 893.1290893554688, \"mean\": 893.1290893554688, \"min\": 893.1290893554688}, \"landing_min_height_m\": {\"count\": 5, \"max\": 0.4597991406917572, \"mean\": 0.4597991406917572, \"min\": 0.4597991406917572}, \"pitch_peak_deg\": {\"count\": 5, \"max\": 14.409429560229295, \"mean\": 14.409429560229295, \"min\": 14.409429560229295}, \"preparation_min_height_m\": {\"count\": 5, \"max\": 0.5617238879203796, \"mean\": 0.5617238879203796, \"min\": 0.5617238879203796}, \"roll_peak_deg\": {\"count\": 5, \"max\": 7.505778558379672, \"mean\": 7.505778558379672, \"min\": 7.505778558379672}, \"takeoff_peak_vz_m_s\": {\"count\": 5, \"max\": 1.0910868111627807, \"mean\": 1.0910868111627807, \"min\": 1.0910868111627807}}}, \"randomized\": {\"baseline\": {\"base_height_peak_m\": {\"count\": 5, \"max\": 0.7276704907417297, \"mean\": 0.7114062905311584, \"min\": 0.6954779028892517}, \"censored_tails\": 1, \"complete_cycles\": 5, \"eight_links_longest_unloaded_s\": {\"count\": 5, \"max\": 0.24, \"mean\": 0.223, \"min\": 0.20500000000000002}, \"failed_terminations\": 0, \"flight_height_rmse_m\": {\"count\": 5, \"max\": 0.03476715520360127, \"mean\": 0.026848679430073085, \"min\": 0.018876955070111674}, \"landing_force_after_unloading_peak_n\": {\"count\": 5, \"max\": 2085.7750244140625, \"mean\": 1437.6909729003905, \"min\": 733.9177551269531}, \"landing_min_height_m\": {\"count\": 5, \"max\": 0.5146140456199646, \"mean\": 0.4701446294784546, \"min\": 0.444757878780365}, \"pitch_peak_deg\": {\"count\": 5, \"max\": 14.804993499404407, \"mean\": 12.700839214280467, \"min\": 11.111853598905192}, \"preparation_min_height_m\": {\"count\": 5, \"max\": 0.5500425100326538, \"mean\": 0.5365406513214112, \"min\": 0.5264760851860046}, \"roll_peak_deg\": {\"count\": 5, \"max\": 8.444300482070558, \"mean\": 6.852793359755266, \"min\": 4.55250086388179}, \"takeoff_peak_vz_m_s\": {\"count\": 5, \"max\": 1.5069535228888744, \"mean\": 1.2214546679844713, \"min\": 0.9900044531751613}}, \"current\": {\"base_height_peak_m\": {\"count\": 5, \"max\": 0.7262901067733765, \"mean\": 0.712529468536377, \"min\": 0.6973344087600708}, \"censored_tails\": 1, \"complete_cycles\": 5, \"eight_links_longest_unloaded_s\": {\"count\": 5, \"max\": 0.23, \"mean\": 0.22400000000000003, \"min\": 0.215}, \"failed_terminations\": 0, \"flight_height_rmse_m\": {\"count\": 5, \"max\": 0.042152698857307914, \"mean\": 0.030861177302572224, \"min\": 0.02329665522074643}, \"landing_force_after_unloading_peak_n\": {\"count\": 5, \"max\": 2680.310302734375, \"mean\": 1451.7438903808593, \"min\": 1054.401123046875}, \"landing_min_height_m\": {\"count\": 5, \"max\": 0.4850703775882721, \"mean\": 0.4676559329032898, \"min\": 0.4559454917907715}, \"pitch_peak_deg\": {\"count\": 5, \"max\": 30.56783177296114, \"mean\": 21.28867595848192, \"min\": 13.064585533591885}, \"preparation_min_height_m\": {\"count\": 5, \"max\": 0.5707090497016907, \"mean\": 0.5455955743789673, \"min\": 0.5175964832305908}, \"roll_peak_deg\": {\"count\": 5, \"max\": 12.881447569829806, \"mean\": 10.36666561606925, \"min\": 7.965431850852426}, \"takeoff_peak_vz_m_s\": {\"count\": 5, \"max\": 1.3776433051334804, \"mean\": 1.1813503605863473, \"min\": 1.0012087451613711}}}}"
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "按批次报告检查失败项和动作表现；复测使用新的 batch_id 与 attempt_id。"
+  ],
+  "report": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/report.md",
+    "sha256": "8a1933d91e035bbb798e027f0c2e2b9e09da9f69b29e0618dd33a92bbb619e9a"
+  },
+  "repository_root": "/home/young/liufengrong/robot_lab",
+  "run_id": "2026-10-28_15-03-01",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evidence/training/training-origin-20261029-001.json",
+      "sha256": "3a47cd49011415a52f96a28b6923915ae68958448b6d1db4c87d131214375961"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evidence/training/training-windows-20261029-001.json",
+      "sha256": "361becbee8c49997dd20d5bac9e9838292acb2848cd00563f4fe66884e9c9be7"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evidence/training/protection-before-20261029-001.json",
+      "sha256": "ab013fe24b3a4bd897f3c3932a26961cd84eb4cc611c87b014239538a0c8bf69"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/derived/analysis.json",
+      "sha256": "e96b5c393be91fcccfb7f156a26e192f81f9291a20f73184dca30e8bbd12bee5"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/derived/joint-peak-rms.csv",
+      "sha256": "bf528cf9c6053b9f2ad72fc7ded2530adcefa74be680cd315e4187bec694bf36"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/derived/joint-symmetry-comparison.png",
+      "sha256": "c8819b32dc5a3b82801fa66d87682feeae2d0a3a12b0228b009172e0e9c8aba3"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-28_15-03-01/evaluations/wheel-to-leg-fixed-start-20261029-001/derived/jump-contact-comparison.png",
+      "sha256": "ebd372cdf1129225ca69428f93f2130c745165d41fa9b78f699bc0527deeee22"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "version": 1
+}
