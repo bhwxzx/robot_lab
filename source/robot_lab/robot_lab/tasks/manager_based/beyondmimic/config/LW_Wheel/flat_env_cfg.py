@@ -149,8 +149,8 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.wheel_contact_continuous.weight = 0.5
         self.rewards.wheel_contact_continuous.params["sensor_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.wheel_contact_continuous.params["start_time_s"] = 0.0
-        self.rewards.wheel_contact_continuous.params["end_time_s"] = 1.30
-        self.rewards.wheel_contact_continuous.params["ramp_time_s"] = 0.2
+        self.rewards.wheel_contact_continuous.params["end_time_s"] = 1.25
+        self.rewards.wheel_contact_continuous.params["ramp_time_s"] = 0.0
         self.rewards.wheel_contact_continuous.params["min_contact_force"] = 10.0
         self.rewards.wheel_contact_continuous.params["stable_contact_time"] = 0.1
         # Full-reference joint mirror cost; enable with a negative weight after comparison.
@@ -166,7 +166,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.same_foot_x_position.weight = -10.0
         self.rewards.same_foot_x_position.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.same_foot_x_position.params["start_time_s"] = 0.0
-        self.rewards.same_foot_x_position.params["end_time_s"] = 1.30
+        self.rewards.same_foot_x_position.params["end_time_s"] = 1.25
         self.rewards.same_foot_x_position.params["ramp_time_s"] = 0.2
         # terminations
         self.terminations.anchor_pos.params["threshold"] = 0.15
