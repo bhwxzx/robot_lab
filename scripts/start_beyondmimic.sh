@@ -22,9 +22,14 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
+TRAIN_NUM_ENVS=4096
+if [[ "$TYPE" == "wheel" ]]; then
+    TRAIN_NUM_ENVS=8192
+fi
+
 conda run --no-capture-output -n isaacsim-5.1 python scripts/reinforcement_learning/rsl_rl/train.py \
     --task="RobotLab-Isaac-BeyondMimic-Flat-LW-${TYPE}-v0" \
     --log_project_name="LW_${TYPE}_beyondmimic" \
     --logger=wandb \
-    --num_envs=4096 \
+    --num_envs="$TRAIN_NUM_ENVS" \
     --headless

@@ -31,7 +31,7 @@ class LWWheelRewardsCfg(RewardsCfg):
 
     hip_pos_zero_l2 = RewTerm(
         func=mdp.joint_pos_zero_l2,
-        weight=-3.0,
+        weight=-2.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_hip_joint", "left_hip_joint"])},
     )
 
@@ -146,7 +146,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
         # Wheel contact has no phase fade and switches off at reference time 1.25 s.
         # At 50 Hz, frame 62 (1.24 s) is the last nonzero frame; frame 63 is disabled.
-        self.rewards.wheel_contact_continuous.weight = 0.0
+        self.rewards.wheel_contact_continuous.weight = 0.5
         self.rewards.wheel_contact_continuous.params["sensor_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.wheel_contact_continuous.params["start_time_s"] = 0.0
         self.rewards.wheel_contact_continuous.params["end_time_s"] = 1.30
@@ -166,7 +166,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.same_foot_x_position.weight = -10.0
         self.rewards.same_foot_x_position.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.same_foot_x_position.params["start_time_s"] = 0.0
-        self.rewards.same_foot_x_position.params["end_time_s"] = 1.25
+        self.rewards.same_foot_x_position.params["end_time_s"] = 1.30
         self.rewards.same_foot_x_position.params["ramp_time_s"] = 0.2
         # terminations
         self.terminations.anchor_pos.params["threshold"] = 0.15
