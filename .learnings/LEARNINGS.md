@@ -1606,3 +1606,27 @@ Verify remaining thigh/shank self-contact pairs in replicated runtime before sim
 - SHA256 logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-28_13-14-04/params/agent.yaml: b0d443b000e29edd9c891ca0b8c148c9805becb60de3bd332e7bcb10c6782fed
 
 ---
+
+## [LRN-20261030-CPT] correction
+
+**Logged**: 2026-10-30T11:23:17.060678+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: docs
+
+### Summary
+Policy ranking must enumerate checkpoint identities from every completed evaluation batch, including intermediate checkpoints.
+
+### Details
+The recent wheel-to-leg ranking searched only fixed-start batch names and omitted server 2026-10-27_20-02-47/model_25000.pt, although its validated near-iteration batch existed. It had five complete cycles in both cases, landing peaks 1122.94/1755.07 N and foot-speed peaks 6.6886/10.0590 rad/s. Its omission invalidated the earlier claim that server 2026-10-28_13-14-55 was the preferred local checkpoint. The intermediate checkpoint belongs among the main candidates; posture and height tradeoffs remain. No universal ranking follows without declared priorities.
+
+### Suggested Action
+Enumerate all sealed batches and completed results; identify each candidate by host, run ID, checkpoint path and SHA256, then deduplicate by checkpoint and comparable scenario. Include mid-training checkpoints and report scope/exclusions explicitly. Never filter candidates by a batch-name convention or treat the final checkpoint as the only representative of a run.
+
+### Metadata
+- Source: user_feedback
+- Related Files: learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-27_20-02-47/evaluations/wheel-to-leg-near-iteration-20261028-002/manifest.json
+- Tags: wheel-to-leg, checkpoint-comparison, candidate-coverage, intermediate-checkpoint
+- Pattern-Key: evaluation.enumerate_all_checkpoint_candidates
+
+---
