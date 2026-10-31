@@ -31,7 +31,7 @@ class LWWheelRewardsCfg(RewardsCfg):
 
     hip_pos_zero_l2 = RewTerm(
         func=mdp.joint_pos_zero_l2,
-        weight=-2.0,
+        weight=-3.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["right_hip_joint", "left_hip_joint"])},
     )
 
