@@ -1,0 +1,103 @@
+{
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-30_11-48-12/model_49999.pt",
+    "sha256": "21388bfa4e76eb15bc2d0321c09461a9ba5cccfe071af35d77fc070448333b03"
+  },
+  "evaluation_source_head": "3ce5db81768c9c86e6b9ecb90a303fea3d88ff9c",
+  "expanded_training_argv": [
+    "python",
+    "scripts/reinforcement_learning/rsl_rl/train.py",
+    "--task=RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+    "--log_project_name=LW_wheel_beyondmimic",
+    "--logger=wandb",
+    "--num_envs=8192",
+    "--headless"
+  ],
+  "host_id": "server-System-Product-Name",
+  "launch_confirmation": "User confirmed bash scripts/start_beyondmimic.sh --type wheel without additional CLI or Hydra overrides in this session on 2026-10-31.",
+  "motion": {
+    "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz",
+    "sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+  },
+  "run_id": "2026-10-30_11-48-12",
+  "saved_config_restore": {
+    "rewards.hip_pos_zero_l2.weight": -2.0
+  },
+  "source_delta": "diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\nindex 8b31d6a..5349e4d 100644\n--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\n+++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\n@@ -31,7 +31,7 @@ class LWWheelRewardsCfg(RewardsCfg):\n \n     hip_pos_zero_l2 = RewTerm(\n         func=mdp.joint_pos_zero_l2,\n-        weight=-2.0,\n+        weight=-3.0,\n         params={\"asset_cfg\": SceneEntityCfg(\"robot\", joint_names=[\"right_hip_joint\", \"left_hip_joint\"])},\n     )\n \n",
+  "training_git_record": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-10-30_11-48-12/git/robot_lab.diff",
+    "sha256": "c5036f565133551c80314001117e9da35feaacbc637028c41313ab0e26903293"
+  },
+  "training_source_head": "feb358373a80117be9b6009c6b816b5e8cc48dc1",
+  "training_sources": [
+    {
+      "path": "scripts/reinforcement_learning/rsl_rl/train.py",
+      "sha256": "95a4a317d71089d9658b85a8048c857fe3990ff5fbf8a558d5e258fdd308f808"
+    },
+    {
+      "path": "scripts/start_beyondmimic.sh",
+      "sha256": "ac4d332eca2ed5721abba69a335ebda384ea131413a15e4e101594f3963748d2"
+    },
+    {
+      "path": "scripts/start_play_beyondmimic.sh",
+      "sha256": "a7f530d55793783520079a20dac95b5f7c090d196ce71b3665496c67bce25c51"
+    },
+    {
+      "path": "source/robot_lab/data/Robots/LW/LW_description/LW.usd",
+      "sha256": "abaf00bafdecef29f51fa3c41dd06b41be95a55366266a6b6000017f3dc6d11a"
+    },
+    {
+      "path": "source/robot_lab/data/Robots/LW/LW_description/configuration/LW_base.usd",
+      "sha256": "2caccf13f76acaf5683fa5d570471aa85840ca1cc47993137764a7bed760e693"
+    },
+    {
+      "path": "source/robot_lab/data/Robots/LW/LW_description/configuration/LW_physics.usd",
+      "sha256": "2f86cffab0729467eed1ac15149c2df0feea5481b33b1b7b200df663ce532775"
+    },
+    {
+      "path": "source/robot_lab/data/Robots/LW/LW_description/configuration/LW_robot.usd",
+      "sha256": "097beace5b47994990a69523dde7b8810ae6a92c6e9b8a4f405f0907a8ead86c"
+    },
+    {
+      "path": "source/robot_lab/data/Robots/LW/LW_description/configuration/LW_sensor.usd",
+      "sha256": "bb634d41ca2fd95d26ff3fe543ae141ec7520e2ffed9763e58a997ca4ada7489"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/assets/LW.py",
+      "sha256": "efecd732278bd1e269ae6ccef49667a51751956594cd900ae1f3ed6a75089ec2"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/agents/rsl_rl_ppo_cfg.py",
+      "sha256": "95177ac8d4b171d968b1d660f0eb286056509c8faa24b5550eddef1eb5e31723"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py",
+      "sha256": "28894758999dc62a1089416b4a94303b114245a2ce6d18b224c398d86a666efc"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/commands.py",
+      "sha256": "fce82adca89dfe693fe7a331d12f9a7dd5b8324324a82327a6a4d4441a96e065"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/observations.py",
+      "sha256": "325cbafcd9de75479b545229772d24f271beb2f26a6f3523d4710c6854020872"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/rewards.py",
+      "sha256": "2be7f91237cda4e3476701a56163e1f6b42846a18d85e3635bcb10935a438b01"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/mdp/terminations.py",
+      "sha256": "662b9bb8070fd5618ea88468f8536948ad9a39cdc618115f55e32ef958d7b0cb"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/tracking_env_cfg.py",
+      "sha256": "4db0e2d5c07779cbed6441b284509adff2a42436be27b2ab8bfa6fccf4e391ca"
+    }
+  ],
+  "version": 1,
+  "wandb_metadata": {
+    "path": "/home/server/liufengrong/robot_lab/wandb/run-20261030_114828-m6gwcnju/files/wandb-metadata.json",
+    "sha256": "26a49af555907ceb0fc18ab44aff0552efad110287e673436294e3a983d157b0"
+  }
+}
