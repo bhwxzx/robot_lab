@@ -267,11 +267,16 @@ def _wheel_phase_weight(
     ramp_time_s: float,
     end_time_s: float | None = None,
 ) -> torch.Tensor:
-    """Fade in after the start, or fade out before an optional end, in reference time."""
+    """Gate rewards in reference time, optionally smoothing their entry or exit.
+
+    A zero ramp enables the full weight from the start, including that frame,
+    until the optional end, excluding that frame. Positive ramps fade in after
+    the start, or fade out before the end when one is supplied.
+    """
     if not math.isfinite(start_time_s) or start_time_s < 0.0:
         raise ValueError("Wheel phase rewards require a finite, nonnegative start time.")
-    if not math.isfinite(ramp_time_s) or ramp_time_s <= 0.0:
-        raise ValueError("Wheel phase rewards require a finite, positive ramp duration.")
+    if not math.isfinite(ramp_time_s) or ramp_time_s < 0.0:
+        raise ValueError("Wheel phase rewards require a finite, nonnegative ramp duration.")
     if end_time_s is not None:
         if not math.isfinite(end_time_s) or end_time_s <= start_time_s:
             raise ValueError("Wheel phase rewards require a finite end time after the start.")
@@ -283,6 +288,11 @@ def _wheel_phase_weight(
     if not math.isfinite(fps) or fps <= 0.0:
         raise ValueError("Wheel phase rewards require a finite, positive reference frame rate.")
     reference_time = command.time_steps / fps
+    if ramp_time_s == 0.0:
+        active = command.time_steps >= math.ceil(start_time_s * fps)
+        if end_time_s is not None:
+            active = active & (command.time_steps < math.ceil(end_time_s * fps))
+        return active.to(dtype=reference_time.dtype)
     if end_time_s is not None:
         blend = torch.clamp((end_time_s - reference_time) / ramp_time_s, min=0.0, max=1.0)
         start_frame = math.ceil(start_time_s * fps)
@@ -405,7 +415,10 @@ def wheel_phase_same_feet_x_position(
     ramp_time_s: float,
     end_time_s: float | None = None,
 ) -> torch.Tensor:
-    """Penalize base-frame wheel fore-aft separation with a negative reward weight."""
+    """Penalize base-frame wheel fore-aft separation with a negative reward weight.
+
+    A zero ramp applies the full penalty within the reference-time window.
+    """
     blend = _wheel_phase_geometry_weight(env, command_name, asset_cfg, start_time_s, ramp_time_s, end_time_s)
     return blend * _locomotion_same_feet_x_position(env, asset_cfg=asset_cfg)
 

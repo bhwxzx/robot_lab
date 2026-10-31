@@ -162,12 +162,12 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
             ),
             "joint_scales": (0.1, 0.2, 0.2, 0.2),  # hip, thigh, shank, foot; radians
         }
-        # Keep fore-aft alignment fading out from 1.05 s to 1.25 s.
+        # Keep full fore-aft alignment penalty until 1.25 s, then switch it off.
         self.rewards.same_foot_x_position.weight = -10.0
         self.rewards.same_foot_x_position.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.same_foot_x_position.params["start_time_s"] = 0.0
         self.rewards.same_foot_x_position.params["end_time_s"] = 1.25
-        self.rewards.same_foot_x_position.params["ramp_time_s"] = 0.2
+        self.rewards.same_foot_x_position.params["ramp_time_s"] = 0.0
         # terminations
         self.terminations.anchor_pos.params["threshold"] = 0.15
         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
