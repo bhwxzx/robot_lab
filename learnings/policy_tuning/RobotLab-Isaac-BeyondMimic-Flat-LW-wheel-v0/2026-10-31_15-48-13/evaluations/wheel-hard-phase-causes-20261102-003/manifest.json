@@ -1,0 +1,103 @@
+{
+  "batch_id": "wheel-hard-phase-causes-20261102-003",
+  "cases": [
+    {
+      "attempt_id": "random-phase-stochastic-a01",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/raw/random-phase-stochastic-a01/console.log",
+        "sha256": "d9df4fbc132bf2b728688fd00276f7fb1e026ff32ddc36f00ae20fb7842ec830"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/raw/random-phase-stochastic-a01/result.json",
+        "sha256": "c1938c1ef553da15a668991af1caf1ad20b23a9b38780af0c6342ff048ec9fd1"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 5000,
+        "num_envs": 1,
+        "scenario_id": "random-phase-stochastic",
+        "scenario_overrides": {
+          "commands.motion.sampling_diagnostics_dir": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/raw/random-phase-stochastic-a01/sampling-diagnostics",
+          "commands.motion.sampling_diagnostics_window_steps": 1000,
+          "evaluation.motion_action_mode": "sample",
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "randomized_phase",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03",
+          "rewards.hip_pos_zero_l2.weight": -2.0
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/contract.json",
+    "sha256": "f38f36b7a4a6ef0cb4e033f0ca5907baaf45ddc0cdddc42695ce4ffedcda73d4"
+  },
+  "layout_version": 2,
+  "notes": [
+    "本批次只新增随机相位+训练随机化+checkpoint高斯采样动作5000步；名义/随机化均值动作两组复用002及其引用的001批次。新增选项由用户明确批准；网络冻结、不训练。",
+    "最新 server 2026-10-31_15-48-13/model_49999.pt，SHA256 d5d75f2da8d11057f00d65f4f73f13dcee9dfb4dec312d362622fc1b0a058059；沿用已确认训练来源与保存配置。",
+    "采样动作直接调用冻结策略的原生policy.act，读取checkpoint保存的std；策略与观测归一化处于eval模式，无参数更新。新选项28项CPU测试通过；默认mean及旧版证据兼容。",
+    "随机相位名义组关闭事件随机化、初始姿态/速度/关节噪声、观测噪声和执行器延迟；随机化组保留保存训练配置。",
+    "当前诊断代码尚未提交；精确运行源码（含未跟踪helper）另行快照，训练来源仍为原始879357b。",
+    "诊断每1000控制步保存计数，所有阶段暴露数及终止原因与独立遥测逐帧交叉核验；失效率为每万环境控制步失败次数，非每回合失败概率。",
+    "失败区间按floor(frame*4/170)定义；第二段为43..84帧(0.86..1.68s)。采样初始帧分桶用169而非170，边界略有差异。",
+    "本批次从空的困难采样计数开始，并启用checkpoint动作噪声。动作采样消耗随机数，会改变后续重置/随机化抽样序列；同seed不代表逐回合同随机条件。单环境/seed不能还原8192环境训练期失败比例或确证历史采样因果。",
+    "各终止原因可同时成立，分别保留；motion_finished与time_out不单独算失败。起始帧为评估实际首帧，诊断reset_starts另保存采样选定帧。",
+    "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。",
+    "random-phase-stochastic-a01: ended=56, failures=0, motion_finished_without_failure=56, censored=1",
+    "random-phase-stochastic-a01 终止原因={\"anchor_ori\": 0, \"anchor_pos\": 0, \"ee_body_pos\": 0, \"motion_finished\": 56, \"thigh_shank_ground_contact\": 0, \"time_out\": 0}",
+    "random-phase-stochastic-a01 分段暴露/失败/每万步率=[{\"bin\": 0, \"exposure_steps\": 325, \"failures\": 0, \"failures_per_10000_steps\": 0.0, \"termination_counts\": {\"anchor_ori\": 0, \"anchor_pos\": 0, \"ee_body_pos\": 0, \"motion_finished\": 0, \"thigh_shank_ground_contact\": 0, \"time_out\": 0}}, {\"bin\": 1, \"exposure_steps\": 905, \"failures\": 0, \"failures_per_10000_steps\": 0.0, \"termination_counts\": {\"anchor_ori\": 0, \"anchor_pos\": 0, \"ee_body_pos\": 0, \"motion_finished\": 0, \"thigh_shank_ground_contact\": 0, \"time_out\": 0}}, {\"bin\": 2, \"exposure_steps\": 1665, \"failures\": 0, \"failures_per_10000_steps\": 0.0, \"termination_counts\": {\"anchor_ori\": 0, \"anchor_pos\": 0, \"ee_body_pos\": 0, \"motion_finished\": 0, \"thigh_shank_ground_contact\": 0, \"time_out\": 0}}, {\"bin\": 3, \"exposure_steps\": 2105, \"failures\": 0, \"failures_per_10000_steps\": 0.0, \"termination_counts\": {\"anchor_ori\": 0, \"anchor_pos\": 0, \"ee_body_pos\": 0, \"motion_finished\": 56, \"thigh_shank_ground_contact\": 0, \"time_out\": 0}}]",
+    "random-phase-stochastic-a01 失败发生于重置后<=5/10/25步=(0, 0, 0)"
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "以真实失败的时间、触发原因和相位暴露归一化率判断困难片段；不以采样占比单独代表失败率。",
+    "若失败主要在随机中途起点后短时间出现，应优先分析重置状态与闭环历史的差异；不能直接通过加大奖励惩罚认定根因。",
+    "本批次只评估冻结策略，没有训练、修改奖励/持久配置或Git提交；后续修改先提出方案并获得批准。"
+  ],
+  "report": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/report.md",
+    "sha256": "3bd45261fcb6b650b97f4417378bb5cba56a740aff4a9eefc3aa51791353e198"
+  },
+  "repository_root": "/home/server/liufengrong/robot_lab",
+  "run_id": "2026-10-31_15-48-13",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-to-leg-fixed-start-20261102-001/manifest.json",
+      "sha256": "6bd674573b268cd73a3686332a1ca163a35ddb218d2379fa065dedc1fd15a5cc"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-002/manifest.json",
+      "sha256": "e943020c6ae8ef37874fb5a6774b9cf0556c3bd14d48569c71c21e519c4f2367"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-002/derived/failure-phase-analysis.json",
+      "sha256": "cfaad822a8e1779a9ca3c8cb5fde9eca565683a08726c159010d9ee305c1f9ce"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/raw/random-phase-stochastic-a01/sampling-diagnostics/motion_sampling_diagnostics.jsonl",
+      "sha256": "293a24302dd781dda16c41eabc0b16d0e41e86874935e2b6ebabf85de34dc39d"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/derived/failure-phase-analysis.json",
+      "sha256": "63d100163e28478c6ad870b61dc628e9a0df6ef6b4c4e70ce20e1e3752551209"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/derived/phase-failure-diagnosis.png",
+      "sha256": "c25e15ba10526888fa1a0058ef477393bca37189040e0e28ab0a6f33025f88b7"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-10-31_15-48-13/evaluations/wheel-hard-phase-causes-20261102-003/derived/protection.json",
+      "sha256": "14d6a1865be4f2a94a6c3be327b47b54627cf9344fe166f6a139d1f201dbe4da"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "version": 1
+}
