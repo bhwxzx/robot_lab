@@ -24,6 +24,8 @@ from isaaclab.utils.math import (
     yaw_quat,
 )
 
+from .sampling_diagnostics import MotionSamplingDiagnostics
+
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
@@ -91,6 +93,7 @@ class MotionCommand(CommandTerm):
             [self.cfg.adaptive_lambda**i for i in range(self.cfg.adaptive_kernel_size)], device=self.device
         )
         self.kernel = self.kernel / self.kernel.sum()
+        self._sampling_diagnostics: MotionSamplingDiagnostics | None = None
 
         self.metrics["error_anchor_pos"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_anchor_rot"] = torch.zeros(self.num_envs, device=self.device)
@@ -242,6 +245,51 @@ class MotionCommand(CommandTerm):
         self.metrics["error_joint_pos"] = torch.norm(self.joint_pos - self.robot_joint_pos, dim=-1)
         self.metrics["error_joint_vel"] = torch.norm(self.joint_vel - self.robot_joint_vel, dim=-1)
 
+    def _get_sampling_diagnostics(self) -> MotionSamplingDiagnostics | None:
+        if self.cfg.sampling_diagnostics_dir is None:
+            return None
+        if self._sampling_diagnostics is None:
+            # The termination manager is constructed after the command manager.
+            manager = self._env.termination_manager
+            self._sampling_diagnostics = MotionSamplingDiagnostics(
+                output_dir=self.cfg.sampling_diagnostics_dir,
+                num_envs=self.num_envs,
+                frame_count=self.motion.time_step_total,
+                fps=float(self.motion.fps),
+                bin_count=self.bin_count,
+                term_timeouts={name: manager.get_term_cfg(name).time_out for name in manager.active_terms},
+                device=self.device,
+                window_steps=self.cfg.sampling_diagnostics_window_steps,
+            )
+        return self._sampling_diagnostics
+
+    def _record_sampling_diagnostics(self):
+        diagnostics = self._get_sampling_diagnostics()
+        if diagnostics is not None:
+            manager = self._env.termination_manager
+            diagnostics.observe(
+                step=self._env.common_step_counter,
+                frames=self.time_steps,
+                terminated=manager.terminated,
+                term_values={name: manager.get_term(name) for name in manager.active_terms},
+            )
+
+    def reset(self, env_ids: Sequence[int] | None = None) -> dict[str, float]:
+        # Capture every environment before any reference frame is replaced. The
+        # common step counter deduplicates the later compute() call.
+        self._record_sampling_diagnostics()
+        return super().reset(env_ids)
+
+    def compute(self, dt: float):
+        # Handles steps with no reset, before command resampling/frame advance.
+        self._record_sampling_diagnostics()
+        super().compute(dt)
+
+    def flush_sampling_diagnostics(self):
+        """Optionally persist an incomplete final window; does not create a recorder."""
+        if self._sampling_diagnostics is not None:
+            self._sampling_diagnostics.flush()
+
     def _adaptive_sampling(self, env_ids: Sequence[int]):
         episode_failed = self._env.termination_manager.terminated[env_ids]
         if torch.any(episode_failed):
@@ -269,6 +317,10 @@ class MotionCommand(CommandTerm):
             / self.bin_count
             * (self.motion.time_step_total - 1)
         ).long()
+
+        diagnostics = self._get_sampling_diagnostics()
+        if diagnostics is not None:
+            diagnostics.record_starts(env_ids, self.time_steps[env_ids], sampling_probabilities)
 
         # Metrics
         H = -(sampling_probabilities * (sampling_probabilities + 1e-12).log()).sum()
@@ -419,6 +471,20 @@ class MotionCommandCfg(CommandTermCfg):
     adaptive_lambda: float = 0.8
     adaptive_uniform_ratio: float = 0.1
     adaptive_alpha: float = 0.001
+
+    sampling_diagnostics_dir: str | None = None
+    """Explicit NEW output directory; None disables diagnostics without file writes.
+
+    Example Hydra override: env.commands.motion.sampling_diagnostics_dir=/path/to/new/diagnostics
+    Diagnostics never use the saved training log_dir implicitly. In distributed
+    jobs each process must receive a different directory.
+    """
+    sampling_diagnostics_window_steps: int = 2400
+    """Control steps per raw-count window (100 iterations at 24 steps/iteration).
+
+    Completed windows are written automatically. Call flush_sampling_diagnostics()
+    to save a partial tail when closing a run; otherwise that tail is not persisted.
+    """
 
     anchor_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
     anchor_visualizer_cfg.markers["frame"].scale = (0.2, 0.2, 0.2)
