@@ -572,6 +572,32 @@ def _reset_motion_observation_history(env):
     return TensorDict(env.unwrapped.obs_buf, batch_size=[env.num_envs])
 
 
+def _select_motion_action_policy(inference_policy, policy_module, mode, checkpoint_sha256):
+    """Select frozen inference or the same Gaussian action sampler used by PPO.
+
+    Sampling consumes the normal policy RNG stream and does not call an optimizer
+    or update observation normalizers. The runner has already set evaluation mode.
+    """
+    if mode == "mean":
+        return inference_policy, {"mode": "mean"}
+    if mode != "sample":
+        raise ValueError("unknown motion action mode")
+    noise_type = getattr(policy_module, "noise_std_type", None)
+    if noise_type == "scalar":
+        std = policy_module.std.detach()
+    elif noise_type == "log":
+        std = policy_module.log_std.detach().exp()
+    else:
+        raise ValueError("motion sampling requires checkpoint scalar/log Gaussian standard deviations")
+    if std.ndim != 1 or std.numel() == 0 or not torch.isfinite(std).all() or not (std > 0).all():
+        raise ValueError("invalid checkpoint action standard deviations")
+    return policy_module.act, {
+        "mode": "sample", "distribution": "Normal", "std_source": "checkpoint",
+        "checkpoint_sha256": checkpoint_sha256, "noise_std_type": noise_type,
+        "action_std": std.cpu().tolist(),
+    }
+
+
 def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
     """One-env Native motion evaluation with terminal state captured before reset."""
     from isaaclab.utils.math import quat_apply, quat_error_magnitude, quat_inv, quat_mul, yaw_quat
@@ -591,6 +617,11 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
     policy_module = getattr(runner.alg, "policy", None)
     if policy_module is None:
         policy_module = runner.alg.actor_critic
+    policy, action_sampling = _select_motion_action_policy(
+        policy, policy_module,
+        plan.scenario_contract["scenario_overrides"].get("evaluation.motion_action_mode", "mean"),
+        plan.checkpoint["sha256"],
+    )
 
     def aligned_reference():
         rotation = yaw_quat(quat_mul(cmd.robot_anchor_quat_w, quat_inv(cmd.anchor_quat_w)))
@@ -672,6 +703,7 @@ def _evaluate_motion(env, runner, env_cfg, plan, publisher, mode):
         raise ValueError("motion fps differs from control frequency")
     diagnostic = {
         "mode": mode, "sampling_phase": "post_physics_pre_reset",
+        "action_sampling": action_sampling,
         "reference_timing": "frame commanded for this action; not next observation frame",
         "motion_file": {"path": str(motion_file), "sha256": motion_hash},
         "frame_count": cmd.motion.time_step_total, "fps": float(cmd.motion.fps.item()),
@@ -1053,6 +1085,7 @@ def _evaluate(
         if dotted_path in (
             "evaluation.roa_mode", "evaluation.dwaq_mode", ROA_SENSOR_DELAY_OPTION,
             "evaluation.motion_mode", "evaluation.motion_sha256", "evaluation.motion_physics_window",
+            "evaluation.motion_action_mode",
             "evaluation.motion_ground_contacts",
             "evaluation.landing_pull",
         ):

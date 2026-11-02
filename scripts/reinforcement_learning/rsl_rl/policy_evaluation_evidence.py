@@ -224,10 +224,13 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
                 continue
             modes = {"evaluation.roa_mode": ROA_CONTROL_MODES,
                      "evaluation.dwaq_mode": DWAQ_CONTROL_MODES,
-                     "evaluation.motion_mode": MOTION_MODES}
+                     "evaluation.motion_mode": MOTION_MODES,
+                     "evaluation.motion_action_mode": ("mean", "sample")}
             if key not in modes or setting not in modes[key]:
                 raise EvaluationEvidenceError("invalid evaluation controller or unknown evaluation option")
     overrides = value["scenario_overrides"]
+    if "evaluation.motion_action_mode" in overrides and "evaluation.motion_mode" not in overrides:
+        raise EvaluationEvidenceError("motion action sampling requires motion diagnostics")
     if "evaluation.motion_ground_contacts" in overrides and "evaluation.motion_physics_window" not in overrides:
         raise EvaluationEvidenceError("motion ground contacts require physics capture")
     if "evaluation.landing_pull" in overrides and (
@@ -1027,6 +1030,44 @@ def validate_motion_telemetry(result, telemetry, scenario):
     samples = telemetry.get("samples", [])
     if len(samples) != scenario["duration_steps"]:
         raise EvaluationEvidenceError("motion sample count mismatch")
+    requested_action_mode = scenario["scenario_overrides"].get("evaluation.motion_action_mode", "mean")
+    action_sampling = diagnostic.get("action_sampling")
+    legacy_mean = action_sampling is None and "evaluation.motion_action_mode" not in scenario["scenario_overrides"]
+    if not legacy_mean:
+        if not isinstance(action_sampling, dict) or action_sampling.get("mode") != requested_action_mode:
+            raise EvaluationEvidenceError("motion action sampling mode differs from scenario")
+        if requested_action_mode == "mean":
+            if action_sampling != {"mode": "mean"}:
+                raise EvaluationEvidenceError("mean motion actions must not claim sampled noise")
+        else:
+            std = action_sampling.get("action_std")
+            checkpoint = result.get("inputs", {}).get("checkpoint", {})
+            if (set(action_sampling) != {"mode", "distribution", "std_source", "checkpoint_sha256",
+                                        "noise_std_type", "action_std"}
+                    or action_sampling.get("distribution") != "Normal"
+                    or action_sampling.get("std_source") != "checkpoint"
+                    or action_sampling.get("noise_std_type") not in ("scalar", "log")
+                    or not re.fullmatch(r"[0-9a-f]{64}", str(action_sampling.get("checkpoint_sha256", "")))
+                    or action_sampling.get("checkpoint_sha256") != checkpoint.get("sha256")
+                    or not isinstance(std, list) or not std
+                    or not samples or len(std) != len(samples[0].get("action", []))
+                    or any(type(v) not in (int, float) or not math.isfinite(v) or v <= 0 for v in std)):
+                raise EvaluationEvidenceError("invalid checkpoint-bound motion action standard deviations")
+            bound_checkpoint = _validate_reference(checkpoint, label="motion action checkpoint")
+            try:
+                import torch
+                state = torch.load(bound_checkpoint["path"], map_location="cpu", weights_only=True)["model_state_dict"]
+                saved_std = state["std" if action_sampling["noise_std_type"] == "scalar" else "log_std"]
+                if not isinstance(saved_std, torch.Tensor) or saved_std.ndim != 1:
+                    raise ValueError("checkpoint action std must be a vector")
+                if action_sampling["noise_std_type"] == "log":
+                    saved_std = saved_std.exp()
+                recorded_std = torch.tensor(std, dtype=torch.float64)
+                if (saved_std.shape != recorded_std.shape
+                        or not torch.allclose(saved_std.to(torch.float64), recorded_std, rtol=1e-6, atol=1e-8)):
+                    raise ValueError("recorded action std differs from checkpoint")
+            except Exception as exc:
+                raise EvaluationEvidenceError(f"motion action checkpoint std verification failed: {exc}") from exc
     if (telemetry.get("telemetry_status") != "complete"
             or result.get("telemetry_status") != "complete"
             or not MOTION_REQUIRED_SIGNALS.issubset(telemetry.get("required_signals", []))):

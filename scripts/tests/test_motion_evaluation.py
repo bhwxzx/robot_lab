@@ -1,12 +1,16 @@
 """Motion evaluation contracts without launching Isaac Sim."""
 import copy
+import ast
+import contextlib
 import hashlib
+import io
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 import numpy as np
+import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "reinforcement_learning/rsl_rl"))
 from policy_evaluation_evidence import EvaluationEvidenceError, build_scenario_contract, validate_motion_telemetry, validate_scenario_contract
@@ -142,6 +146,57 @@ class MotionEvaluationTests(unittest.TestCase):
         self.assertEqual(metrics['action_rate_rms'], 1)
         validate_motion_telemetry(self.result, self.telemetry, self.scenario)
 
+    def add_action_sampling(self):
+        self.scenario['scenario_overrides']['evaluation.motion_action_mode'] = 'sample'
+        checkpoint = Path(self.directory.name) / 'checkpoint.pt'
+        torch.save({'model_state_dict': {'std': torch.tensor([.14, .2])}}, checkpoint)
+        digest = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+        self.result['inputs']['checkpoint'] = {'path': str(checkpoint), 'sha256': digest}
+        value = {'mode': 'sample', 'distribution': 'Normal', 'std_source': 'checkpoint',
+                 'checkpoint_sha256': digest, 'noise_std_type': 'scalar', 'action_std': [.14, .2]}
+        self.result['motion_diagnostics']['action_sampling'] = value
+        return value
+
+    def test_action_sampling_contract_and_checkpoint_binding(self):
+        value = self.add_action_sampling()
+        validate_scenario_contract(self.scenario)
+        validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+        value['checkpoint_sha256'] = '2' * 64
+        with self.assertRaisesRegex(EvaluationEvidenceError, 'checkpoint-bound'):
+            validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
+    def test_action_sampling_rejects_finite_std_tamper(self):
+        value = self.add_action_sampling()
+        value['action_std'] = [.15, .2]
+        with self.assertRaisesRegex(EvaluationEvidenceError, 'differs from checkpoint'):
+            validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
+    def test_invalid_action_sampling_mode_and_missing_motion_rejected(self):
+        self.scenario['scenario_overrides']['evaluation.motion_action_mode'] = 'training'
+        with self.assertRaises(EvaluationEvidenceError):
+            validate_scenario_contract(self.scenario)
+        self.scenario['scenario_overrides'] = {'evaluation.motion_action_mode': 'sample'}
+        with self.assertRaisesRegex(EvaluationEvidenceError, 'requires motion'):
+            validate_scenario_contract(self.scenario)
+
+    def test_action_sampling_standard_deviations_are_positive_finite_and_complete(self):
+        value = self.add_action_sampling()
+        for bad in ([0, .2], [-.1, .2], [float('nan'), .2], [.1], [True, .2]):
+            value['action_std'] = bad
+            with self.subTest(std=bad), self.assertRaisesRegex(EvaluationEvidenceError, 'checkpoint-bound'):
+                validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
+    def test_explicit_action_mode_requires_matching_telemetry_but_legacy_mean_still_valid(self):
+        validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+        self.scenario['scenario_overrides']['evaluation.motion_action_mode'] = 'sample'
+        with self.assertRaisesRegex(EvaluationEvidenceError, 'mode differs'):
+            validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+        self.result['motion_diagnostics']['action_sampling'] = {'mode': 'mean'}
+        with self.assertRaisesRegex(EvaluationEvidenceError, 'mode differs'):
+            validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+        self.scenario['scenario_overrides']['evaluation.motion_action_mode'] = 'mean'
+        validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
     def test_simultaneous_failure_is_not_success(self):
         self.samples[2]['termination_terms']['anchor_pos'] = True
         metrics = summarize_motion_samples(self.samples, self.telemetry['joint_names'], [10, 10])
@@ -251,6 +306,65 @@ class MotionEvaluationTests(unittest.TestCase):
         self.result['physics_window_metrics']['sample_count'] = 15
         with self.assertRaises(EvaluationEvidenceError):
             validate_motion_telemetry(self.result, self.telemetry, self.scenario)
+
+
+class FrozenMotionActionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Extract the pure selector without importing the simulator CLI entrypoint.
+        path = Path(__file__).resolve().parents[1] / 'reinforcement_learning/rsl_rl/evaluate_policy.py'
+        node = next(n for n in ast.parse(path.read_text()).body
+                    if isinstance(n, ast.FunctionDef) and n.name == '_select_motion_action_policy')
+        namespace = {'torch': torch}
+        exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), 'exec'), namespace)
+        cls.select = staticmethod(namespace['_select_motion_action_policy'])
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'rsl_rl'))
+        from rsl_rl.modules import ActorCritic
+        cls.policy_class = ActorCritic
+
+    def policy(self, noise_type='scalar'):
+        obs = {'policy': torch.ones(2, 3)}
+        with contextlib.redirect_stdout(io.StringIO()):
+            policy = self.policy_class(obs, {'policy': ['policy'], 'critic': ['policy']}, 2,
+                                       actor_hidden_dims=[4], critic_hidden_dims=[4],
+                                       init_noise_std=.15, noise_std_type=noise_type,
+                                       actor_obs_normalization=True)
+        policy.eval()
+        return policy, obs
+
+    def test_mean_keeps_original_callable_outputs_and_rng(self):
+        policy, obs = self.policy()
+        original = policy.act_inference
+        rng = torch.random.get_rng_state().clone()
+        selected, metadata = self.select(original, policy, 'mean', '1' * 64)
+        self.assertIs(selected, original)
+        self.assertEqual(metadata, {'mode': 'mean'})
+        self.assertTrue(torch.equal(selected(obs), original(obs)))
+        self.assertTrue(torch.equal(rng, torch.random.get_rng_state()))
+
+    def test_sampling_matches_native_ppo_and_leaves_model_state_unchanged(self):
+        for noise_type in ('scalar', 'log'):
+            with self.subTest(noise_type=noise_type):
+                policy, obs = self.policy(noise_type)
+                state = {k: v.clone() for k, v in policy.state_dict().items()}
+                selected, metadata = self.select(policy.act_inference, policy, 'sample', '1' * 64)
+                torch.manual_seed(71)
+                expected = policy.act(obs)
+                torch.manual_seed(71)
+                actual = selected(obs)
+                self.assertTrue(torch.equal(expected, actual))
+                self.assertFalse(torch.equal(actual, policy.act_inference(obs)))
+                np.testing.assert_allclose(metadata['action_std'], [.15, .15], rtol=1e-6)
+                self.assertEqual(metadata['noise_std_type'], noise_type)
+                for key, value in policy.state_dict().items():
+                    self.assertTrue(torch.equal(value, state[key]), key)
+
+    def test_invalid_checkpoint_std_rejected(self):
+        policy, _ = self.policy()
+        with torch.no_grad():
+            policy.std[0] = 0
+        with self.assertRaisesRegex(ValueError, 'standard deviations'):
+            self.select(policy.act_inference, policy, 'sample', '1' * 64)
 
 
 if __name__ == '__main__':
