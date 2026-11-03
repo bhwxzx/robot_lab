@@ -1,0 +1,108 @@
+{
+  "batch_id": "wheel-contact-hip-review-20261103-001",
+  "cases": [
+    {
+      "attempt_id": "fixed-start-nominal-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-02_14-06-00/evaluations/wheel-to-leg-fixed-start-20261103-001/raw/fixed-start-nominal-a01/console.log",
+        "sha256": "801ca875ee044179bad7be7372bebb2c2e5b31c90611f93353f51fd2b2f7a5cb"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-02_14-06-00/evaluations/wheel-to-leg-fixed-start-20261103-001/raw/fixed-start-nominal-a01/result.json",
+        "sha256": "6c3c7ce0dcdb0441026d3cd0d48d9ed9d3af68b4211e9097ae071d529e7992fe"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "fixed-start-nominal",
+        "scenario_overrides": {
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "nominal_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03",
+          "rewards.undesired_contacts.weight": -1.0,
+          "terminations.thigh_shank_ground_contact": null
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    },
+    {
+      "attempt_id": "fixed-start-randomized-a01",
+      "console": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-02_14-06-00/evaluations/wheel-to-leg-fixed-start-20261103-001/raw/fixed-start-randomized-a01/console.log",
+        "sha256": "3140385dce1c166b196fc58c5acdc4fde85cafcb93c8f786a5e0c7aa33444e30"
+      },
+      "result": {
+        "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-02_14-06-00/evaluations/wheel-to-leg-fixed-start-20261103-001/raw/fixed-start-randomized-a01/result.json",
+        "sha256": "ff9d9ed25680437b8d3c6060faada523c53680a835ec6855cda7f750ef880ec3"
+      },
+      "scenario": {
+        "command_schedule": [],
+        "duration_steps": 1000,
+        "num_envs": 1,
+        "scenario_id": "fixed-start-randomized",
+        "scenario_overrides": {
+          "evaluation.motion_ground_contacts": true,
+          "evaluation.motion_mode": "randomized_start",
+          "evaluation.motion_physics_window": [
+            0,
+            169
+          ],
+          "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03",
+          "rewards.undesired_contacts.weight": -1.0,
+          "terminations.thigh_shank_ground_contact": null
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": null,
+  "layout_version": 2,
+  "notes": [
+    "本批次只分析已完成两组Native评估的原始遥测，未追加仿真；引用原始result/telemetry，不复制或改写旧证据。",
+    "结论：两组均完成动作序列，但每个观测周期都发生大腿触地；起跳高度不足，1.5s后的髋突变仍明显。1.0–1.5s的局部指标改善不能代表过渡动作已解决。",
+    "本文相位数值采用记录的frame_index/50；图中控制采样加20ms、物理采样按子步加5ms，以对齐物理步末。接触力为仿真物理步平均法向接触力，不可直接视作实物瞬时峰值。",
+    "大腿触地终止已关闭，所以motion_finished不能用来判定无碰撞完成。时间上相邻支持碰撞与突变相关，不能单凭本测试证明唯一因果。",
+    "仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。",
+    "nominal: 大腿接触出现在6个观测周期（含5个完整周期和1个未完整尾段）；峰值5.220kN，连杆right_thigh_link，参考帧相位1.520s。",
+    "nominal: 扩大到1.0–1.8s窗口，髋镜像误差峰值8.475°；右髋20ms最大变化3.858°，相位1.520→1.540s。",
+    "nominal: 起跳窗口机身最高高度0.621m，参考0.714m；全程高度误差峰值22.17cm。八连杆最长同时失载0.035s，不涵盖base/hip接触，不能独立证明整体腾空。",
+    "randomized: 大腿接触出现在6个观测周期（含5个完整周期和1个未完整尾段）；峰值6.759kN，连杆left_thigh_link，参考帧相位1.540s。",
+    "randomized: 扩大到1.0–1.8s窗口，髋镜像误差峰值8.786°；右髋20ms最大变化3.111°，相位1.540→1.560s。",
+    "randomized: 起跳窗口机身最高高度0.626m，参考0.714m；全程高度误差峰值21.74cm。八连杆最长同时失载0.105s，不涵盖base/hip接触，不能独立证明整体腾空。"
+  ],
+  "origin": "adopted",
+  "recommendations": [
+    "本版本不能仅凭较高motion_finished和采样熵认定为优化成功。优先把无大腿触地、起跳高度跟踪和髋突变同时作为后续对照的观察项。",
+    "若优化，先提出单变量对照方案并获用户批准；本轮未改配置、启动训练、导出或提交。"
+  ],
+  "report": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-02_14-06-00/evaluations/wheel-contact-hip-review-20261103-001/report.md",
+    "sha256": "a0f04773bc0ae4c6ee1f3715716e078ca97361e4063af09899780fd08ae767c9"
+  },
+  "repository_root": "/home/young/liufengrong/robot_lab",
+  "run_id": "2026-11-02_14-06-00",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-02_14-06-00/evaluations/wheel-to-leg-fixed-start-20261103-001/manifest.json",
+      "sha256": "ff35089f7f8c2723588a3b9c23d9d45571533e3e529a75fd8f91546df87e95b7"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-02_14-06-00/evaluations/wheel-contact-hip-review-20261103-001/derived/contact-hip-analysis.json",
+      "sha256": "52fae73b645be8fb00154418e96dec8db59f37e61ba48106f30fe57830aacaac"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-02_14-06-00/evaluations/wheel-contact-hip-review-20261103-001/derived/contact-hip-alignment.png",
+      "sha256": "46cc907ee306a5c45f4f586226002bd32cf465621c22af937708333c59b11fdb"
+    }
+  ],
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "version": 1
+}

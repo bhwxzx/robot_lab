@@ -1,0 +1,21 @@
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+index 9793e4e..1ae85b1 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+@@ -136,7 +136,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
+         self.rewards.motion_takeoff_anchor_ori.params["ramp_time_s"] = 0.1
+         self.rewards.action_rate_l2.weight = -0.2
+         self.rewards.action_smoothness.weight = -0.075
+-        self.rewards.undesired_contacts.weight = -0.1
++        self.rewards.undesired_contacts.weight = -1.0
+         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
+         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+         self.rewards.torque_limit.weight = -0.0
+@@ -171,6 +171,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
+         # terminations
+         # self.terminations.anchor_pos.params["threshold"] = 0.15
+         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
++        self.terminations.thigh_shank_ground_contact = None
+         # commands
+         self.commands.motion.initialize_reset_targets = True
+         self.commands.motion.motion_file = "source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz"
