@@ -29,6 +29,13 @@ class LWActionsCfg:
 class LWWheelRewardsCfg(RewardsCfg):
     """Wheel transition, takeoff and flight tracking rewards."""
 
+    # Encourage horizontal roll throughout the motion, leaving pitch and yaw free.
+    motion_anchor_roll_horizontal = RewTerm(
+        func=mdp.motion_anchor_roll_horizontal_error_exp,
+        weight=0.5,
+        params={"command_name": "motion", "std": 0.15},
+    )
+
     hip_pos_zero_l2 = RewTerm(
         func=mdp.joint_pos_zero_l2,
         weight=-2.0,
