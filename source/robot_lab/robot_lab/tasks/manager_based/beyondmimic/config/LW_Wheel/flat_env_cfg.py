@@ -169,6 +169,30 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
             ),
             "joint_scales": (0.1, 0.2, 0.2, 0.2),  # hip, thigh, shank, foot; radians
         }
+        # Keep bilateral wheel geometry within the reference's double-wheel phase.
+        self.rewards.leg_symmetry.weight = 0.5
+        self.rewards.leg_symmetry.params = {
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg(
+                "robot", body_names=["right_wheel_link", "left_wheel_link"], preserve_order=True,
+            ),
+            "std": 0.05,  # meters; symmetry alone permits equal inward motion
+            "start_time_s": 0.0,
+            "end_time_s": 1.25,
+            "ramp_time_s": 0.0,
+        }
+        self.rewards.feet_distance_penalize.weight = -20.0
+        self.rewards.feet_distance_penalize.params = {
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg(
+                "robot", body_names=["right_wheel_link", "left_wheel_link"], preserve_order=True,
+            ),
+            "min_feet_distance": 0.496,  # world-horizontal wheel-center distance, meters
+            "max_feet_distance": 0.536,
+            "start_time_s": 0.0,
+            "end_time_s": 1.25,
+            "ramp_time_s": 0.0,
+        }
         # Keep full fore-aft alignment penalty until 1.25 s, then switch it off.
         self.rewards.same_foot_x_position.weight = -10.0
         self.rewards.same_foot_x_position.params["asset_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]

@@ -358,6 +358,35 @@ class RewardsCfg:
             "joint_scales": (0.1, 0.2, 0.2, 0.2),  # hip, thigh, shank, foot; radians
         },
     )
+    leg_symmetry = RewTerm(
+        func=mdp.wheel_phase_leg_symmetry,
+        weight=0.0,
+        params={
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg(
+                "robot", body_names=["right_wheel_link", "left_wheel_link"], preserve_order=True,
+            ),
+            "std": 0.05,
+            "start_time_s": 0.0,
+            "end_time_s": 1.25,
+            "ramp_time_s": 0.0,
+        },
+    )
+    feet_distance_penalize = RewTerm(
+        func=mdp.wheel_phase_feet_distance_penalize,
+        weight=0.0,
+        params={
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg(
+                "robot", body_names=["right_wheel_link", "left_wheel_link"], preserve_order=True,
+            ),
+            "min_feet_distance": 0.496,
+            "max_feet_distance": 0.536,
+            "start_time_s": 0.0,
+            "end_time_s": 1.25,
+            "ramp_time_s": 0.0,
+        },
+    )
     same_foot_x_position = RewTerm(
         func=mdp.wheel_phase_same_feet_x_position,
         weight=0.0,

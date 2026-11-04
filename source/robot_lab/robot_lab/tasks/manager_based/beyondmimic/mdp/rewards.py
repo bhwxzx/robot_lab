@@ -12,6 +12,8 @@ from isaaclab.assets import Articulation
 
 from robot_lab.tasks.manager_based.beyondmimic.mdp.commands import MotionCommand
 from robot_lab.tasks.manager_based.locomotion.velocity.mdp.rewards import (
+    feet_distance_penalize as _locomotion_feet_distance_penalize,
+    leg_symmetry as _locomotion_leg_symmetry,
     same_feet_x_position as _locomotion_same_feet_x_position,
 )
 
@@ -405,6 +407,66 @@ def joint_symmetry(
     scales = actual.new_tensor(joint_scales)
     error = residual / scales
     return torch.nn.functional.huber_loss(error, torch.zeros_like(error), reduction="none", delta=1.0).mean(dim=-1)
+
+
+def _wheel_geometry_body_names(asset_cfg: SceneEntityCfg) -> list[str]:
+    """Require explicit bilateral wheel names for the locomotion geometry terms."""
+    names = asset_cfg.body_names
+    if not isinstance(names, (list, tuple)) or len(names) != 2 or set(names) != {
+        "right_wheel_link", "left_wheel_link",
+    }:
+        raise ValueError("Wheel geometry rewards require explicit right_wheel_link and left_wheel_link names.")
+    return list(names)
+
+
+def wheel_phase_leg_symmetry(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    asset_cfg: SceneEntityCfg,
+    std: float,
+    start_time_s: float,
+    end_time_s: float,
+    ramp_time_s: float,
+) -> torch.Tensor:
+    """Reward base-frame lateral wheel symmetry within a reference-time window.
+
+    Use a positive weight; ``std`` is in meters. Equal inward motion remains
+    symmetric, so pair this with a wheel-distance constraint.
+    """
+    if not math.isfinite(std) or std <= 0.0:
+        raise ValueError("Wheel symmetry reward requires a finite, positive standard deviation in meters.")
+    _wheel_geometry_body_names(asset_cfg)
+    blend = _wheel_phase_geometry_weight(env, command_name, asset_cfg, start_time_s, ramp_time_s, end_time_s)
+    return blend * _locomotion_leg_symmetry(env, std=std, asset_cfg=asset_cfg)
+
+
+def wheel_phase_feet_distance_penalize(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    asset_cfg: SceneEntityCfg,
+    min_feet_distance: float,
+    max_feet_distance: float,
+    start_time_s: float,
+    end_time_s: float,
+    ramp_time_s: float,
+) -> torch.Tensor:
+    """Penalize wheel-center world-XY distance outside a band in reference time.
+
+    Use a negative weight. Bounds are meters; retain locomotion's linear,
+    clipped violations and world-horizontal distance, including fore-aft offset.
+    Current contact does not gate the cost, so unloading cannot disable it.
+    """
+    if (
+        not math.isfinite(min_feet_distance) or not math.isfinite(max_feet_distance)
+        or min_feet_distance <= 0.0 or max_feet_distance <= min_feet_distance
+    ):
+        raise ValueError("Wheel distance bounds must be finite and satisfy 0 < min < max.")
+    names = _wheel_geometry_body_names(asset_cfg)
+    blend = _wheel_phase_geometry_weight(env, command_name, asset_cfg, start_time_s, ramp_time_s, end_time_s)
+    return blend * _locomotion_feet_distance_penalize(
+        env, asset_cfg=asset_cfg, feet_links_name=names,
+        min_feet_distance=min_feet_distance, max_feet_distance=max_feet_distance,
+    )
 
 
 def wheel_phase_same_feet_x_position(
