@@ -1,5 +1,10 @@
 from isaaclab.utils import configclass
-from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
+from isaaclab_rl.rsl_rl import (
+    RslRlOnPolicyRunnerCfg,
+    RslRlPpoActorCriticCfg,
+    RslRlPpoAlgorithmCfg,
+    RslRlSymmetryCfg,
+)
 
 
 @configclass
@@ -29,4 +34,11 @@ class LWBeyondMimicFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         lam=0.95,
         desired_kl=0.01,
         max_grad_norm=1.0,
+        symmetry_cfg=RslRlSymmetryCfg(
+            use_data_augmentation=True,
+            use_mirror_loss=True,
+            # Initial experiment weight; monitor task performance alongside Loss/symmetry.
+            mirror_loss_coeff=0.1,
+            data_augmentation_func="robot_lab.tasks.manager_based.beyondmimic.mdp.symmetry:compute_symmetric_states",
+        ),
     )
