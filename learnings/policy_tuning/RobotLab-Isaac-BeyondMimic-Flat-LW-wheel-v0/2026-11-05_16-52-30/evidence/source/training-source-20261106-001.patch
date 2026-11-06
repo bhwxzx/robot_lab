@@ -1,0 +1,13 @@
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+index c4976f9..412826d 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+@@ -200,7 +200,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
+         self.rewards.same_foot_x_position.params["end_time_s"] = 1.25
+         self.rewards.same_foot_x_position.params["ramp_time_s"] = 0.0
+         # terminations
+-        # self.terminations.anchor_pos.params["threshold"] = 0.15
++        self.terminations.anchor_pos.params["threshold"] = 0.15
+         self.terminations.ee_body_pos.params["body_names"] = ["right_foot_link", "left_foot_link"]
+         # commands
+         self.commands.motion.initialize_reset_targets = True

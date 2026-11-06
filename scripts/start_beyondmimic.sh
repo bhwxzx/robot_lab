@@ -2,6 +2,7 @@
 
 # 设置默认值
 TYPE="leg"
+TRAIN_NUM_ENVS=4096
 
 # 解析传入的命名参数
 while [[ "$#" -gt 0 ]]; do
@@ -17,15 +18,18 @@ while [[ "$#" -gt 0 ]]; do
             esac
             shift
             ;;
+        --num_envs)
+            if [[ "$#" -lt 2 || ! "${2:-}" =~ ^[1-9][0-9]*$ ]]; then
+                echo "--num_envs 需要提供正整数" >&2
+                exit 1
+            fi
+            TRAIN_NUM_ENVS="$2"
+            shift
+            ;;
         *) echo "未知参数: $1"; exit 1 ;;
     esac
     shift
 done
-
-TRAIN_NUM_ENVS=4096
-if [[ "$TYPE" == "wheel" ]]; then
-    TRAIN_NUM_ENVS=8192
-fi
 
 conda run --no-capture-output -n isaacsim-5.1 python scripts/reinforcement_learning/rsl_rl/train.py \
     --task="RobotLab-Isaac-BeyondMimic-Flat-LW-${TYPE}-v0" \
