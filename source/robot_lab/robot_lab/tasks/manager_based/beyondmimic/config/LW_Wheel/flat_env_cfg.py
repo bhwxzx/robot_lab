@@ -27,13 +27,26 @@ class LWActionsCfg:
 
 @configclass
 class LWWheelRewardsCfg(RewardsCfg):
-    """Wheel transition, takeoff and flight tracking rewards."""
+    """Wheel transition, takeoff, flight and landing tracking rewards."""
 
     # Encourage horizontal roll throughout the motion, leaving pitch and yaw free.
     motion_anchor_roll_horizontal = RewTerm(
         func=mdp.motion_anchor_roll_horizontal_error_exp,
         weight=0.5,
         params={"command_name": "motion", "std": 0.15},
+    )
+
+    # Track reference base-link height through push-off, flight and landing recovery.
+    motion_flight_height = RewTerm(
+        func=mdp.motion_phase_anchor_height_error_exp,
+        weight=2.0,
+        params={
+            "command_name": "motion",
+            "std": 0.10,
+            "start_time_s": 1.10,
+            "end_time_s": 1.90,
+            "ramp_time_s": 0.05,
+        },
     )
 
     hip_pos_zero_l2 = RewTerm(
