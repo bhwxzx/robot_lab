@@ -160,10 +160,26 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.0
-        self.rewards.joint_vel_wheel_l2.weight = -0.0 # -5e-3
-        self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
-        self.rewards.joint_acc_wheel_l2.weight = -0.0
-        self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
+        # Suppress wheel spin after reference landing; phase follows the motion, not contact.
+        self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2
+        self.rewards.joint_vel_wheel_l2.weight = -0.5
+        self.rewards.joint_vel_wheel_l2.params = {
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
+            "start_time_s": 1.65,
+            "ramp_time_s": 0.10,
+            "velocity_scale": 10.0,
+        }
+        # Ramp measured acceleration regularization more slowly to allow initial braking.
+        self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2
+        self.rewards.joint_acc_wheel_l2.weight = -0.1
+        self.rewards.joint_acc_wheel_l2.params = {
+            "command_name": "motion",
+            "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
+            "start_time_s": 1.65,
+            "ramp_time_s": 0.20,
+            "acceleration_scale": 50.0,
+        }
         # Wheel contact has no phase fade and switches off at reference time 1.25 s.
         # At 50 Hz, frame 62 (1.24 s) is the last nonzero frame; frame 63 is disabled.
         self.rewards.wheel_contact_continuous.weight = 0.5
