@@ -1,0 +1,40 @@
+{
+  "notes": [
+    "范围与证据资格：本机 2026-11-06_16-07-00/model_49999.pt 的两场 Native 结果均通过原始 validate_evaluation_bundle。server 2026-11-06_11-39-51 暂不可访问，未取得原机 checkpoint 与 canonical paths 的完整 bundle 校验；34个可访问归档引用哈希、重复输入绑定、运动摘要重算、4000条物理遥测时序及接触契约均通过有限检查。以下8192列只描述该归档内容，不参与已验证的策略排名或选择；未修改归档路径、未替换 checkpoint、未放宽现有验证器。",
+    "本机 checkpoint SHA-256 e4943048256507fbfb32e89001a2ea0e9ed3e252280113ea08c1cc4b105bdda6；server归档绑定72a75d2cbfe756e452f135ed01599f72601b8093559c0285b66438ecc2a271c1。本机CPU读取内部iter=49999，TensorBoard最大step=49999。用户确认 bash scripts/start_beyondmimic.sh --type wheel，无额外覆盖；本机训练HEAD为96c1c78dee5e183e9d0b87cc9689a73f47e353c2，评估HEAD为36b9f750860d76343b840ea64a030bba1d909cb1，两者source/scripts/.agents无差异。context记录当前评估源码，训练提交另见protection-before。",
+    "完整有效配置比较仅4处差异：scene.num_envs、terrain.num_envs、log_dir、USD绝对主机路径；agent无差异。机器人USD及MDP/奖励配置等17项源码资源与server记录相同，启动脚本因4096默认值不同；运动NPZ SHA一致，8项评估器捕获源码无差异。两场记录到的初始质量、局部COM、材料、PhysX刚度/阻尼均逐元素相同；未独立捕获软件PD增益、动作延迟每次抽样及全部软件依赖，不能声称运行条件完全一致。",
+    "执行预算：两个对应场景各1环境、seed42、Native mean action、1000控制步、无视频，从参考frame0重置；每场5个完整成功周期、0失败和1个截尾周期。控制20ms和物理5ms遥测分别1000/4000条，必要信号完整。A/B缩窄场景未运行，因为server没有对应基线。标称重置是确定性的，5次轨迹相同，不能当作5个独立seed。",
+    "统计定义：主表只用5个完整周期（850控制/3400物理样本）；comparison-metrics.json同时保留含第6截尾周期的1000/4000样本口径。起跳窗口参考1.10–1.70s，落地1.45–1.90s（50Hz实际取1.46–1.90s），推蹬1.10–1.36s；控制状态比参考时刻晚20ms。高度误差使用base-link原点世界Z，不是三维anchor范数；竖直速度是基座COM而非全身COM。双髋同向误差=(qL+qR−qL_ref−qR_ref)/2。",
+    "完整周期统一指标（server列仅归档有限核验）：\n\n| 指标 | 4096 标称 | 8192 标称归档 | 4096 随机化 | 8192 随机化归档 |\n|---|---:|---:|---:|---:|\n| 起跳最高点均值 m | 0.7122 | 0.7044 | 0.7149 | 0.7073 |\n| 基座向上COM速度峰 m/s | 1.873 | 1.837 | 2.187 | 2.155 |\n| 全周期高度RMSE cm | 1.241 | 1.768 | 1.637 | 1.479 |\n| 最大高度绝对误差 cm | 3.836 | 5.776 | 8.335 | 6.203 |\n| 落地高度RMSE cm | 1.833 | 2.871 | 2.686 | 2.121 |\n| 落地最低基座高度 m | 0.4807 | 0.4738 | 0.4527 | 0.4627 |\n| 起跳段横滚峰值 deg | 0.696 | 3.423 | 6.459 | 6.588 |\n| 落地段俯仰峰值 deg | 11.743 | 8.185 | 11.449 | 12.872 |\n| 推蹬双髋同向误差峰 deg | 0.183 | 0.901 | 2.462 | 2.306 |\n| 落地踝关节位置误差峰 deg | 22.116 | 17.606 | 27.532 | 27.220 |\n| 单足法向力范数峰 N | 1315.8 | 1215.0 | 1374.2 | 1508.1 |\n| 单轮法向力范数峰 N | 415.1 | 427.9 | 987.4 | 958.7 |\n",
+    "观察：4096标称高度跟踪与起跳段横滚较该8192归档更好，但落地俯仰、踝角误差、足接触峰值更大；随机化高度RMSE和最大高度误差更大，足接触峰值较低。不存在所有指标一致改善。随机化起跳峰高范围4096为0.69943–0.73658m，8192归档0.69500–0.71690m；均值贴近参考并不表示周期波动小。",
+    "负载：4096标称右足关节峰速10.71075rad/s，超过配置10rad/s；完整周期累计25ms（每周期5ms），含尾周期30ms。8192归档标称双足峰速7.324/5.388rad/s。4096随机化完整周期双足峰速10.0054/10.0031rad/s，累计5/10ms，仅略过配置值；含尾周期左足10.0163rad/s、10ms。8192归档随机化10.3622/10.2599rad/s、15/5ms。四场applied torque均未达到配置限值的99%；4096随机化最大驱动力矩105.73Nm（左胫，限120Nm），足部最大23.88Nm（限27Nm）。完整各关节速度、力矩、超速时长见joint-loads.csv，不能把驱动力矩与接触冲击混为一谈。",
+    "接触时序：10N、连续至少15ms仅为描述性接触判据。标称4096监测离地265ms、首次连续足接触物理1.590s；8192归档245ms、1.570s。完整随机化周期离地4096为245–285ms、8192归档245–270ms；足接触时刻分别1.565–1.640s、1.575–1.620s。四场监测大腿/小腿地面力均为0，但不能证明任意未监测部位无接触。PhysX法向力是5ms采样值且不含摩擦，不作为实物瞬时冲击峰值。",
+    "全周期关节跟踪另见joint-tracking.json。4096左右轮速度RMSE标称7.244/7.321rad/s、随机化9.212/9.266rad/s；8192归档对应3.535/3.386及5.150/4.948rad/s。轮速跟踪是4096需关注的另一差异。轮角误差为未wrap直接差，不能把轮角累计误差等同腿部姿态缺陷。",
+    "采样量混杂：两场均50000迭代、24步/env，4096累计4,915,200,000样本，8192为9,830,400,000；本机RTX4080 SUPER、server归档RTX5090 D，单训练seed42。不能把全部差异归因于环境数，也不能据这对场次推断4096更省样本或更优。",
+    "截尾敏感性：完整随机化落地RMSE4096/8192归档为2.6861/2.1211cm；含截尾为2.5949/2.0928cm。8192归档落地最低高度完整周期0.46266m、含截尾0.44786m；比较必须保持同一口径。",
+    "训练最后1000条均值（4096原始事件重新提取，8192为归档统计）：\n\n| 指标 | 4096 | 8192归档 |\n|---|---:|---:|\n| Episode_Termination/motion_finished | 0.9960246 | 0.9961627 |\n| Episode_Termination/anchor_pos | 0.0004305 | 0.0002906 |\n| Episode_Termination/thigh_shank_ground_contact | 0.0025192 | 0.0023662 |\n| Loss/value_function | 0.0179397 | 0.0162216 |\n| Loss/surrogate | 0.0046190 | 0.0052832 |\n| Loss/symmetry | 0.0001608 | 0.0001462 |\n| Metrics/motion/error_anchor_pos | 0.1346635 | 0.1250240 |\n| Metrics/motion/error_joint_pos | 3.8507638 | 2.2631822 |\n| Metrics/motion/error_joint_vel | 7.6992446 | 2.5350998 |\n| Metrics/motion/sampling_entropy | 0.8741135 | 0.8203664 |\n| Metrics/motion/sampling_top1_prob | 0.4832504 | 0.5091638 |\n",
+    "训练指标仅辅助解释：双方选定27项最后5000记录均为有限值，本机窗口从原始TensorBoard重新提取，server仅用归档窗口统计（原始事件文件不可访问）。训练采用自适应相位初始化，motion_finished不是frame0整动作独立成功率。源码error_anchor_pos是3D范数，与本报告Z-only误差及Z-only终止判据不同；error_joint_pos/vel是含轮关节的向量范数，不能直接归因到某条腿。sampling_top1_bin=0.5是bin索引/bin_count的归一化值，不是50%失败率。",
+    "![完整周期高度与横滚对照](derived/phase-comparison.png)",
+    "完成后复核：1593个旧证据、checkpoint、参数、既有导出与资源文件SHA保持不变；tracked和staged diff为空，HEAD不变；GPU无compute进程，训练/评估进程均未运行。只新增本次证据，未启停训练、改代码、导出或执行Git同步/提交/推送。",
+    "无获批准的收敛验收阈值，因此结论为indeterminate；单seed、单环境、少量周期及无视频不证明普遍鲁棒性。仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+  ],
+  "recommendations": [
+    "保留4096本轮结果；优先复核标称右踝短时超速、随机化高度波动和轮速跟踪差异。本批不改训练参数。",
+    "server恢复访问后，在原机运行原始bundle及batch验证器并验证checkpoint SHA；当前跨机对照不能升级为已验证排名。",
+    "若后续要隔离环境数效应，另行批准相同训练样本预算与多seed实验，并在同一评估主机复测两模型；不自动启动扩展实验。"
+  ],
+  "supporting": [
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evaluations/wheel-to-leg-4096-vs-8192-20261107-001/derived/analysis-method.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evaluations/wheel-to-leg-4096-vs-8192-20261107-001/derived/comparison-metrics.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evaluations/wheel-to-leg-4096-vs-8192-20261107-001/derived/execution-receipt.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evaluations/wheel-to-leg-4096-vs-8192-20261107-001/derived/joint-loads.csv",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evaluations/wheel-to-leg-4096-vs-8192-20261107-001/derived/joint-tracking.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evaluations/wheel-to-leg-4096-vs-8192-20261107-001/derived/phase-comparison.png",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evidence/training/effective-config-diff-20261107-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evidence/training/evaluation-request-20261107-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evidence/training/protection-after-20261107-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evidence/training/protection-before-20261107-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evidence/training/server-archive-audit-20261107-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_16-07-00/evidence/training/tensorboard-windows-20261107-001.json"
+  ]
+}
