@@ -1,0 +1,1169 @@
+{
+  "version": 1,
+  "source": "from pathlib import Path\nimport sys,json,gzip,hashlib,numpy as np\nroot=Path.cwd();sys.path.insert(0,str(root/'scripts/reinforcement_learning/rsl_rl'))\nfrom diagnose_motion_policy_symmetry import rotation_matrix\nfrom policy_evaluation_evidence import validate_evaluation_bundle\nbase=root/'learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0'\nruns={'old':('2026-11-05_16-40-14','wheel-to-leg-fixed-start-20261106-001'),'new':('2026-11-06_11-39-51','wheel-to-leg-fixed-start-20261107-001')}\nout=base/runs['new'][0]/'evaluations'/runs['new'][1]/'derived'\nref=lambda p:{'path':str(p),'sha256':hashlib.sha256(Path(p).read_bytes()).hexdigest()}\ninputs=[];results={};runtimes={}\ndef envelope(v):\n return {'min':float(min(v)),'max':float(max(v)),'mean':float(np.mean(v))}\nfor version,(run,batch) in runs.items():\n results[version]={}\n for case in ('nominal','randomized'):\n  directory=base/run/'evaluations'/batch/'raw'/f'fixed-start-{case}-a01'\n  validate_evaluation_bundle(directory/'result.json')\n  inputs.extend([ref(directory/'result.json'),ref(directory/'telemetry.json.gz')])\n  with gzip.open(directory/'telemetry.json.gz','rt') as f:t=json.load(f)\n  md=t['motion_diagnostics'];runtimes[version,case]=md['initial_runtime'];names=t['joint_names'];fps=md['fps']\n  motion_path=Path(md['motion_file']['path']);assert ref(motion_path)['sha256']==md['motion_file']['sha256']\n  motion=np.load(motion_path);bi=md['initial_runtime']['body_names'].index('base_link')\n  allss=t['samples'];allps=t['physics_samples'];episodes=[];complete=[]\n  for ep in sorted(set(s['episode_id'] for s in allss)):\n   ss=[s for s in allss if s['episode_id']==ep];ps=[s for s in allps if s['episode_id']==ep]\n   terminal=ss[-1]['termination_terms'];success=len(ss)==170 and [s['frame_index'] for s in ss]==list(range(170)) and terminal['motion_finished'] and not any(v for k,v in terminal.items() if k!='motion_finished')\n   if success:complete.extend(ss)\n   f=np.array([s['frame_index'] for s in ss]);ts=f/fps;z=np.array([s['root_position_w'][2] for s in ss]);zr=motion['body_pos_w'][f,bi,2]\n   err=z-zr;vz=np.array([(rotation_matrix(s['root_quaternion_w'])@np.array(s['root_linear_velocity_b']))[2] for s in ss])\n   take=(ts>=1.1)&(ts<=1.5);jump=(ts>=1.1)&(ts<=1.7);land=(ts>=1.45)&(ts<=1.9)\n   def at(i):\n    return {'reference_time_s':float(ts[i]),'physical_time_s':float(ts[i]+.02),'actual_z_m':float(z[i]),'reference_z_m':float(zr[i]),'error_m':float(err[i])}\n   im=int(np.abs(err).argmax());il=np.where(land)[0][np.argmin(z[land])]\n   iv=np.where(take)[0][np.argmax(vz[take])]\n   row={'episode':ep,'successful_complete_cycle':bool(success),'samples':len(ss),'max_abs_height_error':at(im),'landing_min':at(il),'jump_peak_z_m':float(z[jump].max()),'vertical_speed_peak_m_s':float(vz[iv]),'vertical_speed_peak_ref_time_s':float(ts[iv]),'vertical_speed_tracking_rmse_m_s':float(np.sqrt(np.mean((vz[take]-motion['body_lin_vel_w'][f[take],bi,2])**2)))}\n   pt=np.array([p['frame_index']/fps+(p['substep']+1)*.005 for p in ps])\n   forces=np.array([p['contact_forces_w'] for p in ps]).reshape(-1,4,3);fz=forces[:,:,2]\n   ground=np.array([p['ground_contact_forces_w'] for p in ps]).reshape(-1,4,3)[:,:,2]\n   contacts=np.concatenate((fz,ground),axis=1);off=(contacts<10).all(axis=1)\n   starts=[i for i in range(len(ps)-2) if 1.15<=pt[i]<=1.6 and off[i:i+3].all()]\n   firstair=starts[0] if starts else None;contact=None\n   if firstair is not None:\n    for i in range(firstair+3,len(ps)-2):\n     if (fz[i:i+3,:2]>=10).any(axis=1).all():contact=i;break\n   row['monitored_air_start_s']=float(pt[firstair]) if firstair is not None else None\n   row['first_sustained_foot_contact_s']=float(pt[contact]) if contact is not None else None\n   row['monitored_air_interval_ms']=float(round((pt[contact]-pt[firstair])*1000,5)) if contact is not None else None\n   row['joint_events']=[]\n   for j,n in enumerate(names):\n    vv=np.array([p['joint_velocity'][j] for p in ps]);tau=np.array([p['applied_torque'][j] for p in ps]);limit=33 if 'wheel' in n else 10 if 'foot' in n else 20;eff=t['joint_effort_limits'][j]\n    over=np.where(np.abs(vv)>limit+1e-5)[0];sat=np.where(np.abs(tau)>=eff*(1-1e-6))[0]\n    if len(over) or len(sat):row['joint_events'].append({'joint':n,'overspeed_samples':[{'physical_time_s':float(pt[k]),'velocity_rad_s':float(vv[k])} for k in over],'saturation_samples':[{'physical_time_s':float(pt[k]),'torque_nm':float(tau[k])} for k in sat]})\n   episodes.append(row)\n  result={'episodes':episodes,'completed':sum(e['successful_complete_cycle'] for e in episodes),'failed':sum(bool(s['done']) and any(v for k,v in s['termination_terms'].items() if k!='motion_finished') for s in allss),'truncated':sum(not any(s['done'] for s in allss if s['episode_id']==e['episode']) for e in episodes)}\n  for scope,ee in [('all_cycles',episodes),('completed_cycles',[e for e in episodes if e['successful_complete_cycle']])]:\n   result[scope]={'jump_peak_z_m':envelope([e['jump_peak_z_m'] for e in ee]),'vertical_speed_peak_m_s':envelope([e['vertical_speed_peak_m_s'] for e in ee]),'max_abs_height_error_m':max(abs(e['max_abs_height_error']['error_m']) for e in ee),'landing_min_z_m':envelope([e['landing_min']['actual_z_m'] for e in ee]),'foot_contact_time_s':envelope([e['first_sustained_foot_contact_s'] for e in ee if e['first_sustained_foot_contact_s'] is not None]),'monitored_air_interval_ms':envelope([e['monitored_air_interval_ms'] for e in ee if e['monitored_air_interval_ms'] is not None])}\n  results[version][case]=result\nruntime_comparison={}\nfor case in ('nominal','randomized'):\n runtime_comparison[case]={}\n for key in ('masses_kg','coms','material_properties','joint_stiffness','joint_damping'):\n  a=np.asarray(runtimes['old',case][key]);b=np.asarray(runtimes['new',case][key])\n  runtime_comparison[case][key]={'exactly_equal':bool(np.array_equal(a,b)),'max_abs_difference':float(np.max(np.abs(a-b)))}\nreference={'motion':ref(motion_path),'jump_peak_z_m':float(motion['body_pos_w'][55:86,bi,2].max()),'upward_vertical_speed_peak_m_s':float(motion['body_lin_vel_w'][:,bi,2].max())}\nresult={'version':1,'source':CODE_SOURCE,'inputs':inputs,'reference':reference,'statistics':results,'runtime_comparison':runtime_comparison,'conventions':{'height':'base_link world-Z link-origin, actual minus commanded reference frame; control sample occurs 20ms after commanded frame time','velocity':'world-Z base COM velocity reconstructed by quaternion rotation, compared with reference COM velocity','landing':'15ms sustained any-foot Fz >= 10N after first 15ms all-eight monitored Fz <10N; not all-body flight proof','episodes':'complete cycles checked as all frames 0..169 with motion_finished only; truncated sixth cycle reported separately','runtime':'PhysX joint stiffness/damping does not capture software actuator gain/delay draws'}}\nwith (out/'height-landing-analysis.json').open('x') as f:json.dump(result,f,indent=2,ensure_ascii=False,allow_nan=False);f.write('\\n')\nprint(json.dumps({'reference':reference,'comparison':{v:{c:d['all_cycles'] for c,d in cases.items()} for v,cases in results.items()},'runtime':runtime_comparison},ensure_ascii=False))\n",
+  "inputs": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-05_16-40-14/evaluations/wheel-to-leg-fixed-start-20261106-001/raw/fixed-start-nominal-a01/result.json",
+      "sha256": "04e67de489660c00bbe2b0506814535bb37a6cfe22cb66824a3cc8abf27cc402"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-05_16-40-14/evaluations/wheel-to-leg-fixed-start-20261106-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "e074c44610ce77ac03d93ae16f9979b0cdabb5f29812d20ce80422728225a9bc"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-05_16-40-14/evaluations/wheel-to-leg-fixed-start-20261106-001/raw/fixed-start-randomized-a01/result.json",
+      "sha256": "98047788aedb983cd03b4cffe53aed60d1acacf9d4a474b770c3fbfe7cb7e1f1"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-05_16-40-14/evaluations/wheel-to-leg-fixed-start-20261106-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "06713d285cc5c65883abe5ed88967b2a05a7d904809ea05fd634cecf992a4d53"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/evaluations/wheel-to-leg-fixed-start-20261107-001/raw/fixed-start-nominal-a01/result.json",
+      "sha256": "8d5cff667dc90a24e8a98c04b82ff0e8b0e0de06983a9e1124743cb5d0c22a35"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/evaluations/wheel-to-leg-fixed-start-20261107-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "cbb26f6bc0922fb9ec6bd13bacd0faf03d6ad58475e0b781a179603d5bef457e"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/evaluations/wheel-to-leg-fixed-start-20261107-001/raw/fixed-start-randomized-a01/result.json",
+      "sha256": "ad84d06d7baaab4ec5116e2edd18b225491a6a7208e8399886917f37ccf35506"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/evaluations/wheel-to-leg-fixed-start-20261107-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "36193a6cd06a122b2c7c6fbcd42f432633b6418c3bbd919c92085e14f73d5b3f"
+    }
+  ],
+  "reference": {
+    "motion": {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz",
+      "sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+    },
+    "jump_peak_z_m": 0.713509202003479,
+    "upward_vertical_speed_peak_m_s": 1.966831088066101
+  },
+  "statistics": {
+    "old": {
+      "nominal": {
+        "episodes": [
+          {
+            "episode": 0,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.5194844603538513,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.10902601480484009
+            },
+            "landing_min": {
+              "reference_time_s": 1.68,
+              "physical_time_s": 1.7,
+              "actual_z_m": 0.4439080059528351,
+              "reference_z_m": 0.48442643880844116,
+              "error_m": -0.04051843285560608
+            },
+            "jump_peak_z_m": 0.6735244393348694,
+            "vertical_speed_peak_m_s": 1.7096039533000342,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.3394650938478036,
+            "monitored_air_start_s": 1.33,
+            "first_sustained_foot_contact_s": 1.575,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [],
+                "saturation_samples": [
+                  {
+                    "physical_time_s": 1.595,
+                    "torque_nm": -27.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "episode": 1,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.5194844603538513,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.10902601480484009
+            },
+            "landing_min": {
+              "reference_time_s": 1.68,
+              "physical_time_s": 1.7,
+              "actual_z_m": 0.4439080059528351,
+              "reference_z_m": 0.48442643880844116,
+              "error_m": -0.04051843285560608
+            },
+            "jump_peak_z_m": 0.6735244393348694,
+            "vertical_speed_peak_m_s": 1.7096039533000342,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.3394650938478036,
+            "monitored_air_start_s": 1.33,
+            "first_sustained_foot_contact_s": 1.575,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [],
+                "saturation_samples": [
+                  {
+                    "physical_time_s": 1.595,
+                    "torque_nm": -27.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "episode": 2,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.5194844603538513,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.10902601480484009
+            },
+            "landing_min": {
+              "reference_time_s": 1.68,
+              "physical_time_s": 1.7,
+              "actual_z_m": 0.4439080059528351,
+              "reference_z_m": 0.48442643880844116,
+              "error_m": -0.04051843285560608
+            },
+            "jump_peak_z_m": 0.6735244393348694,
+            "vertical_speed_peak_m_s": 1.7096039533000342,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.3394650938478036,
+            "monitored_air_start_s": 1.33,
+            "first_sustained_foot_contact_s": 1.575,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [],
+                "saturation_samples": [
+                  {
+                    "physical_time_s": 1.595,
+                    "torque_nm": -27.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "episode": 3,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.5194844603538513,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.10902601480484009
+            },
+            "landing_min": {
+              "reference_time_s": 1.68,
+              "physical_time_s": 1.7,
+              "actual_z_m": 0.4439080059528351,
+              "reference_z_m": 0.48442643880844116,
+              "error_m": -0.04051843285560608
+            },
+            "jump_peak_z_m": 0.6735244393348694,
+            "vertical_speed_peak_m_s": 1.7096039533000342,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.3394650938478036,
+            "monitored_air_start_s": 1.33,
+            "first_sustained_foot_contact_s": 1.575,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [],
+                "saturation_samples": [
+                  {
+                    "physical_time_s": 1.595,
+                    "torque_nm": -27.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "episode": 4,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.5194844603538513,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.10902601480484009
+            },
+            "landing_min": {
+              "reference_time_s": 1.68,
+              "physical_time_s": 1.7,
+              "actual_z_m": 0.4439080059528351,
+              "reference_z_m": 0.48442643880844116,
+              "error_m": -0.04051843285560608
+            },
+            "jump_peak_z_m": 0.6735244393348694,
+            "vertical_speed_peak_m_s": 1.7096039533000342,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.3394650938478036,
+            "monitored_air_start_s": 1.33,
+            "first_sustained_foot_contact_s": 1.575,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [],
+                "saturation_samples": [
+                  {
+                    "physical_time_s": 1.595,
+                    "torque_nm": -27.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "episode": 5,
+            "successful_complete_cycle": false,
+            "samples": 150,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.5194844603538513,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.10902601480484009
+            },
+            "landing_min": {
+              "reference_time_s": 1.68,
+              "physical_time_s": 1.7,
+              "actual_z_m": 0.4439080059528351,
+              "reference_z_m": 0.48442643880844116,
+              "error_m": -0.04051843285560608
+            },
+            "jump_peak_z_m": 0.6735244393348694,
+            "vertical_speed_peak_m_s": 1.7096039533000342,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.3394650938478036,
+            "monitored_air_start_s": 1.33,
+            "first_sustained_foot_contact_s": 1.575,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [],
+                "saturation_samples": [
+                  {
+                    "physical_time_s": 1.595,
+                    "torque_nm": -27.0
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "completed": 5,
+        "failed": 0,
+        "truncated": 1,
+        "all_cycles": {
+          "jump_peak_z_m": {
+            "min": 0.6735244393348694,
+            "max": 0.6735244393348694,
+            "mean": 0.6735244393348694
+          },
+          "vertical_speed_peak_m_s": {
+            "min": 1.7096039533000342,
+            "max": 1.7096039533000342,
+            "mean": 1.7096039533000342
+          },
+          "max_abs_height_error_m": 0.10902601480484009,
+          "landing_min_z_m": {
+            "min": 0.4439080059528351,
+            "max": 0.4439080059528351,
+            "mean": 0.4439080059528351
+          },
+          "foot_contact_time_s": {
+            "min": 1.575,
+            "max": 1.575,
+            "mean": 1.575
+          },
+          "monitored_air_interval_ms": {
+            "min": 245.0,
+            "max": 245.0,
+            "mean": 245.0
+          }
+        },
+        "completed_cycles": {
+          "jump_peak_z_m": {
+            "min": 0.6735244393348694,
+            "max": 0.6735244393348694,
+            "mean": 0.6735244393348694
+          },
+          "vertical_speed_peak_m_s": {
+            "min": 1.7096039533000342,
+            "max": 1.7096039533000342,
+            "mean": 1.7096039533000345
+          },
+          "max_abs_height_error_m": 0.10902601480484009,
+          "landing_min_z_m": {
+            "min": 0.4439080059528351,
+            "max": 0.4439080059528351,
+            "mean": 0.4439080059528351
+          },
+          "foot_contact_time_s": {
+            "min": 1.575,
+            "max": 1.575,
+            "mean": 1.575
+          },
+          "monitored_air_interval_ms": {
+            "min": 245.0,
+            "max": 245.0,
+            "mean": 245.0
+          }
+        }
+      },
+      "randomized": {
+        "episodes": [
+          {
+            "episode": 0,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.32,
+              "physical_time_s": 1.34,
+              "actual_z_m": 0.5266218185424805,
+              "reference_z_m": 0.649391770362854,
+              "error_m": -0.12276995182037354
+            },
+            "landing_min": {
+              "reference_time_s": 1.74,
+              "physical_time_s": 1.76,
+              "actual_z_m": 0.4886426627635956,
+              "reference_z_m": 0.4732118248939514,
+              "error_m": 0.015430837869644165
+            },
+            "jump_peak_z_m": 0.6756323575973511,
+            "vertical_speed_peak_m_s": 1.8297180267599276,
+            "vertical_speed_peak_ref_time_s": 1.36,
+            "vertical_speed_tracking_rmse_m_s": 0.6895398949391383,
+            "monitored_air_start_s": 1.3949999999999998,
+            "first_sustained_foot_contact_s": 1.635,
+            "monitored_air_interval_ms": 240.0,
+            "joint_events": []
+          },
+          {
+            "episode": 1,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.5820698738098145,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.04644060134887695
+            },
+            "landing_min": {
+              "reference_time_s": 1.74,
+              "physical_time_s": 1.76,
+              "actual_z_m": 0.4567350149154663,
+              "reference_z_m": 0.4732118248939514,
+              "error_m": -0.016476809978485107
+            },
+            "jump_peak_z_m": 0.6878201365470886,
+            "vertical_speed_peak_m_s": 1.5338800609409755,
+            "vertical_speed_peak_ref_time_s": 1.32,
+            "vertical_speed_tracking_rmse_m_s": 0.41958433089403036,
+            "monitored_air_start_s": 1.36,
+            "first_sustained_foot_contact_s": 1.59,
+            "monitored_air_interval_ms": 230.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.59,
+                    "velocity_rad_s": 10.473389625549316
+                  }
+                ],
+                "saturation_samples": []
+              }
+            ]
+          },
+          {
+            "episode": 2,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.54,
+              "physical_time_s": 1.56,
+              "actual_z_m": 0.5468824505805969,
+              "reference_z_m": 0.6529585719108582,
+              "error_m": -0.10607612133026123
+            },
+            "landing_min": {
+              "reference_time_s": 1.7,
+              "physical_time_s": 1.72,
+              "actual_z_m": 0.4395090341567993,
+              "reference_z_m": 0.47688406705856323,
+              "error_m": -0.037375032901763916
+            },
+            "jump_peak_z_m": 0.6523502469062805,
+            "vertical_speed_peak_m_s": 1.6548321011789309,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.2545109015820629,
+            "monitored_air_start_s": 1.35,
+            "first_sustained_foot_contact_s": 1.565,
+            "monitored_air_interval_ms": 215.0,
+            "joint_events": [
+              {
+                "joint": "right_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.565,
+                    "velocity_rad_s": -10.8898286819458
+                  }
+                ],
+                "saturation_samples": []
+              }
+            ]
+          },
+          {
+            "episode": 3,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.34,
+              "physical_time_s": 1.36,
+              "actual_z_m": 0.5920438766479492,
+              "reference_z_m": 0.6731683015823364,
+              "error_m": -0.08112442493438721
+            },
+            "landing_min": {
+              "reference_time_s": 1.74,
+              "physical_time_s": 1.76,
+              "actual_z_m": 0.45806020498275757,
+              "reference_z_m": 0.4732118248939514,
+              "error_m": -0.015151619911193848
+            },
+            "jump_peak_z_m": 0.667553186416626,
+            "vertical_speed_peak_m_s": 1.412053942121139,
+            "vertical_speed_peak_ref_time_s": 1.36,
+            "vertical_speed_tracking_rmse_m_s": 0.7086079227522509,
+            "monitored_air_start_s": 1.39,
+            "first_sustained_foot_contact_s": 1.605,
+            "monitored_air_interval_ms": 215.0,
+            "joint_events": [
+              {
+                "joint": "right_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.605,
+                    "velocity_rad_s": -10.91083812713623
+                  }
+                ],
+                "saturation_samples": []
+              }
+            ]
+          },
+          {
+            "episode": 4,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.5126007795333862,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.11590969562530518
+            },
+            "landing_min": {
+              "reference_time_s": 1.72,
+              "physical_time_s": 1.74,
+              "actual_z_m": 0.4238945245742798,
+              "reference_z_m": 0.4735262095928192,
+              "error_m": -0.04963168501853943
+            },
+            "jump_peak_z_m": 0.6563041806221008,
+            "vertical_speed_peak_m_s": 1.7012656305163663,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.26548309375826695,
+            "monitored_air_start_s": 1.335,
+            "first_sustained_foot_contact_s": 1.57,
+            "monitored_air_interval_ms": 235.0,
+            "joint_events": [
+              {
+                "joint": "right_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.57,
+                    "velocity_rad_s": -10.519184112548828
+                  }
+                ],
+                "saturation_samples": []
+              }
+            ]
+          },
+          {
+            "episode": 5,
+            "successful_complete_cycle": false,
+            "samples": 150,
+            "max_abs_height_error": {
+              "reference_time_s": 1.34,
+              "physical_time_s": 1.36,
+              "actual_z_m": 0.5542561411857605,
+              "reference_z_m": 0.6731683015823364,
+              "error_m": -0.11891216039657593
+            },
+            "landing_min": {
+              "reference_time_s": 1.76,
+              "physical_time_s": 1.78,
+              "actual_z_m": 0.4422501027584076,
+              "reference_z_m": 0.4754323959350586,
+              "error_m": -0.033182293176651
+            },
+            "jump_peak_z_m": 0.662505030632019,
+            "vertical_speed_peak_m_s": 1.4911282573464668,
+            "vertical_speed_peak_ref_time_s": 1.38,
+            "vertical_speed_tracking_rmse_m_s": 0.8247401237461071,
+            "monitored_air_start_s": 1.41,
+            "first_sustained_foot_contact_s": 1.615,
+            "monitored_air_interval_ms": 205.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.615,
+                    "velocity_rad_s": -10.03589916229248
+                  }
+                ],
+                "saturation_samples": []
+              }
+            ]
+          }
+        ],
+        "completed": 5,
+        "failed": 0,
+        "truncated": 1,
+        "all_cycles": {
+          "jump_peak_z_m": {
+            "min": 0.6523502469062805,
+            "max": 0.6878201365470886,
+            "mean": 0.6670275231202444
+          },
+          "vertical_speed_peak_m_s": {
+            "min": 1.412053942121139,
+            "max": 1.8297180267599276,
+            "mean": 1.6038130031439677
+          },
+          "max_abs_height_error_m": 0.12276995182037354,
+          "landing_min_z_m": {
+            "min": 0.4238945245742798,
+            "max": 0.4886426627635956,
+            "mean": 0.451515257358551
+          },
+          "foot_contact_time_s": {
+            "min": 1.565,
+            "max": 1.635,
+            "mean": 1.5966666666666667
+          },
+          "monitored_air_interval_ms": {
+            "min": 205.0,
+            "max": 240.0,
+            "mean": 223.33333333333334
+          }
+        },
+        "completed_cycles": {
+          "jump_peak_z_m": {
+            "min": 0.6523502469062805,
+            "max": 0.6878201365470886,
+            "mean": 0.6679320216178894
+          },
+          "vertical_speed_peak_m_s": {
+            "min": 1.412053942121139,
+            "max": 1.8297180267599276,
+            "mean": 1.626349952303468
+          },
+          "max_abs_height_error_m": 0.12276995182037354,
+          "landing_min_z_m": {
+            "min": 0.4238945245742798,
+            "max": 0.4886426627635956,
+            "mean": 0.4533682882785797
+          },
+          "foot_contact_time_s": {
+            "min": 1.565,
+            "max": 1.635,
+            "mean": 1.593
+          },
+          "monitored_air_interval_ms": {
+            "min": 215.0,
+            "max": 240.0,
+            "mean": 227.0
+          }
+        }
+      }
+    },
+    "new": {
+      "nominal": {
+        "episodes": [
+          {
+            "episode": 0,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.54,
+              "physical_time_s": 1.56,
+              "actual_z_m": 0.5951982140541077,
+              "reference_z_m": 0.6529585719108582,
+              "error_m": -0.05776035785675049
+            },
+            "landing_min": {
+              "reference_time_s": 1.72,
+              "physical_time_s": 1.74,
+              "actual_z_m": 0.47380805015563965,
+              "reference_z_m": 0.4735262095928192,
+              "error_m": 0.00028184056282043457
+            },
+            "jump_peak_z_m": 0.7044456601142883,
+            "vertical_speed_peak_m_s": 1.8365802058796987,
+            "vertical_speed_peak_ref_time_s": 1.28,
+            "vertical_speed_tracking_rmse_m_s": 0.2392676310900067,
+            "monitored_air_start_s": 1.325,
+            "first_sustained_foot_contact_s": 1.57,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": []
+          },
+          {
+            "episode": 1,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.54,
+              "physical_time_s": 1.56,
+              "actual_z_m": 0.5951982140541077,
+              "reference_z_m": 0.6529585719108582,
+              "error_m": -0.05776035785675049
+            },
+            "landing_min": {
+              "reference_time_s": 1.72,
+              "physical_time_s": 1.74,
+              "actual_z_m": 0.47380805015563965,
+              "reference_z_m": 0.4735262095928192,
+              "error_m": 0.00028184056282043457
+            },
+            "jump_peak_z_m": 0.7044456601142883,
+            "vertical_speed_peak_m_s": 1.8365802058796987,
+            "vertical_speed_peak_ref_time_s": 1.28,
+            "vertical_speed_tracking_rmse_m_s": 0.2392676310900067,
+            "monitored_air_start_s": 1.325,
+            "first_sustained_foot_contact_s": 1.57,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": []
+          },
+          {
+            "episode": 2,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.54,
+              "physical_time_s": 1.56,
+              "actual_z_m": 0.5951982140541077,
+              "reference_z_m": 0.6529585719108582,
+              "error_m": -0.05776035785675049
+            },
+            "landing_min": {
+              "reference_time_s": 1.72,
+              "physical_time_s": 1.74,
+              "actual_z_m": 0.47380805015563965,
+              "reference_z_m": 0.4735262095928192,
+              "error_m": 0.00028184056282043457
+            },
+            "jump_peak_z_m": 0.7044456601142883,
+            "vertical_speed_peak_m_s": 1.8365802058796987,
+            "vertical_speed_peak_ref_time_s": 1.28,
+            "vertical_speed_tracking_rmse_m_s": 0.2392676310900067,
+            "monitored_air_start_s": 1.325,
+            "first_sustained_foot_contact_s": 1.57,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": []
+          },
+          {
+            "episode": 3,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.54,
+              "physical_time_s": 1.56,
+              "actual_z_m": 0.5951982140541077,
+              "reference_z_m": 0.6529585719108582,
+              "error_m": -0.05776035785675049
+            },
+            "landing_min": {
+              "reference_time_s": 1.72,
+              "physical_time_s": 1.74,
+              "actual_z_m": 0.47380805015563965,
+              "reference_z_m": 0.4735262095928192,
+              "error_m": 0.00028184056282043457
+            },
+            "jump_peak_z_m": 0.7044456601142883,
+            "vertical_speed_peak_m_s": 1.8365802058796987,
+            "vertical_speed_peak_ref_time_s": 1.28,
+            "vertical_speed_tracking_rmse_m_s": 0.2392676310900067,
+            "monitored_air_start_s": 1.325,
+            "first_sustained_foot_contact_s": 1.57,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": []
+          },
+          {
+            "episode": 4,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.54,
+              "physical_time_s": 1.56,
+              "actual_z_m": 0.5951982140541077,
+              "reference_z_m": 0.6529585719108582,
+              "error_m": -0.05776035785675049
+            },
+            "landing_min": {
+              "reference_time_s": 1.72,
+              "physical_time_s": 1.74,
+              "actual_z_m": 0.47380805015563965,
+              "reference_z_m": 0.4735262095928192,
+              "error_m": 0.00028184056282043457
+            },
+            "jump_peak_z_m": 0.7044456601142883,
+            "vertical_speed_peak_m_s": 1.8365802058796987,
+            "vertical_speed_peak_ref_time_s": 1.28,
+            "vertical_speed_tracking_rmse_m_s": 0.2392676310900067,
+            "monitored_air_start_s": 1.325,
+            "first_sustained_foot_contact_s": 1.57,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": []
+          },
+          {
+            "episode": 5,
+            "successful_complete_cycle": false,
+            "samples": 150,
+            "max_abs_height_error": {
+              "reference_time_s": 1.54,
+              "physical_time_s": 1.56,
+              "actual_z_m": 0.5951982140541077,
+              "reference_z_m": 0.6529585719108582,
+              "error_m": -0.05776035785675049
+            },
+            "landing_min": {
+              "reference_time_s": 1.72,
+              "physical_time_s": 1.74,
+              "actual_z_m": 0.47380805015563965,
+              "reference_z_m": 0.4735262095928192,
+              "error_m": 0.00028184056282043457
+            },
+            "jump_peak_z_m": 0.7044456601142883,
+            "vertical_speed_peak_m_s": 1.8365802058796987,
+            "vertical_speed_peak_ref_time_s": 1.28,
+            "vertical_speed_tracking_rmse_m_s": 0.2392676310900067,
+            "monitored_air_start_s": 1.325,
+            "first_sustained_foot_contact_s": 1.57,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": []
+          }
+        ],
+        "completed": 5,
+        "failed": 0,
+        "truncated": 1,
+        "all_cycles": {
+          "jump_peak_z_m": {
+            "min": 0.7044456601142883,
+            "max": 0.7044456601142883,
+            "mean": 0.7044456601142883
+          },
+          "vertical_speed_peak_m_s": {
+            "min": 1.8365802058796987,
+            "max": 1.8365802058796987,
+            "mean": 1.8365802058796987
+          },
+          "max_abs_height_error_m": 0.05776035785675049,
+          "landing_min_z_m": {
+            "min": 0.47380805015563965,
+            "max": 0.47380805015563965,
+            "mean": 0.47380805015563965
+          },
+          "foot_contact_time_s": {
+            "min": 1.57,
+            "max": 1.57,
+            "mean": 1.57
+          },
+          "monitored_air_interval_ms": {
+            "min": 245.0,
+            "max": 245.0,
+            "mean": 245.0
+          }
+        },
+        "completed_cycles": {
+          "jump_peak_z_m": {
+            "min": 0.7044456601142883,
+            "max": 0.7044456601142883,
+            "mean": 0.7044456601142883
+          },
+          "vertical_speed_peak_m_s": {
+            "min": 1.8365802058796987,
+            "max": 1.8365802058796987,
+            "mean": 1.8365802058796987
+          },
+          "max_abs_height_error_m": 0.05776035785675049,
+          "landing_min_z_m": {
+            "min": 0.47380805015563965,
+            "max": 0.47380805015563965,
+            "mean": 0.47380805015563965
+          },
+          "foot_contact_time_s": {
+            "min": 1.57,
+            "max": 1.57,
+            "mean": 1.57
+          },
+          "monitored_air_interval_ms": {
+            "min": 245.0,
+            "max": 245.0,
+            "mean": 245.0
+          }
+        }
+      },
+      "randomized": {
+        "episodes": [
+          {
+            "episode": 0,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 0.34,
+              "physical_time_s": 0.36000000000000004,
+              "actual_z_m": 0.6009162664413452,
+              "reference_z_m": 0.6625524163246155,
+              "error_m": -0.061636149883270264
+            },
+            "landing_min": {
+              "reference_time_s": 1.76,
+              "physical_time_s": 1.78,
+              "actual_z_m": 0.4745795428752899,
+              "reference_z_m": 0.4754323959350586,
+              "error_m": -0.0008528530597686768
+            },
+            "jump_peak_z_m": 0.7161264419555664,
+            "vertical_speed_peak_m_s": 2.1551311825795083,
+            "vertical_speed_peak_ref_time_s": 1.32,
+            "vertical_speed_tracking_rmse_m_s": 0.34993278294771,
+            "monitored_air_start_s": 1.35,
+            "first_sustained_foot_contact_s": 1.62,
+            "monitored_air_interval_ms": 270.0,
+            "joint_events": []
+          },
+          {
+            "episode": 1,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.64,
+              "physical_time_s": 1.66,
+              "actual_z_m": 0.5396708250045776,
+              "reference_z_m": 0.513059675693512,
+              "error_m": 0.026611149311065674
+            },
+            "landing_min": {
+              "reference_time_s": 1.76,
+              "physical_time_s": 1.78,
+              "actual_z_m": 0.47643762826919556,
+              "reference_z_m": 0.4754323959350586,
+              "error_m": 0.0010052323341369629
+            },
+            "jump_peak_z_m": 0.7168980836868286,
+            "vertical_speed_peak_m_s": 2.021509677852063,
+            "vertical_speed_peak_ref_time_s": 1.3,
+            "vertical_speed_tracking_rmse_m_s": 0.07914921516857276,
+            "monitored_air_start_s": 1.33,
+            "first_sustained_foot_contact_s": 1.59,
+            "monitored_air_interval_ms": 260.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.59,
+                    "velocity_rad_s": -10.018508911132812
+                  }
+                ],
+                "saturation_samples": []
+              }
+            ]
+          },
+          {
+            "episode": 2,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.54,
+              "physical_time_s": 1.56,
+              "actual_z_m": 0.6010323762893677,
+              "reference_z_m": 0.6529585719108582,
+              "error_m": -0.05192619562149048
+            },
+            "landing_min": {
+              "reference_time_s": 1.74,
+              "physical_time_s": 1.76,
+              "actual_z_m": 0.4678959548473358,
+              "reference_z_m": 0.4732118248939514,
+              "error_m": -0.005315870046615601
+            },
+            "jump_peak_z_m": 0.6949976682662964,
+            "vertical_speed_peak_m_s": 1.9062328196108504,
+            "vertical_speed_peak_ref_time_s": 1.28,
+            "vertical_speed_tracking_rmse_m_s": 0.18524372563145955,
+            "monitored_air_start_s": 1.33,
+            "first_sustained_foot_contact_s": 1.575,
+            "monitored_air_interval_ms": 245.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.595,
+                    "velocity_rad_s": -10.038454055786133
+                  }
+                ],
+                "saturation_samples": []
+              }
+            ]
+          },
+          {
+            "episode": 3,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.14,
+              "physical_time_s": 1.16,
+              "actual_z_m": 0.5290398001670837,
+              "reference_z_m": 0.5004451870918274,
+              "error_m": 0.028594613075256348
+            },
+            "landing_min": {
+              "reference_time_s": 1.74,
+              "physical_time_s": 1.76,
+              "actual_z_m": 0.4626632630825043,
+              "reference_z_m": 0.4732118248939514,
+              "error_m": -0.010548561811447144
+            },
+            "jump_peak_z_m": 0.7120978236198425,
+            "vertical_speed_peak_m_s": 1.756795548528009,
+            "vertical_speed_peak_ref_time_s": 1.32,
+            "vertical_speed_tracking_rmse_m_s": 0.33494254075121527,
+            "monitored_air_start_s": 1.36,
+            "first_sustained_foot_contact_s": 1.61,
+            "monitored_air_interval_ms": 250.0,
+            "joint_events": []
+          },
+          {
+            "episode": 4,
+            "successful_complete_cycle": true,
+            "samples": 170,
+            "max_abs_height_error": {
+              "reference_time_s": 1.56,
+              "physical_time_s": 1.58,
+              "actual_z_m": 0.566484272480011,
+              "reference_z_m": 0.6285104751586914,
+              "error_m": -0.06202620267868042
+            },
+            "landing_min": {
+              "reference_time_s": 1.72,
+              "physical_time_s": 1.74,
+              "actual_z_m": 0.46595653891563416,
+              "reference_z_m": 0.4735262095928192,
+              "error_m": -0.007569670677185059
+            },
+            "jump_peak_z_m": 0.6965256929397583,
+            "vertical_speed_peak_m_s": 1.8738493927494426,
+            "vertical_speed_peak_ref_time_s": 1.28,
+            "vertical_speed_tracking_rmse_m_s": 0.21982361098731906,
+            "monitored_air_start_s": 1.325,
+            "first_sustained_foot_contact_s": 1.575,
+            "monitored_air_interval_ms": 250.0,
+            "joint_events": [
+              {
+                "joint": "left_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.575,
+                    "velocity_rad_s": 10.362237930297852
+                  }
+                ],
+                "saturation_samples": []
+              },
+              {
+                "joint": "right_foot_joint",
+                "overspeed_samples": [
+                  {
+                    "physical_time_s": 1.58,
+                    "velocity_rad_s": -10.259930610656738
+                  }
+                ],
+                "saturation_samples": []
+              }
+            ]
+          },
+          {
+            "episode": 5,
+            "successful_complete_cycle": false,
+            "samples": 150,
+            "max_abs_height_error": {
+              "reference_time_s": 1.3,
+              "physical_time_s": 1.32,
+              "actual_z_m": 0.5625330805778503,
+              "reference_z_m": 0.6178717017173767,
+              "error_m": -0.05533862113952637
+            },
+            "landing_min": {
+              "reference_time_s": 1.76,
+              "physical_time_s": 1.78,
+              "actual_z_m": 0.44785934686660767,
+              "reference_z_m": 0.4754323959350586,
+              "error_m": -0.027573049068450928
+            },
+            "jump_peak_z_m": 0.7034964561462402,
+            "vertical_speed_peak_m_s": 1.8341807012783562,
+            "vertical_speed_peak_ref_time_s": 1.32,
+            "vertical_speed_tracking_rmse_m_s": 0.3857980340659116,
+            "monitored_air_start_s": 1.365,
+            "first_sustained_foot_contact_s": 1.62,
+            "monitored_air_interval_ms": 255.0,
+            "joint_events": []
+          }
+        ],
+        "completed": 5,
+        "failed": 0,
+        "truncated": 1,
+        "all_cycles": {
+          "jump_peak_z_m": {
+            "min": 0.6949976682662964,
+            "max": 0.7168980836868286,
+            "mean": 0.7066903611024221
+          },
+          "vertical_speed_peak_m_s": {
+            "min": 1.756795548528009,
+            "max": 2.1551311825795083,
+            "mean": 1.9246165537663718
+          },
+          "max_abs_height_error_m": 0.06202620267868042,
+          "landing_min_z_m": {
+            "min": 0.44785934686660767,
+            "max": 0.47643762826919556,
+            "mean": 0.46589871247609455
+          },
+          "foot_contact_time_s": {
+            "min": 1.575,
+            "max": 1.62,
+            "mean": 1.5983333333333334
+          },
+          "monitored_air_interval_ms": {
+            "min": 245.0,
+            "max": 270.0,
+            "mean": 255.0
+          }
+        },
+        "completed_cycles": {
+          "jump_peak_z_m": {
+            "min": 0.6949976682662964,
+            "max": 0.7168980836868286,
+            "mean": 0.7073291420936585
+          },
+          "vertical_speed_peak_m_s": {
+            "min": 1.756795548528009,
+            "max": 2.1551311825795083,
+            "mean": 1.9427037242639749
+          },
+          "max_abs_height_error_m": 0.06202620267868042,
+          "landing_min_z_m": {
+            "min": 0.4626632630825043,
+            "max": 0.47643762826919556,
+            "mean": 0.46950658559799197
+          },
+          "foot_contact_time_s": {
+            "min": 1.575,
+            "max": 1.62,
+            "mean": 1.594
+          },
+          "monitored_air_interval_ms": {
+            "min": 245.0,
+            "max": 270.0,
+            "mean": 255.0
+          }
+        }
+      }
+    }
+  },
+  "runtime_comparison": {
+    "nominal": {
+      "masses_kg": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      },
+      "coms": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      },
+      "material_properties": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      },
+      "joint_stiffness": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      },
+      "joint_damping": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      }
+    },
+    "randomized": {
+      "masses_kg": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      },
+      "coms": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      },
+      "material_properties": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      },
+      "joint_stiffness": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      },
+      "joint_damping": {
+        "exactly_equal": true,
+        "max_abs_difference": 0.0
+      }
+    }
+  },
+  "conventions": {
+    "height": "base_link world-Z link-origin, actual minus commanded reference frame; control sample occurs 20ms after commanded frame time",
+    "velocity": "world-Z base COM velocity reconstructed by quaternion rotation, compared with reference COM velocity",
+    "landing": "15ms sustained any-foot Fz >= 10N after first 15ms all-eight monitored Fz <10N; not all-body flight proof",
+    "episodes": "complete cycles checked as all frames 0..169 with motion_finished only; truncated sixth cycle reported separately",
+    "runtime": "PhysX joint stiffness/damping does not capture software actuator gain/delay draws"
+  }
+}
