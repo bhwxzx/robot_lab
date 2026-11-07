@@ -326,7 +326,7 @@ def wheel_phase_joint_velocity_l2(
     ramp_time_s: float,
     velocity_scale: float,
 ) -> torch.Tensor:
-    """Penalize mean squared wheel speed after reference landing with a negative weight.
+    """Penalize mean squared wheel speed from the configured reference time with a negative weight.
 
     ``velocity_scale`` is in rad/s. Only the two selected wheel joints contribute;
     reference progress, rather than episode age or current contact, gates the term.

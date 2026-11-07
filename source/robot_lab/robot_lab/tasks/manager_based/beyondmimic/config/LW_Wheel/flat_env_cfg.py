@@ -39,7 +39,7 @@ class LWWheelRewardsCfg(RewardsCfg):
     # Track reference base-link height through push-off, flight and landing recovery.
     motion_flight_height = RewTerm(
         func=mdp.motion_phase_anchor_height_error_exp,
-        weight=2.0,
+        weight=0.0,
         params={
             "command_name": "motion",
             "std": 0.10,
@@ -160,24 +160,24 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.0
-        # Suppress wheel spin after reference landing; phase follows the motion, not contact.
+        # Regularize wheel speed throughout the reference motion, independently of contact.
         self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2
-        self.rewards.joint_vel_wheel_l2.weight = -0.5
+        self.rewards.joint_vel_wheel_l2.weight = -0.10
         self.rewards.joint_vel_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
-            "start_time_s": 1.65,
-            "ramp_time_s": 0.10,
+            "start_time_s": 0.0,
+            "ramp_time_s": 0.0,
             "velocity_scale": 10.0,
         }
-        # Ramp measured acceleration regularization more slowly to allow initial braking.
+        # Keep full-motion acceleration regularization weak to allow push-off and braking.
         self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2
-        self.rewards.joint_acc_wheel_l2.weight = -0.1
+        self.rewards.joint_acc_wheel_l2.weight = -0.002
         self.rewards.joint_acc_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
-            "start_time_s": 1.65,
-            "ramp_time_s": 0.20,
+            "start_time_s": 0.0,
+            "ramp_time_s": 0.0,
             "acceleration_scale": 50.0,
         }
         # Wheel contact has no phase fade and switches off at reference time 1.25 s.
