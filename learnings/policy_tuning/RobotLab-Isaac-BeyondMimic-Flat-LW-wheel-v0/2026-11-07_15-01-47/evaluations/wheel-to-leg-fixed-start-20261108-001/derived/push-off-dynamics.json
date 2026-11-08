@@ -1,0 +1,458 @@
+{
+  "version": 1,
+  "source": "from pathlib import Path\nimport json,gzip,sys,hashlib,xml.etree.ElementTree as ET\nimport numpy as np\nroot=Path.cwd();sys.path.insert(0,str(root/'scripts/reinforcement_learning/rsl_rl'))\nfrom diagnose_motion_policy_symmetry import rotation_matrix as R\nbase=root/'learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0'\nout=base/'2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/derived'\na=json.loads((out/'analysis.json').read_text())\nref=lambda p:{'path':str(p),'sha256':hashlib.sha256(Path(p).read_bytes()).hexdigest()}\nurdf=root/'source/robot_lab/data/Robots/LW/LW_description/LW.urdf'\njoints=[]\nfor j in ET.parse(urdf).getroot().findall('joint'):\n assert np.allclose(np.fromstring(j.find('origin').get('rpy'),sep=' '),0)\n joints.append((j.get('name'),j.find('parent').get('link'),j.find('child').get('link'),np.fromstring(j.find('origin').get('xyz'),sep=' '),np.fromstring(j.find('axis').get('xyz'),sep=' ')))\nruns={'no_height':('2026-11-05_16-40-14','wheel-to-leg-fixed-start-20261106-001'),'height':('2026-11-06_11-39-51','wheel-to-leg-fixed-start-20261107-001'),'current':('2026-11-07_15-01-47','wheel-to-leg-fixed-start-20261108-001')}\nstats={};inputs=[ref(out/'analysis.json'),ref(urdf)];max_fk=0.;max_v=0.;max_closure=0.\nfor version,(run,batch) in runs.items():\n stats[version]={}\n for case in ['nominal','randomized']:\n  p=base/run/'evaluations'/batch/'raw'/f'fixed-start-{case}-a01/telemetry.json.gz'\n  with gzip.open(p,'rt') as f:t=json.load(f)\n  inputs.append(ref(p));md=t['motion_diagnostics'];rt=md['initial_runtime'];bn=md['body_names'];jn=t['joint_names'];mass=sum(rt['masses_kg'])\n  pd={(s['episode_id'],s['frame_index']):s for s in t['physics_samples'] if s['substep']==3}\n  cr={}\n  for s in t['samples']:\n   time=s['frame_index']/50+.02\n   if not 1.0<=time<=1.8:continue\n   ph=pd[s['episode_id'],s['frame_index']];pos=np.asarray(s['body_position_w']).reshape(-1,3);quat=np.asarray(s['body_quaternion_w']).reshape(-1,4)\n   positions=dict(zip(bn,pos));rots={n:R(q) for n,q in zip(bn,quat)}\n   for i,side in enumerate(['right','left']):\n    n=side+'_wheel_link';positions[n]=np.asarray(ph['wheel_center_position_w']).reshape(2,3)[i];rots[n]=rots[side+'_shank_link']\n    c=np.asarray(rt['coms'][rt['body_names'].index(n)])[:3];assert abs(c[0])+abs(c[2])<1e-8\n   omega={'base_link':rots['base_link']@s['root_angular_velocity_b']}\n   rb=rots['base_link']@np.asarray(rt['coms'][rt['body_names'].index('base_link')])[:3]\n   vel={'base_link':rots['base_link']@s['root_linear_velocity_b']-np.cross(omega['base_link'],rb)}\n   axes={}\n   for name,parent,child,offset,axis in joints:\n    max_fk=max(max_fk,float(np.linalg.norm(positions[parent]+rots[parent]@offset-positions[child])))\n    vel[child]=vel[parent]+np.cross(omega[parent],positions[child]-positions[parent])\n    axes[child]=rots[parent]@axis;omega[child]=omega[parent]+axes[child]*s['joint_velocity'][jn.index(name)]\n   whole=sum(m*(vel[n]+np.cross(omega[n],rots[n]@np.array(c)[:3])) for m,n,c in zip(rt['masses_kg'],rt['body_names'],rt['coms']))/mass\n   slips=[];forces=np.asarray(ph['contact_forces_w']).reshape(4,3)[:,2]\n   for i,side in enumerate(['right','left']):\n    n=side+'_wheel_link';measured=np.asarray(ph['wheel_center_velocity_w']).reshape(2,3)[i]\n    max_v=max(max_v,float(np.linalg.norm(measured-vel[n])))\n    axis=axes[n];down=np.array([0.,0.,-1.]);radial=down-axis*np.dot(down,axis);radial=radial/np.linalg.norm(radial)*.1095\n    slip=measured+np.cross(omega[n],radial);slips.append(float(np.linalg.norm(slip[:2])))\n   cr.setdefault(s['episode_id'],[]).append({'time':time,'vz':float(whole[2]),'slip':slips,'wheel_forces':forces[2:].tolist()})\n  records=[]\n  for ep in a['statistics'][version][case]['episodes']:\n   if not ep['complete_success']:continue\n   air=ep['air_start_s'];x=cr[ep['episode']];times=np.array([v['time'] for v in x]);vz=np.array([v['vz'] for v in x])\n   flight=(times>=air+.015)&(times<=air+.095);backproject=vz[flight]+9.81*(times[flight]-air);takeoff=float(backproject.mean());start=float(np.interp(1.1,times,vz));closure=takeoff-start-ep['net_vertical_impulse_Ns']/mass\n   max_closure=max(max_closure,abs(closure))\n   push=(times>=1.1)&(times<=air);slips=np.array([v['slip'] for v in x])[push];forces=np.array([v['wheel_forces'] for v in x])[push];mask=forces>=10;weights=np.where(mask,forces,0)\n   row={'episode':ep['episode'],'mass_kg':mass,'air_start_s':air,'whole_body_com_vz_at_1p10_m_s':start,'whole_body_com_takeoff_vz_m_s':takeoff,'flight_backproject_spread_m_s':float(np.ptp(backproject)),'support_impulse_Ns':ep['support_impulse_1p10_to_air_Ns'],'net_impulse_Ns':ep['net_vertical_impulse_Ns'],'impulse_velocity_closure_error_m_s':float(closure),'loaded_wheel_slip_force_weighted_mean_m_s':float((slips*weights).sum()/weights.sum()),'loaded_wheel_slip_peak_m_s':float(slips[mask].max())}\n   records.append(row)\n  stats[version][case]=records\nassert max_fk<1e-5 and max_v<1e-4\nd={'version':1,'source':CODE_SOURCE,'inputs':inputs,'statistics':stats,'validation':{'max_joint_origin_fk_error_m':max_fk,'max_wheel_velocity_error_m_s':max_v,'max_impulse_velocity_closure_error_m_s':max_closure},'conventions':{'com':'Mass-weighted body COM velocity reconstructed from measured poses, root COM velocity, angular velocity, joint rates and URDF tree; exact wheel-origin velocity crosscheck. Takeoff vz estimated from 15..95ms flight window via v(t)+g*(t-takeoff).','slip':'20ms end-step proxy: ideal wheel radius0.1095m, full world wheel angular velocity including parent bodies, ground-facing radial tangent point. Force-weighted mean among wheelFz>=10N during1.1..takeoff. No contact-patch or friction telemetry: not slip energy or a causal loss measurement.','episodes':'Only five completed cycles per case; deterministic nominal repetitions, single seed; startup physical draws fixed within case.'}}\nwith (out/'push-off-dynamics.json').open('x') as f:json.dump(d,f,indent=2,allow_nan=False)\nprint('validation',d['validation'])\nfor v,cases in stats.items():\n for c,rr in cases.items():print(v,c,json.dumps(rr))\n",
+  "inputs": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/derived/analysis.json",
+      "sha256": "3cfe9bd0a42604ed7a1dfc85d6fc73ea0180927ec3b906e544d17090855c05ce"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/data/Robots/LW/LW_description/LW.urdf",
+      "sha256": "e416fdf3568b6a25b42c5e73e67d15b03762bf20e870d0a205e389af9dc6861e"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-05_16-40-14/evaluations/wheel-to-leg-fixed-start-20261106-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "e074c44610ce77ac03d93ae16f9979b0cdabb5f29812d20ce80422728225a9bc"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-05_16-40-14/evaluations/wheel-to-leg-fixed-start-20261106-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "06713d285cc5c65883abe5ed88967b2a05a7d904809ea05fd634cecf992a4d53"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/evaluations/wheel-to-leg-fixed-start-20261107-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "cbb26f6bc0922fb9ec6bd13bacd0faf03d6ad58475e0b781a179603d5bef457e"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/evaluations/wheel-to-leg-fixed-start-20261107-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "36193a6cd06a122b2c7c6fbcd42f432633b6418c3bbd919c92085e14f73d5b3f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "f0f4b47e495201a5a33a13c4820d70338e85da504b31f1ef0b1924620ecf1a3a"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "f6a70f528519486a75f8cec1042d61b68a7ccbe4393620ddd9c540548bc5177a"
+    }
+  ],
+  "statistics": {
+    "no_height": {
+      "nominal": [
+        {
+          "episode": 0,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.33,
+          "whole_body_com_vz_at_1p10_m_s": -0.32395249909492996,
+          "whole_body_com_takeoff_vz_m_s": 0.9661144200556883,
+          "flight_backproject_spread_m_s": 1.1565599733476262e-07,
+          "support_impulse_Ns": 94.79864719390869,
+          "net_impulse_Ns": 34.48504390718937,
+          "impulse_velocity_closure_error_m_s": -3.3479712180373156e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.036569671848043495,
+          "loaded_wheel_slip_peak_m_s": 0.2566122513863268
+        },
+        {
+          "episode": 1,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.33,
+          "whole_body_com_vz_at_1p10_m_s": -0.32395249909492996,
+          "whole_body_com_takeoff_vz_m_s": 0.9661144200556883,
+          "flight_backproject_spread_m_s": 1.1565599733476262e-07,
+          "support_impulse_Ns": 94.79864719390869,
+          "net_impulse_Ns": 34.48504390718937,
+          "impulse_velocity_closure_error_m_s": -3.3479712180373156e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.036569671848043495,
+          "loaded_wheel_slip_peak_m_s": 0.2566122513863268
+        },
+        {
+          "episode": 2,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.33,
+          "whole_body_com_vz_at_1p10_m_s": -0.32395249909492996,
+          "whole_body_com_takeoff_vz_m_s": 0.9661144200556883,
+          "flight_backproject_spread_m_s": 1.1565599733476262e-07,
+          "support_impulse_Ns": 94.79864719390869,
+          "net_impulse_Ns": 34.48504390718937,
+          "impulse_velocity_closure_error_m_s": -3.3479712180373156e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.036569671848043495,
+          "loaded_wheel_slip_peak_m_s": 0.2566122513863268
+        },
+        {
+          "episode": 3,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.33,
+          "whole_body_com_vz_at_1p10_m_s": -0.32395249909492996,
+          "whole_body_com_takeoff_vz_m_s": 0.9661144200556883,
+          "flight_backproject_spread_m_s": 1.1565599733476262e-07,
+          "support_impulse_Ns": 94.79864719390869,
+          "net_impulse_Ns": 34.48504390718937,
+          "impulse_velocity_closure_error_m_s": -3.3479712180373156e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.036569671848043495,
+          "loaded_wheel_slip_peak_m_s": 0.2566122513863268
+        },
+        {
+          "episode": 4,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.33,
+          "whole_body_com_vz_at_1p10_m_s": -0.32395249909492996,
+          "whole_body_com_takeoff_vz_m_s": 0.9661144200556883,
+          "flight_backproject_spread_m_s": 1.1565599733476262e-07,
+          "support_impulse_Ns": 94.79864719390869,
+          "net_impulse_Ns": 34.48504390718937,
+          "impulse_velocity_closure_error_m_s": -3.3479712180373156e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.036569671848043495,
+          "loaded_wheel_slip_peak_m_s": 0.2566122513863268
+        }
+      ],
+      "randomized": [
+        {
+          "episode": 0,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.3949999999999998,
+          "whole_body_com_vz_at_1p10_m_s": -0.3867770212839004,
+          "whole_body_com_takeoff_vz_m_s": 1.206223052426487,
+          "flight_backproject_spread_m_s": 2.377343524262443e-07,
+          "support_impulse_Ns": 125.12124443054199,
+          "net_impulse_Ns": 44.4217487909884,
+          "impulse_velocity_closure_error_m_s": -2.1575699671316784e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.06825186001267444,
+          "loaded_wheel_slip_peak_m_s": 0.37674824162467635
+        },
+        {
+          "episode": 1,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.36,
+          "whole_body_com_vz_at_1p10_m_s": -0.3119909933459887,
+          "whole_body_com_takeoff_vz_m_s": 0.9719715578770336,
+          "flight_backproject_spread_m_s": 5.653910941649798e-07,
+          "support_impulse_Ns": 106.92897278308868,
+          "net_impulse_Ns": 35.80399357534647,
+          "impulse_velocity_closure_error_m_s": 2.0210336790782435e-06,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.01216465814201139,
+          "loaded_wheel_slip_peak_m_s": 0.0564376003427852
+        },
+        {
+          "episode": 2,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.35,
+          "whole_body_com_vz_at_1p10_m_s": -0.3194351064284251,
+          "whole_body_com_takeoff_vz_m_s": 0.9278619707225062,
+          "flight_backproject_spread_m_s": 1.2121225578809458e-07,
+          "support_impulse_Ns": 103.17104408502578,
+          "net_impulse_Ns": 34.78164100065827,
+          "impulse_velocity_closure_error_m_s": -1.052485950614468e-06,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.056490078373133,
+          "loaded_wheel_slip_peak_m_s": 0.3474618342850717
+        },
+        {
+          "episode": 3,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.39,
+          "whole_body_com_vz_at_1p10_m_s": -0.2651293395242751,
+          "whole_body_com_takeoff_vz_m_s": 0.8808349492480142,
+          "flight_backproject_spread_m_s": 2.2008431510567306e-07,
+          "support_impulse_Ns": 111.28760803222656,
+          "net_impulse_Ns": 31.95590045436029,
+          "impulse_velocity_closure_error_m_s": -4.7082118759256275e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.0468515185187248,
+          "loaded_wheel_slip_peak_m_s": 0.20761664110929828
+        },
+        {
+          "episode": 4,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.335,
+          "whole_body_com_vz_at_1p10_m_s": -0.35067981626207295,
+          "whole_body_com_takeoff_vz_m_s": 0.978717925931652,
+          "flight_backproject_spread_m_s": 1.457481292321816e-07,
+          "support_impulse_Ns": 101.35708054542542,
+          "net_impulse_Ns": 37.071041646119994,
+          "impulse_velocity_closure_error_m_s": -1.694235367555308e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.03681582881242464,
+          "loaded_wheel_slip_peak_m_s": 0.09899066465430909
+        }
+      ]
+    },
+    "height": {
+      "nominal": [
+        {
+          "episode": 0,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.3665707773535859,
+          "whole_body_com_takeoff_vz_m_s": 1.0931102018626202,
+          "flight_backproject_spread_m_s": 4.572075200659498e-07,
+          "support_impulse_Ns": 98.02148086547852,
+          "net_impulse_Ns": 39.01904286760095,
+          "impulse_velocity_closure_error_m_s": -7.778767845412204e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.017898586034457445,
+          "loaded_wheel_slip_peak_m_s": 0.0862058625216261
+        },
+        {
+          "episode": 1,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.3665707773535859,
+          "whole_body_com_takeoff_vz_m_s": 1.0931102018626202,
+          "flight_backproject_spread_m_s": 4.572075200659498e-07,
+          "support_impulse_Ns": 98.02148086547852,
+          "net_impulse_Ns": 39.01904286760095,
+          "impulse_velocity_closure_error_m_s": -7.778767845412204e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.017898586034457445,
+          "loaded_wheel_slip_peak_m_s": 0.0862058625216261
+        },
+        {
+          "episode": 2,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.3665707773535859,
+          "whole_body_com_takeoff_vz_m_s": 1.0931102018626202,
+          "flight_backproject_spread_m_s": 4.572075200659498e-07,
+          "support_impulse_Ns": 98.02148086547852,
+          "net_impulse_Ns": 39.01904286760095,
+          "impulse_velocity_closure_error_m_s": -7.778767845412204e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.017898586034457445,
+          "loaded_wheel_slip_peak_m_s": 0.0862058625216261
+        },
+        {
+          "episode": 3,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.3665707773535859,
+          "whole_body_com_takeoff_vz_m_s": 1.0931102018626202,
+          "flight_backproject_spread_m_s": 4.572075200659498e-07,
+          "support_impulse_Ns": 98.02148086547852,
+          "net_impulse_Ns": 39.01904286760095,
+          "impulse_velocity_closure_error_m_s": -7.778767845412204e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.017898586034457445,
+          "loaded_wheel_slip_peak_m_s": 0.0862058625216261
+        },
+        {
+          "episode": 4,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.3665707773535859,
+          "whole_body_com_takeoff_vz_m_s": 1.0931102018626202,
+          "flight_backproject_spread_m_s": 4.572075200659498e-07,
+          "support_impulse_Ns": 98.02148086547852,
+          "net_impulse_Ns": 39.01904286760095,
+          "impulse_velocity_closure_error_m_s": -7.778767845412204e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.017898586034457445,
+          "loaded_wheel_slip_peak_m_s": 0.0862058625216261
+        }
+      ],
+      "randomized": [
+        {
+          "episode": 0,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.35,
+          "whole_body_com_vz_at_1p10_m_s": -0.3401159939276975,
+          "whole_body_com_takeoff_vz_m_s": 1.396348065367395,
+          "flight_backproject_spread_m_s": 1.8019289171888886e-07,
+          "support_impulse_Ns": 116.81179162979126,
+          "net_impulse_Ns": 48.42238854542374,
+          "impulse_velocity_closure_error_m_s": -2.447967010210661e-06,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.09086615387141639,
+          "loaded_wheel_slip_peak_m_s": 0.32745270662574144
+        },
+        {
+          "episode": 1,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.33,
+          "whole_body_com_vz_at_1p10_m_s": -0.36923219190080336,
+          "whole_body_com_takeoff_vz_m_s": 1.3146791741685568,
+          "flight_backproject_spread_m_s": 4.017433132830206e-07,
+          "support_impulse_Ns": 109.8750819683075,
+          "net_impulse_Ns": 46.95683113068939,
+          "impulse_velocity_closure_error_m_s": 9.478727225342709e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.11022229964171378,
+          "loaded_wheel_slip_peak_m_s": 0.7696219310557195
+        },
+        {
+          "episode": 2,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.33,
+          "whole_body_com_vz_at_1p10_m_s": -0.3124362135708011,
+          "whole_body_com_takeoff_vz_m_s": 1.157880346505776,
+          "flight_backproject_spread_m_s": 1.7502657079226935e-07,
+          "support_impulse_Ns": 103.91894300460815,
+          "net_impulse_Ns": 41.00069216699004,
+          "impulse_velocity_closure_error_m_s": -1.8372853061165983e-06,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.08772377633785465,
+          "loaded_wheel_slip_peak_m_s": 0.2944441968920539
+        },
+        {
+          "episode": 3,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.36,
+          "whole_body_com_vz_at_1p10_m_s": -0.27766654800259494,
+          "whole_body_com_takeoff_vz_m_s": 1.0787468058583118,
+          "flight_backproject_spread_m_s": 7.688885512724397e-07,
+          "support_impulse_Ns": 108.94935000419616,
+          "net_impulse_Ns": 37.82437079645395,
+          "impulse_velocity_closure_error_m_s": 4.419969716895622e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.05294013542346822,
+          "loaded_wheel_slip_peak_m_s": 0.2105278013463919
+        },
+        {
+          "episode": 4,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.35480880348411864,
+          "whole_body_com_takeoff_vz_m_s": 1.1282681246512551,
+          "flight_backproject_spread_m_s": 5.001013552163869e-07,
+          "support_impulse_Ns": 102.906919631958,
+          "net_impulse_Ns": 41.35645685602728,
+          "impulse_velocity_closure_error_m_s": 5.176820840890883e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.034128694425462125,
+          "loaded_wheel_slip_peak_m_s": 0.13268869976268552
+        }
+      ]
+    },
+    "current": {
+      "nominal": [
+        {
+          "episode": 0,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.36354313544617833,
+          "whole_body_com_takeoff_vz_m_s": 0.9497555884396632,
+          "flight_backproject_spread_m_s": 1.370293289948421e-07,
+          "support_impulse_Ns": 94.10850368499756,
+          "net_impulse_Ns": 35.10606568711999,
+          "impulse_velocity_closure_error_m_s": -6.264000387279367e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.01813176028994627,
+          "loaded_wheel_slip_peak_m_s": 0.11941731701991981
+        },
+        {
+          "episode": 1,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.36354313544617833,
+          "whole_body_com_takeoff_vz_m_s": 0.9497555884396632,
+          "flight_backproject_spread_m_s": 1.370293289948421e-07,
+          "support_impulse_Ns": 94.10850368499756,
+          "net_impulse_Ns": 35.10606568711999,
+          "impulse_velocity_closure_error_m_s": -6.264000387279367e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.01813176028994627,
+          "loaded_wheel_slip_peak_m_s": 0.11941731701991981
+        },
+        {
+          "episode": 2,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.36354313544617833,
+          "whole_body_com_takeoff_vz_m_s": 0.9497555884396632,
+          "flight_backproject_spread_m_s": 1.370293289948421e-07,
+          "support_impulse_Ns": 94.10850368499756,
+          "net_impulse_Ns": 35.10606568711999,
+          "impulse_velocity_closure_error_m_s": -6.264000387279367e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.01813176028994627,
+          "loaded_wheel_slip_peak_m_s": 0.11941731701991981
+        },
+        {
+          "episode": 3,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.36354313544617833,
+          "whole_body_com_takeoff_vz_m_s": 0.9497555884396632,
+          "flight_backproject_spread_m_s": 1.370293289948421e-07,
+          "support_impulse_Ns": 94.10850368499756,
+          "net_impulse_Ns": 35.10606568711999,
+          "impulse_velocity_closure_error_m_s": -6.264000387279367e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.01813176028994627,
+          "loaded_wheel_slip_peak_m_s": 0.11941731701991981
+        },
+        {
+          "episode": 4,
+          "mass_kg": 26.73119854927063,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.36354313544617833,
+          "whole_body_com_takeoff_vz_m_s": 0.9497555884396632,
+          "flight_backproject_spread_m_s": 1.370293289948421e-07,
+          "support_impulse_Ns": 94.10850368499756,
+          "net_impulse_Ns": 35.10606568711999,
+          "impulse_velocity_closure_error_m_s": -6.264000387279367e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.01813176028994627,
+          "loaded_wheel_slip_peak_m_s": 0.11941731701991981
+        }
+      ],
+      "randomized": [
+        {
+          "episode": 0,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.365,
+          "whole_body_com_vz_at_1p10_m_s": -0.2571328443151934,
+          "whole_body_com_takeoff_vz_m_s": 1.3258276485047162,
+          "flight_backproject_spread_m_s": 6.375906960176536e-07,
+          "support_impulse_Ns": 116.63455636978149,
+          "net_impulse_Ns": 44.14178910035196,
+          "impulse_velocity_closure_error_m_s": -2.1287688833915297e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.05194355511512926,
+          "loaded_wheel_slip_peak_m_s": 0.1378303968199627
+        },
+        {
+          "episode": 1,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.32,
+          "whole_body_com_vz_at_1p10_m_s": -0.38253995603817315,
+          "whole_body_com_takeoff_vz_m_s": 1.1201098358481556,
+          "flight_backproject_spread_m_s": 2.4838749146383066e-07,
+          "support_impulse_Ns": 102.08494790792466,
+          "net_impulse_Ns": 41.90227319368125,
+          "impulse_velocity_closure_error_m_s": -3.9414705277351914e-08,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.08864403225736703,
+          "loaded_wheel_slip_peak_m_s": 0.5795266527523562
+        },
+        {
+          "episode": 2,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.33,
+          "whole_body_com_vz_at_1p10_m_s": -0.3431453168358492,
+          "whole_body_com_takeoff_vz_m_s": 0.9628079024960514,
+          "flight_backproject_spread_m_s": 3.568125866992844e-07,
+          "support_impulse_Ns": 99.3354754447937,
+          "net_impulse_Ns": 36.41722460717559,
+          "impulse_velocity_closure_error_m_s": 1.7221545052237275e-06,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.09355878837642495,
+          "loaded_wheel_slip_peak_m_s": 0.6962671905512934
+        },
+        {
+          "episode": 3,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.335,
+          "whole_body_com_vz_at_1p10_m_s": -0.3152169477762967,
+          "whole_body_com_takeoff_vz_m_s": 0.982021720936247,
+          "flight_backproject_spread_m_s": 1.2853634023812788e-07,
+          "support_impulse_Ns": 100.4602989768982,
+          "net_impulse_Ns": 36.17426007759278,
+          "impulse_velocity_closure_error_m_s": 7.853430372684045e-08,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.04427886532342548,
+          "loaded_wheel_slip_peak_m_s": 0.16671742132832576
+        },
+        {
+          "episode": 4,
+          "mass_kg": 27.88558739423752,
+          "air_start_s": 1.325,
+          "whole_body_com_vz_at_1p10_m_s": -0.32398896387189396,
+          "whole_body_com_takeoff_vz_m_s": 1.0559458023673125,
+          "flight_backproject_spread_m_s": 4.1626179303477784e-07,
+          "support_impulse_Ns": 100.03075904369355,
+          "net_impulse_Ns": 38.480296267762824,
+          "impulse_velocity_closure_error_m_s": -1.7017582032430312e-07,
+          "loaded_wheel_slip_force_weighted_mean_m_s": 0.030923113230967053,
+          "loaded_wheel_slip_peak_m_s": 0.09096936332173487
+        }
+      ]
+    }
+  },
+  "validation": {
+    "max_joint_origin_fk_error_m": 4.333320893110204e-07,
+    "max_wheel_velocity_error_m_s": 6.0354961918636e-06,
+    "max_impulse_velocity_closure_error_m_s": 2.447967010210661e-06
+  },
+  "conventions": {
+    "com": "Mass-weighted body COM velocity reconstructed from measured poses, root COM velocity, angular velocity, joint rates and URDF tree; exact wheel-origin velocity crosscheck. Takeoff vz estimated from 15..95ms flight window via v(t)+g*(t-takeoff).",
+    "slip": "20ms end-step proxy: ideal wheel radius0.1095m, full world wheel angular velocity including parent bodies, ground-facing radial tangent point. Force-weighted mean among wheelFz>=10N during1.1..takeoff. No contact-patch or friction telemetry: not slip energy or a causal loss measurement.",
+    "episodes": "Only five completed cycles per case; deterministic nominal repetitions, single seed; startup physical draws fixed within case."
+  }
+}

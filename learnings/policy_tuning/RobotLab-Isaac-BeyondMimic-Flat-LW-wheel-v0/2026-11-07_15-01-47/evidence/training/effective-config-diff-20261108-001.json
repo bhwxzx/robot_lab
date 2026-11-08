@@ -1,0 +1,508 @@
+{
+  "2026-11-05_16-40-14": {
+    "baseline": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-05_16-40-14/provenance/config-6e76acfd190d3d5690f89d736106d4d4b011f8c21403d0f540db66447e198218.json",
+      "sha256": "6e76acfd190d3d5690f89d736106d4d4b011f8c21403d0f540db66447e198218"
+    },
+    "current": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/provenance/config-a7701e8c299ea6a6def7e23a7e0a587c091febc86f9bb58aaa817e5fd7cea25b.json",
+      "sha256": "a7701e8c299ea6a6def7e23a7e0a587c091febc86f9bb58aaa817e5fd7cea25b"
+    },
+    "comparison": {
+      "version": 1,
+      "complete": true,
+      "baseline": {
+        "run_id": "2026-11-05_16-40-14",
+        "effective_config_fingerprint": "ad43a683938b8d9511d9df5f8803784e3403f14682ddbc7300220fa186066612"
+      },
+      "current": {
+        "run_id": "2026-11-07_15-01-47",
+        "effective_config_fingerprint": "46b98949fc716d8e74057baf7d7c8825eae6eded8de62aadc45f36fe136ef617"
+      },
+      "summary": {
+        "semantic_changes": 22,
+        "agent_changes": 0,
+        "environment_changes": 22,
+        "reward_weight_changes": 3,
+        "training_parameter_changes": 0
+      },
+      "reward_weight_changes": [
+        {
+          "path": "joint_acc_wheel_l2",
+          "change": "changed",
+          "before": -0.0,
+          "after": -0.002
+        },
+        {
+          "path": "joint_vel_wheel_l2",
+          "change": "changed",
+          "before": -0.0,
+          "after": -0.1
+        },
+        {
+          "path": "motion_flight_height",
+          "change": "added",
+          "before": null,
+          "after": 0.0
+        }
+      ],
+      "training_parameter_changes": [],
+      "semantic_changes": [
+        {
+          "path": "/environment/log_dir",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-05_16-40-14"
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-07_15-01-47"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/func",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "isaaclab.envs.mdp.rewards:joint_acc_l2"
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "robot_lab.tasks.manager_based.beyondmimic.mdp.rewards:wheel_phase_joint_acceleration_l2"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/acceleration_scale",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 50.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/command_name",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "motion"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/ramp_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/start_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.002
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/func",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "isaaclab.envs.mdp.rewards:joint_vel_l2"
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "robot_lab.tasks.manager_based.beyondmimic.mdp.rewards:wheel_phase_joint_velocity_l2"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/command_name",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "motion"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/ramp_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/start_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/velocity_scale",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 10.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.1
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "mapping",
+            "tag": "tag:yaml.org,2002:map"
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/func",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "robot_lab.tasks.manager_based.beyondmimic.mdp.rewards:motion_phase_anchor_height_error_exp"
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/params",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "mapping",
+            "tag": "tag:yaml.org,2002:map"
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/params/command_name",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "motion"
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/params/end_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 1.9
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/params/ramp_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.05
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/params/start_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 1.1
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/params/std",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.1
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/weight",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        }
+      ]
+    }
+  },
+  "2026-11-06_11-39-51": {
+    "baseline": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/provenance/config-f7ccd64b04371fd4fab2c4159b0cbeec87ece7115f1fcf7874e63a9a9c3b8cb2.json",
+      "sha256": "f7ccd64b04371fd4fab2c4159b0cbeec87ece7115f1fcf7874e63a9a9c3b8cb2"
+    },
+    "current": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/provenance/config-a7701e8c299ea6a6def7e23a7e0a587c091febc86f9bb58aaa817e5fd7cea25b.json",
+      "sha256": "a7701e8c299ea6a6def7e23a7e0a587c091febc86f9bb58aaa817e5fd7cea25b"
+    },
+    "comparison": {
+      "version": 1,
+      "complete": true,
+      "baseline": {
+        "run_id": "2026-11-06_11-39-51",
+        "effective_config_fingerprint": "e70617b6e9c7e6a97217dd8f1419473732513b7cb028547932cd6661083d2178"
+      },
+      "current": {
+        "run_id": "2026-11-07_15-01-47",
+        "effective_config_fingerprint": "46b98949fc716d8e74057baf7d7c8825eae6eded8de62aadc45f36fe136ef617"
+      },
+      "summary": {
+        "semantic_changes": 14,
+        "agent_changes": 0,
+        "environment_changes": 14,
+        "reward_weight_changes": 3,
+        "training_parameter_changes": 0
+      },
+      "reward_weight_changes": [
+        {
+          "path": "joint_acc_wheel_l2",
+          "change": "changed",
+          "before": -0.0,
+          "after": -0.002
+        },
+        {
+          "path": "joint_vel_wheel_l2",
+          "change": "changed",
+          "before": -0.0,
+          "after": -0.1
+        },
+        {
+          "path": "motion_flight_height",
+          "change": "changed",
+          "before": 2.0,
+          "after": 0.0
+        }
+      ],
+      "training_parameter_changes": [],
+      "semantic_changes": [
+        {
+          "path": "/environment/log_dir",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-06_11-39-51"
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-07_15-01-47"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/func",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "isaaclab.envs.mdp.rewards:joint_acc_l2"
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "robot_lab.tasks.manager_based.beyondmimic.mdp.rewards:wheel_phase_joint_acceleration_l2"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/acceleration_scale",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 50.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/command_name",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "motion"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/ramp_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/start_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.002
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/func",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "isaaclab.envs.mdp.rewards:joint_vel_l2"
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "robot_lab.tasks.manager_based.beyondmimic.mdp.rewards:wheel_phase_joint_velocity_l2"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/command_name",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "motion"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/ramp_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/start_time_s",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/velocity_scale",
+          "change": "added",
+          "before": null,
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 10.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.1
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 2.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        }
+      ]
+    }
+  }
+}

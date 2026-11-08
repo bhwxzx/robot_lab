@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "source": "from pathlib import Path\nimport json,gzip,hashlib,numpy as np\nroot=Path.cwd();d=root/'learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001'\nref=lambda p:{'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}\nout={'version':1,'source':CODE_SOURCE,'inputs':[],'cases':{}}\nfor case in ['nominal','randomized']:\n p=d/'raw'/f'fixed-start-{case}-a01/telemetry.json.gz'\n with gzip.open(p,'rt') as f:t=json.load(f)\n out['inputs'].append(ref(p));j=[i for i,n in enumerate(t['joint_names']) if 'wheel' in n];ps=t['physics_samples'];acc=np.array([x['joint_acceleration'] for x in ps])[:,j];last=np.array([x['substep']==3 for x in ps]);im,jj=np.unravel_index(np.abs(acc).argmax(),acc.shape);s=ps[im]\n out['cases'][case]={'acceleration_peak_all_substeps_rad_s2':float(abs(acc).max()),'acceleration_peak_last_substeps_rad_s2':float(abs(acc[last]).max()),'peak_substep_zero_based':s['substep'],'peak_time_s':s['frame_index']/50+(s['substep']+1)*.005,'peak_joint':t['joint_names'][j[jj]],'peak_episode':s['episode_id']}\nout['interpretation']='The reward reads asset.data.joint_acc once at each control-step boundary; it does not aggregate all four physics-substep peaks. Absence from the final-substep sample does not mean an impact has no later effect on rewards.'\nwith (d/'derived/sampling-audit.json').open('x') as f:json.dump(out,f,indent=2,allow_nan=False)\nprint(json.dumps(out['cases']))\n",
+  "inputs": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "f0f4b47e495201a5a33a13c4820d70338e85da504b31f1ef0b1924620ecf1a3a"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "f6a70f528519486a75f8cec1042d61b68a7ccbe4393620ddd9c540548bc5177a"
+    }
+  ],
+  "cases": {
+    "nominal": {
+      "acceleration_peak_all_substeps_rad_s2": 847.7603759765625,
+      "acceleration_peak_last_substeps_rad_s2": 330.5255126953125,
+      "peak_substep_zero_based": 1,
+      "peak_time_s": 1.57,
+      "peak_joint": "left_wheel_joint",
+      "peak_episode": 0
+    },
+    "randomized": {
+      "acceleration_peak_all_substeps_rad_s2": 1292.82666015625,
+      "acceleration_peak_last_substeps_rad_s2": 1292.82666015625,
+      "peak_substep_zero_based": 3,
+      "peak_time_s": 1.3,
+      "peak_joint": "left_wheel_joint",
+      "peak_episode": 2
+    }
+  },
+  "interpretation": "The reward reads asset.data.joint_acc once at each control-step boundary; it does not aggregate all four physics-substep peaks. Absence from the final-substep sample does not mean an impact has no later effect on rewards."
+}
