@@ -36,7 +36,7 @@ class LWWheelRewardsCfg(RewardsCfg):
         params={"command_name": "motion", "std": 0.15},
     )
 
-    # Track reference base-link height through push-off, flight and landing recovery.
+    # Disable separate height tracking; global anchor position still tracks XYZ.
     motion_flight_height = RewTerm(
         func=mdp.motion_phase_anchor_height_error_exp,
         weight=0.0,
@@ -139,7 +139,8 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         ]
         self.events.push_robot = None
         # rewards
-        # self.rewards.motion_global_anchor_pos.weight = 2.0
+        # Tighten XYZ tracking while retaining the inherited reward weight of 0.5.
+        self.rewards.motion_global_anchor_pos.params["std"] = 0.15
         # self.rewards.motion_global_anchor_ori.weight = 1.0
         # self.rewards.motion_body_pos.weight = 2.0
         # self.rewards.motion_body_ori.weight = 2.0
@@ -160,24 +161,24 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.0
-        # Regularize wheel speed throughout the reference motion, independently of contact.
+        # Suppress wheel spin after reference landing; phase follows the motion, not contact.
         self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2
-        self.rewards.joint_vel_wheel_l2.weight = -0.10
+        self.rewards.joint_vel_wheel_l2.weight = -0.5
         self.rewards.joint_vel_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
-            "start_time_s": 0.0,
-            "ramp_time_s": 0.0,
+            "start_time_s": 1.65,
+            "ramp_time_s": 0.10,
             "velocity_scale": 10.0,
         }
-        # Keep full-motion acceleration regularization weak to allow push-off and braking.
+        # Ramp measured acceleration regularization more slowly to allow initial braking.
         self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2
-        self.rewards.joint_acc_wheel_l2.weight = -0.002
+        self.rewards.joint_acc_wheel_l2.weight = -0.1
         self.rewards.joint_acc_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
-            "start_time_s": 0.0,
-            "ramp_time_s": 0.0,
+            "start_time_s": 1.65,
+            "ramp_time_s": 0.20,
             "acceleration_scale": 50.0,
         }
         # Wheel contact has no phase fade and switches off at reference time 1.25 s.

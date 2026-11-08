@@ -1,0 +1,46 @@
+{
+  "notes": [
+    "结论：本机新版明显抑制落地后轮子持续空转，标称与随机化轮速RMS分别下降98.0%和97.7%；但标称起跳高度/落地高度跟踪变差，随机化右踝触地超速、左胫推蹬力矩余量及足部接触负载需要重点关注。两场完成整段动作不代表无缺陷或全面优于旧版。",
+    "本机最新完整场次2026-11-07_11-48-06/model_49999.pt，内部iter49999、SHA-256 ee0664364adebaf029f2e642cebc48f04c1b3257350d21a62c3dc21c58a8a6ec；51个checkpoint。用户确认 bash scripts/start_beyondmimic.sh --type wheel，无额外CLI/Hydra。训练HEAD2879c3cbb10641ec56e86762a76bab028d46cacb由W&B git字段及干净训练diff佐证；当前评估HEAD e9ac6f1f373000e52b419a236df2c03ef424d033。host younghit，RTX4080 SUPER，PPO/OnPolicyRunner，seed42。",
+    "训练保存配置为4096环境、50000迭代、每环境24步、高度奖励2.0；轮速惩罚-0.5，自参考1.65s起0.10s渐入，velocity_scale10rad/s；轮加速度惩罚-0.1，自1.65s起0.20s渐入，acceleration_scale50rad/s²。当前源码已是关闭高度奖励/全程轮惩罚配置，因此本次以7个显式scenario覆盖恢复训练值。runtime-restoration-audit逐项核对保存YAML；源码未修改。训练至评估源码差异只有这7个配置值及一条reward文档字符串。",
+    "基线为本机2026-11-06_16-07-00/model_49999.pt，SHA e4943048256507fbfb32e89001a2ea0e9ed3e252280113ea08c1cc4b105bdda6，复用此前两场完整bundle并重新通过原始验证器。完整保存配置相比仅log_dir和两项轮部惩罚的函数、参数、权重变化；agent完全相同，两者均4096环境和4,915,200,000训练样本。未将server 2026-11-07_15-01-47的全程轮约束策略混为本机策略，本报告不使用远端模型。",
+    "测试：标称、保留完整训练随机化各1环境、1000控制步、seed42，Native mean action，frame0开始，无视频。新版每场5个完整成功周期、0失败、1个未结束尾周期；每场1000条20ms控制及4000条5ms物理遥测完整，missing_required_signals为空，新旧四个bundle均通过校验。标称重复轨迹相同，不是5个独立试验。",
+    "统计口径：主对照只含5个完整周期（850控制/3400物理样本）；comparison-metrics另存含截尾口径。起跳参考1.10–1.70s，落地1.45–1.90s（50Hz实际1.46–1.90s），推蹬1.10–1.36s。控制状态为参考帧后20ms；物理相位为frame/50+(substep+1)*5ms。高度是base-link原点世界Z，非三维anchor范数；竖直速度是基座COM，非全身COM。",
+    "参考1.85s之后、两项轮惩罚均完成渐入的统一窗口（50Hz参考帧实际1.86–3.38s，1540物理样本/场，双轮合并RMS）：\n\n| 指标 | 旧版标称 | 新版标称 | 旧版随机化 | 新版随机化 |\n|---|---:|---:|---:|---:|\n| 轮速RMS rad/s | 9.7071 | 0.1933 | 11.3941 | 0.2581 |\n| 轮速绝对峰 rad/s | 10.1968 | 0.3430 | 14.1674 | 1.1764 |\n| 轮加速度RMS rad/s² | 0.9377 | 0.9165 | 2.4551 | 1.7898 |\n| 轮加速度绝对峰 rad/s² | 3.7941 | 3.9737 | 44.3674 | 27.0062 |\n",
+    "轮部效果：新版落地后近乎停转，但轮加速度的变化需分阶段看。1.85s后标称加速度RMS仅0.938→0.916rad/s²，旧版稳定空转本就可有很小加速度；随机化2.455→1.790rad/s²。不能把轮速下降等同全程加速度下降，完整阶段统计见comparison-metrics。奖励门控跟随参考相位，不按实际接触开启。",
+    "完整周期对照：\n\n| 指标 | 旧版标称 | 新版标称 | 旧版随机化 | 新版随机化 |\n|---|---:|---:|---:|---:|\n| 起跳最高点均值 m | 0.7122 | 0.6974 | 0.7149 | 0.7077 |\n| 起跳向上基座COM速度峰 m/s | 1.873 | 1.777 | 2.187 | 2.187 |\n| 全周期高度RMSE cm | 1.241 | 1.897 | 1.637 | 1.976 |\n| 最大高度绝对误差 cm | 3.836 | 6.462 | 8.335 | 7.159 |\n| 落地高度RMSE cm | 1.833 | 3.219 | 2.686 | 2.341 |\n| 落地最低基座高度 m | 0.4807 | 0.4791 | 0.4527 | 0.4583 |\n| 起跳段横滚峰 deg | 0.696 | 1.622 | 6.459 | 8.012 |\n| 落地段俯仰峰 deg | 11.743 | 4.512 | 11.449 | 13.123 |\n| 推蹬双髋同向误差峰 deg | 0.183 | 1.068 | 2.462 | 2.355 |\n| 落地踝位置误差峰 deg | 22.116 | 15.984 | 27.532 | 24.431 |\n| 单足法向力范数峰 N | 1315.8 | 1274.9 | 1374.2 | 1626.1 |\n| 单轮法向力范数峰 N | 415.1 | 516.8 | 987.4 | 943.7 |\n",
+    "高度和姿态取舍：标称起跳峰高0.71222→0.69739m，向上速度1.873→1.777m/s，落地高度RMSE1.833→3.219cm（+75.7%），横滚峰0.696→1.622°；标称落地俯仰11.743→4.512°、踝角误差22.116→15.984°则改善。随机化落地高度RMSE2.686→2.341cm（-12.9%），但横滚峰6.459→8.012°、俯仰峰11.449→13.123°；全周期高度RMSE1.637→1.976cm。因此不能将落地局部高度改善说成全程跟踪改善。",
+    "接触负载：标称足部法向力峰1315.8→1274.9N；随机化1374.2→1626.1N（+18.3%）。PhysX值是5ms法向力，不含摩擦，不能作为实物连续时间瞬时峰值。监测四个大腿/小腿地面力在本次均为0，只支持被监测部位和测试范围。",
+    "新版各关节绝对峰值（每场全4000物理样本，含截尾；速度rad/s，applied驱动力矩N·m）：\n\n| 关节 | 标称速度 | 随机化速度 | 速度限值 | 标称力矩 | 随机化力矩 | 力矩限值 |\n|---|---:|---:|---:|---:|---:|---:|\n| left_hip_joint | 2.049 | 2.670 | 20 | 39.135 | 54.320 | 120 |\n| right_hip_joint | 1.655 | 2.918 | 20 | 40.556 | 39.166 | 120 |\n| left_thigh_joint | 11.010 | 13.093 | 20 | 29.282 | 33.694 | 120 |\n| right_thigh_joint | 10.601 | 13.053 | 20 | 21.654 | 45.144 | 120 |\n| left_shank_joint | 15.783 | 17.435 | 20 | 87.003 | 118.135 | 120 |\n| right_shank_joint | 15.610 | 17.569 | 20 | 81.781 | 81.237 | 120 |\n| left_foot_joint | 5.923 | 10.009 | 10 | 8.830 | 21.425 | 27 |\n| right_foot_joint | 9.992 | 12.548 | 10 | 12.596 | 20.952 | 27 |\n| left_wheel_joint | 5.598 | 12.952 | 33 | 2.509 | 6.974 | 40 |\n| right_wheel_joint | 5.283 | 12.690 | 33 | 4.281 | 6.871 | 40 |\n",
+    "关键峰值：新版标称右踝9.992rad/s，未超过10rad/s但余量很小；随机化右踝12.5479rad/s（+25.5%），超速单个5ms样本，发生episode1、参考1.58s/物理1.585s，与右足669.46N接触同一步。当时applied torque仅0.834N·m，随后5ms为20.95N·m，不能解释为驱动力矩饱和导致；接触同期突变是线索，不作单因果判断。左踝随机化10.0093rad/s、累计10ms。",
+    "新版最大驱动力矩为随机化左胫118.1345N·m，达到120N·m配置限值的98.45%，剩余约1.87N·m；发生episode0、物理1.300s推蹬阶段，当时双轮仍接触。旧版对应峰105.7315N·m。所有applied torque均低于99%限值，computed torque也未超过配置限值；未触限不等于裕量充足。上述右踝与左胫峰值都早于参考1.65s的轮惩罚开启时刻，不能把它们直接解释为该时刻立即制动产生。",
+    "接触时序用10N且持续至少15ms作为描述性判据：标称监测离地旧265→新245ms，首次持续足接触物理1.590→1.565s；新版随机化离地245–280ms，首次持续足接触1.575–1.625s。只覆盖四足轮及四大腿/小腿监测集合，不能证明任意部位无接触。",
+    "完整周期与截尾分开：新版随机化落地高度RMSE完整周期2.3409cm、含截尾2.2774cm；最低基座高度完整0.45833m、含截尾0.45157m。主表按完整周期比较，关节负载表按全部4000物理样本检查峰值，口径在各表明确标注。",
+    "运行条件对照：相同场景所记录的初始质量、局部COM、材料、PhysX关节刚度和阻尼逐元素相等。软件PD增益和动作延迟逐次抽样未独立捕获，不能声称所有随机量都测量一致。两场训练同样本量、同seed、同机评估，但只有一对训练，不能证明唯一因果或普遍鲁棒性。",
+    "训练统计：内部iter与TensorBoard最大step均49999，选定29项最后5000记录均为有限值；窗口100/1000/5000和此前1000条均保存。新版最后1000 motion_finished均值0.995575，旧版0.996025；它来自自适应相位初始化，不能当作frame0成功率。关节速度误差范数7.699→1.816，包含轮关节，需结合闭环分关节统计；总reward因奖励定义变化不用于优劣排名。sampling_top1_bin=0.5是归一化bin索引，不是50%失败率。",
+    "训练最后1000条均值：\n\n| 指标 | 旧版 | 新版 | 新版此前1000 |\n|---|---:|---:|---:|\n| Episode_Termination/motion_finished | 0.9960246 | 0.9955753 | 0.9949539 |\n| Episode_Termination/anchor_pos | 0.0004305 | 0.0005596 | 0.0007407 |\n| Episode_Termination/ee_body_pos | 0.0010786 | 0.0012366 | 0.0014166 |\n| Episode_Termination/thigh_shank_ground_contact | 0.0025192 | 0.0026504 | 0.0029384 |\n| Loss/value_function | 0.0179397 | 0.0203304 | 0.0218198 |\n| Loss/surrogate | 0.0046190 | 0.0044353 | 0.0040499 |\n| Loss/symmetry | 0.0001608 | 0.0001541 | 0.0001581 |\n| Metrics/motion/error_anchor_pos | 0.1346635 | 0.1339369 | 0.1350292 |\n| Metrics/motion/error_joint_pos | 3.8507638 | 1.6768616 | 1.6945900 |\n| Metrics/motion/error_joint_vel | 7.6992446 | 1.8161531 | 1.7940871 |\n| Metrics/motion/sampling_entropy | 0.8741135 | 0.8703466 | 0.8570914 |\n| Metrics/motion/sampling_top1_prob | 0.4832504 | 0.4729431 | 0.4668877 |\n",
+    "![完整周期高度、横滚与轮速](derived/phase-comparison.png)",
+    "保护核验：1670个既有证据、checkpoint、参数、资源及导出文件SHA均未改变；tracked/staged diff为空，HEAD不变，评估进程退出、GPU无compute任务。本批仅新增证据；未修改代码、启停训练、导出、删除旧文件或Git提交推送。",
+    "收敛结论indeterminate：没有获批准的验收阈值，单seed和少量周期无法证明收敛、普遍稳定或实物适用性。仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+  ],
+  "recommendations": [
+    "保留新版作为落地后轮速抑制有效的证据；不判为全面优于旧版，暂不自动替换、导出或部署。",
+    "下一步优先复核随机化右踝触地5ms超速和左胫推蹬力矩余量，再评估标称高度损失。若需要扩展seed、短视频或训练改动，另行明确有限范围；本批不执行扩展。",
+    "当前证据不支持直接加大轮部惩罚。任何参数建议应分别关注轮速抑制、高度、姿态、接触负载和关节余量，并经用户批准后实施。"
+  ],
+  "supporting": [
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/derived/analysis-method.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/derived/comparison-metrics.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/derived/cycle-metrics.csv",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/derived/execution-receipt.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/derived/joint-loads.csv",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/derived/load-extrema.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/derived/phase-comparison.png",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evidence/training/effective-config-diff-20261108-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evidence/training/evaluation-request-20261108-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evidence/training/protection-after-20261108-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evidence/training/protection-before-20261108-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evidence/training/runtime-restoration-audit-20261108-001.json",
+    "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_11-48-06/evidence/training/tensorboard-windows-20261108-001.json"
+  ]
+}
