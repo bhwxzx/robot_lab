@@ -1,0 +1,27 @@
+{
+  "training_head": "e4317a70b221940a0a2a9f4e74547204dd950fe7",
+  "export_head": "3d2d9baca45498cc02ca1c0a500160581a9b6d28",
+  "training_runtime_config_files_differ": [
+    "source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py"
+  ],
+  "diff": "diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\nindex 0468d0f..b4d337e 100644\n--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\n+++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py\n@@ -36,10 +36,10 @@ class LWWheelRewardsCfg(RewardsCfg):\n         params={\"command_name\": \"motion\", \"std\": 0.15},\n     )\n \n-    # Track reference base-link height through push-off, flight and landing recovery.\n+    # Disable separate height tracking; global anchor position still tracks XYZ.\n     motion_flight_height = RewTerm(\n         func=mdp.motion_phase_anchor_height_error_exp,\n-        weight=0.0,\n+        weight=2.0,\n         params={\n             \"command_name\": \"motion\",\n             \"std\": 0.10,\n@@ -139,7 +139,8 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):\n         ]\n         self.events.push_robot = None\n         # rewards\n-        # self.rewards.motion_global_anchor_pos.weight = 2.0\n+        # Tighten XYZ tracking while retaining the inherited reward weight of 0.5.\n+        self.rewards.motion_global_anchor_pos.params[\"std\"] = 0.15\n         # self.rewards.motion_global_anchor_ori.weight = 1.0\n         # self.rewards.motion_body_pos.weight = 2.0\n         # self.rewards.motion_body_ori.weight = 2.0\n@@ -160,24 +161,24 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):\n         self.rewards.undesired_contacts.params[\"sensor_cfg\"].body_names = [\"base_link\", \".*hip_link\", \".*thigh_link\",\".*shank_link\"]\n         self.rewards.joint_limit.params[\"asset_cfg\"].joint_names = self.joint_names_without_wheels\n         self.rewards.torque_limit.weight = -0.0\n-        # Regularize wheel speed throughout the reference motion, independently of contact.\n+        # Suppress wheel spin after reference landing; phase follows the motion, not contact.\n         self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2\n-        self.rewards.joint_vel_wheel_l2.weight = -0.10\n+        self.rewards.joint_vel_wheel_l2.weight = -0.5\n         self.rewards.joint_vel_wheel_l2.params = {\n             \"command_name\": \"motion\",\n             \"asset_cfg\": SceneEntityCfg(\"robot\", joint_names=self.wheel_joint_names),\n-            \"start_time_s\": 0.0,\n-            \"ramp_time_s\": 0.0,\n+            \"start_time_s\": 1.65,\n+            \"ramp_time_s\": 0.10,\n             \"velocity_scale\": 10.0,\n         }\n-        # Keep full-motion acceleration regularization weak to allow push-off and braking.\n+        # Ramp measured acceleration regularization more slowly to allow initial braking.\n         self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2\n-        self.rewards.joint_acc_wheel_l2.weight = -0.002\n+        self.rewards.joint_acc_wheel_l2.weight = -0.1\n         self.rewards.joint_acc_wheel_l2.params = {\n             \"command_name\": \"motion\",\n             \"asset_cfg\": SceneEntityCfg(\"robot\", joint_names=self.wheel_joint_names),\n-            \"start_time_s\": 0.0,\n-            \"ramp_time_s\": 0.0,\n+            \"start_time_s\": 1.65,\n+            \"ramp_time_s\": 0.20,\n             \"acceleration_scale\": 50.0,\n         }\n         # Wheel contact has no phase fade and switches off at reference time 1.25 s.\n",
+  "process_overrides": [
+    "env.rewards.motion_flight_height.weight=0.0",
+    "env.rewards.motion_global_anchor_pos.params.std=0.3",
+    "env.rewards.joint_vel_wheel_l2.weight=-0.1",
+    "env.rewards.joint_vel_wheel_l2.params.start_time_s=0.0",
+    "env.rewards.joint_vel_wheel_l2.params.ramp_time_s=0.0",
+    "env.rewards.joint_acc_wheel_l2.weight=-0.002",
+    "env.rewards.joint_acc_wheel_l2.params.start_time_s=0.0",
+    "env.rewards.joint_acc_wheel_l2.params.ramp_time_s=0.0"
+  ],
+  "verified_saved_sections_equal_previous_archive": [
+    "actions",
+    "observations",
+    "sim",
+    "scene",
+    "commands"
+  ],
+  "saved_environment": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-07_15-01-47/params/env.yaml",
+  "saved_environment_sha256": "57ac811fb76140475ebfad0f45e7de57d360cecf162d0ce68e761a5a1a525394"
+}
