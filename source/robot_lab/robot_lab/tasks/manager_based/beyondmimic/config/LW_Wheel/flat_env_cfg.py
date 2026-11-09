@@ -139,8 +139,6 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         ]
         self.events.push_robot = None
         # rewards
-        # Tighten XYZ tracking while retaining the inherited reward weight of 0.5.
-        self.rewards.motion_global_anchor_pos.params["std"] = 0.15
         # self.rewards.motion_global_anchor_ori.weight = 1.0
         # self.rewards.motion_body_pos.weight = 2.0
         # self.rewards.motion_body_ori.weight = 2.0
@@ -161,9 +159,9 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.0
-        # Suppress wheel spin after reference landing; phase follows the motion, not contact.
+        # Wheel motion is tracked through link rewards; disable the separate speed penalty.
         self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2
-        self.rewards.joint_vel_wheel_l2.weight = -0.5
+        self.rewards.joint_vel_wheel_l2.weight = -0.0
         self.rewards.joint_vel_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
@@ -171,9 +169,9 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
             "ramp_time_s": 0.10,
             "velocity_scale": 10.0,
         }
-        # Ramp measured acceleration regularization more slowly to allow initial braking.
+        # Disable the separate wheel acceleration penalty as well.
         self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2
-        self.rewards.joint_acc_wheel_l2.weight = -0.1
+        self.rewards.joint_acc_wheel_l2.weight = -0.0
         self.rewards.joint_acc_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
@@ -183,7 +181,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         }
         # Wheel contact has no phase fade and switches off at reference time 1.25 s.
         # At 50 Hz, frame 62 (1.24 s) is the last nonzero frame; frame 63 is disabled.
-        self.rewards.wheel_contact_continuous.weight = 0.5
+        self.rewards.wheel_contact_continuous.weight = 0.0
         self.rewards.wheel_contact_continuous.params["sensor_cfg"].body_names = ["right_wheel_link", "left_wheel_link"]
         self.rewards.wheel_contact_continuous.params["start_time_s"] = 0.0
         self.rewards.wheel_contact_continuous.params["end_time_s"] = 1.25
@@ -245,7 +243,9 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
             "right_shank_link",
             "left_shank_link",
             "right_foot_link",
-            "left_foot_link"
+            "left_foot_link",
+            "right_wheel_link",
+            "left_wheel_link",
         ]
         self.commands.motion.joint_names = self.joint_names # 指定command的关节顺序，但不是都必须要追踪的关节
 

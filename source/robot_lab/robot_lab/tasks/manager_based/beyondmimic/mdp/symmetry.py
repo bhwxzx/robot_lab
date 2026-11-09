@@ -21,11 +21,26 @@ JOINT_NAMES = tuple(f"{side}_{part}_joint" for part in ("hip", "thigh", "shank",
                     for side in ("right", "left"))
 BODY_NAMES = ("base_link",) + tuple(f"{side}_{part}_link" for part in ("hip", "thigh", "shank", "foot")
                                   for side in ("right", "left"))
+WHEEL_BODY_NAMES = BODY_NAMES + ("right_wheel_link", "left_wheel_link")
 POLICY_TERMS = (("command", 20), ("motion_anchor_ori_b", 6), ("base_ang_vel", 3),
                 ("joint_pos", 10), ("joint_vel", 10), ("actions", 10))
 CRITIC_TERMS = (("command", 20), ("motion_anchor_pos_b", 3), ("motion_anchor_ori_b", 6),
                 ("body_pos", 27), ("body_ori", 54), ("base_lin_vel", 3), ("base_ang_vel", 3),
                 ("joint_pos", 10), ("joint_vel", 10), ("actions", 10))
+WHEEL_CRITIC_TERMS = tuple(
+    (name, 33 if name == "body_pos" else 66 if name == "body_ori" else width)
+    for name, width in CRITIC_TERMS
+)
+_CRITIC_LAYOUTS = {
+    sum(width for _, width in terms): (names, terms)
+    for names, terms in ((BODY_NAMES, CRITIC_TERMS), (WHEEL_BODY_NAMES, WHEEL_CRITIC_TERMS))
+}
+
+
+def _critic_layout(width: int) -> tuple:
+    if width not in _CRITIC_LAYOUTS:
+        raise ValueError("LW symmetry requires a 146- or 164-dimensional critic observation.")
+    return _CRITIC_LAYOUTS[width]
 
 
 def _check(x: torch.Tensor, width: int) -> None:
@@ -56,7 +71,7 @@ def mirror_rotation_6d(x: torch.Tensor) -> torch.Tensor:
     return x * x.new_tensor((1, -1, -1, 1, 1, -1))
 
 
-def _mirror_term(name: str, x: torch.Tensor) -> torch.Tensor:
+def _mirror_term(name: str, x: torch.Tensor, body_names: tuple = BODY_NAMES) -> torch.Tensor:
     if name == "command":
         return torch.cat((mirror_joints(x[..., :10]), mirror_joints(x[..., 10:])), dim=-1)
     if name in ("joint_pos", "joint_vel", "actions"):
@@ -70,14 +85,18 @@ def _mirror_term(name: str, x: torch.Tensor) -> torch.Tensor:
         return x * x.new_tensor((-1, 1, -1))
     if name in ("body_pos", "body_ori"):
         width = 3 if name == "body_pos" else 6
-        bodies = x.reshape(*x.shape[:-1], len(BODY_NAMES), width)
-        bodies = bodies[..., (0, 2, 1, 4, 3, 6, 5, 8, 7), :]
+        bodies = x.reshape(*x.shape[:-1], len(body_names), width)
+        other = tuple("left_" + n[6:] if n.startswith("right_") else
+                      "right_" + n[5:] if n.startswith("left_") else n for n in body_names)
+        bodies = bodies[..., tuple(body_names.index(n) for n in other), :]
         result = (bodies * x.new_tensor((1, -1, 1)) if width == 3 else mirror_rotation_6d(bodies))
         return result.reshape_as(x)
     raise ValueError(f"Unsupported observation term: {name}")
 
 
-def _mirror_group(obs: torch.Tensor, terms: tuple, history_length: int) -> torch.Tensor:
+def _mirror_group(
+    obs: torch.Tensor, terms: tuple, history_length: int, body_names: tuple = BODY_NAMES
+) -> torch.Tensor:
     if type(history_length) is not int or history_length < 1:
         raise ValueError("history_length must be a positive integer.")
     _check(obs, sum(width for _, width in terms) * history_length)
@@ -86,7 +105,7 @@ def _mirror_group(obs: torch.Tensor, terms: tuple, history_length: int) -> torch
     for name, width in terms:
         count = history_length * width
         term = obs[..., offset:offset + count].reshape(*obs.shape[:-1], history_length, width)
-        parts.append(_mirror_term(name, term).reshape(*obs.shape[:-1], count))
+        parts.append(_mirror_term(name, term, body_names).reshape(*obs.shape[:-1], count))
         offset += count
     return torch.cat(parts, dim=-1)
 
@@ -97,20 +116,29 @@ def mirror_policy_observations(obs: torch.Tensor, history_length: int = 10) -> t
 
 
 def mirror_critic_observations(obs: torch.Tensor) -> torch.Tensor:
-    """Reflect the task's 146-dimensional privileged, history-free observation."""
-    return _mirror_group(obs, CRITIC_TERMS, 1)
+    """Reflect 9-link (146) or 11-link (164) privileged observations, without history."""
+    if not isinstance(obs, torch.Tensor) or obs.ndim < 1:
+        raise ValueError("LW symmetry requires a critic tensor with a feature dimension.")
+    names, terms = _critic_layout(obs.shape[-1])
+    return _mirror_group(obs, terms, 1, names)
 
 
 _VALIDATED_TRAINING_ENVS = WeakSet()
 
 
-def _validate_training_env(env) -> None:
+def _validate_training_env(env) -> int:
     """Check the resolved layout once per environment, before using fixed maps."""
     env = getattr(env, "unwrapped", env)
+    motion = env.cfg.commands.motion
+    body_names = tuple(motion.body_names)
+    if body_names not in (BODY_NAMES, WHEEL_BODY_NAMES):
+        raise ValueError("LW symmetry requires the declared reference body order.")
+    critic_terms = CRITIC_TERMS if body_names == BODY_NAMES else WHEEL_CRITIC_TERMS
+    critic_width = sum(width for _, width in critic_terms)
     if env in _VALIDATED_TRAINING_ENVS:
-        return
+        return critic_width
     manager = env.observation_manager
-    for group, terms, history in (("policy", POLICY_TERMS, 10), ("critic", CRITIC_TERMS, 1)):
+    for group, terms, history in (("policy", POLICY_TERMS, 10), ("critic", critic_terms, 1)):
         if (
             tuple(manager.active_terms[group]) != tuple(name for name, _ in terms)
             or not manager.group_obs_concatenate[group]
@@ -123,8 +151,7 @@ def _validate_training_env(env) -> None:
             selector = getattr(group_cfg, name).params["asset_cfg"]
             if tuple(selector.joint_names) != JOINT_NAMES or not selector.preserve_order:
                 raise ValueError(f"LW symmetry requires ordered joint names in {group}.{name}.")
-    motion = env.cfg.commands.motion
-    if tuple(motion.joint_names) != JOINT_NAMES or tuple(motion.body_names) != BODY_NAMES:
+    if tuple(motion.joint_names) != JOINT_NAMES:
         raise ValueError("LW symmetry requires the declared reference joint and body order.")
     if tuple(env.action_manager.active_terms) != ("joint_pos", "joint_vel"):
         raise ValueError("LW symmetry requires position actions followed by wheel velocity actions.")
@@ -138,15 +165,18 @@ def _validate_training_env(env) -> None:
         ):
             raise ValueError(f"LW symmetry requires the declared {name} action mapping.")
     _VALIDATED_TRAINING_ENVS.add(env)
+    return critic_width
 
 
 @lru_cache(maxsize=16)
-def _training_map(group: str, device: torch.device, dtype: torch.dtype) -> tuple[torch.Tensor, torch.Tensor]:
+def _training_map(
+    group: str, device: torch.device, dtype: torch.dtype, width: int
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Compile the tested signed permutations once; avoid GPU checks per PPO batch."""
-    width, reflect = {
-        "policy": (590, mirror_policy_observations),
-        "critic": (146, mirror_critic_observations),
-        "actions": (10, mirror_actions),
+    reflect = {
+        "policy": mirror_policy_observations,
+        "critic": mirror_critic_observations,
+        "actions": mirror_actions,
     }[group]
     # Positive, unique labels recover both index and sign from the reference mapping.
     reflected = reflect(torch.arange(1, width + 1, dtype=torch.float64))
@@ -156,10 +186,10 @@ def _training_map(group: str, device: torch.device, dtype: torch.dtype) -> tuple
 
 
 def _reflect_training_tensor(data: torch.Tensor, group: str) -> torch.Tensor:
-    width = {"policy": 590, "critic": 146, "actions": 10}[group]
-    if not isinstance(data, torch.Tensor) or data.ndim != 2 or data.shape[1] != width or not data.is_floating_point():
-        raise ValueError(f"LW symmetry expects a floating-point [batch, {width}] {group} tensor.")
-    indices, signs = _training_map(group, data.device, data.dtype)
+    widths = {"policy": (590,), "critic": tuple(_CRITIC_LAYOUTS), "actions": (10,)}[group]
+    if not isinstance(data, torch.Tensor) or data.ndim != 2 or data.shape[1] not in widths or not data.is_floating_point():
+        raise ValueError(f"LW symmetry expects a floating-point {group} tensor with feature width in {widths}.")
+    indices, signs = _training_map(group, data.device, data.dtype, data.shape[1])
     return data.index_select(-1, indices) * signs
 
 
@@ -172,12 +202,13 @@ def compute_symmetric_states(env, obs: TensorDict | None = None, actions: torch.
     ``env=None`` permits simulator-free tensor tests. Gradients are preserved; PPO
     itself detaches the mirrored mean-action targets when computing its loss.
     """
-    if env is not None:
-        _validate_training_env(env)
+    critic_width = _validate_training_env(env) if env is not None else None
     obs_aug = None
     if obs is not None:
         if not isinstance(obs, TensorDict) or len(obs.batch_size) != 1 or set(obs.keys()) != {"policy", "critic"}:
             raise ValueError("LW symmetry expects flat policy/critic TensorDict groups with one batch dimension.")
+        if critic_width is not None and obs["critic"].shape[-1] != critic_width:
+            raise ValueError("LW critic observation width differs from the environment's body layout.")
         mirrored = TensorDict(
             {group: _reflect_training_tensor(obs[group], group) for group in ("policy", "critic")},
             batch_size=obs.batch_size,

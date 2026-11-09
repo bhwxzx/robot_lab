@@ -42,7 +42,8 @@ class MirrorTests(unittest.TestCase):
     def test_involution_and_no_input_mutation_for_actor_critic_and_actions(self):
         torch.manual_seed(12)
         for width, func in ((590, mirror.mirror_policy_observations),
-                            (146, mirror.mirror_critic_observations), (10, mirror.mirror_actions)):
+                            (146, mirror.mirror_critic_observations),
+                            (164, mirror.mirror_critic_observations), (10, mirror.mirror_actions)):
             original = torch.randn(2, 3, width, dtype=torch.float64)
             before = original.clone()
             reflected = func(original)
@@ -93,6 +94,18 @@ class MirrorTests(unittest.TestCase):
         polar = torch.tensor([1, -1, 1])
         axial = torch.tensor([-1, 1, -1])
         torch.testing.assert_close(torch.linalg.cross(a*polar, b*polar), torch.linalg.cross(a, b)*axial)
+
+    def test_wheel_critic_swaps_wheel_positions_and_orientations(self):
+        x = torch.arange(164, dtype=torch.float64)[None, :]
+        y = mirror.mirror_critic_observations(x)
+        # 11 bodies: positions start at 29, orientations at 62; wheels are slots 9 and 10.
+        for target, source in ((9, 10), (10, 9)):
+            torch.testing.assert_close(y[0, 29+3*target:32+3*target],
+                                       x[0, 29+3*source:32+3*source]*torch.tensor([1, -1, 1]))
+            torch.testing.assert_close(y[0, 62+6*target:68+6*target],
+                                       x[0, 62+6*source:68+6*source]*torch.tensor([1, -1, -1, 1, 1, -1]))
+        torch.testing.assert_close(y[0, 128:131], x[0, 128:131]*torch.tensor([1, -1, 1]))
+        torch.testing.assert_close(y[0, 131:134], x[0, 131:134]*torch.tensor([-1, 1, -1]))
 
     def test_mixed_action_targets_commute_when_offsets_are_also_reflected(self):
         # Includes asymmetric startup offsets: the *mirrored environment* must use mirrored defaults.
@@ -165,11 +178,13 @@ def training_symmetry_cfg():
     return {keyword.arg: ast.literal_eval(keyword.value) for keyword in calls[0].keywords}
 
 
-def fake_training_env():
+def fake_training_env(with_wheels=False):
     class Env:
         pass
     env = Env()
-    groups = {'policy': (mirror.POLICY_TERMS, 10), 'critic': (mirror.CRITIC_TERMS, 1)}
+    critic_terms = mirror.WHEEL_CRITIC_TERMS if with_wheels else mirror.CRITIC_TERMS
+    body_names = mirror.WHEEL_BODY_NAMES if with_wheels else mirror.BODY_NAMES
+    groups = {'policy': (mirror.POLICY_TERMS, 10), 'critic': (critic_terms, 1)}
     env.observation_manager = SimpleNamespace(
         active_terms={group: [name for name, _ in terms] for group, (terms, _) in groups.items()},
         group_obs_concatenate=dict.fromkeys(groups, True),
@@ -189,13 +204,38 @@ def fake_training_env():
     env.cfg = SimpleNamespace(
         observations=SimpleNamespace(**observations), actions=SimpleNamespace(**actions),
         commands=SimpleNamespace(motion=SimpleNamespace(
-            joint_names=list(mirror.JOINT_NAMES), body_names=list(mirror.BODY_NAMES))),
+            joint_names=list(mirror.JOINT_NAMES), body_names=list(body_names))),
     )
     env.action_manager = SimpleNamespace(active_terms=['joint_pos', 'joint_vel'])
     return env
 
 
 class TrainingSymmetryTests(unittest.TestCase):
+    def test_callback_handles_both_critic_layouts_without_cache_aliasing(self):
+        for width in (164, 146, 164):
+            env = fake_training_env(with_wheels=width == 164)
+            critic = torch.randn(2, width, requires_grad=True)
+            obs = TensorDict({'policy': torch.randn(2, 590), 'critic': critic}, batch_size=[2])
+            aug, _ = mirror.compute_symmetric_states(env, obs=obs)
+            torch.testing.assert_close(aug['critic'][:2], critic, rtol=0, atol=0)
+            torch.testing.assert_close(aug['critic'][2:], mirror.mirror_critic_observations(critic), rtol=0, atol=0)
+            aug['critic'][2:].square().sum().backward()
+            torch.testing.assert_close(critic.grad, 2*critic.detach())
+            wrong_width = 146 if width == 164 else 164
+            mismatched = obs.clone().set('critic', torch.zeros(2, wrong_width))
+            with self.assertRaises(ValueError):
+                mirror.compute_symmetric_states(env, obs=mismatched)
+
+    def test_wheel_environment_rejects_old_dimensions_and_reordered_wheels(self):
+        for bad_order in (False, True):
+            env = fake_training_env(with_wheels=True)
+            if bad_order:
+                env.cfg.commands.motion.body_names[-2:] = ['left_wheel_link', 'right_wheel_link']
+            else:
+                env.observation_manager.group_obs_dim['critic'] = (146,)
+            with self.assertRaises(ValueError):
+                mirror.compute_symmetric_states(env, actions=torch.zeros(2, 10))
+
     def test_callback_original_first_and_matches_geometric_maps(self):
         for dtype in (torch.float32, torch.float64):
             obs = TensorDict({'policy': torch.randn(3, 590, dtype=dtype),
@@ -276,6 +316,11 @@ class TrainingSymmetryTests(unittest.TestCase):
             self.assertIs(string_to_callable(cfg['data_augmentation_func']), mirror.compute_symmetric_states)
 
     def test_local_ppo_modes_and_mirror_loss_gradient_without_updates(self):
+        for width in (146, 164):
+            with self.subTest(critic_width=width):
+                self._check_ppo_modes_without_updates(width)
+
+    def _check_ppo_modes_without_updates(self, critic_width):
         from rsl_rl.algorithms import PPO
         from rsl_rl.modules import ActorCritic
         from rsl_rl.modules.symmetry import resolve_symmetry_config
@@ -296,14 +341,15 @@ class TrainingSymmetryTests(unittest.TestCase):
         for do_aug, do_loss in ((False, False), (False, True), (True, False), (True, True)):
             with self.subTest(augmentation=do_aug, mirror_loss=do_loss):
                 torch.manual_seed(11)
-                obs = TensorDict({'policy': torch.randn(4, 590), 'critic': torch.randn(4, 146)}, batch_size=[4])
+                obs = TensorDict({'policy': torch.randn(4, 590), 'critic': torch.randn(4, critic_width)}, batch_size=[4])
                 symmetry = dict(cfg, use_data_augmentation=do_aug, use_mirror_loss=do_loss,
                                 data_augmentation_func=mirror.compute_symmetric_states)
                 with contextlib.redirect_stdout(io.StringIO()):
                     policy = ActorCritic(obs, {'policy': ['policy'], 'critic': ['critic']}, 10,
                                          actor_hidden_dims=[32, 16], critic_hidden_dims=[32, 16])
                     ppo = PPO(policy, num_learning_epochs=1, num_mini_batches=1, max_grad_norm=1e9,
-                              **resolve_symmetry_config({'symmetry_cfg': symmetry}, fake_training_env()))
+                              **resolve_symmetry_config({'symmetry_cfg': symmetry},
+                                                        fake_training_env(with_wheels=critic_width == 164)))
                 with torch.no_grad():
                     actions = policy.act(obs).clone()
                     old_log = policy.get_actions_log_prob(actions).unsqueeze(-1).clone()
