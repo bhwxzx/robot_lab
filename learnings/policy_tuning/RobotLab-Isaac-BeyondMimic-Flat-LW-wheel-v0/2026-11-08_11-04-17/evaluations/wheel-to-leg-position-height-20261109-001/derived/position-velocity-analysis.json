@@ -1,0 +1,1332 @@
+{
+  "version": 1,
+  "source": "from pathlib import Path\nimport json,gzip,hashlib,sys\nimport numpy as np\nimport matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt\nroot=Path.cwd();sys.path.insert(0,str(root/'scripts/reinforcement_learning/rsl_rl'))\nfrom diagnose_motion_policy_symmetry import rotation_matrix as R\nbase=root/'learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0'\nruns={'no_height':('2026-11-07_15-01-47','wheel-to-leg-fixed-start-20261108-001'),'height':('2026-11-06_11-39-51','wheel-to-leg-fixed-start-20261107-001'),'current':('2026-11-08_11-04-17','wheel-to-leg-position-height-20261109-001')}\nout=base/runs['current'][0]/'evaluations'/runs['current'][1]/'derived';analysis=json.loads((out/'analysis.json').read_text())\nref=lambda p:{'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}\nrms=lambda x:float(np.sqrt(np.mean(np.asarray(x)**2)))\ndef env(v):return {'min':float(min(v)),'max':float(max(v)),'mean':float(np.mean(v))}\nstats={};inputs=[ref(out/'analysis.json')];curves={};reference=None\nfor version,(run,batch) in runs.items():\n stats[version]={}\n for case in ['nominal','randomized']:\n  p=base/run/'evaluations'/batch/'raw'/f'fixed-start-{case}-a01/telemetry.json.gz'\n  with gzip.open(p,'rt') as f:t=json.load(f)\n  inputs.append(ref(p));md=t['motion_diagnostics'];npz=Path(md['motion_file']['path']);m=np.load(npz);bi=md['initial_runtime']['body_names'].index('base_link');rb=md['body_names'].index('base_link');refpos=m['body_pos_w'][:,bi];mt=np.arange(len(refpos))/50\n  assert ref(npz)['sha256']==md['motion_file']['sha256']\n  reference={'motion':ref(npz),'base_z_peak_m':float(refpos[55:86,2].max()),'base_COM_vz_peak_m_s':float(m['body_lin_vel_w'][55:86,bi,2].max()),'base_COM_vx_peak_m_s':float(m['body_lin_vel_w'][55:86,bi,0].max()),'takeoff_time_s':1.3,'landing_time_s':1.6}\n  rows=[];allss=t['samples'];allps=t['physics_samples'];wi=[i for i,n in enumerate(t['joint_names']) if 'wheel' in n];names=t['joint_names'];lsh=names.index('left_shank_joint')\n  for e in analysis['statistics'][version][case]['episodes']:\n   if not e['complete_success']:continue\n   ss=[s for s in allss if s['episode_id']==e['episode']];ps=[s for s in allps if s['episode_id']==e['episode']]\n   frame=np.array([s['frame_index'] for s in ss]);time=frame/50+.02;pos=np.array([s['root_position_w'] for s in ss]);vel=np.array([R(s['root_quaternion_w'])@s['root_linear_velocity_b'] for s in ss])\n   recorded_ref=np.array([s['reference_body_position_w'] for s in ss]).reshape(-1,len(md['body_names']),3)[:,rb]\n   offsets=recorded_ref-refpos[frame];origin=offsets[0];assert np.max(np.abs(offsets-origin))<1e-5\n   aligned=np.stack([np.interp(time,mt,refpos[:,j])+origin[j] for j in range(3)],axis=1);error=pos-aligned;valid=time<=mt[-1]+1e-9\n   jump=(time>=1.1)&(time<=1.7);land=(time>=1.45)&(time<=1.9);pt=np.array([s['frame_index']/50+(s['substep']+1)*.005 for s in ps]);phase_t=np.array([s['frame_index']/50 for s in ps]);pv=np.array([s['joint_velocity'] for s in ps]);pa=np.array([s['joint_acceleration'] for s in ps]);late=phase_t>=1.85;posq=np.array([s['joint_position'] for s in ss]);a=e['air_start_s'];l=e['landing_s']\n   signed_velocity=vel[jump,2];imax=np.where(jump)[0][np.argmax(signed_velocity)];minq=np.where((time>=1.1)&(time<=1.5))[0];imin=minq[np.argmin(posq[minq,lsh])]\n   row={'episode':e['episode'],'aligned_3D_position_rmse_m':float(np.sqrt(np.mean(np.sum(error[valid]**2,axis=1)))),'aligned_xyz_rmse_m':[rms(error[valid,j]) for j in range(3)],'aligned_landing_z_rmse_m':rms(error[land,2]),'landing_x_error_m':float(np.interp(l,time,pos[:,0])-np.interp(l,mt,refpos[:,0])-origin[0]),'end_x_error_m':float(np.interp(mt[-1],time,pos[:,0])-refpos[-1,0]-origin[0]),'base_dx_takeoff_to_landing_m':float(np.interp(l,time,pos[:,0])-np.interp(a,time,pos[:,0])),'base_COM_vz_peak_m_s':float(vel[imax,2]),'base_COM_vz_peak_time_s':float(time[imax]),'base_COM_vz_at_air_interpolated_m_s':float(np.interp(a,time,vel[:,2])),'base_COM_vx_peak_jump_m_s':float(vel[jump,0].max()),'base_COM_vx_at_landing_interpolated_m_s':float(np.interp(l,time,vel[:,0])),'late_wheel_speed_rms_rad_s':rms(pv[late][:,wi]),'late_wheel_speed_peak_rad_s':float(np.abs(pv[late][:,wi]).max()),'late_wheel_acceleration_rms_rad_s2':rms(pa[late][:,wi]),'late_wheel_acceleration_peak_rad_s2':float(np.abs(pa[late][:,wi]).max()),'left_shank_min_q_time_s':float(time[imin]),'left_shank_min_q_rad':float(posq[imin,lsh])}\n   rows.append(row);curves[version,case,e['episode']]={'time':time,'x':pos[:,0]-origin[0],'z':pos[:,2]-origin[2],'vz':vel[:,2],'vx':vel[:,0]}\n  stats[version][case]={'episodes':rows,'envelopes':{k:env([row[k] for row in rows]) for k in rows[0] if k not in ['episode','aligned_xyz_rmse_m']},'aligned_xyz_rmse_mean_m':np.mean([row['aligned_xyz_rmse_m'] for row in rows],axis=0).tolist(),'landing_x_error_mean_abs_m':float(np.mean([abs(row['landing_x_error_m']) for row in rows]))}\nfig,axs=plt.subplots(3,2,figsize=(12,10),sharex=True)\nfor col,case in enumerate(['nominal','randomized']):\n for version,color in [('no_height','tab:orange'),('height','tab:green'),('current','tab:blue')]:\n  for e in range(5):\n   c=curves[version,case,e];mask=(c['time']>=.9)&(c['time']<=2.0)\n   for row,k in enumerate(['x','vx','vz']):axs[row,col].plot(c['time'][mask],c[k][mask],color=color,alpha=.7 if case=='nominal' else .35,label=version if e==0 else None)\n for row,(label,values) in enumerate([('Base link X (m)',refpos[:,0]),('Base COM Vx (m/s)',m['body_lin_vel_w'][:,bi,0]),('Base COM Vz (m/s)',m['body_lin_vel_w'][:,bi,2])]):\n  mask=(mt>=.9)&(mt<=2.0);axs[row,col].plot(mt[mask],values[mask],'k--',label='reference');axs[row,col].set_ylabel(label);axs[row,col].grid(alpha=.25)\n axs[0,col].set_title(case);axs[0,col].legend(fontsize=8);axs[-1,col].set_xlabel('Physical motion time (s)')\nfig.tight_layout();fig.savefig(out/'position-velocity-comparison.png',dpi=150);plt.close(fig)\nresult={'version':1,'source':CODE_SOURCE,'inputs':inputs,'reference':reference,'statistics':stats,'conventions':{'position':'Base link-origin world position minus original reference positions plus environment origin; no per-episode fitting or removal of reset position error. Reference linearly interpolated at physical control time frame/50+.02. Full-cycle RMSE excludes final sample beyond reference horizon3.38s.','velocity':'World base COM velocity rotated from telemetry; liftoff/landing values interpolated from20ms control samples; peaks are20ms sampled, not5ms exact.','landing':'Contact times from analysis.json; landing X error at each actual landing time; averages include five complete cycles only.','late_wheels':'Reference command phase>=1.85s, first50Hz frame1.86;5ms physics data, only complete cycles, left/right pooled RMS.','comparison':'Three8192-env server policies; no_height=Nov7 full-wheel/height0/std.30, height=Nov6 height2/no-wheel/std.30, current=Nov8 height2/late-wheel/std.15. Multiple reward changes; not a single-factor causal experiment.'}}\nwith (out/'position-velocity-analysis.json').open('x') as f:json.dump(result,f,indent=2,allow_nan=False)\nprint('POSITION_ANALYSIS_READY')\n",
+  "inputs": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-08_11-04-17/evaluations/wheel-to-leg-position-height-20261109-001/derived/analysis.json",
+      "sha256": "49f787fb9a3866a946d53ef6a75f08eddacb6ab1f779ae1b6a73b40759a61b6a"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "f0f4b47e495201a5a33a13c4820d70338e85da504b31f1ef0b1924620ecf1a3a"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "f6a70f528519486a75f8cec1042d61b68a7ccbe4393620ddd9c540548bc5177a"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/evaluations/wheel-to-leg-fixed-start-20261107-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "cbb26f6bc0922fb9ec6bd13bacd0faf03d6ad58475e0b781a179603d5bef457e"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-06_11-39-51/evaluations/wheel-to-leg-fixed-start-20261107-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "36193a6cd06a122b2c7c6fbcd42f432633b6418c3bbd919c92085e14f73d5b3f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-08_11-04-17/evaluations/wheel-to-leg-position-height-20261109-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "ed558870e7e0dc7266c3a10c9b3bbd8f7f86080b88bcd50d1b9adff78190dfb2"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-08_11-04-17/evaluations/wheel-to-leg-position-height-20261109-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "7841f86076ff29f35e631c7228245f8d1a0545507efceaf01a6f0208e8a841e7"
+    }
+  ],
+  "reference": {
+    "motion": {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz",
+      "sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+    },
+    "base_z_peak_m": 0.713509202003479,
+    "base_COM_vz_peak_m_s": 1.966831088066101,
+    "base_COM_vx_peak_m_s": 1.2220124006271362,
+    "takeoff_time_s": 1.3,
+    "landing_time_s": 1.6
+  },
+  "statistics": {
+    "no_height": {
+      "nominal": {
+        "episodes": [
+          {
+            "episode": 0,
+            "aligned_3D_position_rmse_m": 0.09222575161556558,
+            "aligned_xyz_rmse_m": [
+              0.08788153414402587,
+              0.01257886583051942,
+              0.024983941882061014
+            ],
+            "aligned_landing_z_rmse_m": 0.053547902385535105,
+            "landing_x_error_m": 0.08695057034492493,
+            "end_x_error_m": 0.12279579043388367,
+            "base_dx_takeoff_to_landing_m": 0.2601820603013041,
+            "base_COM_vz_peak_m_s": 1.4644602774402142,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.2321115090808616,
+            "base_COM_vx_peak_jump_m_s": 2.21441858648398,
+            "base_COM_vx_at_landing_interpolated_m_s": 1.2745474836000488,
+            "late_wheel_speed_rms_rad_s": 0.8819366120814005,
+            "late_wheel_speed_peak_rad_s": 1.0883183479309082,
+            "late_wheel_acceleration_rms_rad_s2": 0.8413413619428024,
+            "late_wheel_acceleration_peak_rad_s2": 3.329026699066162,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.14022448658943176
+          },
+          {
+            "episode": 1,
+            "aligned_3D_position_rmse_m": 0.09222575161556558,
+            "aligned_xyz_rmse_m": [
+              0.08788153414402587,
+              0.01257886583051942,
+              0.024983941882061014
+            ],
+            "aligned_landing_z_rmse_m": 0.053547902385535105,
+            "landing_x_error_m": 0.08695057034492493,
+            "end_x_error_m": 0.12279579043388367,
+            "base_dx_takeoff_to_landing_m": 0.2601820603013041,
+            "base_COM_vz_peak_m_s": 1.4644602774402142,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.2321115090808616,
+            "base_COM_vx_peak_jump_m_s": 2.21441858648398,
+            "base_COM_vx_at_landing_interpolated_m_s": 1.2745474836000488,
+            "late_wheel_speed_rms_rad_s": 0.8819366120814005,
+            "late_wheel_speed_peak_rad_s": 1.0883183479309082,
+            "late_wheel_acceleration_rms_rad_s2": 0.8413413619428024,
+            "late_wheel_acceleration_peak_rad_s2": 3.329026699066162,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.14022448658943176
+          },
+          {
+            "episode": 2,
+            "aligned_3D_position_rmse_m": 0.09222575161556558,
+            "aligned_xyz_rmse_m": [
+              0.08788153414402587,
+              0.01257886583051942,
+              0.024983941882061014
+            ],
+            "aligned_landing_z_rmse_m": 0.053547902385535105,
+            "landing_x_error_m": 0.08695057034492493,
+            "end_x_error_m": 0.12279579043388367,
+            "base_dx_takeoff_to_landing_m": 0.2601820603013041,
+            "base_COM_vz_peak_m_s": 1.4644602774402142,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.2321115090808616,
+            "base_COM_vx_peak_jump_m_s": 2.21441858648398,
+            "base_COM_vx_at_landing_interpolated_m_s": 1.2745474836000488,
+            "late_wheel_speed_rms_rad_s": 0.8819366120814005,
+            "late_wheel_speed_peak_rad_s": 1.0883183479309082,
+            "late_wheel_acceleration_rms_rad_s2": 0.8413413619428024,
+            "late_wheel_acceleration_peak_rad_s2": 3.329026699066162,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.14022448658943176
+          },
+          {
+            "episode": 3,
+            "aligned_3D_position_rmse_m": 0.09222575161556558,
+            "aligned_xyz_rmse_m": [
+              0.08788153414402587,
+              0.01257886583051942,
+              0.024983941882061014
+            ],
+            "aligned_landing_z_rmse_m": 0.053547902385535105,
+            "landing_x_error_m": 0.08695057034492493,
+            "end_x_error_m": 0.12279579043388367,
+            "base_dx_takeoff_to_landing_m": 0.2601820603013041,
+            "base_COM_vz_peak_m_s": 1.4644602774402142,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.2321115090808616,
+            "base_COM_vx_peak_jump_m_s": 2.21441858648398,
+            "base_COM_vx_at_landing_interpolated_m_s": 1.2745474836000488,
+            "late_wheel_speed_rms_rad_s": 0.8819366120814005,
+            "late_wheel_speed_peak_rad_s": 1.0883183479309082,
+            "late_wheel_acceleration_rms_rad_s2": 0.8413413619428024,
+            "late_wheel_acceleration_peak_rad_s2": 3.329026699066162,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.14022448658943176
+          },
+          {
+            "episode": 4,
+            "aligned_3D_position_rmse_m": 0.09222575161556558,
+            "aligned_xyz_rmse_m": [
+              0.08788153414402587,
+              0.01257886583051942,
+              0.024983941882061014
+            ],
+            "aligned_landing_z_rmse_m": 0.053547902385535105,
+            "landing_x_error_m": 0.08695057034492493,
+            "end_x_error_m": 0.12279579043388367,
+            "base_dx_takeoff_to_landing_m": 0.2601820603013041,
+            "base_COM_vz_peak_m_s": 1.4644602774402142,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.2321115090808616,
+            "base_COM_vx_peak_jump_m_s": 2.21441858648398,
+            "base_COM_vx_at_landing_interpolated_m_s": 1.2745474836000488,
+            "late_wheel_speed_rms_rad_s": 0.8819366120814005,
+            "late_wheel_speed_peak_rad_s": 1.0883183479309082,
+            "late_wheel_acceleration_rms_rad_s2": 0.8413413619428024,
+            "late_wheel_acceleration_peak_rad_s2": 3.329026699066162,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.14022448658943176
+          }
+        ],
+        "envelopes": {
+          "aligned_3D_position_rmse_m": {
+            "min": 0.09222575161556558,
+            "max": 0.09222575161556558,
+            "mean": 0.09222575161556558
+          },
+          "aligned_landing_z_rmse_m": {
+            "min": 0.053547902385535105,
+            "max": 0.053547902385535105,
+            "mean": 0.053547902385535105
+          },
+          "landing_x_error_m": {
+            "min": 0.08695057034492493,
+            "max": 0.08695057034492493,
+            "mean": 0.08695057034492493
+          },
+          "end_x_error_m": {
+            "min": 0.12279579043388367,
+            "max": 0.12279579043388367,
+            "mean": 0.12279579043388367
+          },
+          "base_dx_takeoff_to_landing_m": {
+            "min": 0.2601820603013041,
+            "max": 0.2601820603013041,
+            "mean": 0.2601820603013041
+          },
+          "base_COM_vz_peak_m_s": {
+            "min": 1.4644602774402142,
+            "max": 1.4644602774402142,
+            "mean": 1.4644602774402142
+          },
+          "base_COM_vz_peak_time_s": {
+            "min": 1.3,
+            "max": 1.3,
+            "mean": 1.3
+          },
+          "base_COM_vz_at_air_interpolated_m_s": {
+            "min": 1.2321115090808616,
+            "max": 1.2321115090808616,
+            "mean": 1.2321115090808616
+          },
+          "base_COM_vx_peak_jump_m_s": {
+            "min": 2.21441858648398,
+            "max": 2.21441858648398,
+            "mean": 2.21441858648398
+          },
+          "base_COM_vx_at_landing_interpolated_m_s": {
+            "min": 1.2745474836000488,
+            "max": 1.2745474836000488,
+            "mean": 1.2745474836000488
+          },
+          "late_wheel_speed_rms_rad_s": {
+            "min": 0.8819366120814005,
+            "max": 0.8819366120814005,
+            "mean": 0.8819366120814005
+          },
+          "late_wheel_speed_peak_rad_s": {
+            "min": 1.0883183479309082,
+            "max": 1.0883183479309082,
+            "mean": 1.0883183479309082
+          },
+          "late_wheel_acceleration_rms_rad_s2": {
+            "min": 0.8413413619428024,
+            "max": 0.8413413619428024,
+            "mean": 0.8413413619428024
+          },
+          "late_wheel_acceleration_peak_rad_s2": {
+            "min": 3.329026699066162,
+            "max": 3.329026699066162,
+            "mean": 3.329026699066162
+          },
+          "left_shank_min_q_time_s": {
+            "min": 1.36,
+            "max": 1.36,
+            "mean": 1.36
+          },
+          "left_shank_min_q_rad": {
+            "min": 0.14022448658943176,
+            "max": 0.14022448658943176,
+            "mean": 0.14022448658943176
+          }
+        },
+        "aligned_xyz_rmse_mean_m": [
+          0.08788153414402587,
+          0.01257886583051942,
+          0.024983941882061014
+        ],
+        "landing_x_error_mean_abs_m": 0.08695057034492493
+      },
+      "randomized": {
+        "episodes": [
+          {
+            "episode": 0,
+            "aligned_3D_position_rmse_m": 0.1161802067651902,
+            "aligned_xyz_rmse_m": [
+              0.10083171279403631,
+              0.05033413076711194,
+              0.028236172172279306
+            ],
+            "aligned_landing_z_rmse_m": 0.028378773780777185,
+            "landing_x_error_m": -0.1468445509672166,
+            "end_x_error_m": -0.1356472373008728,
+            "base_dx_takeoff_to_landing_m": 0.14427986368536966,
+            "base_COM_vz_peak_m_s": 2.024266707521709,
+            "base_COM_vz_peak_time_s": 1.34,
+            "base_COM_vz_at_air_interpolated_m_s": 1.8926786677716327,
+            "base_COM_vx_peak_jump_m_s": 1.624218928294133,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.7276607486748392,
+            "late_wheel_speed_rms_rad_s": 0.7354826349986926,
+            "late_wheel_speed_peak_rad_s": 1.1090666055679321,
+            "late_wheel_acceleration_rms_rad_s2": 2.544925805288827,
+            "late_wheel_acceleration_peak_rad_s2": 16.168750762939453,
+            "left_shank_min_q_time_s": 1.4,
+            "left_shank_min_q_rad": 0.13929079473018646
+          },
+          {
+            "episode": 1,
+            "aligned_3D_position_rmse_m": 0.049201764281733,
+            "aligned_xyz_rmse_m": [
+              0.02758227953808148,
+              0.03596666309301976,
+              0.019142377330717292
+            ],
+            "aligned_landing_z_rmse_m": 0.03961335611221989,
+            "landing_x_error_m": -0.030428975820541382,
+            "end_x_error_m": -0.033962637186050415,
+            "base_dx_takeoff_to_landing_m": 0.20352106541395187,
+            "base_COM_vz_peak_m_s": 1.6213599029805497,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.4589009375240902,
+            "base_COM_vx_peak_jump_m_s": 1.822406712435474,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.8973622899902127,
+            "late_wheel_speed_rms_rad_s": 0.706822318232335,
+            "late_wheel_speed_peak_rad_s": 0.9885687232017517,
+            "late_wheel_acceleration_rms_rad_s2": 1.7392620498902334,
+            "late_wheel_acceleration_peak_rad_s2": 8.136510848999023,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.07512958347797394
+          },
+          {
+            "episode": 2,
+            "aligned_3D_position_rmse_m": 0.2957379368065262,
+            "aligned_xyz_rmse_m": [
+              0.27574513283789576,
+              0.10224461951713516,
+              0.03117028653362642
+            ],
+            "aligned_landing_z_rmse_m": 0.07061881211879778,
+            "landing_x_error_m": 0.292977936565876,
+            "end_x_error_m": 0.29820331931114197,
+            "base_dx_takeoff_to_landing_m": 0.21333934366703022,
+            "base_COM_vz_peak_m_s": 1.530280686829758,
+            "base_COM_vz_peak_time_s": 1.32,
+            "base_COM_vz_at_air_interpolated_m_s": 1.3184484099023477,
+            "base_COM_vx_peak_jump_m_s": 1.8508253792770355,
+            "base_COM_vx_at_landing_interpolated_m_s": 1.0507315872439817,
+            "late_wheel_speed_rms_rad_s": 0.7205221555382536,
+            "late_wheel_speed_peak_rad_s": 1.004260778427124,
+            "late_wheel_acceleration_rms_rad_s2": 1.547816141728088,
+            "late_wheel_acceleration_peak_rad_s2": 9.727042198181152,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.17740851640701294
+          },
+          {
+            "episode": 3,
+            "aligned_3D_position_rmse_m": 0.17000413324405583,
+            "aligned_xyz_rmse_m": [
+              0.16649446483161348,
+              0.021987997146203097,
+              0.026410726646495106
+            ],
+            "aligned_landing_z_rmse_m": 0.05302043472149344,
+            "landing_x_error_m": 0.16123588383197784,
+            "end_x_error_m": 0.1835671365261078,
+            "base_dx_takeoff_to_landing_m": 0.17868415266275423,
+            "base_COM_vz_peak_m_s": 1.5017422855666989,
+            "base_COM_vz_peak_time_s": 1.32,
+            "base_COM_vz_at_air_interpolated_m_s": 1.320439277189735,
+            "base_COM_vx_peak_jump_m_s": 1.6664262443558318,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.917404973135668,
+            "late_wheel_speed_rms_rad_s": 0.6905384019832713,
+            "late_wheel_speed_peak_rad_s": 0.9782138466835022,
+            "late_wheel_acceleration_rms_rad_s2": 2.123406013854103,
+            "late_wheel_acceleration_peak_rad_s2": 13.075363159179688,
+            "left_shank_min_q_time_s": 1.3800000000000001,
+            "left_shank_min_q_rad": 0.09984567761421204
+          },
+          {
+            "episode": 4,
+            "aligned_3D_position_rmse_m": 0.10258667707432165,
+            "aligned_xyz_rmse_m": [
+              0.07651407529589842,
+              0.0644150016811904,
+              0.022810746440591924
+            ],
+            "aligned_landing_z_rmse_m": 0.05377153634170529,
+            "landing_x_error_m": 0.06784643232822418,
+            "end_x_error_m": 0.06967362761497498,
+            "base_dx_takeoff_to_landing_m": 0.187239855527878,
+            "base_COM_vz_peak_m_s": 1.6656564641045677,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.309161336424515,
+            "base_COM_vx_peak_jump_m_s": 1.7981325590134536,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.8251692585220656,
+            "late_wheel_speed_rms_rad_s": 0.6910416458633862,
+            "late_wheel_speed_peak_rad_s": 1.082655429840088,
+            "late_wheel_acceleration_rms_rad_s2": 1.9350687414451884,
+            "late_wheel_acceleration_peak_rad_s2": 7.998937606811523,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.1583452671766281
+          }
+        ],
+        "envelopes": {
+          "aligned_3D_position_rmse_m": {
+            "min": 0.049201764281733,
+            "max": 0.2957379368065262,
+            "mean": 0.14674214363436539
+          },
+          "aligned_landing_z_rmse_m": {
+            "min": 0.028378773780777185,
+            "max": 0.07061881211879778,
+            "mean": 0.049080582614998716
+          },
+          "landing_x_error_m": {
+            "min": -0.1468445509672166,
+            "max": 0.292977936565876,
+            "mean": 0.06895734518766401
+          },
+          "end_x_error_m": {
+            "min": -0.1356472373008728,
+            "max": 0.29820331931114197,
+            "mean": 0.0763668417930603
+          },
+          "base_dx_takeoff_to_landing_m": {
+            "min": 0.14427986368536966,
+            "max": 0.21333934366703022,
+            "mean": 0.1854128561913968
+          },
+          "base_COM_vz_peak_m_s": {
+            "min": 1.5017422855666989,
+            "max": 2.024266707521709,
+            "mean": 1.6686612094006565
+          },
+          "base_COM_vz_peak_time_s": {
+            "min": 1.3,
+            "max": 1.34,
+            "mean": 1.316
+          },
+          "base_COM_vz_at_air_interpolated_m_s": {
+            "min": 1.309161336424515,
+            "max": 1.8926786677716327,
+            "mean": 1.459925725762464
+          },
+          "base_COM_vx_peak_jump_m_s": {
+            "min": 1.624218928294133,
+            "max": 1.8508253792770355,
+            "mean": 1.7524019646751856
+          },
+          "base_COM_vx_at_landing_interpolated_m_s": {
+            "min": 0.7276607486748392,
+            "max": 1.0507315872439817,
+            "mean": 0.8836657715133533
+          },
+          "late_wheel_speed_rms_rad_s": {
+            "min": 0.6905384019832713,
+            "max": 0.7354826349986926,
+            "mean": 0.7088814313231877
+          },
+          "late_wheel_speed_peak_rad_s": {
+            "min": 0.9782138466835022,
+            "max": 1.1090666055679321,
+            "mean": 1.0325530767440796
+          },
+          "late_wheel_acceleration_rms_rad_s2": {
+            "min": 1.547816141728088,
+            "max": 2.544925805288827,
+            "mean": 1.978095750441288
+          },
+          "late_wheel_acceleration_peak_rad_s2": {
+            "min": 7.998937606811523,
+            "max": 16.168750762939453,
+            "mean": 11.021320915222168
+          },
+          "left_shank_min_q_time_s": {
+            "min": 1.36,
+            "max": 1.4,
+            "mean": 1.372
+          },
+          "left_shank_min_q_rad": {
+            "min": 0.07512958347797394,
+            "max": 0.17740851640701294,
+            "mean": 0.1300039678812027
+          }
+        },
+        "aligned_xyz_rmse_mean_m": [
+          0.12943353305950506,
+          0.054989682440932074,
+          0.025554061824742007
+        ],
+        "landing_x_error_mean_abs_m": 0.1398667559027672
+      }
+    },
+    "height": {
+      "nominal": {
+        "episodes": [
+          {
+            "episode": 0,
+            "aligned_3D_position_rmse_m": 0.04395191728340929,
+            "aligned_xyz_rmse_m": [
+              0.034100051271763666,
+              0.022249619305135228,
+              0.01655028630952635
+            ],
+            "aligned_landing_z_rmse_m": 0.01620878800906629,
+            "landing_x_error_m": 0.0027237236499786377,
+            "end_x_error_m": 0.06010964512825012,
+            "base_dx_takeoff_to_landing_m": 0.18799559399485608,
+            "base_COM_vz_peak_m_s": 1.8365802058796987,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.535595106306834,
+            "base_COM_vx_peak_jump_m_s": 1.9626358501687218,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9350135909037096,
+            "late_wheel_speed_rms_rad_s": 2.280024636363299,
+            "late_wheel_speed_peak_rad_s": 5.141592502593994,
+            "late_wheel_acceleration_rms_rad_s2": 3.4075988849106893,
+            "late_wheel_acceleration_peak_rad_s2": 9.484481811523438,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.09699567407369614
+          },
+          {
+            "episode": 1,
+            "aligned_3D_position_rmse_m": 0.04395191728340929,
+            "aligned_xyz_rmse_m": [
+              0.034100051271763666,
+              0.022249619305135228,
+              0.01655028630952635
+            ],
+            "aligned_landing_z_rmse_m": 0.01620878800906629,
+            "landing_x_error_m": 0.0027237236499786377,
+            "end_x_error_m": 0.06010964512825012,
+            "base_dx_takeoff_to_landing_m": 0.18799559399485608,
+            "base_COM_vz_peak_m_s": 1.8365802058796987,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.535595106306834,
+            "base_COM_vx_peak_jump_m_s": 1.9626358501687218,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9350135909037096,
+            "late_wheel_speed_rms_rad_s": 2.280024636363299,
+            "late_wheel_speed_peak_rad_s": 5.141592502593994,
+            "late_wheel_acceleration_rms_rad_s2": 3.4075988849106893,
+            "late_wheel_acceleration_peak_rad_s2": 9.484481811523438,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.09699567407369614
+          },
+          {
+            "episode": 2,
+            "aligned_3D_position_rmse_m": 0.04395191728340929,
+            "aligned_xyz_rmse_m": [
+              0.034100051271763666,
+              0.022249619305135228,
+              0.01655028630952635
+            ],
+            "aligned_landing_z_rmse_m": 0.01620878800906629,
+            "landing_x_error_m": 0.0027237236499786377,
+            "end_x_error_m": 0.06010964512825012,
+            "base_dx_takeoff_to_landing_m": 0.18799559399485608,
+            "base_COM_vz_peak_m_s": 1.8365802058796987,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.535595106306834,
+            "base_COM_vx_peak_jump_m_s": 1.9626358501687218,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9350135909037096,
+            "late_wheel_speed_rms_rad_s": 2.280024636363299,
+            "late_wheel_speed_peak_rad_s": 5.141592502593994,
+            "late_wheel_acceleration_rms_rad_s2": 3.4075988849106893,
+            "late_wheel_acceleration_peak_rad_s2": 9.484481811523438,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.09699567407369614
+          },
+          {
+            "episode": 3,
+            "aligned_3D_position_rmse_m": 0.04395191728340929,
+            "aligned_xyz_rmse_m": [
+              0.034100051271763666,
+              0.022249619305135228,
+              0.01655028630952635
+            ],
+            "aligned_landing_z_rmse_m": 0.01620878800906629,
+            "landing_x_error_m": 0.0027237236499786377,
+            "end_x_error_m": 0.06010964512825012,
+            "base_dx_takeoff_to_landing_m": 0.18799559399485608,
+            "base_COM_vz_peak_m_s": 1.8365802058796987,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.535595106306834,
+            "base_COM_vx_peak_jump_m_s": 1.9626358501687218,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9350135909037096,
+            "late_wheel_speed_rms_rad_s": 2.280024636363299,
+            "late_wheel_speed_peak_rad_s": 5.141592502593994,
+            "late_wheel_acceleration_rms_rad_s2": 3.4075988849106893,
+            "late_wheel_acceleration_peak_rad_s2": 9.484481811523438,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.09699567407369614
+          },
+          {
+            "episode": 4,
+            "aligned_3D_position_rmse_m": 0.04395191728340929,
+            "aligned_xyz_rmse_m": [
+              0.034100051271763666,
+              0.022249619305135228,
+              0.01655028630952635
+            ],
+            "aligned_landing_z_rmse_m": 0.01620878800906629,
+            "landing_x_error_m": 0.0027237236499786377,
+            "end_x_error_m": 0.06010964512825012,
+            "base_dx_takeoff_to_landing_m": 0.18799559399485608,
+            "base_COM_vz_peak_m_s": 1.8365802058796987,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.535595106306834,
+            "base_COM_vx_peak_jump_m_s": 1.9626358501687218,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9350135909037096,
+            "late_wheel_speed_rms_rad_s": 2.280024636363299,
+            "late_wheel_speed_peak_rad_s": 5.141592502593994,
+            "late_wheel_acceleration_rms_rad_s2": 3.4075988849106893,
+            "late_wheel_acceleration_peak_rad_s2": 9.484481811523438,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.09699567407369614
+          }
+        ],
+        "envelopes": {
+          "aligned_3D_position_rmse_m": {
+            "min": 0.04395191728340929,
+            "max": 0.04395191728340929,
+            "mean": 0.04395191728340929
+          },
+          "aligned_landing_z_rmse_m": {
+            "min": 0.01620878800906629,
+            "max": 0.01620878800906629,
+            "mean": 0.01620878800906629
+          },
+          "landing_x_error_m": {
+            "min": 0.0027237236499786377,
+            "max": 0.0027237236499786377,
+            "mean": 0.0027237236499786377
+          },
+          "end_x_error_m": {
+            "min": 0.06010964512825012,
+            "max": 0.06010964512825012,
+            "mean": 0.06010964512825012
+          },
+          "base_dx_takeoff_to_landing_m": {
+            "min": 0.18799559399485608,
+            "max": 0.18799559399485608,
+            "mean": 0.18799559399485608
+          },
+          "base_COM_vz_peak_m_s": {
+            "min": 1.8365802058796987,
+            "max": 1.8365802058796987,
+            "mean": 1.8365802058796987
+          },
+          "base_COM_vz_peak_time_s": {
+            "min": 1.3,
+            "max": 1.3,
+            "mean": 1.3
+          },
+          "base_COM_vz_at_air_interpolated_m_s": {
+            "min": 1.535595106306834,
+            "max": 1.535595106306834,
+            "mean": 1.535595106306834
+          },
+          "base_COM_vx_peak_jump_m_s": {
+            "min": 1.9626358501687218,
+            "max": 1.9626358501687218,
+            "mean": 1.9626358501687218
+          },
+          "base_COM_vx_at_landing_interpolated_m_s": {
+            "min": 0.9350135909037096,
+            "max": 0.9350135909037096,
+            "mean": 0.9350135909037096
+          },
+          "late_wheel_speed_rms_rad_s": {
+            "min": 2.280024636363299,
+            "max": 2.280024636363299,
+            "mean": 2.280024636363299
+          },
+          "late_wheel_speed_peak_rad_s": {
+            "min": 5.141592502593994,
+            "max": 5.141592502593994,
+            "mean": 5.141592502593994
+          },
+          "late_wheel_acceleration_rms_rad_s2": {
+            "min": 3.4075988849106893,
+            "max": 3.4075988849106893,
+            "mean": 3.4075988849106893
+          },
+          "late_wheel_acceleration_peak_rad_s2": {
+            "min": 9.484481811523438,
+            "max": 9.484481811523438,
+            "mean": 9.484481811523438
+          },
+          "left_shank_min_q_time_s": {
+            "min": 1.36,
+            "max": 1.36,
+            "mean": 1.36
+          },
+          "left_shank_min_q_rad": {
+            "min": 0.09699567407369614,
+            "max": 0.09699567407369614,
+            "mean": 0.09699567407369614
+          }
+        },
+        "aligned_xyz_rmse_mean_m": [
+          0.034100051271763666,
+          0.022249619305135228,
+          0.01655028630952635
+        ],
+        "landing_x_error_mean_abs_m": 0.0027237236499786377
+      },
+      "randomized": {
+        "episodes": [
+          {
+            "episode": 0,
+            "aligned_3D_position_rmse_m": 0.12595051969205012,
+            "aligned_xyz_rmse_m": [
+              0.11466023345520944,
+              0.045888114049202754,
+              0.024715284010137027
+            ],
+            "aligned_landing_z_rmse_m": 0.03443967638775896,
+            "landing_x_error_m": -0.1821471005678177,
+            "end_x_error_m": -0.1431644856929779,
+            "base_dx_takeoff_to_landing_m": 0.09942150488495827,
+            "base_COM_vz_peak_m_s": 2.1551311825795083,
+            "base_COM_vz_peak_time_s": 1.34,
+            "base_COM_vz_at_air_interpolated_m_s": 1.9661560631727175,
+            "base_COM_vx_peak_jump_m_s": 1.439015615914103,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.5661034478112087,
+            "late_wheel_speed_rms_rad_s": 4.104924376534689,
+            "late_wheel_speed_peak_rad_s": 8.025171279907227,
+            "late_wheel_acceleration_rms_rad_s2": 5.440965181494516,
+            "late_wheel_acceleration_peak_rad_s2": 39.64314270019531,
+            "left_shank_min_q_time_s": 1.4,
+            "left_shank_min_q_rad": 0.1294012814760208
+          },
+          {
+            "episode": 1,
+            "aligned_3D_position_rmse_m": 0.08930452440655033,
+            "aligned_xyz_rmse_m": [
+              0.08442153290975887,
+              0.025280283711718785,
+              0.014464097486592345
+            ],
+            "aligned_landing_z_rmse_m": 0.023580807194161075,
+            "landing_x_error_m": -0.10824766010046005,
+            "end_x_error_m": -0.11053243279457092,
+            "base_dx_takeoff_to_landing_m": 0.13995401561260223,
+            "base_COM_vz_peak_m_s": 2.021509677852063,
+            "base_COM_vz_peak_time_s": 1.32,
+            "base_COM_vz_at_air_interpolated_m_s": 1.8137900847565986,
+            "base_COM_vx_peak_jump_m_s": 1.5261704666582085,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.7130240708299986,
+            "late_wheel_speed_rms_rad_s": 2.819937457316264,
+            "late_wheel_speed_peak_rad_s": 5.863854885101318,
+            "late_wheel_acceleration_rms_rad_s2": 3.9671356225875187,
+            "late_wheel_acceleration_peak_rad_s2": 14.182090759277344,
+            "left_shank_min_q_time_s": 1.3800000000000001,
+            "left_shank_min_q_rad": 0.15505045652389526
+          },
+          {
+            "episode": 2,
+            "aligned_3D_position_rmse_m": 0.25105878904764134,
+            "aligned_xyz_rmse_m": [
+              0.22390363935092014,
+              0.11249173958764593,
+              0.015597575709911295
+            ],
+            "aligned_landing_z_rmse_m": 0.016426253206730964,
+            "landing_x_error_m": 0.20150721818208694,
+            "end_x_error_m": 0.22044500708580017,
+            "base_dx_takeoff_to_landing_m": 0.14583447575569142,
+            "base_COM_vz_peak_m_s": 1.9062328196108504,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.5082957519931297,
+            "base_COM_vx_peak_jump_m_s": 1.6362562385918302,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.7680940913695874,
+            "late_wheel_speed_rms_rad_s": 2.403102347290032,
+            "late_wheel_speed_peak_rad_s": 5.2892632484436035,
+            "late_wheel_acceleration_rms_rad_s2": 3.691366848628371,
+            "late_wheel_acceleration_peak_rad_s2": 16.36509895324707,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.19208386540412903
+          },
+          {
+            "episode": 3,
+            "aligned_3D_position_rmse_m": 0.2465469478013833,
+            "aligned_xyz_rmse_m": [
+              0.24370140069122126,
+              0.03367499314924044,
+              0.016156101253503197
+            ],
+            "aligned_landing_z_rmse_m": 0.017851121113921883,
+            "landing_x_error_m": 0.1984170377254486,
+            "end_x_error_m": 0.30051150918006897,
+            "base_dx_takeoff_to_landing_m": 0.16091132164001465,
+            "base_COM_vz_peak_m_s": 1.756795548528009,
+            "base_COM_vz_peak_time_s": 1.34,
+            "base_COM_vz_at_air_interpolated_m_s": 1.6147578030989633,
+            "base_COM_vx_peak_jump_m_s": 1.6274321944837737,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9620370359866169,
+            "late_wheel_speed_rms_rad_s": 3.2357435916759894,
+            "late_wheel_speed_peak_rad_s": 7.382803440093994,
+            "late_wheel_acceleration_rms_rad_s2": 5.540903682594205,
+            "late_wheel_acceleration_peak_rad_s2": 35.1140022277832,
+            "left_shank_min_q_time_s": 1.4,
+            "left_shank_min_q_rad": 0.16429570317268372
+          },
+          {
+            "episode": 4,
+            "aligned_3D_position_rmse_m": 0.07795031562939737,
+            "aligned_xyz_rmse_m": [
+              0.05581691191316373,
+              0.05299670492312755,
+              0.01233180110493766
+            ],
+            "aligned_landing_z_rmse_m": 0.019916759520540096,
+            "landing_x_error_m": -0.009543456137180273,
+            "end_x_error_m": 0.0508522093296051,
+            "base_dx_takeoff_to_landing_m": 0.14032555744051944,
+            "base_COM_vz_peak_m_s": 1.8738493927494426,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.5989375071485048,
+            "base_COM_vx_peak_jump_m_s": 1.601762572456451,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.8256409510184197,
+            "late_wheel_speed_rms_rad_s": 2.774474541170908,
+            "late_wheel_speed_peak_rad_s": 5.793583869934082,
+            "late_wheel_acceleration_rms_rad_s2": 4.208464584789967,
+            "late_wheel_acceleration_peak_rad_s2": 21.097660064697266,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.16687056422233582
+          }
+        ],
+        "envelopes": {
+          "aligned_3D_position_rmse_m": {
+            "min": 0.07795031562939737,
+            "max": 0.25105878904764134,
+            "mean": 0.15816221931540447
+          },
+          "aligned_landing_z_rmse_m": {
+            "min": 0.016426253206730964,
+            "max": 0.03443967638775896,
+            "mean": 0.022442923484622596
+          },
+          "landing_x_error_m": {
+            "min": -0.1821471005678177,
+            "max": 0.20150721818208694,
+            "mean": 0.01999720782041551
+          },
+          "end_x_error_m": {
+            "min": -0.1431644856929779,
+            "max": 0.30051150918006897,
+            "mean": 0.06362236142158509
+          },
+          "base_dx_takeoff_to_landing_m": {
+            "min": 0.09942150488495827,
+            "max": 0.16091132164001465,
+            "mean": 0.1372893750667572
+          },
+          "base_COM_vz_peak_m_s": {
+            "min": 1.756795548528009,
+            "max": 2.1551311825795083,
+            "mean": 1.9427037242639749
+          },
+          "base_COM_vz_peak_time_s": {
+            "min": 1.3,
+            "max": 1.34,
+            "mean": 1.3199999999999998
+          },
+          "base_COM_vz_at_air_interpolated_m_s": {
+            "min": 1.5082957519931297,
+            "max": 1.9661560631727175,
+            "mean": 1.7003874420339826
+          },
+          "base_COM_vx_peak_jump_m_s": {
+            "min": 1.439015615914103,
+            "max": 1.6362562385918302,
+            "mean": 1.5661274176208733
+          },
+          "base_COM_vx_at_landing_interpolated_m_s": {
+            "min": 0.5661034478112087,
+            "max": 0.9620370359866169,
+            "mean": 0.7669799194031663
+          },
+          "late_wheel_speed_rms_rad_s": {
+            "min": 2.403102347290032,
+            "max": 4.104924376534689,
+            "mean": 3.0676364627975765
+          },
+          "late_wheel_speed_peak_rad_s": {
+            "min": 5.2892632484436035,
+            "max": 8.025171279907227,
+            "mean": 6.470935344696045
+          },
+          "late_wheel_acceleration_rms_rad_s2": {
+            "min": 3.691366848628371,
+            "max": 5.540903682594205,
+            "mean": 4.569767184018916
+          },
+          "late_wheel_acceleration_peak_rad_s2": {
+            "min": 14.182090759277344,
+            "max": 39.64314270019531,
+            "mean": 25.28039894104004
+          },
+          "left_shank_min_q_time_s": {
+            "min": 1.36,
+            "max": 1.4,
+            "mean": 1.3800000000000003
+          },
+          "left_shank_min_q_rad": {
+            "min": 0.1294012814760208,
+            "max": 0.19208386540412903,
+            "mean": 0.16154037415981293
+          }
+        },
+        "aligned_xyz_rmse_mean_m": [
+          0.1445007436640547,
+          0.054066367084187085,
+          0.016652971913016304
+        ],
+        "landing_x_error_mean_abs_m": 0.13997249454259872
+      }
+    },
+    "current": {
+      "nominal": {
+        "episodes": [
+          {
+            "episode": 0,
+            "aligned_3D_position_rmse_m": 0.024911557159406083,
+            "aligned_xyz_rmse_m": [
+              0.01308276062968119,
+              0.01853000309576455,
+              0.010298836812173336
+            ],
+            "aligned_landing_z_rmse_m": 0.014472677105396166,
+            "landing_x_error_m": -0.024814262986183167,
+            "end_x_error_m": 0.0031082630157470703,
+            "base_dx_takeoff_to_landing_m": 0.18043274991214286,
+            "base_COM_vz_peak_m_s": 1.766168770720131,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.6027093926368567,
+            "base_COM_vx_peak_jump_m_s": 1.9204659014289442,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9145341988814601,
+            "late_wheel_speed_rms_rad_s": 0.39868454508208323,
+            "late_wheel_speed_peak_rad_s": 1.304101586341858,
+            "late_wheel_acceleration_rms_rad_s2": 1.3936906275775112,
+            "late_wheel_acceleration_peak_rad_s2": 7.556390762329102,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.05687464028596878
+          },
+          {
+            "episode": 1,
+            "aligned_3D_position_rmse_m": 0.024911557159406083,
+            "aligned_xyz_rmse_m": [
+              0.01308276062968119,
+              0.01853000309576455,
+              0.010298836812173336
+            ],
+            "aligned_landing_z_rmse_m": 0.014472677105396166,
+            "landing_x_error_m": -0.024814262986183167,
+            "end_x_error_m": 0.0031082630157470703,
+            "base_dx_takeoff_to_landing_m": 0.18043274991214286,
+            "base_COM_vz_peak_m_s": 1.766168770720131,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.6027093926368567,
+            "base_COM_vx_peak_jump_m_s": 1.9204659014289442,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9145341988814601,
+            "late_wheel_speed_rms_rad_s": 0.39868454508208323,
+            "late_wheel_speed_peak_rad_s": 1.304101586341858,
+            "late_wheel_acceleration_rms_rad_s2": 1.3936906275775112,
+            "late_wheel_acceleration_peak_rad_s2": 7.556390762329102,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.05687464028596878
+          },
+          {
+            "episode": 2,
+            "aligned_3D_position_rmse_m": 0.024911557159406083,
+            "aligned_xyz_rmse_m": [
+              0.01308276062968119,
+              0.01853000309576455,
+              0.010298836812173336
+            ],
+            "aligned_landing_z_rmse_m": 0.014472677105396166,
+            "landing_x_error_m": -0.024814262986183167,
+            "end_x_error_m": 0.0031082630157470703,
+            "base_dx_takeoff_to_landing_m": 0.18043274991214286,
+            "base_COM_vz_peak_m_s": 1.766168770720131,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.6027093926368567,
+            "base_COM_vx_peak_jump_m_s": 1.9204659014289442,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9145341988814601,
+            "late_wheel_speed_rms_rad_s": 0.39868454508208323,
+            "late_wheel_speed_peak_rad_s": 1.304101586341858,
+            "late_wheel_acceleration_rms_rad_s2": 1.3936906275775112,
+            "late_wheel_acceleration_peak_rad_s2": 7.556390762329102,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.05687464028596878
+          },
+          {
+            "episode": 3,
+            "aligned_3D_position_rmse_m": 0.024911557159406083,
+            "aligned_xyz_rmse_m": [
+              0.01308276062968119,
+              0.01853000309576455,
+              0.010298836812173336
+            ],
+            "aligned_landing_z_rmse_m": 0.014472677105396166,
+            "landing_x_error_m": -0.024814262986183167,
+            "end_x_error_m": 0.0031082630157470703,
+            "base_dx_takeoff_to_landing_m": 0.18043274991214286,
+            "base_COM_vz_peak_m_s": 1.766168770720131,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.6027093926368567,
+            "base_COM_vx_peak_jump_m_s": 1.9204659014289442,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9145341988814601,
+            "late_wheel_speed_rms_rad_s": 0.39868454508208323,
+            "late_wheel_speed_peak_rad_s": 1.304101586341858,
+            "late_wheel_acceleration_rms_rad_s2": 1.3936906275775112,
+            "late_wheel_acceleration_peak_rad_s2": 7.556390762329102,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.05687464028596878
+          },
+          {
+            "episode": 4,
+            "aligned_3D_position_rmse_m": 0.024911557159406083,
+            "aligned_xyz_rmse_m": [
+              0.01308276062968119,
+              0.01853000309576455,
+              0.010298836812173336
+            ],
+            "aligned_landing_z_rmse_m": 0.014472677105396166,
+            "landing_x_error_m": -0.024814262986183167,
+            "end_x_error_m": 0.0031082630157470703,
+            "base_dx_takeoff_to_landing_m": 0.18043274991214286,
+            "base_COM_vz_peak_m_s": 1.766168770720131,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.6027093926368567,
+            "base_COM_vx_peak_jump_m_s": 1.9204659014289442,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9145341988814601,
+            "late_wheel_speed_rms_rad_s": 0.39868454508208323,
+            "late_wheel_speed_peak_rad_s": 1.304101586341858,
+            "late_wheel_acceleration_rms_rad_s2": 1.3936906275775112,
+            "late_wheel_acceleration_peak_rad_s2": 7.556390762329102,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.05687464028596878
+          }
+        ],
+        "envelopes": {
+          "aligned_3D_position_rmse_m": {
+            "min": 0.024911557159406083,
+            "max": 0.024911557159406083,
+            "mean": 0.024911557159406083
+          },
+          "aligned_landing_z_rmse_m": {
+            "min": 0.014472677105396166,
+            "max": 0.014472677105396166,
+            "mean": 0.014472677105396164
+          },
+          "landing_x_error_m": {
+            "min": -0.024814262986183167,
+            "max": -0.024814262986183167,
+            "mean": -0.024814262986183167
+          },
+          "end_x_error_m": {
+            "min": 0.0031082630157470703,
+            "max": 0.0031082630157470703,
+            "mean": 0.0031082630157470703
+          },
+          "base_dx_takeoff_to_landing_m": {
+            "min": 0.18043274991214286,
+            "max": 0.18043274991214286,
+            "mean": 0.18043274991214286
+          },
+          "base_COM_vz_peak_m_s": {
+            "min": 1.766168770720131,
+            "max": 1.766168770720131,
+            "mean": 1.766168770720131
+          },
+          "base_COM_vz_peak_time_s": {
+            "min": 1.3,
+            "max": 1.3,
+            "mean": 1.3
+          },
+          "base_COM_vz_at_air_interpolated_m_s": {
+            "min": 1.6027093926368567,
+            "max": 1.6027093926368567,
+            "mean": 1.6027093926368567
+          },
+          "base_COM_vx_peak_jump_m_s": {
+            "min": 1.9204659014289442,
+            "max": 1.9204659014289442,
+            "mean": 1.9204659014289445
+          },
+          "base_COM_vx_at_landing_interpolated_m_s": {
+            "min": 0.9145341988814601,
+            "max": 0.9145341988814601,
+            "mean": 0.9145341988814601
+          },
+          "late_wheel_speed_rms_rad_s": {
+            "min": 0.39868454508208323,
+            "max": 0.39868454508208323,
+            "mean": 0.39868454508208323
+          },
+          "late_wheel_speed_peak_rad_s": {
+            "min": 1.304101586341858,
+            "max": 1.304101586341858,
+            "mean": 1.304101586341858
+          },
+          "late_wheel_acceleration_rms_rad_s2": {
+            "min": 1.3936906275775112,
+            "max": 1.3936906275775112,
+            "mean": 1.3936906275775112
+          },
+          "late_wheel_acceleration_peak_rad_s2": {
+            "min": 7.556390762329102,
+            "max": 7.556390762329102,
+            "mean": 7.556390762329102
+          },
+          "left_shank_min_q_time_s": {
+            "min": 1.36,
+            "max": 1.36,
+            "mean": 1.36
+          },
+          "left_shank_min_q_rad": {
+            "min": 0.05687464028596878,
+            "max": 0.05687464028596878,
+            "mean": 0.05687464028596878
+          }
+        },
+        "aligned_xyz_rmse_mean_m": [
+          0.01308276062968119,
+          0.01853000309576455,
+          0.010298836812173336
+        ],
+        "landing_x_error_mean_abs_m": 0.024814262986183167
+      },
+      "randomized": {
+        "episodes": [
+          {
+            "episode": 0,
+            "aligned_3D_position_rmse_m": 0.08835698837465517,
+            "aligned_xyz_rmse_m": [
+              0.0783617845180397,
+              0.03561906195255575,
+              0.01994167865068682
+            ],
+            "aligned_landing_z_rmse_m": 0.034430755080683904,
+            "landing_x_error_m": -0.09594799578189861,
+            "end_x_error_m": -0.08527499437332153,
+            "base_dx_takeoff_to_landing_m": 0.13080139830708515,
+            "base_COM_vz_peak_m_s": 2.130067423692144,
+            "base_COM_vz_peak_time_s": 1.32,
+            "base_COM_vz_at_air_interpolated_m_s": 1.8674176829534446,
+            "base_COM_vx_peak_jump_m_s": 1.5808529015212893,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.8277195843268275,
+            "late_wheel_speed_rms_rad_s": 0.8006513418392728,
+            "late_wheel_speed_peak_rad_s": 2.546024799346924,
+            "late_wheel_acceleration_rms_rad_s2": 3.21199015334771,
+            "late_wheel_acceleration_peak_rad_s2": 16.739320755004883,
+            "left_shank_min_q_time_s": 1.3800000000000001,
+            "left_shank_min_q_rad": -4.006387462140992e-05
+          },
+          {
+            "episode": 1,
+            "aligned_3D_position_rmse_m": 0.09053981773610274,
+            "aligned_xyz_rmse_m": [
+              0.0797429856288684,
+              0.04162158464457921,
+              0.010303326179196682
+            ],
+            "aligned_landing_z_rmse_m": 0.020588881560877185,
+            "landing_x_error_m": -0.12476123869419098,
+            "end_x_error_m": -0.0947798490524292,
+            "base_dx_takeoff_to_landing_m": 0.18561710044741647,
+            "base_COM_vz_peak_m_s": 1.8639875441686329,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.6870006743699306,
+            "base_COM_vx_peak_jump_m_s": 1.6520028642858013,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.9060640867292512,
+            "late_wheel_speed_rms_rad_s": 0.5151865064492741,
+            "late_wheel_speed_peak_rad_s": 1.665349006652832,
+            "late_wheel_acceleration_rms_rad_s2": 2.21408767722318,
+            "late_wheel_acceleration_peak_rad_s2": 13.207554817199707,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.05821753293275833
+          },
+          {
+            "episode": 2,
+            "aligned_3D_position_rmse_m": 0.28324283223936025,
+            "aligned_xyz_rmse_m": [
+              0.255725956119007,
+              0.12035481569261813,
+              0.01858643918533078
+            ],
+            "aligned_landing_z_rmse_m": 0.03666602959750988,
+            "landing_x_error_m": 0.2607072666287422,
+            "end_x_error_m": 0.2578152120113373,
+            "base_dx_takeoff_to_landing_m": 0.15457299351692189,
+            "base_COM_vz_peak_m_s": 1.7857260975259779,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.2531115128542025,
+            "base_COM_vx_peak_jump_m_s": 1.7497400138349701,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.716958422208528,
+            "late_wheel_speed_rms_rad_s": 0.5909422055451553,
+            "late_wheel_speed_peak_rad_s": 1.5401002168655396,
+            "late_wheel_acceleration_rms_rad_s2": 1.6303262110932035,
+            "late_wheel_acceleration_peak_rad_s2": 7.496333122253418,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.14757488667964935
+          },
+          {
+            "episode": 3,
+            "aligned_3D_position_rmse_m": 0.1663414712719466,
+            "aligned_xyz_rmse_m": [
+              0.16499311160338492,
+              0.017151064424911648,
+              0.012353103959788045
+            ],
+            "aligned_landing_z_rmse_m": 0.01407508333225161,
+            "landing_x_error_m": 0.14768746495246887,
+            "end_x_error_m": 0.1785428822040558,
+            "base_dx_takeoff_to_landing_m": 0.16408699750900269,
+            "base_COM_vz_peak_m_s": 1.8087538079863776,
+            "base_COM_vz_peak_time_s": 1.32,
+            "base_COM_vz_at_air_interpolated_m_s": 1.5952479423418515,
+            "base_COM_vx_peak_jump_m_s": 1.65946238970823,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.8625058708007639,
+            "late_wheel_speed_rms_rad_s": 0.7631164840771998,
+            "late_wheel_speed_peak_rad_s": 1.9898593425750732,
+            "late_wheel_acceleration_rms_rad_s2": 2.0389460816145513,
+            "late_wheel_acceleration_peak_rad_s2": 10.492277145385742,
+            "left_shank_min_q_time_s": 1.3800000000000001,
+            "left_shank_min_q_rad": 0.0683286041021347
+          },
+          {
+            "episode": 4,
+            "aligned_3D_position_rmse_m": 0.09494875138795607,
+            "aligned_xyz_rmse_m": [
+              0.07239172269130195,
+              0.06022647139023436,
+              0.012143970512102252
+            ],
+            "aligned_landing_z_rmse_m": 0.02094103332410683,
+            "landing_x_error_m": 0.039938703179359436,
+            "end_x_error_m": 0.06497243046760559,
+            "base_dx_takeoff_to_landing_m": 0.1516693495213987,
+            "base_COM_vz_peak_m_s": 1.7747822544914802,
+            "base_COM_vz_peak_time_s": 1.3,
+            "base_COM_vz_at_air_interpolated_m_s": 1.3666034437752845,
+            "base_COM_vx_peak_jump_m_s": 1.672692862153042,
+            "base_COM_vx_at_landing_interpolated_m_s": 0.7471579108304611,
+            "late_wheel_speed_rms_rad_s": 0.559775028259928,
+            "late_wheel_speed_peak_rad_s": 1.1921164989471436,
+            "late_wheel_acceleration_rms_rad_s2": 1.4150296751774503,
+            "late_wheel_acceleration_peak_rad_s2": 10.582613945007324,
+            "left_shank_min_q_time_s": 1.36,
+            "left_shank_min_q_rad": 0.15768559277057648
+          }
+        ],
+        "envelopes": {
+          "aligned_3D_position_rmse_m": {
+            "min": 0.08835698837465517,
+            "max": 0.28324283223936025,
+            "mean": 0.1446859722020042
+          },
+          "aligned_landing_z_rmse_m": {
+            "min": 0.01407508333225161,
+            "max": 0.03666602959750988,
+            "mean": 0.02534035657908588
+          },
+          "landing_x_error_m": {
+            "min": -0.12476123869419098,
+            "max": 0.2607072666287422,
+            "mean": 0.045524840056896186
+          },
+          "end_x_error_m": {
+            "min": -0.0947798490524292,
+            "max": 0.2578152120113373,
+            "mean": 0.06425513625144959
+          },
+          "base_dx_takeoff_to_landing_m": {
+            "min": 0.13080139830708515,
+            "max": 0.18561710044741647,
+            "mean": 0.157349567860365
+          },
+          "base_COM_vz_peak_m_s": {
+            "min": 1.7747822544914802,
+            "max": 2.130067423692144,
+            "mean": 1.8726634255729224
+          },
+          "base_COM_vz_peak_time_s": {
+            "min": 1.3,
+            "max": 1.32,
+            "mean": 1.308
+          },
+          "base_COM_vz_at_air_interpolated_m_s": {
+            "min": 1.2531115128542025,
+            "max": 1.8674176829534446,
+            "mean": 1.5538762512589428
+          },
+          "base_COM_vx_peak_jump_m_s": {
+            "min": 1.5808529015212893,
+            "max": 1.7497400138349701,
+            "mean": 1.6629502063006665
+          },
+          "base_COM_vx_at_landing_interpolated_m_s": {
+            "min": 0.716958422208528,
+            "max": 0.9060640867292512,
+            "mean": 0.8120811749791663
+          },
+          "late_wheel_speed_rms_rad_s": {
+            "min": 0.5151865064492741,
+            "max": 0.8006513418392728,
+            "mean": 0.645934313234166
+          },
+          "late_wheel_speed_peak_rad_s": {
+            "min": 1.1921164989471436,
+            "max": 2.546024799346924,
+            "mean": 1.7866899728775025
+          },
+          "late_wheel_acceleration_rms_rad_s2": {
+            "min": 1.4150296751774503,
+            "max": 3.21199015334771,
+            "mean": 2.102075959691219
+          },
+          "late_wheel_acceleration_peak_rad_s2": {
+            "min": 7.496333122253418,
+            "max": 16.739320755004883,
+            "mean": 11.703619956970215
+          },
+          "left_shank_min_q_time_s": {
+            "min": 1.36,
+            "max": 1.3800000000000001,
+            "mean": 1.368
+          },
+          "left_shank_min_q_rad": {
+            "min": -4.006387462140992e-05,
+            "max": 0.15768559277057648,
+            "mean": 0.08635331052209949
+          }
+        },
+        "aligned_xyz_rmse_mean_m": [
+          0.13024311211212042,
+          0.05499459962097982,
+          0.014665703697420915
+        ],
+        "landing_x_error_mean_abs_m": 0.13380853384733202
+      }
+    }
+  },
+  "conventions": {
+    "position": "Base link-origin world position minus original reference positions plus environment origin; no per-episode fitting or removal of reset position error. Reference linearly interpolated at physical control time frame/50+.02. Full-cycle RMSE excludes final sample beyond reference horizon3.38s.",
+    "velocity": "World base COM velocity rotated from telemetry; liftoff/landing values interpolated from20ms control samples; peaks are20ms sampled, not5ms exact.",
+    "landing": "Contact times from analysis.json; landing X error at each actual landing time; averages include five complete cycles only.",
+    "late_wheels": "Reference command phase>=1.85s, first50Hz frame1.86;5ms physics data, only complete cycles, left/right pooled RMS.",
+    "comparison": "Three8192-env server policies; no_height=Nov7 full-wheel/height0/std.30, height=Nov6 height2/no-wheel/std.30, current=Nov8 height2/late-wheel/std.15. Multiple reward changes; not a single-factor causal experiment."
+  }
+}
