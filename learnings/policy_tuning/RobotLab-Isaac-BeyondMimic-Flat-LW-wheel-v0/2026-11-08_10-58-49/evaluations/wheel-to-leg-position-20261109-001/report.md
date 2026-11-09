@@ -1,0 +1,73 @@
+# 评估批次 wheel-to-leg-position-20261109-001
+
+任务：`RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0`；训练：`2026-11-08_10-58-49`。
+
+本报告汇总已校验的用例；completed 表示证据发布完成，策略表现须结合指标和视频判断。
+
+| 用例 / 尝试 | 状态 | 场景、步数 / 环境 / seed | 遥测 | 结果与视频 |
+| --- | --- | --- | --- | --- |
+| fixed-start-nominal-a01 | completed | fixed-start-nominal，1000 / 1 / 42 | complete | [结果](<raw/fixed-start-nominal-a01/result.json>) / [日志](<raw/fixed-start-nominal-a01/console.log>) |
+| fixed-start-randomized-a01 | completed | fixed-start-randomized，1000 / 1 / 42 | complete | [结果](<raw/fixed-start-randomized-a01/result.json>) / [日志](<raw/fixed-start-randomized-a01/console.log>) |
+
+## 策略与场景
+
+- checkpoint SHA-256：`bd4d7eef0c02b1356598d1b5f3949f1f395d352a27b8e5c533fbb726bfd8c92e`；runner：`OnPolicyRunner`。
+- [场景来源 scenario-69d6c3ad51fa3d388baae28a7ab3078966c3d89b3e6280c4be0f43d0e79439ae.json](<../../provenance/scenario-69d6c3ad51fa3d388baae28a7ab3078966c3d89b3e6280c4be0f43d0e79439ae.json>)
+- [场景来源 scenario-975f701dba411bf397797dca98623e9cac3e0be75a7bddb0472a34bb00d7a834.json](<../../provenance/scenario-975f701dba411bf397797dca98623e9cac3e0be75a7bddb0472a34bb00d7a834.json>)
+- [训练上下文 context-0857328f1a17e11f5914eee0b2c0e9867df7019940959a88e31b92f9e77ebcd0.json](<../../provenance/context-0857328f1a17e11f5914eee0b2c0e9867df7019940959a88e31b92f9e77ebcd0.json>)
+- [训练有效配置 config-b411c7b3722ebeb30cbd877403ab872b0f48dc930396dbc655bef6a87d49b0fb.json](<../../provenance/config-b411c7b3722ebeb30cbd877403ab872b0f48dc930396dbc655bef6a87d49b0fb.json>)
+
+- `fixed-start-nominal-a01` 指标：`{"max_joint_velocity_utilization": "unavailable", "max_tilt": "unavailable", "termination_rate": "unavailable", "tracking_xy_rmse": "unavailable", "tracking_yaw_rmse": "unavailable"}`
+- `fixed-start-nominal-a01` 命令调度：`[]`；训练配置覆盖：`{"evaluation.motion_ground_contacts": true, "evaluation.motion_mode": "nominal_start", "evaluation.motion_physics_window": [0, 169], "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03", "rewards.hip_pos_zero_l2.weight": -2.0, "rewards.joint_acc_wheel_l2.params.ramp_time_s": 0.2, "rewards.joint_acc_wheel_l2.params.start_time_s": 1.65, "rewards.joint_acc_wheel_l2.weight": -0.1, "rewards.joint_vel_wheel_l2.params.ramp_time_s": 0.1, "rewards.joint_vel_wheel_l2.params.start_time_s": 1.65, "rewards.joint_vel_wheel_l2.weight": -0.5, "rewards.motion_flight_height.weight": 0.0, "rewards.motion_global_anchor_pos.params.std": 0.15}`。
+- `fixed-start-randomized-a01` 指标：`{"max_joint_velocity_utilization": "unavailable", "max_tilt": "unavailable", "termination_rate": "unavailable", "tracking_xy_rmse": "unavailable", "tracking_yaw_rmse": "unavailable"}`
+- `fixed-start-randomized-a01` 命令调度：`[]`；训练配置覆盖：`{"evaluation.motion_ground_contacts": true, "evaluation.motion_mode": "randomized_start", "evaluation.motion_physics_window": [0, 169], "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03", "rewards.hip_pos_zero_l2.weight": -2.0, "rewards.joint_acc_wheel_l2.params.ramp_time_s": 0.2, "rewards.joint_acc_wheel_l2.params.start_time_s": 1.65, "rewards.joint_acc_wheel_l2.weight": -0.1, "rewards.joint_vel_wheel_l2.params.ramp_time_s": 0.1, "rewards.joint_vel_wheel_l2.params.start_time_s": 1.65, "rewards.joint_vel_wheel_l2.weight": -0.5, "rewards.motion_flight_height.weight": 0.0, "rewards.motion_global_anchor_pos.params.std": 0.15}`。
+
+## 观察与限制
+
+- 结论：标称场的落地前冲减少，但起跳窗口基座最高位置下降，随机场落地点偏差没有改善；本轮不能判定新版整体优于11月7日策略。两项奖励同时改变，只能评估组合结果，不能把收益或退步单独归因于某一项。
+- 来源：本机younghit，训练2026-11-08_10-58-49/model_49999.pt，SHA256 bd4d7eef0c02b1356598d1b5f3949f1f395d352a27b8e5c533fbb726bfd8c92e；checkpoint内部iter49999，51个checkpoint。源码d11e72b5fba4a380f83a0b0929bdb76c67d4a4ff，训练git记录clean；用户确认bash scripts/start_beyondmimic.sh --type wheel且无额外参数。PPO/OnPolicyRunner，4096环境、seed42、50000迭代、24steps/env；profile=rsl-rl-ppo。
+- 有效配置对比：与2026-11-07_11-48-06相比，除log_dir外仅motion_flight_height.weight从2.0变0.0，以及motion_global_anchor_pos.std从0.30变0.15m；agent.yaml完全相同。全局位置weight仍0.5，落地轮速/加速度约束不变。
+- 测试：Native均值动作，标称nominal_start及联合随机化randomized_start各1环境、1000控制步、seed42；从frame0开始，每场5个完整成功周期、0失败、1未完成尾部。完整周期比较各850控制样本/3400物理子步；关节极值另用全部1000/4000样本。标称重复周期确定性相同，不是5次独立统计试验。
+- 时序口径：控制遥测是frame f执行20ms后的状态；全局X位置对齐参考f+1（末帧保持169），接触以5ms采样法向力>=10N持续>=15ms识别，并取随后最近控制状态。起跳z/vz统计沿用旧批次reference1.10..1.70s窗口；速度是基座COM世界速度，不是整机COM；位置是base_link原点世界坐标。接触阈值仅用于描述，不是实物验收标准。
+- 标称方向：蹬地物理1.30s的vx从2.0557降至1.6120m/s，vz从1.7773降至1.7407m/s。但整个起跳窗口vx峰只从2.1670降至1.9918m/s（-8.1%）；新版在1.28s已落后参考9.00cm，旧版起跳前最大落后2.83cm。因而落地点不再超前不等于水平推进已充分受控，包含明显起跳前位置滞后。
+- 标称落地：对齐参考后的基座X误差从+7.895cm变-4.881cm；动作结束从+8.442cm变-4.417cm。全周期对齐3D位置RMSE从7.423降至4.742cm。参考完整动作自身前移45cm，新版末端base x约40.58cm，旧版约53.44cm。
+- 起跳高度与腾空：标称起跳窗口基座最高z从0.69739降至0.67823m（低1.92cm），vz峰从1.77727降至1.74072m/s，腾空245降至240ms。随机5周期最高z均值从0.70771降至0.67910m（低2.86cm），每周期vz峰均值1.92194降至1.82709m/s，腾空均值259降至240ms。最高z是世界高度，不是相对起跳点的跃升高度。
+- 随机位置：5周期落地X误差由[-22.85,-4.10,+23.05,+10.25,+6.06]cm变为[-15.39,-13.58,+24.43,+22.67,-1.58]cm，平均绝对误差13.26升至15.53cm，全周期对齐3D位置RMSE均值14.738升至15.858cm。新版动作末端X误差[-12.38,-11.16,+22.90,+29.48,+0.52]cm；不能用有正有负的均值抵消掩盖离散。
+- 高度跟踪：沿用旧批次未补偿20ms的原控制参考口径，标称落地窗口高度RMSE3.219升至4.690cm，随机2.341升至3.350cm。若补偿时序后看全周期z RMSE，标称1.464升至1.626cm，随机各周期均值1.950升至2.371cm，变差方向一致。
+- 姿态与接触：标称起跳roll峰1.622变1.767度、落地pitch峰4.512变6.068度；随机起跳roll峰8.012变7.389度、落地pitch峰13.123变13.031度。足法向力峰标称1274.9变1261.3N，随机1626.1变1211.0N；轮法向力峰标称516.8升至796.4N，随机943.7变951.0N。所监测大腿/小腿对地接触力均为0，不能据此推断所有可能碰撞均已排除。
+- 关节负载（全部4000物理子步）：随机左shank applied力矩峰118.134降至100.674Nm（限120，83.9%）；左foot力矩21.425升至23.799Nm（限27，88.1%）。所有应用力矩未达99%限值。最大关节速度为左shank15.913rad/s（限20）。右foot速度12.548降至11.153rad/s，但超过10rad/s累计时间从5增至15ms；左foot10.0115rad/s、超限5ms。标称所有关节速度均未超限。降低单个峰值不等于所有负载指标改善。
+- 轮速：双轮起跳/过渡瞬时速度仍显著，落地双ramp结束后(reference>=1.85s)轮速RMS标称0.193升至0.427rad/s、随机0.258升至0.466rad/s；仍较低但优于旧版的说法不成立。
+- 可比性：参考NPZ SHA保持8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03；同场景新旧初始质量、COM、材料和PhysX stiffness/damping采样记录一致。软件PD/延迟的每次抽样未独立记录，不能声称全部随机轨迹逐样本完全一致；仅一个seed、每场5周期，不能给出统计显著性或泛化优胜结论。
+- 训练记录：55个TensorBoard标量均推进至49999。45000..47499到47500..49999的anchor位置误差均值0.13278降至0.12915m，motion_finished均值0.99469变0.99502；训练reward均值6.87879变6.77729。训练随机相位起点和奖励改动使这些数值不能替代固定起点闭环评估，也不能跨奖励版本按总reward排名。无用户批准的收敛标准，收敛结论indeterminate。
+- 历史查询：query_context_incomplete、0个candidate_events；观测/部署指纹unknown，历史事件没有提供可直接决定参数的因果证据。此次只读核验及有限Native测试；未修改训练代码、未启停训练、未导出或Git提交。旧证据及模型1665个受保护文件哈希不变。
+- 仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。
+- 未提供用户批准的收敛判据时，不作收敛判断；缺失遥测不能按零值解释。
+- 视频需经机器人持续在画面内的人工检查后才可作为动作证据。
+
+## 相关证据
+
+- [analysis-method.json](<derived/analysis-method.json>)
+- [cases-ready.json](<derived/cases-ready.json>)
+- [comparison-metrics.json](<derived/comparison-metrics.json>)
+- [cycle-metrics.csv](<derived/cycle-metrics.csv>)
+- [direction-diagnostics.json](<derived/direction-diagnostics.json>)
+- [execution-receipt.json](<derived/execution-receipt.json>)
+- [forward-analysis-method.json](<derived/forward-analysis-method.json>)
+- [forward-jump-comparison.png](<derived/forward-jump-comparison.png>)
+- [forward-jump-metrics.json](<derived/forward-jump-metrics.json>)
+- [joint-loads.csv](<derived/joint-loads.csv>)
+- [phase-comparison.png](<derived/phase-comparison.png>)
+- [effective-config-diff-20261109-001.json](<../../evidence/training/effective-config-diff-20261109-001.json>)
+- [evaluation-request-20261109-001.json](<../../evidence/training/evaluation-request-20261109-001.json>)
+- [history-query-20261109-001.json](<../../evidence/training/history-query-20261109-001.json>)
+- [protection-after-20261109-001.json](<../../evidence/training/protection-after-20261109-001.json>)
+- [protection-before-20261109-001.json](<../../evidence/training/protection-before-20261109-001.json>)
+- [tensorboard-windows-20261109-001.json](<../../evidence/training/tensorboard-windows-20261109-001.json>)
+- [manifest.json](<../../../2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/manifest.json>)
+- [report.md](<../../../2026-11-07_11-48-06/evaluations/wheel-to-leg-landing-wheel-20261108-001/report.md>)
+
+## 建议与待授权事项
+
+- 若目标优先减少标称落地前冲，本版在该指标上有改善；若优先向上跃升及随机条件下位置跟踪，目前不能替代旧版作为全面升级。
+- 下一步应做单变量对照：在std=0.15不变时单独恢复高度权重2.0，与本版height=0比较，再与旧版height=2/std=0.30比较，以区分两项改动的贡献；这是待用户决策的实验建议，预期恢复高度但需防止力矩、足速度及接触负载回升。不要据此自动改配置或训练。
+- 继续比较起跳前X滞后、完整起跳窗口vx峰、vz峰、落地误差分布和足速度超限持续时间；实物或跨seed结论需要额外证据。
