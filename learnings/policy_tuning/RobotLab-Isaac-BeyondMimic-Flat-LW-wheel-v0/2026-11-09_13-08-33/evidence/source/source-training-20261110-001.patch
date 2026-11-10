@@ -1,0 +1,50 @@
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+index 82c841f..b1916ac 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+@@ -159,24 +159,24 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
+         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
+         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+         self.rewards.torque_limit.weight = -0.0
+-        # Wheel motion is tracked through link rewards; disable the separate speed penalty.
++        # Regularize wheel speed throughout the reference motion, independently of contact.
+         self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2
+-        self.rewards.joint_vel_wheel_l2.weight = -0.0
++        self.rewards.joint_vel_wheel_l2.weight = -0.10
+         self.rewards.joint_vel_wheel_l2.params = {
+             "command_name": "motion",
+             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
+-            "start_time_s": 1.65,
+-            "ramp_time_s": 0.10,
++            "start_time_s": 0.0,
++            "ramp_time_s": 0.0,
+             "velocity_scale": 10.0,
+         }
+-        # Disable the separate wheel acceleration penalty as well.
++        # Keep full-motion acceleration regularization weak to allow push-off and braking.
+         self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2
+-        self.rewards.joint_acc_wheel_l2.weight = -0.0
++        self.rewards.joint_acc_wheel_l2.weight = -0.002
+         self.rewards.joint_acc_wheel_l2.params = {
+             "command_name": "motion",
+             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
+-            "start_time_s": 1.65,
+-            "ramp_time_s": 0.20,
++            "start_time_s": 0.0,
++            "ramp_time_s": 0.0,
+             "acceleration_scale": 50.0,
+         }
+         # Wheel contact has no phase fade and switches off at reference time 1.25 s.
+@@ -249,4 +249,12 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
+         ]
+         self.commands.motion.joint_names = self.joint_names # 指定command的关节顺序，但不是都必须要追踪的关节
+ 
++        # Track wheel position and linear velocity, without constraining wheel spin orientation or angular velocity.
++        non_wheel_body_names = [
++            name for name in self.commands.motion.body_names
++            if name not in ("right_wheel_link", "left_wheel_link")
++        ]
++        self.rewards.motion_body_ori.params["body_names"] = non_wheel_body_names
++        self.rewards.motion_body_ang_vel.params["body_names"] = non_wheel_body_names
++
+         self.episode_length_s = 10.0
