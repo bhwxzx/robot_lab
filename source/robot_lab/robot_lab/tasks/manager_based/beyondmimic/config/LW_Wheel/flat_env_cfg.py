@@ -36,10 +36,10 @@ class LWWheelRewardsCfg(RewardsCfg):
         params={"command_name": "motion", "std": 0.15},
     )
 
-    # Disable separate height tracking; global anchor position still tracks XYZ.
+    # Track reference height through takeoff, flight and landing.
     motion_flight_height = RewTerm(
         func=mdp.motion_phase_anchor_height_error_exp,
-        weight=0.0,
+        weight=2.0,
         params={
             "command_name": "motion",
             "std": 0.10,
@@ -159,24 +159,24 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.undesired_contacts.params["sensor_cfg"].body_names = ["base_link", ".*hip_link", ".*thigh_link",".*shank_link"]
         self.rewards.joint_limit.params["asset_cfg"].joint_names = self.joint_names_without_wheels
         self.rewards.torque_limit.weight = -0.0
-        # Wheel motion is tracked through link rewards; disable the separate speed penalty.
+        # Penalize wheel speed throughout the reference motion, without a phase ramp.
         self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2
-        self.rewards.joint_vel_wheel_l2.weight = -0.0
+        self.rewards.joint_vel_wheel_l2.weight = -0.10
         self.rewards.joint_vel_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
-            "start_time_s": 1.65,
-            "ramp_time_s": 0.10,
+            "start_time_s": 0.0,
+            "ramp_time_s": 0.0,
             "velocity_scale": 10.0,
         }
-        # Disable the separate wheel acceleration penalty as well.
+        # Penalize wheel acceleration throughout the reference motion as well.
         self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2
-        self.rewards.joint_acc_wheel_l2.weight = -0.0
+        self.rewards.joint_acc_wheel_l2.weight = -0.002
         self.rewards.joint_acc_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
-            "start_time_s": 1.65,
-            "ramp_time_s": 0.20,
+            "start_time_s": 0.0,
+            "ramp_time_s": 0.0,
             "acceleration_scale": 50.0,
         }
         # Wheel contact has no phase fade and switches off at reference time 1.25 s.
@@ -244,8 +244,6 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
             "left_shank_link",
             "right_foot_link",
             "left_foot_link",
-            "right_wheel_link",
-            "left_wheel_link",
         ]
         self.commands.motion.joint_names = self.joint_names # 指定command的关节顺序，但不是都必须要追踪的关节
 
