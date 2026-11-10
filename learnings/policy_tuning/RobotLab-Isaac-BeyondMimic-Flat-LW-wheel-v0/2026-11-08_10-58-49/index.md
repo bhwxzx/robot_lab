@@ -9,5 +9,9 @@
 ## 原始记录与生命周期
 
 - [provenance](<provenance>)
+- [events](<events>)
+- [evidence/checkpoint_selection](<evidence/checkpoint_selection>)
+- [evidence/export](<evidence/export>)
+- [evidence/source](<evidence/source>)
 
 旧版证据保持原位；本索引不会移动、压缩或重写已有结果。
