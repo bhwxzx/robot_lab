@@ -1,0 +1,44 @@
+{
+  "notes": [
+    "结论：双轮完整连杆跟踪版在本次名义与随机化固定起点测试中均完成5次完整动作、0次失败，另各有1次因1000步预算截断的未完整周期。轮速与落地后残余转动改善，但小腿驱动力矩、速度和部分侧倾/对称性指标退化，不能判定为全面优于旧版。",
+    "来源：2026-11-09_12-58-20/model_49999.pt，iter=49999，SHA256=d3b4dc58cc67d6a56875f194d1751756a1f5ca60a47b9260c0ae1431e5f9e1d2。用户确认 bash scripts/start_beyondmimic.sh --type wheel --num_envs 8192，无额外CLI/Hydra覆盖；训练HEAD与本次源码HEAD均ea876d372c3a04f6c68de505dfd3f7b1f8e8f98c。8192环境、seed42、PPO/OnPolicyRunner；actor输入590，critic输入164。",
+    "配置：11个跟踪连杆（新增双轮的位置、姿态、线速度、角速度跟踪）；高度奖励0，全局位置std=0.30；独立轮速、轮加速度、轮接触奖励均0。leg_symmetry=0.5、feet_distance_penalize=-20，数据增强与镜像损失开启，镜像系数0.1。与11-07相比还同时关闭了三项轮奖励，critic输入也改变，因此结果不能归因于单一连杆跟踪项。",
+    "方法：两组均1环境、1000控制步、seed42；无视频。每组1000条20ms控制遥测和4000条5ms物理遥测完整，所有新旧6个结果包均通过完整校验。关节峰值取5ms全样本绝对最大值（包括预算截断尾段）；周期均值只用5个完整周期。名义重置下5个周期完全重复，不是5个独立seed。",
+    "阶段定义：最长连续至少15ms、总正向地面法向力小于10N的[1.0,2.3]s区间作为腾空描述；离地时刻分辨率5ms，基座世界系竖直速度由20ms样本插值。该速度是base COM速度，不是整机质心速度；参考NPZ速度是连杆原点运动学速度，二者不能无条件逐值等同。",
+    "与11-07全程轮约束版比较（名义/随机化）：全程轮速峰值5.98/13.73→5.05/12.19 rad/s；完整周期轮速RMS 1.771/3.365→1.118/2.841 rad/s。2.0s后轮速RMS 0.907/0.729→0.031/0.054 rad/s，落地后稳定效果明显。参考轮速峰值仅0.148 rad/s，因此尚不能称为严格跟踪参考低轮速。",
+    "轮速改善并非所有阶段一致：随机化全局峰值12.19 rad/s在初始调整0.240s（左轮），右轮11.21 rad/s在0.205s；[1.0,1.3)s固定推蹬窗口轮速峰值11.74，高于11-07的10.35 rad/s。名义左轮5.05 rad/s在1.590s落地附近，右轮4.82 rad/s在1.300s离地前后。",
+    "起跳：新策略名义/随机化完整周期平均离地时刻1.310/1.330s、平均腾空时长0.275/0.282s；离地基座向上速度1.466/1.597 m/s，随机化范围1.257–2.032 m/s。推蹬向上速度峰值均值1.682/1.812 m/s。11-07离地速度1.232/1.460 m/s，11-08为1.603/1.554 m/s。",
+    "高度：新策略完整周期基座最高点均值0.731/0.734m，参考最高点0.714m；名义预蹲最低点0.545m，参考0.490m，说明下蹲偏浅，不能只用更高的绝对最高点判断推蹬更充分。全程高度RMSE 0.0293/0.0285m，11-07为0.0249/0.0255m，11-08高度+位置版为0.0103/0.0146m；高度轨迹精度未优于高度奖励版。",
+    "推蹬支撑：从1.0s至各周期离地前法向支撑冲量均值120.91/131.98 N·s（11-07为116.88/130.50；11-08为123.53/132.37）。相同窗口轮轴世界x速度最小值的周期均值为-0.067/-0.694 m/s，11-07为-0.415/-1.271；后退减轻，但窗口长度随离地时刻不同，且缺少完整接触点切向速度与摩擦冲量，不能据此证明无滑移或建立因果。",
+    "侧倾：新策略名义腾空|roll|最大2.87°；随机化每周期峰值平均3.87°，最坏7.45°。11-07对应0.65°、平均3.09°/最坏4.59°；11-08对应3.89°、平均3.45°/最坏6.35°。相对11-07名义与随机化最坏侧倾均增加。",
+    "对称性：[1.0,1.8]s参考校正左右角度和的RMSE（无1/2系数），新策略名义髋/大腿/小腿/足为1.20/2.89/3.04/1.94°，随机化周期均值为2.55/4.19/3.49/3.12°。11-07小腿为1.52/2.75°，新策略小腿对称性未改善。",
+    "负载重点：名义小腿速度最大17.54 rad/s、驱动力矩100.92 N·m；随机化19.58 rad/s、120 N·m。随机化左小腿1.300s达到120 N·m，左足落地后达到27 N·m；5ms样本中分别有2/4000与33/4000达到各自力矩限值99%。右足速度10.110 rad/s在1.650s，超过配置10 rad/s参考值的样本为1/4000。驱动力矩不含被动冲击载荷，配置速度值不是已经验证的硬安全上限。",
+    "可比性：初始质量、COM、材料、刚度、阻尼与两版历史同场景均一致；训练奖励、网络critic维度、策略闭环轨迹不同。11/9连杆的平均body误差不直接混比；共同9连杆位置误差RMSE新策略0.0365/0.0400m，11-07为0.0369/0.0374m，11-08为0.0259/0.0305m。",
+    "训练尾段：48000–48999与49000–49999窗口的55个标量均无非有限值；平均reward 7.091→6.920，episode length 79.90→77.82，value loss 0.02013→0.01907，symmetry loss 0.0001441→0.0001402。自适应起始帧会影响训练episode长度；这些指标不能证明已收敛，也不能把训练motion_finished比例当作固定起点泛化成功率。",
+    "保护核验：1534个已有受保护文件哈希全部保持，HEAD与stash未变；本次仅新增该训练目录下评估/来源/分析证据。未训练、导出、安装、删除、改源码或Git提交。报告模板上方通用tracking_xy等unavailable字段不适用于本任务，BeyondMimic任务指标和必需遥测完整性以本报告、result.json与analysis.json为准。",
+    "限制：单seed、小样本、仿真遥测评估；没有批准的收敛或硬件验收阈值，assessment=insufficient_evidence，convergence=indeterminate。仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。",
+    "各关节全样本5ms峰值如下，速度单位rad/s，力矩单位N·m。\n\n| 关节 | 名义速度 | 随机化速度 | 名义驱动力矩 | 随机化驱动力矩 |\n| --- | ---: | ---: | ---: | ---: |\n| 左髋 | 1.958 | 4.035 | 30.181 | 54.657 |\n| 右髋 | 3.884 | 4.104 | 29.680 | 45.934 |\n| 左大腿 | 8.121 | 11.117 | 26.551 | 35.682 |\n| 右大腿 | 8.620 | 9.060 | 27.114 | 56.972 |\n| 左小腿 | 16.698 | 19.579 | 100.644 | 120.000 |\n| 右小腿 | 17.543 | 19.537 | 100.923 | 110.448 |\n| 左足 | 7.720 | 9.701 | 17.297 | 27.000 |\n| 右足 | 7.801 | 10.110 | 16.829 | 25.748 |\n| 左轮 | 5.047 | 12.187 | 2.569 | 7.203 |\n| 右轮 | 4.824 | 11.206 | 2.431 | 5.983 |"
+  ],
+  "recommendations": [
+    "建议保留双轮完整连杆跟踪作为后续候选基线：当前轮速与落地停稳已有改善，暂无证据要求立即恢复独立全程轮速/轮加速度惩罚。先处理小腿蹬伸负载和随机化腾空末段侧倾，避免仅按成功率或轮速选择策略。",
+    "暂不以增加起跳高度为目的直接加回高度奖励；当前名义最高点已略高于参考且预蹲偏浅。若目标是提高高度轨迹精度，应在保留轮连杆跟踪的条件下单独比较高度/位置约束，观察小腿峰值、接触冲量与侧倾是否同时改善。",
+    "下一有界验证建议使用多个固定seed复核当前候选与11-07基线，优先报告随机化初始调整、推蹬、落地三阶段的轮速、小腿/足力矩饱和和侧倾尾部。任何训练、奖励修改或额外实验需另行明确范围；本次没有自动扩展评估。",
+    "所有参数结论保持建议性质，direct_parameter_change_supported=false。完整逐周期指标见cycle-metrics.csv，各关节及峰值相位见joint-loads.csv，三策略时间曲线见phase-comparison.png。"
+  ],
+  "supporting": [
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/derived/analysis-method.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/derived/analysis.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/derived/cases-ready.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/derived/cycle-metrics.csv",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/derived/joint-loads.csv",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/derived/phase-comparison.png",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/derived/supplemental-method.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/derived/supplemental-metrics.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evidence/training/batch-driver-method-20261110-001.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evidence/training/evaluation-request-20261110-001.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evidence/training/protection-after-20261110-001.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evidence/training/protection-before-20261110-001.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evidence/training/tensorboard-summary-20261110-001.json",
+    "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evidence/training/training-origin-20261110-001.json"
+  ]
+}
