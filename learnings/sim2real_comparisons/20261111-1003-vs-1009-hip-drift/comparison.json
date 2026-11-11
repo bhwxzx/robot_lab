@@ -1,0 +1,140 @@
+{
+  "created_at": "2026-11-11T11:27:20.595826+00:00",
+  "method": {
+    "signals": "Actual encoder hip angles, not policy target angles. Right positive and left negative treated as outward direction, following archived geometric interpretation.",
+    "baseline": "Mean of final 2 seconds before inferred policy activation.",
+    "matched_window_s": [
+      0,
+      36
+    ],
+    "endpoint_mean_window_s": [
+      34,
+      36
+    ],
+    "drift_fit_window_s": [
+      4,
+      36
+    ],
+    "fit": "OLS angle vs elapsed time, exclude initial 4s uniformly; record 0..36 and 10..36 slopes as window-sensitivity checks.",
+    "plot": "Raw traces and nonoverlapping 1s bin means; no raw data modifications.",
+    "limits": [
+      "Different motion commands, manual support conditions and test lengths; not controlled single-variable policy comparison.",
+      "Release time, mechanical zero and structural deflection not independently measured.",
+      "FSM start inferred from targets; approximately one telemetry-frame uncertainty."
+    ]
+  },
+  "cases": {
+    "1003-01": {
+      "archive_directory": "/home/young/liufengrong/policy_storage/LW/wheel_loco/2026-10-02-14-30-02",
+      "inputs": [
+        {
+          "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/analysis/decoded.npz",
+          "sha256": "c6659a021e02607e72d74b02201c3642bc281613859bbc354ba6c1cebbe720c9"
+        },
+        {
+          "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/README.md",
+          "sha256": "c089164dc07a79be7ba914ed75481a8de4925da59540402ee005d5e5b787c54f"
+        },
+        {
+          "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261003-155617-stable-motion-hip-bias/context/bundle_snapshot/policy/LW/robot_lab/wheel_loco/policy.onnx",
+          "sha256": "ef6cf9f83ffcf559e15d1e4e8da138fcd6d0c8c0b8fd02e1de5a4f021817429b"
+        }
+      ],
+      "inferred_policy_interval_s": [
+        50.739602391,
+        163.742160741
+      ],
+      "duration_s": 113.00255834999999,
+      "hip_order": [
+        "right",
+        "left"
+      ],
+      "prepolicy_outward_angle_deg": [
+        -1.902131240923296,
+        -1.6064604927869963
+      ],
+      "endpoint_outward_angle_deg": [
+        0.4911179220805967,
+        0.4117784446817291
+      ],
+      "endpoint_outward_change_deg": [
+        2.3932491630038926,
+        2.0182389374687255
+      ],
+      "OLS_slope_4_36_deg_per_s": [
+        -0.011817531856880033,
+        0.05935407199019886
+      ],
+      "OLS_slope_0_36_deg_per_s": [
+        -0.0008799356592950379,
+        0.062274551502816126
+      ],
+      "OLS_slope_10_36_deg_per_s": [
+        -0.004965272661376454,
+        0.045676799330217836
+      ],
+      "matched_outward_peak_deg": [
+        1.278611412626387,
+        1.2567548072823462
+      ]
+    },
+    "1009-01": {
+      "archive_directory": "/home/young/liufengrong/policy_storage/LW/wheel_loco/2026-10-03-22-59-50",
+      "inputs": [
+        {
+          "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261009-163704-autonomous-motion-hip-outward-drift/analysis/decoded.npz",
+          "sha256": "01c8826a7feb33e7e5f620dfa39ed62bc09bf5c2c6b893e01f7c9b99bc8335a4"
+        },
+        {
+          "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261009-163704-autonomous-motion-hip-outward-drift/README.md",
+          "sha256": "b14f4ab00d4cb90d20223dee3bce35574fc902e63d0a383e8e0ed78ed014063c"
+        },
+        {
+          "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261009-163704-autonomous-motion-hip-outward-drift/context/bundle_snapshot/policy/LW/robot_lab/wheel_loco/policy.onnx",
+          "sha256": "bda4ed7bf090b8e3d554d9243a3652d626016ca70343190d8abb4638bc4f8df9"
+        }
+      ],
+      "inferred_policy_interval_s": [
+        55.601898981,
+        92.33980435
+      ],
+      "duration_s": 36.737905368999996,
+      "hip_order": [
+        "right",
+        "left"
+      ],
+      "prepolicy_outward_angle_deg": [
+        -1.825081187740769,
+        -1.5384864501670308
+      ],
+      "endpoint_outward_angle_deg": [
+        1.6121486743277833,
+        1.1074741927825489
+      ],
+      "endpoint_outward_change_deg": [
+        3.4372298620685524,
+        2.6459606429495794
+      ],
+      "OLS_slope_4_36_deg_per_s": [
+        0.052249555993284964,
+        0.04699787661516989
+      ],
+      "OLS_slope_0_36_deg_per_s": [
+        0.07053037730741148,
+        0.062245327043572635
+      ],
+      "OLS_slope_10_36_deg_per_s": [
+        0.03479132876007121,
+        0.03539846913732901
+      ],
+      "matched_outward_peak_deg": [
+        2.043647241181175,
+        1.519034071410836
+      ]
+    }
+  },
+  "figure": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/sim2real_comparisons/20261111-1003-vs-1009-hip-drift/hip-outward-drift.png",
+    "sha256": "91ae148a99697d93fe8949e84c07106f6ed0a4681d60c27c182ba6d892e636df"
+  }
+}

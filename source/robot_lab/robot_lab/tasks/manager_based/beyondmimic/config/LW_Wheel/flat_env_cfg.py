@@ -210,7 +210,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
             "end_time_s": 1.25,
             "ramp_time_s": 0.0,
         }
-        self.rewards.feet_distance_penalize.weight = -20.0
+        self.rewards.feet_distance_penalize.weight = -0.0
         self.rewards.feet_distance_penalize.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg(

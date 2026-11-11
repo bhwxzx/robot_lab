@@ -1,0 +1,989 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-11-11T09:32:01.278619+00:00",
+  "task": "Diagnose real wheel-to-leg takeoff oscillation without source edits or physical execution",
+  "policy_run": "2026-11-10_14-03-57",
+  "test_model_binding": {
+    "user_confirmed": true,
+    "answer": "是，实测使用该策略",
+    "reference_onnx_matches_archived_bytes": true,
+    "process_binary_binding": "not independently recorded"
+  },
+  "sim2real_repository_head": "51e096c",
+  "inputs": [
+    {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261111-163120-wheel-to-leg-takeoff-oscillation/analysis/decoded.npz",
+      "sha256": "3003d71a6b27e88ce93add9be59b0e23d2748a3e8ac621ca94b07053573c36c3"
+    },
+    {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261111-163120-wheel-to-leg-takeoff-oscillation/exports/joint_states.csv",
+      "sha256": "3fddcf9e946634abaa67fb9afdc6863383a195202bfe78ffa853c6251437a1d3"
+    },
+    {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/wheel/20261111-163120-wheel-to-leg-takeoff-oscillation/raw/lw_real_20261111-163120/lw_real_20261111-163120_0.db3",
+      "sha256": "2f229cd7ac2a0f05322d3bebd10d8323bd042bfd593dc11a8f184563ebdff24b"
+    },
+    {
+      "path": "/home/young/liufengrong/sim2real_test/docs/reports/20261111-wheel-to-leg-takeoff-oscillation/context-reference/policy/LW/robot_lab/wheel_to_leg/policy.onnx",
+      "sha256": "0b2032d78e0f41bc2be5a44fb52251a8af2edd3334d8d36bfd866a1c0249912f"
+    },
+    {
+      "path": "/home/young/liufengrong/sim2real_test/docs/reports/20261111-wheel-to-leg-takeoff-oscillation/context-reference/policy/LW/robot_lab/wheel_to_leg/config.yaml",
+      "sha256": "b435c8bce7994d65520bb94f2fb6baa12534d8a5080ba6cf1467cbddcb57cd27"
+    },
+    {
+      "path": "/home/young/liufengrong/sim2real_test/docs/reports/20261111-wheel-to-leg-takeoff-oscillation/context-reference/policy/LW/robot_lab/wheel_to_leg/wheel_to_leg_transform_60hz.csv",
+      "sha256": "791632a4bbd9d19da77fed85b0d291e65a992f941cf7a8484f15e2bb9519df1c"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz",
+      "sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-10_14-03-57/params/env.yaml",
+      "sha256": "98fa6e84be835094431359f827a03aaf8cbbe247b5373f1ece3e9275d2b1b701"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-10_14-03-57/params/agent.yaml",
+      "sha256": "072673d2cbf1944e9a0d5b48b6f574b55cbfa6706cd456bc9fd6afc06e11b6ad"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-10_14-03-57/evaluations/wheel-to-leg-landing-std030-20261111-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+      "sha256": "704aa105bbf52c8e2624ba6a39494698ffadc765480bed847d0df42f99c235f8"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-10_14-03-57/evaluations/wheel-to-leg-landing-std030-20261111-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+      "sha256": "f6453c371eac66bfe05433007110b395d1fbcbc0cf2273f72eabf2e8889eccdd"
+    }
+  ],
+  "real": {
+    "hip_order": [
+      "right",
+      "left"
+    ],
+    "window_seconds": [
+      0,
+      1.1
+    ],
+    "rows": [
+      1055,
+      1109
+    ],
+    "sample_count": 55,
+    "hip_position_p2p_deg": [
+      16.39267257408404,
+      16.39267257408404
+    ],
+    "hip_velocity_peak_rad_s": [
+      8.699634552001953,
+      9.029304504394531
+    ],
+    "hip_reported_torque_peak_nm": [
+      57.28938293457031,
+      40.879119873046875
+    ],
+    "hip_reported_torque_rms_nm": [
+      20.021408453842533,
+      16.564351142693706
+    ],
+    "target": {
+      "target_p2p_deg": [
+        66.35491895645869,
+        63.68142923605938
+      ],
+      "target_rms_deg": [
+        17.248415299921522,
+        15.858524510883802
+      ],
+      "target_step_max_deg": [
+        38.89137375671399,
+        40.40755110150447
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        41.141905813841376,
+        39.19058391076201
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.8027561389436972,
+        1.7161076538145752
+      ]
+    }
+  },
+  "native": {
+    "fixed-start-nominal-a01": [
+      {
+        "episode": 0,
+        "hip_position_p2p_deg": [
+          1.0633653914115604,
+          1.2146172191831555
+        ],
+        "hip_velocity_peak_rad_s": [
+          0.22485218942165375,
+          0.22481653094291687
+        ],
+        "hip_applied_torque_peak_nm": [
+          19.03150177001953,
+          17.32015609741211
+        ],
+        "hip_applied_torque_rms_nm": [
+          11.513581836611783,
+          11.62453510460297
+        ],
+        "target": {
+          "target_p2p_deg": [
+            11.433057707109164,
+            10.834785376091027
+          ],
+          "target_rms_deg": [
+            7.499682367979817,
+            6.8816035781739275
+          ],
+          "target_step_max_deg": [
+            1.9848465695033586,
+            1.9648061541483064
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.00035930115557534814,
+            0.00010866052934348936
+          ],
+          "peak_frequency_hz": [
+            3.3333333333333335,
+            3.3333333333333335
+          ]
+        }
+      },
+      {
+        "episode": 1,
+        "hip_position_p2p_deg": [
+          1.0633653914115604,
+          1.2146172191831555
+        ],
+        "hip_velocity_peak_rad_s": [
+          0.22485218942165375,
+          0.22481653094291687
+        ],
+        "hip_applied_torque_peak_nm": [
+          19.03150177001953,
+          17.32015609741211
+        ],
+        "hip_applied_torque_rms_nm": [
+          11.513581836611783,
+          11.62453510460297
+        ],
+        "target": {
+          "target_p2p_deg": [
+            11.433057707109164,
+            10.834785376091027
+          ],
+          "target_rms_deg": [
+            7.499682367979817,
+            6.8816035781739275
+          ],
+          "target_step_max_deg": [
+            1.9848465695033586,
+            1.9648061541483064
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.00035930115557534814,
+            0.00010866052934348936
+          ],
+          "peak_frequency_hz": [
+            3.3333333333333335,
+            3.3333333333333335
+          ]
+        }
+      },
+      {
+        "episode": 2,
+        "hip_position_p2p_deg": [
+          1.0633653914115604,
+          1.2146172191831555
+        ],
+        "hip_velocity_peak_rad_s": [
+          0.22485218942165375,
+          0.22481653094291687
+        ],
+        "hip_applied_torque_peak_nm": [
+          19.03150177001953,
+          17.32015609741211
+        ],
+        "hip_applied_torque_rms_nm": [
+          11.513581836611783,
+          11.62453510460297
+        ],
+        "target": {
+          "target_p2p_deg": [
+            11.433057707109164,
+            10.834785376091027
+          ],
+          "target_rms_deg": [
+            7.499682367979817,
+            6.8816035781739275
+          ],
+          "target_step_max_deg": [
+            1.9848465695033586,
+            1.9648061541483064
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.00035930115557534814,
+            0.00010866052934348936
+          ],
+          "peak_frequency_hz": [
+            3.3333333333333335,
+            3.3333333333333335
+          ]
+        }
+      },
+      {
+        "episode": 3,
+        "hip_position_p2p_deg": [
+          1.0633653914115604,
+          1.2146172191831555
+        ],
+        "hip_velocity_peak_rad_s": [
+          0.22485218942165375,
+          0.22481653094291687
+        ],
+        "hip_applied_torque_peak_nm": [
+          19.03150177001953,
+          17.32015609741211
+        ],
+        "hip_applied_torque_rms_nm": [
+          11.513581836611783,
+          11.62453510460297
+        ],
+        "target": {
+          "target_p2p_deg": [
+            11.433057707109164,
+            10.834785376091027
+          ],
+          "target_rms_deg": [
+            7.499682367979817,
+            6.8816035781739275
+          ],
+          "target_step_max_deg": [
+            1.9848465695033586,
+            1.9648061541483064
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.00035930115557534814,
+            0.00010866052934348936
+          ],
+          "peak_frequency_hz": [
+            3.3333333333333335,
+            3.3333333333333335
+          ]
+        }
+      },
+      {
+        "episode": 4,
+        "hip_position_p2p_deg": [
+          1.0633653914115604,
+          1.2146172191831555
+        ],
+        "hip_velocity_peak_rad_s": [
+          0.22485218942165375,
+          0.22481653094291687
+        ],
+        "hip_applied_torque_peak_nm": [
+          19.03150177001953,
+          17.32015609741211
+        ],
+        "hip_applied_torque_rms_nm": [
+          11.513581836611783,
+          11.62453510460297
+        ],
+        "target": {
+          "target_p2p_deg": [
+            11.433057707109164,
+            10.834785376091027
+          ],
+          "target_rms_deg": [
+            7.499682367979817,
+            6.8816035781739275
+          ],
+          "target_step_max_deg": [
+            1.9848465695033586,
+            1.9648061541483064
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.00035930115557534814,
+            0.00010866052934348936
+          ],
+          "peak_frequency_hz": [
+            3.3333333333333335,
+            3.3333333333333335
+          ]
+        }
+      }
+    ],
+    "fixed-start-randomized-a01": [
+      {
+        "episode": 0,
+        "hip_position_p2p_deg": [
+          5.892599070804757,
+          2.4728665739085316
+        ],
+        "hip_velocity_peak_rad_s": [
+          1.8004441261291504,
+          0.6762320399284363
+        ],
+        "hip_applied_torque_peak_nm": [
+          14.463456153869629,
+          11.678844451904297
+        ],
+        "hip_applied_torque_rms_nm": [
+          6.706447987903343,
+          4.1433486393244685
+        ],
+        "target": {
+          "target_p2p_deg": [
+            16.260695816959647,
+            9.949129313928312
+          ],
+          "target_rms_deg": [
+            4.050511369291263,
+            3.274193412299574
+          ],
+          "target_step_max_deg": [
+            3.421004406185729,
+            2.831808382718334
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.009300500929896836,
+            0.039270114501701175
+          ],
+          "peak_frequency_hz": [
+            3.3333333333333335,
+            7.777777777777779
+          ]
+        }
+      },
+      {
+        "episode": 1,
+        "hip_position_p2p_deg": [
+          4.780062747351878,
+          5.1422051534582796
+        ],
+        "hip_velocity_peak_rad_s": [
+          1.5140541791915894,
+          1.6526975631713867
+        ],
+        "hip_applied_torque_peak_nm": [
+          14.55765151977539,
+          15.232630729675293
+        ],
+        "hip_applied_torque_rms_nm": [
+          7.639847132833018,
+          5.753378785629052
+        ],
+        "target": {
+          "target_p2p_deg": [
+            12.93304045993413,
+            16.193842352250385
+          ],
+          "target_rms_deg": [
+            3.7209046421286787,
+            3.982936496580379
+          ],
+          "target_step_max_deg": [
+            2.2575316268323626,
+            4.335804885536888
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.012628886519025063,
+            0.040616284203181
+          ],
+          "peak_frequency_hz": [
+            3.3333333333333335,
+            3.3333333333333335
+          ]
+        }
+      },
+      {
+        "episode": 2,
+        "hip_position_p2p_deg": [
+          2.291860771250655,
+          2.8268043086559476
+        ],
+        "hip_velocity_peak_rad_s": [
+          1.0348933935165405,
+          1.3203620910644531
+        ],
+        "hip_applied_torque_peak_nm": [
+          20.033218383789062,
+          29.677968978881836
+        ],
+        "hip_applied_torque_rms_nm": [
+          7.93154831856134,
+          12.5228952274791
+        ],
+        "target": {
+          "target_p2p_deg": [
+            13.564681199894688,
+            18.05406059440264
+          ],
+          "target_rms_deg": [
+            4.582090978450329,
+            7.086333617457389
+          ],
+          "target_step_max_deg": [
+            3.1371381157420024,
+            2.6699004026296214
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.03998514069963494,
+            0.030191398408144037
+          ],
+          "peak_frequency_hz": [
+            3.3333333333333335,
+            3.3333333333333335
+          ]
+        }
+      },
+      {
+        "episode": 3,
+        "hip_position_p2p_deg": [
+          6.855683491420058,
+          4.5056913803498215
+        ],
+        "hip_velocity_peak_rad_s": [
+          1.1971791982650757,
+          1.227364420890808
+        ],
+        "hip_applied_torque_peak_nm": [
+          38.153778076171875,
+          27.4442081451416
+        ],
+        "hip_applied_torque_rms_nm": [
+          14.210456542311144,
+          8.537922335298692
+        ],
+        "target": {
+          "target_p2p_deg": [
+            23.222694831348953,
+            24.424948571036005
+          ],
+          "target_rms_deg": [
+            6.137542850437065,
+            5.782924311170212
+          ],
+          "target_step_max_deg": [
+            3.445470143792715,
+            4.972049866689122
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.04673679848356367,
+            0.012451091505092365
+          ],
+          "peak_frequency_hz": [
+            6.666666666666667,
+            3.3333333333333335
+          ]
+        }
+      },
+      {
+        "episode": 4,
+        "hip_position_p2p_deg": [
+          2.980093710590015,
+          2.706727822138978
+        ],
+        "hip_velocity_peak_rad_s": [
+          0.8763489127159119,
+          1.1972860097885132
+        ],
+        "hip_applied_torque_peak_nm": [
+          12.877288818359375,
+          16.017990112304688
+        ],
+        "hip_applied_torque_rms_nm": [
+          6.011340694414827,
+          8.150420538883573
+        ],
+        "target": {
+          "target_p2p_deg": [
+            12.612196165654188,
+            15.231512667538372
+          ],
+          "target_rms_deg": [
+            3.060916272639799,
+            5.43749648623543
+          ],
+          "target_step_max_deg": [
+            3.102731678128298,
+            4.265830931511429
+          ],
+          "spectral_power_7_13_hz_unscaled": [
+            0.04765096583957385,
+            0.011707701214548515
+          ],
+          "peak_frequency_hz": [
+            4.444444444444445,
+            3.3333333333333335
+          ]
+        }
+      }
+    ]
+  },
+  "reference_comparison": {
+    "npz_asset_to_policy_indices": [
+      1,
+      0,
+      3,
+      2,
+      5,
+      4,
+      8,
+      6,
+      9,
+      7
+    ],
+    "first_55_position_max_error_rad": [
+      1.474394230193039e-11,
+      1.474394230193039e-11,
+      2.3046722441577572e-07,
+      2.468841555636203e-07,
+      5.669418338127841e-07,
+      5.621726993920717e-07,
+      1.302413942250169e-07,
+      1.2487411504835677e-07,
+      3.909015659775417e-09,
+      3.909015659775417e-09
+    ],
+    "first_55_velocity_max_error_rad_s": [
+      3.500018434948289e-05,
+      3.500018434948289e-05,
+      0.09309363439942042,
+      0.0931145995636038,
+      0.06752292626189993,
+      0.06750913932800429,
+      0.027631007612705205,
+      0.027631007612705205,
+      0.01641399944210052,
+      0.01641399944210052
+    ],
+    "note": "Deployment forward differences at 60Hz vs training velocities derived after resampling at 50Hz; position order checked before comparison."
+  },
+  "approximate_replay": {
+    "baseline_lag0": {
+      "rmse_deg": [
+        16.72060019999292,
+        16.966977802632528
+      ],
+      "correlation": [
+        0.06724959570932264,
+        -0.13900656076946755
+      ]
+    },
+    "baseline_lag1": {
+      "rmse_deg": [
+        4.612690876294133,
+        4.1580701749464986
+      ],
+      "correlation": [
+        0.9719060038926586,
+        0.9741269482750234
+      ]
+    }
+  },
+  "input_substitutions": {
+    "baseline_lag1": {
+      "target_p2p_deg": [
+        54.10645512354343,
+        53.17122464125026
+      ],
+      "target_rms_deg": [
+        14.57862707548185,
+        13.435192568617602
+      ],
+      "target_step_max_deg": [
+        30.33294865120208,
+        31.682604276480358
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        22.82167006678339,
+        22.836902931846335
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.0,
+        1.0
+      ]
+    },
+    "hip_pos_fixed": {
+      "target_p2p_deg": [
+        50.38978719611348,
+        49.39654791719939
+      ],
+      "target_rms_deg": [
+        13.689880639741043,
+        12.226671686572404
+      ],
+      "target_step_max_deg": [
+        28.861645649258588,
+        30.027930332115883
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        20.544074257032396,
+        20.300984863370264
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        0.9002003007191834,
+        0.8889552547451737
+      ]
+    },
+    "hip_vel_fixed": {
+      "target_p2p_deg": [
+        48.57332570710527,
+        48.17284098021615
+      ],
+      "target_rms_deg": [
+        14.006745729069825,
+        12.886423244879605
+      ],
+      "target_step_max_deg": [
+        34.13319589595818,
+        33.04507248286793
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        21.967112868060884,
+        20.126209152190746
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        0.9625550103817204,
+        0.8813020404848552
+      ]
+    },
+    "hip_pos_vel_fixed": {
+      "target_p2p_deg": [
+        44.907262651235946,
+        45.485564522977164
+      ],
+      "target_rms_deg": [
+        12.942894054586153,
+        11.701966814168697
+      ],
+      "target_step_max_deg": [
+        32.40702097004108,
+        31.322150434543044
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        19.68242257445082,
+        18.20975229750511
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        0.8624444449881999,
+        0.7973827428285554
+      ]
+    },
+    "all_joint_pos_vel_fixed": {
+      "target_p2p_deg": [
+        52.37267648953281,
+        55.02016367976188
+      ],
+      "target_rms_deg": [
+        13.5194499386948,
+        13.003488223490184
+      ],
+      "target_step_max_deg": [
+        36.95902274051088,
+        37.3639692884753
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        25.172990097436312,
+        25.915617039796288
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.1030301473893986,
+        1.1348131187989001
+      ]
+    },
+    "nonhip_pos_vel_fixed": {
+      "target_p2p_deg": [
+        54.88035653764089,
+        55.095497251212535
+      ],
+      "target_rms_deg": [
+        14.78488645045105,
+        14.035899512852273
+      ],
+      "target_step_max_deg": [
+        34.01509851011408,
+        35.908092268772286
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        24.250397010673822,
+        24.982350423316397
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.0626039610470894,
+        1.0939465170856513
+      ]
+    },
+    "imu_fixed": {
+      "target_p2p_deg": [
+        55.745656128116885,
+        52.682039662704774
+      ],
+      "target_rms_deg": [
+        15.181866617971497,
+        13.803139316108965
+      ],
+      "target_step_max_deg": [
+        33.15677254278067,
+        32.6430202275643
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        28.10398055753914,
+        25.916461027535835
+      ],
+      "peak_frequency_hz": [
+        8.88888888888889,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.231460295206181,
+        1.1348500759879756
+      ]
+    },
+    "hip_previous_actions_zero": {
+      "target_p2p_deg": [
+        55.02761883124095,
+        58.01653351770062
+      ],
+      "target_rms_deg": [
+        12.840067775744872,
+        13.226343173238932
+      ],
+      "target_step_max_deg": [
+        34.923807367860086,
+        36.26247834140569
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        30.077954181249936,
+        33.36599111661324
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.317955876727355,
+        1.4610558715509518
+      ]
+    },
+    "all_previous_actions_zero": {
+      "target_p2p_deg": [
+        60.04058494615303,
+        61.8862796448089
+      ],
+      "target_rms_deg": [
+        15.2255274254427,
+        15.479006751321522
+      ],
+      "target_step_max_deg": [
+        37.42671311373833,
+        38.06686917860319
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        39.13754138559376,
+        41.0998079638933
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.7149288930680793,
+        1.7997102359523156
+      ]
+    },
+    "hip_feedback_and_previous_actions_fixed": {
+      "target_p2p_deg": [
+        11.179415644072979,
+        12.709084960351758
+      ],
+      "target_rms_deg": [
+        3.2333020990393533,
+        3.098685786841668
+      ],
+      "target_step_max_deg": [
+        7.595508237974683,
+        7.120368476240273
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        0.5059607053764051,
+        0.6696765565525179
+      ],
+      "peak_frequency_hz": [
+        8.88888888888889,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        0.022170187540868167,
+        0.02932431593509319
+      ]
+    },
+    "all_joint_feedback_and_previous_actions_fixed": {
+      "target_p2p_deg": [
+        8.82670575804331,
+        9.5601982789071
+      ],
+      "target_rms_deg": [
+        3.193452049859705,
+        3.033326713052879
+      ],
+      "target_step_max_deg": [
+        7.0699061848785725,
+        6.748658482550778
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        0.1262865640363654,
+        0.046704745269125936
+      ],
+      "peak_frequency_hz": [
+        8.88888888888889,
+        4.444444444444445
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        0.005533625000572314,
+        0.002045143573474475
+      ]
+    },
+    "all_state_and_previous_actions_fixed": {
+      "target_p2p_deg": [
+        3.23171723928305,
+        3.195698076612429
+      ],
+      "target_rms_deg": [
+        1.5197839562993567,
+        1.111891418634167
+      ],
+      "target_step_max_deg": [
+        0.7719189516908685,
+        0.7737936251746255
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        4.0510967570374334e-07,
+        4.0620233143000804e-07
+      ],
+      "peak_frequency_hz": [
+        3.3333333333333335,
+        3.3333333333333335
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.7751096853046463e-08,
+        1.7787102421123574e-08
+      ]
+    },
+    "baseline_lag0": {
+      "target_p2p_deg": [
+        23.47245862759704,
+        27.57013798570557
+      ],
+      "target_rms_deg": [
+        9.751003112423112,
+        8.97123805048256
+      ],
+      "target_step_max_deg": [
+        15.886688104944678,
+        20.417245429298166
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        1.8241562387098365,
+        2.859427526781036
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        0.07993088294466535,
+        0.12521082807570766
+      ]
+    },
+    "recorded_target": {
+      "target_p2p_deg": [
+        66.35491895645869,
+        63.68142923605938
+      ],
+      "target_rms_deg": [
+        17.248415299921522,
+        15.858524510883802
+      ],
+      "target_step_max_deg": [
+        38.89137375671399,
+        40.40755110150447
+      ],
+      "spectral_power_7_13_hz_unscaled": [
+        41.141905813841376,
+        39.19058391076201
+      ],
+      "peak_frequency_hz": [
+        10.0,
+        10.0
+      ],
+      "spectral_power_ratio_vs_lag1": [
+        1.8027561389436972,
+        1.7161076538145752
+      ]
+    }
+  },
+  "method": {
+    "window": "first 55 records after inferred transition start; 0 <= phase < 1.1s; phase inferred with approx 20ms uncertainty",
+    "native_window": "frame_index 0..54; 50Hz target/position, 200Hz speed/torque; native post-step feedback has up to one control-step alignment offset",
+    "replay": "One ONNX forward per recorded row, float32 CPU, 60Hz CSV interpolation on 20ms policy grid, q-ref then dq-ref, yaw-aligned first two rotation columns row-major, gyro, relative joint positions (wheel positions zero), joint velocities, previous raw actions reconstructed from recorded targets and default/scale. Previous action first row zero. Ten-frame term-major oldest-to-newest, first row fills history. Compare current row vs one preceding recorded state. No recursive propagation of predicted actions. All unchanged inputs and previous actions remain recorded. No real control execution.",
+    "substitution": "Replace selected feedback entries in all history frames by their first pretransition value; selected previous raw actions zero. IMU fixed means actual attitude/gyro fixed, reference attitude still changes. Report open-loop input sensitivity only.",
+    "spectrum": "0.2 <= nominal phase < 1.1 s, linear detrend, Hann window, rFFT; 7..13Hz summed unscaled power, 3..20Hz dominant frequency; resolution 1.11Hz",
+    "limits": [
+      "Recorded publication snapshots are not complete timestamped inference inputs; replay is approximate and is not export/runtime parity.",
+      "One-record lag is an alignment hypothesis, not a measurement of hardware or total control latency.",
+      "Individual substitutions leave correlated feedback and recorded prior actions unchanged; effects are not causal contribution percentages.",
+      "Native/real torque channels have different semantics: applied simulation torque vs board-reported torque.",
+      "Single trial; precise rope onset/contact/IMU-age/inference sequence and actual board gains not recorded.",
+      "User confirmation binds policy identity, not an independently measured executable or runtime snapshot."
+    ]
+  },
+  "source_reference": {
+    "commit": "94f9269dba1da2bdc7b33ea404c6880bd64371ab",
+    "access": "Exact-commit raw GitHub files read; local rl_sar checkout not updated; Git object fetch failed with TLS error.",
+    "files": [
+      "src/rl_sar/library/core/rl_sdk/rl_sdk.cpp",
+      "src/rl_sar/library/core/motion_loader/motion_loader_lw.cpp",
+      "src/rl_sar/library/core/safety/lw_runtime_core.hpp",
+      "src/rl_sar/fsm_robot/fsm_LW.hpp"
+    ]
+  },
+  "direct_parameter_change_supported": false,
+  "figure": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-10_14-03-57/evidence/feedback/sim2real-20261111-163120-a01/hip-oscillation-diagnosis.png",
+    "sha256": "c109459ac4670b5b5376ada82d1fdafcc5fc4902ffb0b7296c73a264f04218ac"
+  }
+}
