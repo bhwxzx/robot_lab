@@ -1,0 +1,3855 @@
+{
+  "version": 1,
+  "methods": {
+    "physics_dt_s": 0.005,
+    "control_dt_s": 0.02,
+    "joint_peaks": "absolute drive torque and joint speed, all 4000 physics samples including censored tail; also successful full cycles separately",
+    "phase": "frame*.02+(substep+1)*.005; control uses (frame+1)*.02",
+    "air": "longest contiguous interval with total positive normal ground Fz <10 N in [1.0,2.3] s, at least 3 physics samples; threshold is descriptive",
+    "takeoff_vz": "linear interpolation of base COM world vertical velocity at first airborne physics sample; not whole robot COM",
+    "push_impulse": "normal Fz integrated from phase 1.0s up to but excluding first airborne sample; includes wheel, foot, thigh, shank normal forces; excludes friction",
+    "symmetry": "RMS of (qL+qR)-(refqL+refqR), no half factor; successful full cycles, phase [1.0,1.8]s; reference advanced one control frame for post-physics alignment",
+    "comparison": "same seed42, 1env,1000 steps; 5 repeated complete cycles are not independent seeds; runtime material/mass/COM equality checked; multiple training changes confound causality"
+  },
+  "cases": {
+    "latest/nominal": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-10_13-58-00/evaluations/wheel-to-leg-height-full-wheel-20261111-001/raw/fixed-start-nominal-a01/result.json",
+        "sha256": "6945be573812dd2d8ca50cb5b35e30dbc650a552671e20684f393df0639ceaac"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-10_13-58-00/evaluations/wheel-to-leg-height-full-wheel-20261111-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+        "sha256": "b427517b2c2771e5c65deb3bbfd76972233d05a5316bc859bd79f3b3c2236ea8"
+      },
+      "standard_metrics": {
+        "action_rate_rms": 0.20042540577763665,
+        "anchor_orientation_rmse_rad": 0.0678941217304774,
+        "anchor_position_rmse_m": 0.06408264104442411,
+        "body_orientation_rmse_rad": 0.08982951318544301,
+        "body_position_rmse_m": 0.026436414134650896,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 9.463322639465332,
+        "max_abs_applied_torque": 67.17137145996094,
+        "max_joint_effort_utilization": 0.5818832538746022,
+        "mean_reward": 0.11720769296586514,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.09866962967095538,
+        "real_time_factor": 0.6758780201290567,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_thigh_shank_ground_contact": 0,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 2.304126200670119
+      },
+      "full_cycle_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "cycles": [
+        {
+          "policy": "latest",
+          "case": "nominal",
+          "episode": 0,
+          "base_height_peak_m": 0.7004569172859192,
+          "base_vz_peak_m_s": 1.77946393465504,
+          "base_abs_roll_peak_deg": 1.7248247558356729,
+          "push_base_vz_peak_m_s": 1.77946393465504,
+          "takeoff_phase_s": 1.32,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.25,
+          "takeoff_base_vz_m_s": 1.5518757846251943,
+          "push_normal_impulse_ns": 121.56922543048859,
+          "flight_abs_roll_peak_deg": 1.7248247558356729,
+          "push_wheel_center_vx_min_m_s": -0.8884273171424866,
+          "push_hip_mirror_rmse_deg": 0.549231804569808,
+          "push_thigh_mirror_rmse_deg": 1.698453083097655,
+          "push_shank_mirror_rmse_deg": 2.1053984197682167,
+          "push_foot_mirror_rmse_deg": 1.154309613509125,
+          "height_rmse_m": 0.011354466401215395,
+          "late_height_bias_m": 0.004002581471982209,
+          "wheel_speed_rms_rad_s": 2.2739840176322264,
+          "wheel_speed_peak_rad_s": 7.542170524597168,
+          "late_wheel_speed_rms_rad_s": 1.360975609576994,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "latest",
+          "case": "nominal",
+          "episode": 1,
+          "base_height_peak_m": 0.7004569172859192,
+          "base_vz_peak_m_s": 1.77946393465504,
+          "base_abs_roll_peak_deg": 1.7248247558356729,
+          "push_base_vz_peak_m_s": 1.77946393465504,
+          "takeoff_phase_s": 1.32,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.25,
+          "takeoff_base_vz_m_s": 1.5518757846251943,
+          "push_normal_impulse_ns": 121.56922543048859,
+          "flight_abs_roll_peak_deg": 1.7248247558356729,
+          "push_wheel_center_vx_min_m_s": -0.8884273171424866,
+          "push_hip_mirror_rmse_deg": 0.549231804569808,
+          "push_thigh_mirror_rmse_deg": 1.698453083097655,
+          "push_shank_mirror_rmse_deg": 2.1053984197682167,
+          "push_foot_mirror_rmse_deg": 1.154309613509125,
+          "height_rmse_m": 0.011354466401215395,
+          "late_height_bias_m": 0.004002581471982209,
+          "wheel_speed_rms_rad_s": 2.2739840176322264,
+          "wheel_speed_peak_rad_s": 7.542170524597168,
+          "late_wheel_speed_rms_rad_s": 1.360975609576994,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "latest",
+          "case": "nominal",
+          "episode": 2,
+          "base_height_peak_m": 0.7004569172859192,
+          "base_vz_peak_m_s": 1.77946393465504,
+          "base_abs_roll_peak_deg": 1.7248247558356729,
+          "push_base_vz_peak_m_s": 1.77946393465504,
+          "takeoff_phase_s": 1.32,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.25,
+          "takeoff_base_vz_m_s": 1.5518757846251943,
+          "push_normal_impulse_ns": 121.56922543048859,
+          "flight_abs_roll_peak_deg": 1.7248247558356729,
+          "push_wheel_center_vx_min_m_s": -0.8884273171424866,
+          "push_hip_mirror_rmse_deg": 0.549231804569808,
+          "push_thigh_mirror_rmse_deg": 1.698453083097655,
+          "push_shank_mirror_rmse_deg": 2.1053984197682167,
+          "push_foot_mirror_rmse_deg": 1.154309613509125,
+          "height_rmse_m": 0.011354466401215395,
+          "late_height_bias_m": 0.004002581471982209,
+          "wheel_speed_rms_rad_s": 2.2739840176322264,
+          "wheel_speed_peak_rad_s": 7.542170524597168,
+          "late_wheel_speed_rms_rad_s": 1.360975609576994,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "latest",
+          "case": "nominal",
+          "episode": 3,
+          "base_height_peak_m": 0.7004569172859192,
+          "base_vz_peak_m_s": 1.77946393465504,
+          "base_abs_roll_peak_deg": 1.7248247558356729,
+          "push_base_vz_peak_m_s": 1.77946393465504,
+          "takeoff_phase_s": 1.32,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.25,
+          "takeoff_base_vz_m_s": 1.5518757846251943,
+          "push_normal_impulse_ns": 121.56922543048859,
+          "flight_abs_roll_peak_deg": 1.7248247558356729,
+          "push_wheel_center_vx_min_m_s": -0.8884273171424866,
+          "push_hip_mirror_rmse_deg": 0.549231804569808,
+          "push_thigh_mirror_rmse_deg": 1.698453083097655,
+          "push_shank_mirror_rmse_deg": 2.1053984197682167,
+          "push_foot_mirror_rmse_deg": 1.154309613509125,
+          "height_rmse_m": 0.011354466401215395,
+          "late_height_bias_m": 0.004002581471982209,
+          "wheel_speed_rms_rad_s": 2.2739840176322264,
+          "wheel_speed_peak_rad_s": 7.542170524597168,
+          "late_wheel_speed_rms_rad_s": 1.360975609576994,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "latest",
+          "case": "nominal",
+          "episode": 4,
+          "base_height_peak_m": 0.7004569172859192,
+          "base_vz_peak_m_s": 1.77946393465504,
+          "base_abs_roll_peak_deg": 1.7248247558356729,
+          "push_base_vz_peak_m_s": 1.77946393465504,
+          "takeoff_phase_s": 1.32,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.25,
+          "takeoff_base_vz_m_s": 1.5518757846251943,
+          "push_normal_impulse_ns": 121.56922543048859,
+          "flight_abs_roll_peak_deg": 1.7248247558356729,
+          "push_wheel_center_vx_min_m_s": -0.8884273171424866,
+          "push_hip_mirror_rmse_deg": 0.549231804569808,
+          "push_thigh_mirror_rmse_deg": 1.698453083097655,
+          "push_shank_mirror_rmse_deg": 2.1053984197682167,
+          "push_foot_mirror_rmse_deg": 1.154309613509125,
+          "height_rmse_m": 0.011354466401215395,
+          "late_height_bias_m": 0.004002581471982209,
+          "wheel_speed_rms_rad_s": 2.2739840176322264,
+          "wheel_speed_peak_rad_s": 7.542170524597168,
+          "late_wheel_speed_rms_rad_s": 1.360975609576994,
+          "extra_ground_contact_peak_n": 0.0
+        }
+      ],
+      "joint_loads": {
+        "all_observed": {
+          "left_hip_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 1.0158107280731201,
+            "speed_signed_rad_s": 1.0158107280731201,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 49.795166015625,
+            "torque_peak_phase_s": 1.26,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 173.83790588378906,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 1.7709238529205322,
+            "speed_signed_rad_s": -1.7709238529205322,
+            "speed_peak_phase_s": 1.575,
+            "speed_episode": 0,
+            "torque_peak_nm": 49.70063400268555,
+            "torque_peak_phase_s": 1.2449999999999999,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 259.5289306640625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 11.86874008178711,
+            "speed_signed_rad_s": 11.86874008178711,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 22.522905349731445,
+            "torque_peak_phase_s": 1.2049999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 697.3368530273438,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 11.577414512634277,
+            "speed_signed_rad_s": -11.577414512634277,
+            "speed_peak_phase_s": 1.315,
+            "speed_episode": 0,
+            "torque_peak_nm": 21.527790069580078,
+            "torque_peak_phase_s": 1.605,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 931.8175048828125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 15.783364295959473,
+            "speed_signed_rad_s": -15.783364295959473,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 79.34550476074219,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 830.3253173828125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 16.0242977142334,
+            "speed_signed_rad_s": 16.0242977142334,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 86.23834991455078,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 911.4735717773438,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 9.066655158996582,
+            "speed_signed_rad_s": 9.066655158996582,
+            "speed_peak_phase_s": 1.585,
+            "speed_episode": 0,
+            "torque_peak_nm": 17.99505043029785,
+            "torque_peak_phase_s": 1.59,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 2155.106689453125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 6.4976911544799805,
+            "speed_signed_rad_s": -6.4976911544799805,
+            "speed_peak_phase_s": 1.3,
+            "speed_episode": 0,
+            "torque_peak_nm": 2.1527724266052246,
+            "torque_peak_phase_s": 0.665,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 504.43115234375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 10.343484878540039,
+            "speed_signed_rad_s": -10.343484878540039,
+            "speed_peak_phase_s": 1.57,
+            "speed_episode": 0,
+            "torque_peak_nm": 18.769283294677734,
+            "torque_peak_phase_s": 1.575,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 2623.592041015625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 7.542170524597168,
+            "speed_signed_rad_s": 7.542170524597168,
+            "speed_peak_phase_s": 1.19,
+            "speed_episode": 0,
+            "torque_peak_nm": 3.7082908153533936,
+            "torque_peak_phase_s": 0.545,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 727.181640625,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        },
+        "complete_cycles": {
+          "left_hip_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 1.0158107280731201,
+            "speed_signed_rad_s": 1.0158107280731201,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 49.795166015625,
+            "torque_peak_phase_s": 1.26,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 173.83790588378906,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 1.7709238529205322,
+            "speed_signed_rad_s": -1.7709238529205322,
+            "speed_peak_phase_s": 1.575,
+            "speed_episode": 0,
+            "torque_peak_nm": 49.70063400268555,
+            "torque_peak_phase_s": 1.2449999999999999,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 259.5289306640625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 11.86874008178711,
+            "speed_signed_rad_s": 11.86874008178711,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 22.522905349731445,
+            "torque_peak_phase_s": 1.2049999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 697.3368530273438,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 11.577414512634277,
+            "speed_signed_rad_s": -11.577414512634277,
+            "speed_peak_phase_s": 1.315,
+            "speed_episode": 0,
+            "torque_peak_nm": 21.527790069580078,
+            "torque_peak_phase_s": 1.605,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 931.8175048828125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 15.783364295959473,
+            "speed_signed_rad_s": -15.783364295959473,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 79.34550476074219,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 830.3253173828125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 16.0242977142334,
+            "speed_signed_rad_s": 16.0242977142334,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 86.23834991455078,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 911.4735717773438,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 9.066655158996582,
+            "speed_signed_rad_s": 9.066655158996582,
+            "speed_peak_phase_s": 1.585,
+            "speed_episode": 0,
+            "torque_peak_nm": 17.99505043029785,
+            "torque_peak_phase_s": 1.59,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 2155.106689453125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 6.4976911544799805,
+            "speed_signed_rad_s": -6.4976911544799805,
+            "speed_peak_phase_s": 1.3,
+            "speed_episode": 0,
+            "torque_peak_nm": 2.1527724266052246,
+            "torque_peak_phase_s": 0.665,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 504.43115234375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 10.343484878540039,
+            "speed_signed_rad_s": -10.343484878540039,
+            "speed_peak_phase_s": 1.57,
+            "speed_episode": 0,
+            "torque_peak_nm": 18.769283294677734,
+            "torque_peak_phase_s": 1.575,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 2623.592041015625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "latest",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 7.542170524597168,
+            "speed_signed_rad_s": 7.542170524597168,
+            "speed_peak_phase_s": 1.19,
+            "speed_episode": 0,
+            "torque_peak_nm": 3.7082908153533936,
+            "torque_peak_phase_s": 0.545,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 727.181640625,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        }
+      },
+      "cycle_summary": {
+        "base_height_peak_m": {
+          "mean": 0.7004569172859192,
+          "min": 0.7004569172859192,
+          "max": 0.7004569172859192
+        },
+        "base_vz_peak_m_s": {
+          "mean": 1.77946393465504,
+          "min": 1.77946393465504,
+          "max": 1.77946393465504
+        },
+        "base_abs_roll_peak_deg": {
+          "mean": 1.7248247558356726,
+          "min": 1.7248247558356729,
+          "max": 1.7248247558356729
+        },
+        "push_base_vz_peak_m_s": {
+          "mean": 1.77946393465504,
+          "min": 1.77946393465504,
+          "max": 1.77946393465504
+        },
+        "takeoff_phase_s": {
+          "mean": 1.32,
+          "min": 1.32,
+          "max": 1.32
+        },
+        "landing_phase_s": {
+          "mean": 1.57,
+          "min": 1.57,
+          "max": 1.57
+        },
+        "flight_duration_s": {
+          "mean": 0.25,
+          "min": 0.25,
+          "max": 0.25
+        },
+        "takeoff_base_vz_m_s": {
+          "mean": 1.5518757846251943,
+          "min": 1.5518757846251943,
+          "max": 1.5518757846251943
+        },
+        "push_normal_impulse_ns": {
+          "mean": 121.56922543048859,
+          "min": 121.56922543048859,
+          "max": 121.56922543048859
+        },
+        "flight_abs_roll_peak_deg": {
+          "mean": 1.7248247558356726,
+          "min": 1.7248247558356729,
+          "max": 1.7248247558356729
+        },
+        "push_wheel_center_vx_min_m_s": {
+          "mean": -0.8884273171424866,
+          "min": -0.8884273171424866,
+          "max": -0.8884273171424866
+        },
+        "push_hip_mirror_rmse_deg": {
+          "mean": 0.549231804569808,
+          "min": 0.549231804569808,
+          "max": 0.549231804569808
+        },
+        "push_thigh_mirror_rmse_deg": {
+          "mean": 1.698453083097655,
+          "min": 1.698453083097655,
+          "max": 1.698453083097655
+        },
+        "push_shank_mirror_rmse_deg": {
+          "mean": 2.1053984197682167,
+          "min": 2.1053984197682167,
+          "max": 2.1053984197682167
+        },
+        "push_foot_mirror_rmse_deg": {
+          "mean": 1.154309613509125,
+          "min": 1.154309613509125,
+          "max": 1.154309613509125
+        },
+        "height_rmse_m": {
+          "mean": 0.011354466401215395,
+          "min": 0.011354466401215395,
+          "max": 0.011354466401215395
+        },
+        "late_height_bias_m": {
+          "mean": 0.004002581471982209,
+          "min": 0.004002581471982209,
+          "max": 0.004002581471982209
+        },
+        "wheel_speed_rms_rad_s": {
+          "mean": 2.2739840176322264,
+          "min": 2.2739840176322264,
+          "max": 2.2739840176322264
+        },
+        "wheel_speed_peak_rad_s": {
+          "mean": 7.542170524597168,
+          "min": 7.542170524597168,
+          "max": 7.542170524597168
+        },
+        "late_wheel_speed_rms_rad_s": {
+          "mean": 1.360975609576994,
+          "min": 1.360975609576994,
+          "max": 1.360975609576994
+        },
+        "extra_ground_contact_peak_n": {
+          "mean": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    },
+    "latest/randomized": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-10_13-58-00/evaluations/wheel-to-leg-height-full-wheel-20261111-001/raw/fixed-start-randomized-a01/result.json",
+        "sha256": "c8114cbfee25e0046d7cb13487c27658fa9515c10eee01433960692c4ba98267"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-10_13-58-00/evaluations/wheel-to-leg-height-full-wheel-20261111-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+        "sha256": "2059f47bd5ddde6a4bf8d578711b05e9f36d201187f0299f2f9777833ded1235"
+      },
+      "standard_metrics": {
+        "action_rate_rms": 0.3012836583348778,
+        "anchor_orientation_rmse_rad": 0.14482408562191595,
+        "anchor_position_rmse_m": 0.18637826995219395,
+        "body_orientation_rmse_rad": 0.13177630671991308,
+        "body_position_rmse_m": 0.0326637085836715,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 17.490352630615234,
+        "max_abs_applied_torque": 105.76679992675781,
+        "max_joint_effort_utilization": 0.9872160311098452,
+        "mean_reward": 0.10768344630498905,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.12495594399473234,
+        "real_time_factor": 0.6680731379739667,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_thigh_shank_ground_contact": 0,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 3.4695303787014256
+      },
+      "full_cycle_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "cycles": [
+        {
+          "policy": "latest",
+          "case": "randomized",
+          "episode": 0,
+          "base_height_peak_m": 0.7239193320274353,
+          "base_vz_peak_m_s": 2.0942529354445782,
+          "base_abs_roll_peak_deg": 5.879981284006624,
+          "push_base_vz_peak_m_s": 2.0942529354445782,
+          "takeoff_phase_s": 1.36,
+          "landing_phase_s": 1.6300000000000001,
+          "flight_duration_s": 0.27,
+          "takeoff_base_vz_m_s": 1.6643652073434938,
+          "push_normal_impulse_ns": 146.1024921065569,
+          "flight_abs_roll_peak_deg": 5.879981284006624,
+          "push_wheel_center_vx_min_m_s": -1.2458561658859253,
+          "push_hip_mirror_rmse_deg": 2.9630228995663033,
+          "push_thigh_mirror_rmse_deg": 2.5549284932140384,
+          "push_shank_mirror_rmse_deg": 2.3973124196048627,
+          "push_foot_mirror_rmse_deg": 3.0926728874896936,
+          "height_rmse_m": 0.022090574398165086,
+          "late_height_bias_m": 0.003917322210643602,
+          "wheel_speed_rms_rad_s": 4.18769914759169,
+          "wheel_speed_peak_rad_s": 13.165813446044922,
+          "late_wheel_speed_rms_rad_s": 1.3174169536888432,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "latest",
+          "case": "randomized",
+          "episode": 1,
+          "base_height_peak_m": 0.7078839540481567,
+          "base_vz_peak_m_s": 1.9476170834644326,
+          "base_abs_roll_peak_deg": 3.9945337909024548,
+          "push_base_vz_peak_m_s": 1.9476170834644326,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.585,
+          "flight_duration_s": 0.26,
+          "takeoff_base_vz_m_s": 1.6658102719395946,
+          "push_normal_impulse_ns": 132.34273624181748,
+          "flight_abs_roll_peak_deg": 3.015136035303435,
+          "push_wheel_center_vx_min_m_s": -1.1374194622039795,
+          "push_hip_mirror_rmse_deg": 1.667586590418004,
+          "push_thigh_mirror_rmse_deg": 3.4780422724119284,
+          "push_shank_mirror_rmse_deg": 3.7482498840461513,
+          "push_foot_mirror_rmse_deg": 3.488152703921336,
+          "height_rmse_m": 0.012124797747050798,
+          "late_height_bias_m": 0.000684824974640556,
+          "wheel_speed_rms_rad_s": 2.967392732507521,
+          "wheel_speed_peak_rad_s": 11.174152374267578,
+          "late_wheel_speed_rms_rad_s": 1.2260992208943324,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "latest",
+          "case": "randomized",
+          "episode": 2,
+          "base_height_peak_m": 0.6922010779380798,
+          "base_vz_peak_m_s": 1.7128489860856604,
+          "base_abs_roll_peak_deg": 3.117745700563871,
+          "push_base_vz_peak_m_s": 1.7128489860856604,
+          "takeoff_phase_s": 1.33,
+          "landing_phase_s": 1.575,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.3966985905447522,
+          "push_normal_impulse_ns": 129.42930572509766,
+          "flight_abs_roll_peak_deg": 2.3499664915079683,
+          "push_wheel_center_vx_min_m_s": -1.2093547582626343,
+          "push_hip_mirror_rmse_deg": 1.8793495215935156,
+          "push_thigh_mirror_rmse_deg": 2.958136404112392,
+          "push_shank_mirror_rmse_deg": 1.6063410491750496,
+          "push_foot_mirror_rmse_deg": 2.8109381120304606,
+          "height_rmse_m": 0.015245024052207913,
+          "late_height_bias_m": -0.0032090428082839303,
+          "wheel_speed_rms_rad_s": 3.863337394597003,
+          "wheel_speed_peak_rad_s": 13.239185333251953,
+          "late_wheel_speed_rms_rad_s": 1.1510643345187985,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "latest",
+          "case": "randomized",
+          "episode": 3,
+          "base_height_peak_m": 0.7126671671867371,
+          "base_vz_peak_m_s": 1.6376804636448163,
+          "base_abs_roll_peak_deg": 5.221628253395423,
+          "push_base_vz_peak_m_s": 1.6376804636448163,
+          "takeoff_phase_s": 1.35,
+          "landing_phase_s": 1.595,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.2898580392938515,
+          "push_normal_impulse_ns": 130.48340520739555,
+          "flight_abs_roll_peak_deg": 1.7179881334685982,
+          "push_wheel_center_vx_min_m_s": -1.1323813199996948,
+          "push_hip_mirror_rmse_deg": 2.3624219988613784,
+          "push_thigh_mirror_rmse_deg": 2.0995002079459093,
+          "push_shank_mirror_rmse_deg": 1.9835099095169522,
+          "push_foot_mirror_rmse_deg": 1.1436742795568495,
+          "height_rmse_m": 0.019484220200524816,
+          "late_height_bias_m": -0.0003724746082140052,
+          "wheel_speed_rms_rad_s": 2.7167772071806153,
+          "wheel_speed_peak_rad_s": 9.966263771057129,
+          "late_wheel_speed_rms_rad_s": 1.3138854426613327,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "latest",
+          "case": "randomized",
+          "episode": 4,
+          "base_height_peak_m": 0.6990796327590942,
+          "base_vz_peak_m_s": 1.719418794711999,
+          "base_abs_roll_peak_deg": 2.059242636364777,
+          "push_base_vz_peak_m_s": 1.719418794711999,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.56,
+          "flight_duration_s": 0.23500000000000001,
+          "takeoff_base_vz_m_s": 1.293894060010726,
+          "push_normal_impulse_ns": 123.73031817436218,
+          "flight_abs_roll_peak_deg": 1.2767938534041043,
+          "push_wheel_center_vx_min_m_s": -1.0343598127365112,
+          "push_hip_mirror_rmse_deg": 2.08883289374199,
+          "push_thigh_mirror_rmse_deg": 2.3522383736760557,
+          "push_shank_mirror_rmse_deg": 3.0731316171935124,
+          "push_foot_mirror_rmse_deg": 1.0198063221191684,
+          "height_rmse_m": 0.018134918152631404,
+          "late_height_bias_m": -0.001546835121901139,
+          "wheel_speed_rms_rad_s": 3.316978204927914,
+          "wheel_speed_peak_rad_s": 10.943359375,
+          "late_wheel_speed_rms_rad_s": 1.2544682841807542,
+          "extra_ground_contact_peak_n": 0.0
+        }
+      ],
+      "joint_loads": {
+        "all_observed": {
+          "left_hip_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 2.7842490673065186,
+            "speed_signed_rad_s": 2.7842490673065186,
+            "speed_peak_phase_s": 1.335,
+            "speed_episode": 4,
+            "torque_peak_nm": 63.583736419677734,
+            "torque_peak_phase_s": 1.26,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 538.1495361328125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 2.935143232345581,
+            "speed_signed_rad_s": -2.935143232345581,
+            "speed_peak_phase_s": 0.035,
+            "speed_episode": 5,
+            "torque_peak_nm": 46.69134521484375,
+            "torque_peak_phase_s": 0.13999999999999999,
+            "torque_episode": 3,
+            "acceleration_peak_rad_s2": 391.73382568359375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 13.41662883758545,
+            "speed_signed_rad_s": 13.41662883758545,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 0,
+            "torque_peak_nm": 41.277626037597656,
+            "torque_peak_phase_s": 0.05,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 962.9382934570312,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 12.753649711608887,
+            "speed_signed_rad_s": -12.753649711608887,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 52.798282623291016,
+            "torque_peak_phase_s": 1.76,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 869.7877197265625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 18.707199096679688,
+            "speed_signed_rad_s": -18.707199096679688,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 0,
+            "torque_peak_nm": 105.76679992675781,
+            "torque_peak_phase_s": 1.3,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1819.8509521484375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 16.789684295654297,
+            "speed_signed_rad_s": 16.789684295654297,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 90.55855560302734,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 4,
+            "acceleration_peak_rad_s2": 1246.739990234375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 10.096138954162598,
+            "speed_signed_rad_s": 10.096138954162598,
+            "speed_peak_phase_s": 1.585,
+            "speed_episode": 1,
+            "torque_peak_nm": 26.70791244506836,
+            "torque_peak_phase_s": 1.645,
+            "torque_episode": 1,
+            "acceleration_peak_rad_s2": 2857.005126953125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 13.239185333251953,
+            "speed_signed_rad_s": 13.239185333251953,
+            "speed_peak_phase_s": 0.30000000000000004,
+            "speed_episode": 2,
+            "torque_peak_nm": 6.965586185455322,
+            "torque_peak_phase_s": 0.13999999999999999,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1529.503173828125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 12.710058212280273,
+            "speed_signed_rad_s": 12.710058212280273,
+            "speed_peak_phase_s": 1.58,
+            "speed_episode": 4,
+            "torque_peak_nm": 16.618080139160156,
+            "torque_peak_phase_s": 1.58,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 4117.24462890625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 13.165813446044922,
+            "speed_signed_rad_s": -13.165813446044922,
+            "speed_peak_phase_s": 0.27,
+            "speed_episode": 0,
+            "torque_peak_nm": 6.348169326782227,
+            "torque_peak_phase_s": 0.12000000000000001,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1121.51123046875,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        },
+        "complete_cycles": {
+          "left_hip_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 2.7842490673065186,
+            "speed_signed_rad_s": 2.7842490673065186,
+            "speed_peak_phase_s": 1.335,
+            "speed_episode": 4,
+            "torque_peak_nm": 63.583736419677734,
+            "torque_peak_phase_s": 1.26,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 538.1495361328125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 2.7405545711517334,
+            "speed_signed_rad_s": -2.7405545711517334,
+            "speed_peak_phase_s": 1.655,
+            "speed_episode": 0,
+            "torque_peak_nm": 46.69134521484375,
+            "torque_peak_phase_s": 0.13999999999999999,
+            "torque_episode": 3,
+            "acceleration_peak_rad_s2": 391.73382568359375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 13.41662883758545,
+            "speed_signed_rad_s": 13.41662883758545,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 0,
+            "torque_peak_nm": 41.277626037597656,
+            "torque_peak_phase_s": 0.05,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 962.9382934570312,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 12.753649711608887,
+            "speed_signed_rad_s": -12.753649711608887,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 52.798282623291016,
+            "torque_peak_phase_s": 1.76,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 869.7877197265625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 18.707199096679688,
+            "speed_signed_rad_s": -18.707199096679688,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 0,
+            "torque_peak_nm": 105.76679992675781,
+            "torque_peak_phase_s": 1.3,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1819.8509521484375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 16.789684295654297,
+            "speed_signed_rad_s": 16.789684295654297,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 90.55855560302734,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 4,
+            "acceleration_peak_rad_s2": 1246.739990234375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 10.096138954162598,
+            "speed_signed_rad_s": 10.096138954162598,
+            "speed_peak_phase_s": 1.585,
+            "speed_episode": 1,
+            "torque_peak_nm": 26.70791244506836,
+            "torque_peak_phase_s": 1.645,
+            "torque_episode": 1,
+            "acceleration_peak_rad_s2": 2857.005126953125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 13.239185333251953,
+            "speed_signed_rad_s": 13.239185333251953,
+            "speed_peak_phase_s": 0.30000000000000004,
+            "speed_episode": 2,
+            "torque_peak_nm": 6.965586185455322,
+            "torque_peak_phase_s": 0.13999999999999999,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1078.349853515625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 12.710058212280273,
+            "speed_signed_rad_s": 12.710058212280273,
+            "speed_peak_phase_s": 1.58,
+            "speed_episode": 4,
+            "torque_peak_nm": 16.618080139160156,
+            "torque_peak_phase_s": 1.58,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 4117.24462890625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "latest",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 13.165813446044922,
+            "speed_signed_rad_s": -13.165813446044922,
+            "speed_peak_phase_s": 0.27,
+            "speed_episode": 0,
+            "torque_peak_nm": 6.348169326782227,
+            "torque_peak_phase_s": 0.12000000000000001,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1121.51123046875,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        }
+      },
+      "cycle_summary": {
+        "base_height_peak_m": {
+          "mean": 0.7071502327919006,
+          "min": 0.6922010779380798,
+          "max": 0.7239193320274353
+        },
+        "base_vz_peak_m_s": {
+          "mean": 1.822363652670297,
+          "min": 1.6376804636448163,
+          "max": 2.0942529354445782
+        },
+        "base_abs_roll_peak_deg": {
+          "mean": 4.05462633304663,
+          "min": 2.059242636364777,
+          "max": 5.879981284006624
+        },
+        "push_base_vz_peak_m_s": {
+          "mean": 1.822363652670297,
+          "min": 1.6376804636448163,
+          "max": 2.0942529354445782
+        },
+        "takeoff_phase_s": {
+          "mean": 1.338,
+          "min": 1.325,
+          "max": 1.36
+        },
+        "landing_phase_s": {
+          "mean": 1.589,
+          "min": 1.56,
+          "max": 1.6300000000000001
+        },
+        "flight_duration_s": {
+          "mean": 0.251,
+          "min": 0.23500000000000001,
+          "max": 0.27
+        },
+        "takeoff_base_vz_m_s": {
+          "mean": 1.4621252338264836,
+          "min": 1.2898580392938515,
+          "max": 1.6658102719395946
+        },
+        "push_normal_impulse_ns": {
+          "mean": 132.41765149104597,
+          "min": 123.73031817436218,
+          "max": 146.1024921065569
+        },
+        "flight_abs_roll_peak_deg": {
+          "mean": 2.8479731595381463,
+          "min": 1.2767938534041043,
+          "max": 5.879981284006624
+        },
+        "push_wheel_center_vx_min_m_s": {
+          "mean": -1.151874303817749,
+          "min": -1.2458561658859253,
+          "max": -1.0343598127365112
+        },
+        "push_hip_mirror_rmse_deg": {
+          "mean": 2.192242780836238,
+          "min": 1.667586590418004,
+          "max": 2.9630228995663033
+        },
+        "push_thigh_mirror_rmse_deg": {
+          "mean": 2.688569150272065,
+          "min": 2.0995002079459093,
+          "max": 3.4780422724119284
+        },
+        "push_shank_mirror_rmse_deg": {
+          "mean": 2.5617089759073055,
+          "min": 1.6063410491750496,
+          "max": 3.7482498840461513
+        },
+        "push_foot_mirror_rmse_deg": {
+          "mean": 2.311048861023502,
+          "min": 1.0198063221191684,
+          "max": 3.488152703921336
+        },
+        "height_rmse_m": {
+          "mean": 0.017415906910116002,
+          "min": 0.012124797747050798,
+          "max": 0.022090574398165086
+        },
+        "late_height_bias_m": {
+          "mean": -0.00010524107062298317,
+          "min": -0.0032090428082839303,
+          "max": 0.003917322210643602
+        },
+        "wheel_speed_rms_rad_s": {
+          "mean": 3.4104369373609487,
+          "min": 2.7167772071806153,
+          "max": 4.18769914759169
+        },
+        "wheel_speed_peak_rad_s": {
+          "mean": 11.697754859924316,
+          "min": 9.966263771057129,
+          "max": 13.239185333251953
+        },
+        "late_wheel_speed_rms_rad_s": {
+          "mean": 1.252586847188812,
+          "min": 1.1510643345187985,
+          "max": 1.3174169536888432
+        },
+        "extra_ground_contact_peak_n": {
+          "mean": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    },
+    "global-wheel/nominal": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-nominal-a01/result.json",
+        "sha256": "b2820a5c6f83d0fa45420671aba74dc0746b82a02a93172476b982961650a800"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+        "sha256": "f0f4b47e495201a5a33a13c4820d70338e85da504b31f1ef0b1924620ecf1a3a"
+      },
+      "standard_metrics": {
+        "action_rate_rms": 0.1948748882612769,
+        "anchor_orientation_rmse_rad": 0.058154852892830976,
+        "anchor_position_rmse_m": 0.09406348821202366,
+        "body_orientation_rmse_rad": 0.11193040173653501,
+        "body_position_rmse_m": 0.03694151570623315,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 9.117350578308105,
+        "max_abs_applied_torque": 67.06262969970703,
+        "max_joint_effort_utilization": 0.5808276423701534,
+        "mean_reward": 0.11115986368060111,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.12865729657096495,
+        "real_time_factor": 0.7491479953246275,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_thigh_shank_ground_contact": 0,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 1.7849746197475083
+      },
+      "full_cycle_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "cycles": [
+        {
+          "policy": "global-wheel",
+          "case": "nominal",
+          "episode": 0,
+          "base_height_peak_m": 0.697986364364624,
+          "base_vz_peak_m_s": 1.4644602954232322,
+          "base_abs_roll_peak_deg": 1.3849486807701108,
+          "push_base_vz_peak_m_s": 1.4644602954232322,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.2321115206847848,
+          "push_normal_impulse_ns": 116.87849697113037,
+          "flight_abs_roll_peak_deg": 0.6510564357427396,
+          "push_wheel_center_vx_min_m_s": -0.41461727023124695,
+          "push_hip_mirror_rmse_deg": 0.3191278086313062,
+          "push_thigh_mirror_rmse_deg": 2.337355615722645,
+          "push_shank_mirror_rmse_deg": 1.515049706477277,
+          "push_foot_mirror_rmse_deg": 1.4011341260902554,
+          "height_rmse_m": 0.024911494282834547,
+          "late_height_bias_m": 0.0025636709254720936,
+          "wheel_speed_rms_rad_s": 1.771294668374987,
+          "wheel_speed_peak_rad_s": 5.977244853973389,
+          "late_wheel_speed_rms_rad_s": 0.9068590891093873,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "global-wheel",
+          "case": "nominal",
+          "episode": 1,
+          "base_height_peak_m": 0.697986364364624,
+          "base_vz_peak_m_s": 1.4644602954232322,
+          "base_abs_roll_peak_deg": 1.3849486807701108,
+          "push_base_vz_peak_m_s": 1.4644602954232322,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.2321115206847848,
+          "push_normal_impulse_ns": 116.87849697113037,
+          "flight_abs_roll_peak_deg": 0.6510564357427396,
+          "push_wheel_center_vx_min_m_s": -0.41461727023124695,
+          "push_hip_mirror_rmse_deg": 0.3191278086313062,
+          "push_thigh_mirror_rmse_deg": 2.337355615722645,
+          "push_shank_mirror_rmse_deg": 1.515049706477277,
+          "push_foot_mirror_rmse_deg": 1.4011341260902554,
+          "height_rmse_m": 0.024911494282834547,
+          "late_height_bias_m": 0.0025636709254720936,
+          "wheel_speed_rms_rad_s": 1.771294668374987,
+          "wheel_speed_peak_rad_s": 5.977244853973389,
+          "late_wheel_speed_rms_rad_s": 0.9068590891093873,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "global-wheel",
+          "case": "nominal",
+          "episode": 2,
+          "base_height_peak_m": 0.697986364364624,
+          "base_vz_peak_m_s": 1.4644602954232322,
+          "base_abs_roll_peak_deg": 1.3849486807701108,
+          "push_base_vz_peak_m_s": 1.4644602954232322,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.2321115206847848,
+          "push_normal_impulse_ns": 116.87849697113037,
+          "flight_abs_roll_peak_deg": 0.6510564357427396,
+          "push_wheel_center_vx_min_m_s": -0.41461727023124695,
+          "push_hip_mirror_rmse_deg": 0.3191278086313062,
+          "push_thigh_mirror_rmse_deg": 2.337355615722645,
+          "push_shank_mirror_rmse_deg": 1.515049706477277,
+          "push_foot_mirror_rmse_deg": 1.4011341260902554,
+          "height_rmse_m": 0.024911494282834547,
+          "late_height_bias_m": 0.0025636709254720936,
+          "wheel_speed_rms_rad_s": 1.771294668374987,
+          "wheel_speed_peak_rad_s": 5.977244853973389,
+          "late_wheel_speed_rms_rad_s": 0.9068590891093873,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "global-wheel",
+          "case": "nominal",
+          "episode": 3,
+          "base_height_peak_m": 0.697986364364624,
+          "base_vz_peak_m_s": 1.4644602954232322,
+          "base_abs_roll_peak_deg": 1.3849486807701108,
+          "push_base_vz_peak_m_s": 1.4644602954232322,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.2321115206847848,
+          "push_normal_impulse_ns": 116.87849697113037,
+          "flight_abs_roll_peak_deg": 0.6510564357427396,
+          "push_wheel_center_vx_min_m_s": -0.41461727023124695,
+          "push_hip_mirror_rmse_deg": 0.3191278086313062,
+          "push_thigh_mirror_rmse_deg": 2.337355615722645,
+          "push_shank_mirror_rmse_deg": 1.515049706477277,
+          "push_foot_mirror_rmse_deg": 1.4011341260902554,
+          "height_rmse_m": 0.024911494282834547,
+          "late_height_bias_m": 0.0025636709254720936,
+          "wheel_speed_rms_rad_s": 1.771294668374987,
+          "wheel_speed_peak_rad_s": 5.977244853973389,
+          "late_wheel_speed_rms_rad_s": 0.9068590891093873,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "global-wheel",
+          "case": "nominal",
+          "episode": 4,
+          "base_height_peak_m": 0.697986364364624,
+          "base_vz_peak_m_s": 1.4644602954232322,
+          "base_abs_roll_peak_deg": 1.3849486807701108,
+          "push_base_vz_peak_m_s": 1.4644602954232322,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.2321115206847848,
+          "push_normal_impulse_ns": 116.87849697113037,
+          "flight_abs_roll_peak_deg": 0.6510564357427396,
+          "push_wheel_center_vx_min_m_s": -0.41461727023124695,
+          "push_hip_mirror_rmse_deg": 0.3191278086313062,
+          "push_thigh_mirror_rmse_deg": 2.337355615722645,
+          "push_shank_mirror_rmse_deg": 1.515049706477277,
+          "push_foot_mirror_rmse_deg": 1.4011341260902554,
+          "height_rmse_m": 0.024911494282834547,
+          "late_height_bias_m": 0.0025636709254720936,
+          "wheel_speed_rms_rad_s": 1.771294668374987,
+          "wheel_speed_peak_rad_s": 5.977244853973389,
+          "late_wheel_speed_rms_rad_s": 0.9068590891093873,
+          "extra_ground_contact_peak_n": 0.0
+        }
+      ],
+      "joint_loads": {
+        "all_observed": {
+          "left_hip_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 1.3580703735351562,
+            "speed_signed_rad_s": -1.3580703735351562,
+            "speed_peak_phase_s": 1.57,
+            "speed_episode": 0,
+            "torque_peak_nm": 24.22828483581543,
+            "torque_peak_phase_s": 1.24,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 404.8661193847656,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 1.7653448581695557,
+            "speed_signed_rad_s": 1.7653448581695557,
+            "speed_peak_phase_s": 1.575,
+            "speed_episode": 0,
+            "torque_peak_nm": 26.023113250732422,
+            "torque_peak_phase_s": 1.2249999999999999,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 398.7331237792969,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 10.195235252380371,
+            "speed_signed_rad_s": 10.195235252380371,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 33.03120422363281,
+            "torque_peak_phase_s": 1.645,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1181.6864013671875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 10.224370956420898,
+            "speed_signed_rad_s": -10.224370956420898,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 24.33518409729004,
+            "torque_peak_phase_s": 1.665,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 344.92987060546875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 14.36176586151123,
+            "speed_signed_rad_s": -14.36176586151123,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 73.11746215820312,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 944.061279296875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 14.983838081359863,
+            "speed_signed_rad_s": 14.983838081359863,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 79.15206909179688,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1318.2811279296875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 4.409905910491943,
+            "speed_signed_rad_s": 4.409905910491943,
+            "speed_peak_phase_s": 1.325,
+            "speed_episode": 0,
+            "torque_peak_nm": 16.507719039916992,
+            "torque_peak_phase_s": 1.585,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1225.2830810546875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 5.977244853973389,
+            "speed_signed_rad_s": -5.977244853973389,
+            "speed_peak_phase_s": 1.1300000000000001,
+            "speed_episode": 0,
+            "torque_peak_nm": 2.7724273204803467,
+            "torque_peak_phase_s": 1.135,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 847.7603759765625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 4.54240608215332,
+            "speed_signed_rad_s": -4.54240608215332,
+            "speed_peak_phase_s": 1.31,
+            "speed_episode": 0,
+            "torque_peak_nm": 14.881499290466309,
+            "torque_peak_phase_s": 1.585,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 544.821044921875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 5.701585292816162,
+            "speed_signed_rad_s": 5.701585292816162,
+            "speed_peak_phase_s": 1.2,
+            "speed_episode": 0,
+            "torque_peak_nm": 3.9354496002197266,
+            "torque_peak_phase_s": 0.645,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 330.5255126953125,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        },
+        "complete_cycles": {
+          "left_hip_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 1.3580703735351562,
+            "speed_signed_rad_s": -1.3580703735351562,
+            "speed_peak_phase_s": 1.57,
+            "speed_episode": 0,
+            "torque_peak_nm": 24.22828483581543,
+            "torque_peak_phase_s": 1.24,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 404.8661193847656,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 1.7653448581695557,
+            "speed_signed_rad_s": 1.7653448581695557,
+            "speed_peak_phase_s": 1.575,
+            "speed_episode": 0,
+            "torque_peak_nm": 26.023113250732422,
+            "torque_peak_phase_s": 1.2249999999999999,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 398.7331237792969,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 10.195235252380371,
+            "speed_signed_rad_s": 10.195235252380371,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 33.03120422363281,
+            "torque_peak_phase_s": 1.645,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1181.6864013671875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 10.224370956420898,
+            "speed_signed_rad_s": -10.224370956420898,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 24.33518409729004,
+            "torque_peak_phase_s": 1.665,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 344.92987060546875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 14.36176586151123,
+            "speed_signed_rad_s": -14.36176586151123,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 73.11746215820312,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 944.061279296875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 14.983838081359863,
+            "speed_signed_rad_s": 14.983838081359863,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 0,
+            "torque_peak_nm": 79.15206909179688,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1318.2811279296875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 4.409905910491943,
+            "speed_signed_rad_s": 4.409905910491943,
+            "speed_peak_phase_s": 1.325,
+            "speed_episode": 0,
+            "torque_peak_nm": 16.507719039916992,
+            "torque_peak_phase_s": 1.585,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1225.2830810546875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 5.977244853973389,
+            "speed_signed_rad_s": -5.977244853973389,
+            "speed_peak_phase_s": 1.1300000000000001,
+            "speed_episode": 0,
+            "torque_peak_nm": 2.7724273204803467,
+            "torque_peak_phase_s": 1.135,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 847.7603759765625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 4.54240608215332,
+            "speed_signed_rad_s": -4.54240608215332,
+            "speed_peak_phase_s": 1.31,
+            "speed_episode": 0,
+            "torque_peak_nm": 14.881499290466309,
+            "torque_peak_phase_s": 1.585,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 544.821044921875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "global-wheel",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 5.701585292816162,
+            "speed_signed_rad_s": 5.701585292816162,
+            "speed_peak_phase_s": 1.2,
+            "speed_episode": 0,
+            "torque_peak_nm": 3.9354496002197266,
+            "torque_peak_phase_s": 0.645,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 330.5255126953125,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        }
+      },
+      "cycle_summary": {
+        "base_height_peak_m": {
+          "mean": 0.697986364364624,
+          "min": 0.697986364364624,
+          "max": 0.697986364364624
+        },
+        "base_vz_peak_m_s": {
+          "mean": 1.4644602954232322,
+          "min": 1.4644602954232322,
+          "max": 1.4644602954232322
+        },
+        "base_abs_roll_peak_deg": {
+          "mean": 1.3849486807701108,
+          "min": 1.3849486807701108,
+          "max": 1.3849486807701108
+        },
+        "push_base_vz_peak_m_s": {
+          "mean": 1.4644602954232322,
+          "min": 1.4644602954232322,
+          "max": 1.4644602954232322
+        },
+        "takeoff_phase_s": {
+          "mean": 1.325,
+          "min": 1.325,
+          "max": 1.325
+        },
+        "landing_phase_s": {
+          "mean": 1.57,
+          "min": 1.57,
+          "max": 1.57
+        },
+        "flight_duration_s": {
+          "mean": 0.24500000000000002,
+          "min": 0.245,
+          "max": 0.245
+        },
+        "takeoff_base_vz_m_s": {
+          "mean": 1.2321115206847848,
+          "min": 1.2321115206847848,
+          "max": 1.2321115206847848
+        },
+        "push_normal_impulse_ns": {
+          "mean": 116.87849697113037,
+          "min": 116.87849697113037,
+          "max": 116.87849697113037
+        },
+        "flight_abs_roll_peak_deg": {
+          "mean": 0.6510564357427396,
+          "min": 0.6510564357427396,
+          "max": 0.6510564357427396
+        },
+        "push_wheel_center_vx_min_m_s": {
+          "mean": -0.41461727023124695,
+          "min": -0.41461727023124695,
+          "max": -0.41461727023124695
+        },
+        "push_hip_mirror_rmse_deg": {
+          "mean": 0.3191278086313062,
+          "min": 0.3191278086313062,
+          "max": 0.3191278086313062
+        },
+        "push_thigh_mirror_rmse_deg": {
+          "mean": 2.337355615722645,
+          "min": 2.337355615722645,
+          "max": 2.337355615722645
+        },
+        "push_shank_mirror_rmse_deg": {
+          "mean": 1.515049706477277,
+          "min": 1.515049706477277,
+          "max": 1.515049706477277
+        },
+        "push_foot_mirror_rmse_deg": {
+          "mean": 1.4011341260902554,
+          "min": 1.4011341260902554,
+          "max": 1.4011341260902554
+        },
+        "height_rmse_m": {
+          "mean": 0.024911494282834547,
+          "min": 0.024911494282834547,
+          "max": 0.024911494282834547
+        },
+        "late_height_bias_m": {
+          "mean": 0.0025636709254720936,
+          "min": 0.0025636709254720936,
+          "max": 0.0025636709254720936
+        },
+        "wheel_speed_rms_rad_s": {
+          "mean": 1.771294668374987,
+          "min": 1.771294668374987,
+          "max": 1.771294668374987
+        },
+        "wheel_speed_peak_rad_s": {
+          "mean": 5.977244853973389,
+          "min": 5.977244853973389,
+          "max": 5.977244853973389
+        },
+        "late_wheel_speed_rms_rad_s": {
+          "mean": 0.9068590891093873,
+          "min": 0.9068590891093873,
+          "max": 0.9068590891093873
+        },
+        "extra_ground_contact_peak_n": {
+          "mean": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    },
+    "global-wheel/randomized": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-randomized-a01/result.json",
+        "sha256": "15eabbc5a827cd4ffc2ff04221d6ddf390a414e42ac584e5ff45bad3e8510bd5"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+        "sha256": "f6a70f528519486a75f8cec1042d61b68a7ccbe4393620ddd9c540548bc5177a"
+      },
+      "standard_metrics": {
+        "action_rate_rms": 0.30511736114018156,
+        "anchor_orientation_rmse_rad": 0.10871226795333368,
+        "anchor_position_rmse_m": 0.17927685250423528,
+        "body_orientation_rmse_rad": 0.13315593554801652,
+        "body_position_rmse_m": 0.037436136869186724,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 17.894912719726562,
+        "max_abs_applied_torque": 106.98281860351562,
+        "max_joint_effort_utilization": 0.8915234883626302,
+        "mean_reward": 0.10277028105780482,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.1438572338331416,
+        "real_time_factor": 0.7333564113821622,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_thigh_shank_ground_contact": 0,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 3.46938472021695
+      },
+      "full_cycle_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "cycles": [
+        {
+          "policy": "global-wheel",
+          "case": "randomized",
+          "episode": 0,
+          "base_height_peak_m": 0.7012097835540771,
+          "base_vz_peak_m_s": 2.0242667093439746,
+          "base_abs_roll_peak_deg": 4.588200793177091,
+          "push_base_vz_peak_m_s": 2.0242667093439746,
+          "takeoff_phase_s": 1.365,
+          "landing_phase_s": 1.6300000000000001,
+          "flight_duration_s": 0.265,
+          "takeoff_base_vz_m_s": 1.8926786698208589,
+          "push_normal_impulse_ns": 145.0457865524292,
+          "flight_abs_roll_peak_deg": 4.588200793177091,
+          "push_wheel_center_vx_min_m_s": -1.6151950359344482,
+          "push_hip_mirror_rmse_deg": 3.1647487285356446,
+          "push_thigh_mirror_rmse_deg": 2.2864775192580935,
+          "push_shank_mirror_rmse_deg": 2.6330670909182974,
+          "push_foot_mirror_rmse_deg": 2.6717121252615863,
+          "height_rmse_m": 0.02815588313148705,
+          "late_height_bias_m": 0.006025433540344238,
+          "wheel_speed_rms_rad_s": 4.414088058152514,
+          "wheel_speed_peak_rad_s": 13.496975898742676,
+          "late_wheel_speed_rms_rad_s": 0.7521507078222469,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "global-wheel",
+          "case": "randomized",
+          "episode": 1,
+          "base_height_peak_m": 0.6975394487380981,
+          "base_vz_peak_m_s": 1.6213599207729128,
+          "base_abs_roll_peak_deg": 3.613988389100003,
+          "push_base_vz_peak_m_s": 1.6213599207729128,
+          "takeoff_phase_s": 1.32,
+          "landing_phase_s": 1.58,
+          "flight_duration_s": 0.26,
+          "takeoff_base_vz_m_s": 1.4589009248679834,
+          "push_normal_impulse_ns": 129.33218873977663,
+          "flight_abs_roll_peak_deg": 3.613988389100003,
+          "push_wheel_center_vx_min_m_s": -1.197986125946045,
+          "push_hip_mirror_rmse_deg": 1.579342335543669,
+          "push_thigh_mirror_rmse_deg": 5.036911685137924,
+          "push_shank_mirror_rmse_deg": 3.543315319098463,
+          "push_foot_mirror_rmse_deg": 1.2667918416235897,
+          "height_rmse_m": 0.019086400339738702,
+          "late_height_bias_m": 0.0008352165636808976,
+          "wheel_speed_rms_rad_s": 2.4335149180359408,
+          "wheel_speed_peak_rad_s": 9.975040435791016,
+          "late_wheel_speed_rms_rad_s": 0.714252429908867,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "global-wheel",
+          "case": "randomized",
+          "episode": 2,
+          "base_height_peak_m": 0.6954303979873657,
+          "base_vz_peak_m_s": 1.53028071088599,
+          "base_abs_roll_peak_deg": 3.1326661596775343,
+          "push_base_vz_peak_m_s": 1.53028071088599,
+          "takeoff_phase_s": 1.33,
+          "landing_phase_s": 1.575,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.3184484387529283,
+          "push_normal_impulse_ns": 125.61666891098022,
+          "flight_abs_roll_peak_deg": 1.6813721404066504,
+          "push_wheel_center_vx_min_m_s": -1.2030490636825562,
+          "push_hip_mirror_rmse_deg": 2.33985541380042,
+          "push_thigh_mirror_rmse_deg": 5.003841197511689,
+          "push_shank_mirror_rmse_deg": 2.1834352520356264,
+          "push_foot_mirror_rmse_deg": 2.9587791826664946,
+          "height_rmse_m": 0.03107854932936727,
+          "late_height_bias_m": 7.259975308957307e-05,
+          "wheel_speed_rms_rad_s": 3.834936216085253,
+          "wheel_speed_peak_rad_s": 13.7282075881958,
+          "late_wheel_speed_rms_rad_s": 0.7522762066029864,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "global-wheel",
+          "case": "randomized",
+          "episode": 3,
+          "base_height_peak_m": 0.6957933306694031,
+          "base_vz_peak_m_s": 1.5017423113045927,
+          "base_abs_roll_peak_deg": 6.085740315134724,
+          "push_base_vz_peak_m_s": 1.5017423113045927,
+          "takeoff_phase_s": 1.335,
+          "landing_phase_s": 1.59,
+          "flight_duration_s": 0.255,
+          "takeoff_base_vz_m_s": 1.3204392872768467,
+          "push_normal_impulse_ns": 126.2900096321106,
+          "flight_abs_roll_peak_deg": 1.4449538661242671,
+          "push_wheel_center_vx_min_m_s": -1.1123015880584717,
+          "push_hip_mirror_rmse_deg": 2.0787597120647,
+          "push_thigh_mirror_rmse_deg": 2.0611934274075847,
+          "push_shank_mirror_rmse_deg": 3.406895315976423,
+          "push_foot_mirror_rmse_deg": 2.283358502129093,
+          "height_rmse_m": 0.02633293361493027,
+          "late_height_bias_m": -0.001027480415675951,
+          "wheel_speed_rms_rad_s": 2.9405233799595756,
+          "wheel_speed_peak_rad_s": 10.880565643310547,
+          "late_wheel_speed_rms_rad_s": 0.7094873483117509,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "global-wheel",
+          "case": "randomized",
+          "episode": 4,
+          "base_height_peak_m": 0.6980762481689453,
+          "base_vz_peak_m_s": 1.6656564353173862,
+          "base_abs_roll_peak_deg": 4.1373093878528895,
+          "push_base_vz_peak_m_s": 1.6656564353173862,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.57,
+          "flight_duration_s": 0.245,
+          "takeoff_base_vz_m_s": 1.3091613494917027,
+          "push_normal_impulse_ns": 126.19152881145477,
+          "flight_abs_roll_peak_deg": 4.1373093878528895,
+          "push_wheel_center_vx_min_m_s": -1.2283434867858887,
+          "push_hip_mirror_rmse_deg": 2.3178634485406886,
+          "push_thigh_mirror_rmse_deg": 5.903841214476186,
+          "push_shank_mirror_rmse_deg": 1.9693050070889302,
+          "push_foot_mirror_rmse_deg": 4.58499799567611,
+          "height_rmse_m": 0.022744882276929713,
+          "late_height_bias_m": -0.000383739886076554,
+          "wheel_speed_rms_rad_s": 3.2035651892412287,
+          "wheel_speed_peak_rad_s": 10.104931831359863,
+          "late_wheel_speed_rms_rad_s": 0.7186389584852702,
+          "extra_ground_contact_peak_n": 0.0
+        }
+      ],
+      "joint_loads": {
+        "all_observed": {
+          "left_hip_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 2.7187013626098633,
+            "speed_signed_rad_s": 2.7187013626098633,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 2,
+            "torque_peak_nm": 38.89986038208008,
+            "torque_peak_phase_s": 1.2449999999999999,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 540.8037719726562,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 3.056161403656006,
+            "speed_signed_rad_s": -3.056161403656006,
+            "speed_peak_phase_s": 0.035,
+            "speed_episode": 5,
+            "torque_peak_nm": 34.21638488769531,
+            "torque_peak_phase_s": 0.09,
+            "torque_episode": 3,
+            "acceleration_peak_rad_s2": 343.1708679199219,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 14.605544090270996,
+            "speed_signed_rad_s": 14.605544090270996,
+            "speed_peak_phase_s": 1.37,
+            "speed_episode": 0,
+            "torque_peak_nm": 41.614295959472656,
+            "torque_peak_phase_s": 0.09,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 723.8872680664062,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 12.684806823730469,
+            "speed_signed_rad_s": -12.684806823730469,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 0,
+            "torque_peak_nm": 40.65561294555664,
+            "torque_peak_phase_s": 1.7,
+            "torque_episode": 5,
+            "acceleration_peak_rad_s2": 831.09033203125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 17.622478485107422,
+            "speed_signed_rad_s": -17.622478485107422,
+            "speed_peak_phase_s": 1.37,
+            "speed_episode": 0,
+            "torque_peak_nm": 106.98281860351562,
+            "torque_peak_phase_s": 1.32,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1517.187744140625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 16.206342697143555,
+            "speed_signed_rad_s": 16.206342697143555,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 0,
+            "torque_peak_nm": 76.05327606201172,
+            "torque_peak_phase_s": 1.285,
+            "torque_episode": 4,
+            "acceleration_peak_rad_s2": 1264.126220703125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 10.054469108581543,
+            "speed_signed_rad_s": 10.054469108581543,
+            "speed_peak_phase_s": 1.575,
+            "speed_episode": 2,
+            "torque_peak_nm": 23.02816390991211,
+            "torque_peak_phase_s": 1.6700000000000002,
+            "torque_episode": 3,
+            "acceleration_peak_rad_s2": 2370.9365234375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 13.7282075881958,
+            "speed_signed_rad_s": -13.7282075881958,
+            "speed_peak_phase_s": 1.3,
+            "speed_episode": 2,
+            "torque_peak_nm": 6.993588447570801,
+            "torque_peak_phase_s": 0.19999999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1292.82666015625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 10.03294563293457,
+            "speed_signed_rad_s": -10.03294563293457,
+            "speed_peak_phase_s": 1.595,
+            "speed_episode": 3,
+            "torque_peak_nm": 21.889896392822266,
+            "torque_peak_phase_s": 1.595,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 2926.360595703125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 11.962453842163086,
+            "speed_signed_rad_s": -11.962453842163086,
+            "speed_peak_phase_s": 0.29000000000000004,
+            "speed_episode": 0,
+            "torque_peak_nm": 5.637855052947998,
+            "torque_peak_phase_s": 0.225,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 1080.707763671875,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        },
+        "complete_cycles": {
+          "left_hip_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 2.7187013626098633,
+            "speed_signed_rad_s": 2.7187013626098633,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 2,
+            "torque_peak_nm": 38.89986038208008,
+            "torque_peak_phase_s": 1.2449999999999999,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 540.8037719726562,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 2.1888065338134766,
+            "speed_signed_rad_s": -2.1888065338134766,
+            "speed_peak_phase_s": 0.04,
+            "speed_episode": 1,
+            "torque_peak_nm": 34.21638488769531,
+            "torque_peak_phase_s": 0.09,
+            "torque_episode": 3,
+            "acceleration_peak_rad_s2": 343.1708679199219,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 14.605544090270996,
+            "speed_signed_rad_s": 14.605544090270996,
+            "speed_peak_phase_s": 1.37,
+            "speed_episode": 0,
+            "torque_peak_nm": 41.614295959472656,
+            "torque_peak_phase_s": 0.09,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 723.8872680664062,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 12.684806823730469,
+            "speed_signed_rad_s": -12.684806823730469,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 0,
+            "torque_peak_nm": 39.504638671875,
+            "torque_peak_phase_s": 1.71,
+            "torque_episode": 3,
+            "acceleration_peak_rad_s2": 831.09033203125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 17.622478485107422,
+            "speed_signed_rad_s": -17.622478485107422,
+            "speed_peak_phase_s": 1.37,
+            "speed_episode": 0,
+            "torque_peak_nm": 106.98281860351562,
+            "torque_peak_phase_s": 1.32,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1517.187744140625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 16.206342697143555,
+            "speed_signed_rad_s": 16.206342697143555,
+            "speed_peak_phase_s": 1.35,
+            "speed_episode": 0,
+            "torque_peak_nm": 76.05327606201172,
+            "torque_peak_phase_s": 1.285,
+            "torque_episode": 4,
+            "acceleration_peak_rad_s2": 1264.126220703125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 10.054469108581543,
+            "speed_signed_rad_s": 10.054469108581543,
+            "speed_peak_phase_s": 1.575,
+            "speed_episode": 2,
+            "torque_peak_nm": 23.02816390991211,
+            "torque_peak_phase_s": 1.6700000000000002,
+            "torque_episode": 3,
+            "acceleration_peak_rad_s2": 2370.9365234375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 13.7282075881958,
+            "speed_signed_rad_s": -13.7282075881958,
+            "speed_peak_phase_s": 1.3,
+            "speed_episode": 2,
+            "torque_peak_nm": 6.993588447570801,
+            "torque_peak_phase_s": 0.19999999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1292.82666015625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 10.03294563293457,
+            "speed_signed_rad_s": -10.03294563293457,
+            "speed_peak_phase_s": 1.595,
+            "speed_episode": 3,
+            "torque_peak_nm": 21.889896392822266,
+            "torque_peak_phase_s": 1.595,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 2926.360595703125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "global-wheel",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 11.962453842163086,
+            "speed_signed_rad_s": -11.962453842163086,
+            "speed_peak_phase_s": 0.29000000000000004,
+            "speed_episode": 0,
+            "torque_peak_nm": 5.637855052947998,
+            "torque_peak_phase_s": 0.225,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 1080.707763671875,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        }
+      },
+      "cycle_summary": {
+        "base_height_peak_m": {
+          "mean": 0.6976098418235779,
+          "min": 0.6954303979873657,
+          "max": 0.7012097835540771
+        },
+        "base_vz_peak_m_s": {
+          "mean": 1.6686612175249713,
+          "min": 1.5017423113045927,
+          "max": 2.0242667093439746
+        },
+        "base_abs_roll_peak_deg": {
+          "mean": 4.311581008988448,
+          "min": 3.1326661596775343,
+          "max": 6.085740315134724
+        },
+        "push_base_vz_peak_m_s": {
+          "mean": 1.6686612175249713,
+          "min": 1.5017423113045927,
+          "max": 2.0242667093439746
+        },
+        "takeoff_phase_s": {
+          "mean": 1.3350000000000002,
+          "min": 1.32,
+          "max": 1.365
+        },
+        "landing_phase_s": {
+          "mean": 1.589,
+          "min": 1.57,
+          "max": 1.6300000000000001
+        },
+        "flight_duration_s": {
+          "mean": 0.254,
+          "min": 0.245,
+          "max": 0.265
+        },
+        "takeoff_base_vz_m_s": {
+          "mean": 1.459925734042064,
+          "min": 1.3091613494917027,
+          "max": 1.8926786698208589
+        },
+        "push_normal_impulse_ns": {
+          "mean": 130.49523652935028,
+          "min": 125.61666891098022,
+          "max": 145.0457865524292
+        },
+        "flight_abs_roll_peak_deg": {
+          "mean": 3.09316491533218,
+          "min": 1.4449538661242671,
+          "max": 4.588200793177091
+        },
+        "push_wheel_center_vx_min_m_s": {
+          "mean": -1.271375060081482,
+          "min": -1.6151950359344482,
+          "max": -1.1123015880584717
+        },
+        "push_hip_mirror_rmse_deg": {
+          "mean": 2.296113927697024,
+          "min": 1.579342335543669,
+          "max": 3.1647487285356446
+        },
+        "push_thigh_mirror_rmse_deg": {
+          "mean": 4.058453008758295,
+          "min": 2.0611934274075847,
+          "max": 5.903841214476186
+        },
+        "push_shank_mirror_rmse_deg": {
+          "mean": 2.7472035970235478,
+          "min": 1.9693050070889302,
+          "max": 3.543315319098463
+        },
+        "push_foot_mirror_rmse_deg": {
+          "mean": 2.7531279294713746,
+          "min": 1.2667918416235897,
+          "max": 4.58499799567611
+        },
+        "height_rmse_m": {
+          "mean": 0.0254797297384906,
+          "min": 0.019086400339738702,
+          "max": 0.03107854932936727
+        },
+        "late_height_bias_m": {
+          "mean": 0.0011044059110724407,
+          "min": -0.001027480415675951,
+          "max": 0.006025433540344238
+        },
+        "wheel_speed_rms_rad_s": {
+          "mean": 3.3653255522949026,
+          "min": 2.4335149180359408,
+          "max": 4.414088058152514
+        },
+        "wheel_speed_peak_rad_s": {
+          "mean": 11.63714427947998,
+          "min": 9.975040435791016,
+          "max": 13.7282075881958
+        },
+        "late_wheel_speed_rms_rad_s": {
+          "mean": 0.7293611302262242,
+          "min": 0.7094873483117509,
+          "max": 0.7522762066029864
+        },
+        "extra_ground_contact_peak_n": {
+          "mean": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    },
+    "wheel-links/nominal": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/raw/fixed-start-nominal-a01/result.json",
+        "sha256": "6e4d50e72deb0ad5d6df685f6e6cb1d4d9a6f4d42d219dc5cc4a1384c49f0130"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/raw/fixed-start-nominal-a01/telemetry.json.gz",
+        "sha256": "38ba07fafd90f7c09e696e941b37ec9d83ebd09a924dce14b57e7011dc3c3620"
+      },
+      "standard_metrics": {
+        "action_rate_rms": 0.20550128397637385,
+        "anchor_orientation_rmse_rad": 0.06521931867469943,
+        "anchor_position_rmse_m": 0.10105250432931953,
+        "body_orientation_rmse_rad": 0.15679825912202133,
+        "body_position_rmse_m": 0.03641704876666351,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 9.113985061645508,
+        "max_abs_applied_torque": 76.55258178710938,
+        "max_joint_effort_utilization": 0.6379381815592448,
+        "mean_reward": 0.10530990414693951,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.1562206653135414,
+        "real_time_factor": 0.6720219576349559,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_thigh_shank_ground_contact": 0,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0,
+        "wheel_velocity_rmse_rad_s": 1.1294079918667914
+      },
+      "full_cycle_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "cycles": [
+        {
+          "policy": "wheel-links",
+          "case": "nominal",
+          "episode": 0,
+          "base_height_peak_m": 0.7309318780899048,
+          "base_vz_peak_m_s": 1.6819472643575224,
+          "base_abs_roll_peak_deg": 2.8663861007369578,
+          "push_base_vz_peak_m_s": 1.6819472643575224,
+          "takeoff_phase_s": 1.31,
+          "landing_phase_s": 1.585,
+          "flight_duration_s": 0.275,
+          "takeoff_base_vz_m_s": 1.4659173897986872,
+          "push_normal_impulse_ns": 120.91248650550843,
+          "flight_abs_roll_peak_deg": 2.8663861007369578,
+          "push_wheel_center_vx_min_m_s": -0.0666290745139122,
+          "push_hip_mirror_rmse_deg": 1.2036297011713348,
+          "push_thigh_mirror_rmse_deg": 2.8872763904737733,
+          "push_shank_mirror_rmse_deg": 3.0372430655707676,
+          "push_foot_mirror_rmse_deg": 1.9423170263635252,
+          "height_rmse_m": 0.029307534369951975,
+          "late_height_bias_m": 0.004129919021025948,
+          "wheel_speed_rms_rad_s": 1.117692447972461,
+          "wheel_speed_peak_rad_s": 5.047266960144043,
+          "late_wheel_speed_rms_rad_s": 0.03115621400965417,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "wheel-links",
+          "case": "nominal",
+          "episode": 1,
+          "base_height_peak_m": 0.7309318780899048,
+          "base_vz_peak_m_s": 1.6819472643575224,
+          "base_abs_roll_peak_deg": 2.8663861007369578,
+          "push_base_vz_peak_m_s": 1.6819472643575224,
+          "takeoff_phase_s": 1.31,
+          "landing_phase_s": 1.585,
+          "flight_duration_s": 0.275,
+          "takeoff_base_vz_m_s": 1.4659173897986872,
+          "push_normal_impulse_ns": 120.91248650550843,
+          "flight_abs_roll_peak_deg": 2.8663861007369578,
+          "push_wheel_center_vx_min_m_s": -0.0666290745139122,
+          "push_hip_mirror_rmse_deg": 1.2036297011713348,
+          "push_thigh_mirror_rmse_deg": 2.8872763904737733,
+          "push_shank_mirror_rmse_deg": 3.0372430655707676,
+          "push_foot_mirror_rmse_deg": 1.9423170263635252,
+          "height_rmse_m": 0.029307534369951975,
+          "late_height_bias_m": 0.004129919021025948,
+          "wheel_speed_rms_rad_s": 1.117692447972461,
+          "wheel_speed_peak_rad_s": 5.047266960144043,
+          "late_wheel_speed_rms_rad_s": 0.03115621400965417,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "wheel-links",
+          "case": "nominal",
+          "episode": 2,
+          "base_height_peak_m": 0.7309318780899048,
+          "base_vz_peak_m_s": 1.6819472643575224,
+          "base_abs_roll_peak_deg": 2.8663861007369578,
+          "push_base_vz_peak_m_s": 1.6819472643575224,
+          "takeoff_phase_s": 1.31,
+          "landing_phase_s": 1.585,
+          "flight_duration_s": 0.275,
+          "takeoff_base_vz_m_s": 1.4659173897986872,
+          "push_normal_impulse_ns": 120.91248650550843,
+          "flight_abs_roll_peak_deg": 2.8663861007369578,
+          "push_wheel_center_vx_min_m_s": -0.0666290745139122,
+          "push_hip_mirror_rmse_deg": 1.2036297011713348,
+          "push_thigh_mirror_rmse_deg": 2.8872763904737733,
+          "push_shank_mirror_rmse_deg": 3.0372430655707676,
+          "push_foot_mirror_rmse_deg": 1.9423170263635252,
+          "height_rmse_m": 0.029307534369951975,
+          "late_height_bias_m": 0.004129919021025948,
+          "wheel_speed_rms_rad_s": 1.117692447972461,
+          "wheel_speed_peak_rad_s": 5.047266960144043,
+          "late_wheel_speed_rms_rad_s": 0.03115621400965417,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "wheel-links",
+          "case": "nominal",
+          "episode": 3,
+          "base_height_peak_m": 0.7309318780899048,
+          "base_vz_peak_m_s": 1.6819472643575224,
+          "base_abs_roll_peak_deg": 2.8663861007369578,
+          "push_base_vz_peak_m_s": 1.6819472643575224,
+          "takeoff_phase_s": 1.31,
+          "landing_phase_s": 1.585,
+          "flight_duration_s": 0.275,
+          "takeoff_base_vz_m_s": 1.4659173897986872,
+          "push_normal_impulse_ns": 120.91248650550843,
+          "flight_abs_roll_peak_deg": 2.8663861007369578,
+          "push_wheel_center_vx_min_m_s": -0.0666290745139122,
+          "push_hip_mirror_rmse_deg": 1.2036297011713348,
+          "push_thigh_mirror_rmse_deg": 2.8872763904737733,
+          "push_shank_mirror_rmse_deg": 3.0372430655707676,
+          "push_foot_mirror_rmse_deg": 1.9423170263635252,
+          "height_rmse_m": 0.029307534369951975,
+          "late_height_bias_m": 0.004129919021025948,
+          "wheel_speed_rms_rad_s": 1.117692447972461,
+          "wheel_speed_peak_rad_s": 5.047266960144043,
+          "late_wheel_speed_rms_rad_s": 0.03115621400965417,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "wheel-links",
+          "case": "nominal",
+          "episode": 4,
+          "base_height_peak_m": 0.7309318780899048,
+          "base_vz_peak_m_s": 1.6819472643575224,
+          "base_abs_roll_peak_deg": 2.8663861007369578,
+          "push_base_vz_peak_m_s": 1.6819472643575224,
+          "takeoff_phase_s": 1.31,
+          "landing_phase_s": 1.585,
+          "flight_duration_s": 0.275,
+          "takeoff_base_vz_m_s": 1.4659173897986872,
+          "push_normal_impulse_ns": 120.91248650550843,
+          "flight_abs_roll_peak_deg": 2.8663861007369578,
+          "push_wheel_center_vx_min_m_s": -0.0666290745139122,
+          "push_hip_mirror_rmse_deg": 1.2036297011713348,
+          "push_thigh_mirror_rmse_deg": 2.8872763904737733,
+          "push_shank_mirror_rmse_deg": 3.0372430655707676,
+          "push_foot_mirror_rmse_deg": 1.9423170263635252,
+          "height_rmse_m": 0.029307534369951975,
+          "late_height_bias_m": 0.004129919021025948,
+          "wheel_speed_rms_rad_s": 1.117692447972461,
+          "wheel_speed_peak_rad_s": 5.047266960144043,
+          "late_wheel_speed_rms_rad_s": 0.03115621400965417,
+          "extra_ground_contact_peak_n": 0.0
+        }
+      ],
+      "joint_loads": {
+        "all_observed": {
+          "left_hip_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 1.9576857089996338,
+            "speed_signed_rad_s": 1.9576857089996338,
+            "speed_peak_phase_s": 1.6,
+            "speed_episode": 0,
+            "torque_peak_nm": 30.18130111694336,
+            "torque_peak_phase_s": 0.87,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 266.7552490234375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 3.884249687194824,
+            "speed_signed_rad_s": 3.884249687194824,
+            "speed_peak_phase_s": 1.605,
+            "speed_episode": 0,
+            "torque_peak_nm": 29.680421829223633,
+            "torque_peak_phase_s": 1.18,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 846.348876953125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 8.120819091796875,
+            "speed_signed_rad_s": 8.120819091796875,
+            "speed_peak_phase_s": 1.31,
+            "speed_episode": 0,
+            "torque_peak_nm": 26.55135726928711,
+            "torque_peak_phase_s": 1.665,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 332.4572448730469,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 8.619804382324219,
+            "speed_signed_rad_s": -8.619804382324219,
+            "speed_peak_phase_s": 1.31,
+            "speed_episode": 0,
+            "torque_peak_nm": 27.114362716674805,
+            "torque_peak_phase_s": 1.6849999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 663.6978149414062,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 16.698015213012695,
+            "speed_signed_rad_s": -16.698015213012695,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 100.64358520507812,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1401.8809814453125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 17.542695999145508,
+            "speed_signed_rad_s": 17.542695999145508,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 100.92347717285156,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 998.25390625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 7.719603538513184,
+            "speed_signed_rad_s": 7.719603538513184,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 17.29749870300293,
+            "torque_peak_phase_s": 1.6849999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 472.088623046875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 5.047266960144043,
+            "speed_signed_rad_s": 5.047266960144043,
+            "speed_peak_phase_s": 1.59,
+            "speed_episode": 0,
+            "torque_peak_nm": 2.5691051483154297,
+            "torque_peak_phase_s": 1.3,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 409.3476257324219,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 7.800915241241455,
+            "speed_signed_rad_s": -7.800915241241455,
+            "speed_peak_phase_s": 1.605,
+            "speed_episode": 0,
+            "torque_peak_nm": 16.829479217529297,
+            "torque_peak_phase_s": 1.61,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 2272.03076171875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "all_observed",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 4.824011325836182,
+            "speed_signed_rad_s": -4.824011325836182,
+            "speed_peak_phase_s": 1.3,
+            "speed_episode": 0,
+            "torque_peak_nm": 2.43147873878479,
+            "torque_peak_phase_s": 1.2049999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 412.5240783691406,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        },
+        "complete_cycles": {
+          "left_hip_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 1.9576857089996338,
+            "speed_signed_rad_s": 1.9576857089996338,
+            "speed_peak_phase_s": 1.6,
+            "speed_episode": 0,
+            "torque_peak_nm": 30.18130111694336,
+            "torque_peak_phase_s": 0.87,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 266.7552490234375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 3.884249687194824,
+            "speed_signed_rad_s": 3.884249687194824,
+            "speed_peak_phase_s": 1.605,
+            "speed_episode": 0,
+            "torque_peak_nm": 29.680421829223633,
+            "torque_peak_phase_s": 1.18,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 846.348876953125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 8.120819091796875,
+            "speed_signed_rad_s": 8.120819091796875,
+            "speed_peak_phase_s": 1.31,
+            "speed_episode": 0,
+            "torque_peak_nm": 26.55135726928711,
+            "torque_peak_phase_s": 1.665,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 332.4572448730469,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 8.619804382324219,
+            "speed_signed_rad_s": -8.619804382324219,
+            "speed_peak_phase_s": 1.31,
+            "speed_episode": 0,
+            "torque_peak_nm": 27.114362716674805,
+            "torque_peak_phase_s": 1.6849999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 663.6978149414062,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 16.698015213012695,
+            "speed_signed_rad_s": -16.698015213012695,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 100.64358520507812,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1401.8809814453125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_shank_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 17.542695999145508,
+            "speed_signed_rad_s": 17.542695999145508,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 100.92347717285156,
+            "torque_peak_phase_s": 1.265,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 998.25390625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 7.719603538513184,
+            "speed_signed_rad_s": 7.719603538513184,
+            "speed_peak_phase_s": 1.305,
+            "speed_episode": 0,
+            "torque_peak_nm": 17.29749870300293,
+            "torque_peak_phase_s": 1.6849999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 472.088623046875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_wheel_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 5.047266960144043,
+            "speed_signed_rad_s": 5.047266960144043,
+            "speed_peak_phase_s": 1.59,
+            "speed_episode": 0,
+            "torque_peak_nm": 2.5691051483154297,
+            "torque_peak_phase_s": 1.3,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 409.3476257324219,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 7.800915241241455,
+            "speed_signed_rad_s": -7.800915241241455,
+            "speed_peak_phase_s": 1.605,
+            "speed_episode": 0,
+            "torque_peak_nm": 16.829479217529297,
+            "torque_peak_phase_s": 1.61,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 2272.03076171875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "wheel-links",
+            "case": "nominal",
+            "scope": "complete_cycles",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 4.824011325836182,
+            "speed_signed_rad_s": -4.824011325836182,
+            "speed_peak_phase_s": 1.3,
+            "speed_episode": 0,
+            "torque_peak_nm": 2.43147873878479,
+            "torque_peak_phase_s": 1.2049999999999998,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 412.5240783691406,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        }
+      },
+      "cycle_summary": {
+        "base_height_peak_m": {
+          "mean": 0.7309318780899048,
+          "min": 0.7309318780899048,
+          "max": 0.7309318780899048
+        },
+        "base_vz_peak_m_s": {
+          "mean": 1.6819472643575224,
+          "min": 1.6819472643575224,
+          "max": 1.6819472643575224
+        },
+        "base_abs_roll_peak_deg": {
+          "mean": 2.8663861007369578,
+          "min": 2.8663861007369578,
+          "max": 2.8663861007369578
+        },
+        "push_base_vz_peak_m_s": {
+          "mean": 1.6819472643575224,
+          "min": 1.6819472643575224,
+          "max": 1.6819472643575224
+        },
+        "takeoff_phase_s": {
+          "mean": 1.31,
+          "min": 1.31,
+          "max": 1.31
+        },
+        "landing_phase_s": {
+          "mean": 1.585,
+          "min": 1.585,
+          "max": 1.585
+        },
+        "flight_duration_s": {
+          "mean": 0.275,
+          "min": 0.275,
+          "max": 0.275
+        },
+        "takeoff_base_vz_m_s": {
+          "mean": 1.4659173897986872,
+          "min": 1.4659173897986872,
+          "max": 1.4659173897986872
+        },
+        "push_normal_impulse_ns": {
+          "mean": 120.91248650550843,
+          "min": 120.91248650550843,
+          "max": 120.91248650550843
+        },
+        "flight_abs_roll_peak_deg": {
+          "mean": 2.8663861007369578,
+          "min": 2.8663861007369578,
+          "max": 2.8663861007369578
+        },
+        "push_wheel_center_vx_min_m_s": {
+          "mean": -0.0666290745139122,
+          "min": -0.0666290745139122,
+          "max": -0.0666290745139122
+        },
+        "push_hip_mirror_rmse_deg": {
+          "mean": 1.2036297011713348,
+          "min": 1.2036297011713348,
+          "max": 1.2036297011713348
+        },
+        "push_thigh_mirror_rmse_deg": {
+          "mean": 2.8872763904737733,
+          "min": 2.8872763904737733,
+          "max": 2.8872763904737733
+        },
+        "push_shank_mirror_rmse_deg": {
+          "mean": 3.0372430655707676,
+          "min": 3.0372430655707676,
+          "max": 3.0372430655707676
+        },
+        "push_foot_mirror_rmse_deg": {
+          "mean": 1.9423170263635252,
+          "min": 1.9423170263635252,
+          "max": 1.9423170263635252
+        },
+        "height_rmse_m": {
+          "mean": 0.029307534369951975,
+          "min": 0.029307534369951975,
+          "max": 0.029307534369951975
+        },
+        "late_height_bias_m": {
+          "mean": 0.004129919021025948,
+          "min": 0.004129919021025948,
+          "max": 0.004129919021025948
+        },
+        "wheel_speed_rms_rad_s": {
+          "mean": 1.117692447972461,
+          "min": 1.117692447972461,
+          "max": 1.117692447972461
+        },
+        "wheel_speed_peak_rad_s": {
+          "mean": 5.047266960144043,
+          "min": 5.047266960144043,
+          "max": 5.047266960144043
+        },
+        "late_wheel_speed_rms_rad_s": {
+          "mean": 0.03115621400965417,
+          "min": 0.03115621400965417,
+          "max": 0.03115621400965417
+        },
+        "extra_ground_contact_peak_n": {
+          "mean": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    },
+    "wheel-links/randomized": {
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/raw/fixed-start-randomized-a01/result.json",
+        "sha256": "b438ccacbda414a0541f3bb98868bab32b1406849c029557c64cb223b930661c"
+      },
+      "telemetry": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/raw/fixed-start-randomized-a01/telemetry.json.gz",
+        "sha256": "1b464d7bc3f6332fdcad49fedb7ef69b733b580b9ed8ebe78b706420b64980ef"
+      },
+      "standard_metrics": {
+        "action_rate_rms": 0.3290542325944749,
+        "anchor_orientation_rmse_rad": 0.16784019481298987,
+        "anchor_position_rmse_m": 0.15891084758770974,
+        "body_orientation_rmse_rad": 0.48830374751436917,
+        "body_position_rmse_m": 0.04190389342699502,
+        "censored_episodes": 1,
+        "completed_episodes": 5,
+        "failed_episodes": 0,
+        "frame_zero_completed_episodes": 5,
+        "frame_zero_success_fraction": 1.0,
+        "frame_zero_successful_episodes": 5,
+        "max_abs_action": 17.338306427001953,
+        "max_abs_applied_torque": 120.0,
+        "max_joint_effort_utilization": 1.0,
+        "mean_reward": 0.08772799547447357,
+        "motion_success_fraction": 1.0,
+        "position_joint_rmse_rad": 0.23671621778809165,
+        "real_time_factor": 0.6649164552201429,
+        "successful_motion_episodes": 5,
+        "termination_count_anchor_ori": 0,
+        "termination_count_anchor_pos": 0,
+        "termination_count_ee_body_pos": 0,
+        "termination_count_motion_finished": 5,
+        "termination_count_thigh_shank_ground_contact": 0,
+        "termination_count_time_out": 0,
+        "torque_saturation_sample_fraction": 0.0009,
+        "wheel_velocity_rmse_rad_s": 3.0114987870914294
+      },
+      "full_cycle_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "cycles": [
+        {
+          "policy": "wheel-links",
+          "case": "randomized",
+          "episode": 0,
+          "base_height_peak_m": 0.7531802654266357,
+          "base_vz_peak_m_s": 2.0692854451045513,
+          "base_abs_roll_peak_deg": 7.448024247750878,
+          "push_base_vz_peak_m_s": 2.0692854451045513,
+          "takeoff_phase_s": 1.34,
+          "landing_phase_s": 1.6500000000000001,
+          "flight_duration_s": 0.31,
+          "takeoff_base_vz_m_s": 2.0317189180848043,
+          "push_normal_impulse_ns": 142.04929651260377,
+          "flight_abs_roll_peak_deg": 7.448024247750878,
+          "push_wheel_center_vx_min_m_s": -0.8605237007141113,
+          "push_hip_mirror_rmse_deg": 3.6109067590469834,
+          "push_thigh_mirror_rmse_deg": 4.909197941030473,
+          "push_shank_mirror_rmse_deg": 3.2781729335948984,
+          "push_foot_mirror_rmse_deg": 3.6580631953919247,
+          "height_rmse_m": 0.033315992357586935,
+          "late_height_bias_m": 0.003139393485110739,
+          "wheel_speed_rms_rad_s": 3.833756110832536,
+          "wheel_speed_peak_rad_s": 11.803318977355957,
+          "late_wheel_speed_rms_rad_s": 0.0621414495161429,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "wheel-links",
+          "case": "randomized",
+          "episode": 1,
+          "base_height_peak_m": 0.7633525729179382,
+          "base_vz_peak_m_s": 1.9057317744971645,
+          "base_abs_roll_peak_deg": 5.916479946574058,
+          "push_base_vz_peak_m_s": 1.9057317744971645,
+          "takeoff_phase_s": 1.325,
+          "landing_phase_s": 1.615,
+          "flight_duration_s": 0.29,
+          "takeoff_base_vz_m_s": 1.7872456233350806,
+          "push_normal_impulse_ns": 135.37264038085937,
+          "flight_abs_roll_peak_deg": 5.503607677294874,
+          "push_wheel_center_vx_min_m_s": -0.06107287481427193,
+          "push_hip_mirror_rmse_deg": 2.167756584243047,
+          "push_thigh_mirror_rmse_deg": 2.000740720467935,
+          "push_shank_mirror_rmse_deg": 4.393353670807055,
+          "push_foot_mirror_rmse_deg": 3.760565667417765,
+          "height_rmse_m": 0.036706870399611374,
+          "late_height_bias_m": 0.004862635031990383,
+          "wheel_speed_rms_rad_s": 1.082739790909174,
+          "wheel_speed_peak_rad_s": 6.393779754638672,
+          "late_wheel_speed_rms_rad_s": 0.05607829623620358,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "wheel-links",
+          "case": "randomized",
+          "episode": 2,
+          "base_height_peak_m": 0.714105486869812,
+          "base_vz_peak_m_s": 1.7242131427139133,
+          "base_abs_roll_peak_deg": 3.1148785246895643,
+          "push_base_vz_peak_m_s": 1.7242131427139133,
+          "takeoff_phase_s": 1.33,
+          "landing_phase_s": 1.595,
+          "flight_duration_s": 0.265,
+          "takeoff_base_vz_m_s": 1.2570983403307343,
+          "push_normal_impulse_ns": 125.98137771606446,
+          "flight_abs_roll_peak_deg": 1.10070640603258,
+          "push_wheel_center_vx_min_m_s": -1.2099007368087769,
+          "push_hip_mirror_rmse_deg": 2.486379265048958,
+          "push_thigh_mirror_rmse_deg": 7.041274109919544,
+          "push_shank_mirror_rmse_deg": 3.5562144850344186,
+          "push_foot_mirror_rmse_deg": 3.4031547677075977,
+          "height_rmse_m": 0.029798099821442384,
+          "late_height_bias_m": 0.0028775450975998588,
+          "wheel_speed_rms_rad_s": 3.918208308317799,
+          "wheel_speed_peak_rad_s": 12.187453269958496,
+          "late_wheel_speed_rms_rad_s": 0.03612670849917724,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "wheel-links",
+          "case": "randomized",
+          "episode": 3,
+          "base_height_peak_m": 0.7138220071792603,
+          "base_vz_peak_m_s": 1.5847034094080188,
+          "base_abs_roll_peak_deg": 4.776622943943944,
+          "push_base_vz_peak_m_s": 1.5847034094080188,
+          "takeoff_phase_s": 1.34,
+          "landing_phase_s": 1.605,
+          "flight_duration_s": 0.265,
+          "takeoff_base_vz_m_s": 1.3782350717514191,
+          "push_normal_impulse_ns": 131.5408687567711,
+          "flight_abs_roll_peak_deg": 2.925116773096616,
+          "push_wheel_center_vx_min_m_s": -0.35936275124549866,
+          "push_hip_mirror_rmse_deg": 2.575272910057649,
+          "push_thigh_mirror_rmse_deg": 3.3106632983743096,
+          "push_shank_mirror_rmse_deg": 4.278670627013265,
+          "push_foot_mirror_rmse_deg": 2.459341769464109,
+          "height_rmse_m": 0.023947830843087492,
+          "late_height_bias_m": -0.0005950202112612517,
+          "wheel_speed_rms_rad_s": 2.1551355349908152,
+          "wheel_speed_peak_rad_s": 9.524218559265137,
+          "late_wheel_speed_rms_rad_s": 0.060723713616955596,
+          "extra_ground_contact_peak_n": 0.0
+        },
+        {
+          "policy": "wheel-links",
+          "case": "randomized",
+          "episode": 4,
+          "base_height_peak_m": 0.726720929145813,
+          "base_vz_peak_m_s": 1.7765584765192015,
+          "base_abs_roll_peak_deg": 2.3791172131843514,
+          "push_base_vz_peak_m_s": 1.7765584765192015,
+          "takeoff_phase_s": 1.315,
+          "landing_phase_s": 1.595,
+          "flight_duration_s": 0.28,
+          "takeoff_base_vz_m_s": 1.5297011128928915,
+          "push_normal_impulse_ns": 124.94388980865479,
+          "flight_abs_roll_peak_deg": 2.3791172131843514,
+          "push_wheel_center_vx_min_m_s": -0.9796313047409058,
+          "push_hip_mirror_rmse_deg": 1.8998579380469522,
+          "push_thigh_mirror_rmse_deg": 3.7081581679999127,
+          "push_shank_mirror_rmse_deg": 1.9565868265830368,
+          "push_foot_mirror_rmse_deg": 2.3312165250878465,
+          "height_rmse_m": 0.018557407622611925,
+          "late_height_bias_m": -0.0007398672725843346,
+          "wheel_speed_rms_rad_s": 3.217624346752788,
+          "wheel_speed_peak_rad_s": 9.772212028503418,
+          "late_wheel_speed_rms_rad_s": 0.05519830526398176,
+          "extra_ground_contact_peak_n": 0.0
+        }
+      ],
+      "joint_loads": {
+        "all_observed": {
+          "left_hip_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 4.035184860229492,
+            "speed_signed_rad_s": -4.035184860229492,
+            "speed_peak_phase_s": 1.6400000000000001,
+            "speed_episode": 5,
+            "torque_peak_nm": 54.6574821472168,
+            "torque_peak_phase_s": 1.2049999999999998,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 862.8060302734375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 4.103970527648926,
+            "speed_signed_rad_s": -4.103970527648926,
+            "speed_peak_phase_s": 1.6849999999999998,
+            "speed_episode": 0,
+            "torque_peak_nm": 45.933921813964844,
+            "torque_peak_phase_s": 1.1749999999999998,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 492.19854736328125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 11.116795539855957,
+            "speed_signed_rad_s": 11.116795539855957,
+            "speed_peak_phase_s": 1.315,
+            "speed_episode": 2,
+            "torque_peak_nm": 35.681697845458984,
+            "torque_peak_phase_s": 0.08,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 876.2354736328125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 9.059563636779785,
+            "speed_signed_rad_s": -9.059563636779785,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 56.97169494628906,
+            "torque_peak_phase_s": 1.78,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 552.652099609375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 19.57880401611328,
+            "speed_signed_rad_s": -19.57880401611328,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 120.0,
+            "torque_peak_phase_s": 1.3,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1492.1474609375,
+            "torque_at_99pct_limit_fraction": 0.0005
+          },
+          "right_shank_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 19.537216186523438,
+            "speed_signed_rad_s": 19.537216186523438,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 1,
+            "torque_peak_nm": 110.44779968261719,
+            "torque_peak_phase_s": 1.285,
+            "torque_episode": 1,
+            "acceleration_peak_rad_s2": 1535.017822265625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 9.701263427734375,
+            "speed_signed_rad_s": 9.701263427734375,
+            "speed_peak_phase_s": 1.6800000000000002,
+            "speed_episode": 0,
+            "torque_peak_nm": 27.0,
+            "torque_peak_phase_s": 1.625,
+            "torque_episode": 1,
+            "acceleration_peak_rad_s2": 3302.22705078125,
+            "torque_at_99pct_limit_fraction": 0.00825
+          },
+          "left_wheel_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 12.187453269958496,
+            "speed_signed_rad_s": 12.187453269958496,
+            "speed_peak_phase_s": 0.24,
+            "speed_episode": 2,
+            "torque_peak_nm": 7.2029266357421875,
+            "torque_peak_phase_s": 0.29500000000000004,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1769.55908203125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 10.110301971435547,
+            "speed_signed_rad_s": -10.110301971435547,
+            "speed_peak_phase_s": 1.6500000000000001,
+            "speed_episode": 0,
+            "torque_peak_nm": 25.747581481933594,
+            "torque_peak_phase_s": 1.675,
+            "torque_episode": 5,
+            "acceleration_peak_rad_s2": 3085.45263671875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "all_observed",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 11.205641746520996,
+            "speed_signed_rad_s": -11.205641746520996,
+            "speed_peak_phase_s": 0.20500000000000002,
+            "speed_episode": 0,
+            "torque_peak_nm": 5.98252010345459,
+            "torque_peak_phase_s": 0.16,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 1144.3389892578125,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        },
+        "complete_cycles": {
+          "left_hip_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_hip_joint",
+            "speed_peak_rad_s": 3.5206427574157715,
+            "speed_signed_rad_s": -3.5206427574157715,
+            "speed_peak_phase_s": 1.6800000000000002,
+            "speed_episode": 0,
+            "torque_peak_nm": 54.6574821472168,
+            "torque_peak_phase_s": 1.2049999999999998,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 782.7035522460938,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_hip_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_hip_joint",
+            "speed_peak_rad_s": 4.103970527648926,
+            "speed_signed_rad_s": -4.103970527648926,
+            "speed_peak_phase_s": 1.6849999999999998,
+            "speed_episode": 0,
+            "torque_peak_nm": 45.933921813964844,
+            "torque_peak_phase_s": 1.1749999999999998,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 491.06396484375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_thigh_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_thigh_joint",
+            "speed_peak_rad_s": 11.116795539855957,
+            "speed_signed_rad_s": 11.116795539855957,
+            "speed_peak_phase_s": 1.315,
+            "speed_episode": 2,
+            "torque_peak_nm": 35.681697845458984,
+            "torque_peak_phase_s": 0.08,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 876.2354736328125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_thigh_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_thigh_joint",
+            "speed_peak_rad_s": 9.059563636779785,
+            "speed_signed_rad_s": -9.059563636779785,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 56.97169494628906,
+            "torque_peak_phase_s": 1.78,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 552.652099609375,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_shank_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_shank_joint",
+            "speed_peak_rad_s": 19.57880401611328,
+            "speed_signed_rad_s": -19.57880401611328,
+            "speed_peak_phase_s": 1.345,
+            "speed_episode": 0,
+            "torque_peak_nm": 120.0,
+            "torque_peak_phase_s": 1.3,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1492.1474609375,
+            "torque_at_99pct_limit_fraction": 0.000588235294117647
+          },
+          "right_shank_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_shank_joint",
+            "speed_peak_rad_s": 19.537216186523438,
+            "speed_signed_rad_s": 19.537216186523438,
+            "speed_peak_phase_s": 1.32,
+            "speed_episode": 1,
+            "torque_peak_nm": 110.44779968261719,
+            "torque_peak_phase_s": 1.285,
+            "torque_episode": 1,
+            "acceleration_peak_rad_s2": 1535.017822265625,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "left_foot_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_foot_joint",
+            "speed_peak_rad_s": 9.701263427734375,
+            "speed_signed_rad_s": 9.701263427734375,
+            "speed_peak_phase_s": 1.6800000000000002,
+            "speed_episode": 0,
+            "torque_peak_nm": 27.0,
+            "torque_peak_phase_s": 1.625,
+            "torque_episode": 1,
+            "acceleration_peak_rad_s2": 3302.22705078125,
+            "torque_at_99pct_limit_fraction": 0.006176470588235294
+          },
+          "left_wheel_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "left_wheel_joint",
+            "speed_peak_rad_s": 12.187453269958496,
+            "speed_signed_rad_s": 12.187453269958496,
+            "speed_peak_phase_s": 0.24,
+            "speed_episode": 2,
+            "torque_peak_nm": 7.2029266357421875,
+            "torque_peak_phase_s": 0.29500000000000004,
+            "torque_episode": 0,
+            "acceleration_peak_rad_s2": 1769.55908203125,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_foot_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_foot_joint",
+            "speed_peak_rad_s": 10.110301971435547,
+            "speed_signed_rad_s": -10.110301971435547,
+            "speed_peak_phase_s": 1.6500000000000001,
+            "speed_episode": 0,
+            "torque_peak_nm": 24.0736026763916,
+            "torque_peak_phase_s": 1.69,
+            "torque_episode": 3,
+            "acceleration_peak_rad_s2": 3085.45263671875,
+            "torque_at_99pct_limit_fraction": 0.0
+          },
+          "right_wheel_joint": {
+            "policy": "wheel-links",
+            "case": "randomized",
+            "scope": "complete_cycles",
+            "joint": "right_wheel_joint",
+            "speed_peak_rad_s": 11.205641746520996,
+            "speed_signed_rad_s": -11.205641746520996,
+            "speed_peak_phase_s": 0.20500000000000002,
+            "speed_episode": 0,
+            "torque_peak_nm": 5.98252010345459,
+            "torque_peak_phase_s": 0.16,
+            "torque_episode": 2,
+            "acceleration_peak_rad_s2": 1144.3389892578125,
+            "torque_at_99pct_limit_fraction": 0.0
+          }
+        }
+      },
+      "cycle_summary": {
+        "base_height_peak_m": {
+          "mean": 0.7342362523078918,
+          "min": 0.7138220071792603,
+          "max": 0.7633525729179382
+        },
+        "base_vz_peak_m_s": {
+          "mean": 1.8120984496485697,
+          "min": 1.5847034094080188,
+          "max": 2.0692854451045513
+        },
+        "base_abs_roll_peak_deg": {
+          "mean": 4.72702457522856,
+          "min": 2.3791172131843514,
+          "max": 7.448024247750878
+        },
+        "push_base_vz_peak_m_s": {
+          "mean": 1.8120984496485697,
+          "min": 1.5847034094080188,
+          "max": 2.0692854451045513
+        },
+        "takeoff_phase_s": {
+          "mean": 1.33,
+          "min": 1.315,
+          "max": 1.34
+        },
+        "landing_phase_s": {
+          "mean": 1.612,
+          "min": 1.595,
+          "max": 1.6500000000000001
+        },
+        "flight_duration_s": {
+          "mean": 0.282,
+          "min": 0.265,
+          "max": 0.31
+        },
+        "takeoff_base_vz_m_s": {
+          "mean": 1.596799813278986,
+          "min": 1.2570983403307343,
+          "max": 2.0317189180848043
+        },
+        "push_normal_impulse_ns": {
+          "mean": 131.9776146349907,
+          "min": 124.94388980865479,
+          "max": 142.04929651260377
+        },
+        "flight_abs_roll_peak_deg": {
+          "mean": 3.8713144634718604,
+          "min": 1.10070640603258,
+          "max": 7.448024247750878
+        },
+        "push_wheel_center_vx_min_m_s": {
+          "mean": -0.6940982736647129,
+          "min": -1.2099007368087769,
+          "max": -0.06107287481427193
+        },
+        "push_hip_mirror_rmse_deg": {
+          "mean": 2.548034691288718,
+          "min": 1.8998579380469522,
+          "max": 3.6109067590469834
+        },
+        "push_thigh_mirror_rmse_deg": {
+          "mean": 4.194006847558435,
+          "min": 2.000740720467935,
+          "max": 7.041274109919544
+        },
+        "push_shank_mirror_rmse_deg": {
+          "mean": 3.492599708606535,
+          "min": 1.9565868265830368,
+          "max": 4.393353670807055
+        },
+        "push_foot_mirror_rmse_deg": {
+          "mean": 3.122468385013849,
+          "min": 2.3312165250878465,
+          "max": 3.760565667417765
+        },
+        "height_rmse_m": {
+          "mean": 0.02846524020886802,
+          "min": 0.018557407622611925,
+          "max": 0.036706870399611374
+        },
+        "late_height_bias_m": {
+          "mean": 0.001908937226171079,
+          "min": -0.0007398672725843346,
+          "max": 0.004862635031990383
+        },
+        "wheel_speed_rms_rad_s": {
+          "mean": 2.841492818360623,
+          "min": 1.082739790909174,
+          "max": 3.918208308317799
+        },
+        "wheel_speed_peak_rad_s": {
+          "mean": 9.936196517944335,
+          "min": 6.393779754638672,
+          "max": 12.187453269958496
+        },
+        "late_wheel_speed_rms_rad_s": {
+          "mean": 0.05405369462649222,
+          "min": 0.03612670849917724,
+          "max": 0.0621414495161429
+        },
+        "extra_ground_contact_peak_n": {
+          "mean": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    }
+  },
+  "config_diffs": {
+    "global-wheel": {
+      "version": 1,
+      "complete": true,
+      "baseline": {
+        "run_id": "2026-11-07_15-01-47",
+        "effective_config_fingerprint": "46b98949fc716d8e74057baf7d7c8825eae6eded8de62aadc45f36fe136ef617"
+      },
+      "current": {
+        "run_id": "2026-11-10_13-58-00",
+        "effective_config_fingerprint": "c9a795744fd05f149e75682340e8578c818823274ea435eda621b394d8a21053"
+      },
+      "summary": {
+        "semantic_changes": 3,
+        "agent_changes": 0,
+        "environment_changes": 3,
+        "reward_weight_changes": 2,
+        "training_parameter_changes": 0
+      },
+      "reward_weight_changes": [
+        {
+          "path": "motion_flight_height",
+          "change": "changed",
+          "before": 0.0,
+          "after": 2.0
+        },
+        {
+          "path": "wheel_contact_continuous",
+          "change": "changed",
+          "before": 0.5,
+          "after": 0.0
+        }
+      ],
+      "training_parameter_changes": [],
+      "semantic_changes": [
+        {
+          "path": "/environment/log_dir",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-07_15-01-47"
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-10_13-58-00"
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 2.0
+          }
+        },
+        {
+          "path": "/environment/rewards/wheel_contact_continuous/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.5
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        }
+      ]
+    },
+    "wheel-links": {
+      "version": 1,
+      "complete": true,
+      "baseline": {
+        "run_id": "2026-11-09_12-58-20",
+        "effective_config_fingerprint": "1587f596f9c24301331ec11e8bd08d0799029a2a2ac84b28385b99c02803aef2"
+      },
+      "current": {
+        "run_id": "2026-11-10_13-58-00",
+        "effective_config_fingerprint": "c9a795744fd05f149e75682340e8578c818823274ea435eda621b394d8a21053"
+      },
+      "summary": {
+        "semantic_changes": 10,
+        "agent_changes": 0,
+        "environment_changes": 10,
+        "reward_weight_changes": 3,
+        "training_parameter_changes": 0
+      },
+      "reward_weight_changes": [
+        {
+          "path": "joint_acc_wheel_l2",
+          "change": "changed",
+          "before": -0.0,
+          "after": -0.002
+        },
+        {
+          "path": "joint_vel_wheel_l2",
+          "change": "changed",
+          "before": -0.0,
+          "after": -0.1
+        },
+        {
+          "path": "motion_flight_height",
+          "change": "changed",
+          "before": 0.0,
+          "after": 2.0
+        }
+      ],
+      "training_parameter_changes": [],
+      "semantic_changes": [
+        {
+          "path": "/environment/commands/motion/body_names/10",
+          "change": "removed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "left_wheel_link"
+          },
+          "after": null
+        },
+        {
+          "path": "/environment/commands/motion/body_names/9",
+          "change": "removed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "right_wheel_link"
+          },
+          "after": null
+        },
+        {
+          "path": "/environment/log_dir",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-09_12-58-20"
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:str",
+            "value": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-10_13-58-00"
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/ramp_time_s",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.2
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/params/start_time_s",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 1.65
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_acc_wheel_l2/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.002
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/ramp_time_s",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.1
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/params/start_time_s",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 1.65
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          }
+        },
+        {
+          "path": "/environment/rewards/joint_vel_wheel_l2/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": -0.1
+          }
+        },
+        {
+          "path": "/environment/rewards/motion_flight_height/weight",
+          "change": "changed",
+          "before": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 0.0
+          },
+          "after": {
+            "kind": "scalar",
+            "tag": "tag:yaml.org,2002:float",
+            "value": 2.0
+          }
+        }
+      ]
+    }
+  },
+  "runtime_comparison": {
+    "global-wheel/nominal": {
+      "body_names": true,
+      "coms": true,
+      "joint_damping": true,
+      "joint_stiffness": true,
+      "masses_kg": true,
+      "material_properties": true
+    },
+    "global-wheel/randomized": {
+      "body_names": true,
+      "coms": true,
+      "joint_damping": true,
+      "joint_stiffness": true,
+      "masses_kg": true,
+      "material_properties": true
+    },
+    "wheel-links/nominal": {
+      "body_names": true,
+      "coms": true,
+      "joint_damping": true,
+      "joint_stiffness": true,
+      "masses_kg": true,
+      "material_properties": true
+    },
+    "wheel-links/randomized": {
+      "body_names": true,
+      "coms": true,
+      "joint_damping": true,
+      "joint_stiffness": true,
+      "masses_kg": true,
+      "material_properties": true
+    }
+  },
+  "reference": {
+    "base_height_peak_m": 0.713509202003479,
+    "base_vz_peak_m_s": 1.966831088066101,
+    "note": "NPZ base link velocity is kinematic link-origin velocity; telemetry base velocity is COM velocity, not exact matching point."
+  }
+}

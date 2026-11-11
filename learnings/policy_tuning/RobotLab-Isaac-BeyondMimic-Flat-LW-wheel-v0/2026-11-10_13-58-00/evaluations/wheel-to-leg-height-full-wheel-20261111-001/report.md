@@ -1,0 +1,107 @@
+# 评估批次 wheel-to-leg-height-full-wheel-20261111-001
+
+任务：`RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0`；训练：`2026-11-10_13-58-00`。
+
+本报告汇总已校验的用例；completed 表示证据发布完成，策略表现须结合指标和视频判断。
+
+| 用例 / 尝试 | 状态 | 场景、步数 / 环境 / seed | 遥测 | 结果与视频 |
+| --- | --- | --- | --- | --- |
+| fixed-start-nominal-a01 | completed | fixed-start-nominal，1000 / 1 / 42 | complete | [结果](<raw/fixed-start-nominal-a01/result.json>) / [日志](<raw/fixed-start-nominal-a01/console.log>) |
+| fixed-start-randomized-a01 | completed | fixed-start-randomized，1000 / 1 / 42 | complete | [结果](<raw/fixed-start-randomized-a01/result.json>) / [日志](<raw/fixed-start-randomized-a01/console.log>) |
+
+## 策略与场景
+
+- checkpoint SHA-256：`0bcb6a3c82f1ee549db1f68da770f6feb2da6103e79352af47e869a380f318cb`；runner：`OnPolicyRunner`。
+- [场景来源 scenario-0b892ed0253103b516fd93ad1f1fd22632bf476212efbd3304c7fb09e89c4fcf.json](<../../provenance/scenario-0b892ed0253103b516fd93ad1f1fd22632bf476212efbd3304c7fb09e89c4fcf.json>)
+- [场景来源 scenario-8a7612b96de7df11e5bf2d42b58ddcfe24a19825cd71d9939d548c4bde6fe63f.json](<../../provenance/scenario-8a7612b96de7df11e5bf2d42b58ddcfe24a19825cd71d9939d548c4bde6fe63f.json>)
+- [训练上下文 context-9c48932f841c50e657008864a78deeef9c5c14bca9bc308e5f980a29d90149f9.json](<../../provenance/context-9c48932f841c50e657008864a78deeef9c5c14bca9bc308e5f980a29d90149f9.json>)
+- [训练有效配置 config-94b7d82ee1e683df6c23467456f0050e7acc63c051a83d75dd29812d26f1a2f7.json](<../../provenance/config-94b7d82ee1e683df6c23467456f0050e7acc63c051a83d75dd29812d26f1a2f7.json>)
+
+- `fixed-start-nominal-a01` 指标：`{"max_joint_velocity_utilization": "unavailable", "max_tilt": "unavailable", "termination_rate": "unavailable", "tracking_xy_rmse": "unavailable", "tracking_yaw_rmse": "unavailable"}`
+- `fixed-start-nominal-a01` 命令调度：`[]`；训练配置覆盖：`{"evaluation.motion_ground_contacts": true, "evaluation.motion_mode": "nominal_start", "evaluation.motion_physics_window": [0, 169], "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"}`。
+- `fixed-start-randomized-a01` 指标：`{"max_joint_velocity_utilization": "unavailable", "max_tilt": "unavailable", "termination_rate": "unavailable", "tracking_xy_rmse": "unavailable", "tracking_yaw_rmse": "unavailable"}`
+- `fixed-start-randomized-a01` 命令调度：`[]`；训练配置覆盖：`{"evaluation.motion_ground_contacts": true, "evaluation.motion_mode": "randomized_start", "evaluation.motion_physics_window": [0, 169], "evaluation.motion_sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"}`。
+
+## 观察与限制
+
+- 结论：本次高度+全程轮约束策略在两组有限测试中均完成动作，高度轨迹及落地支撑高度较Nov7改善；轮速残留、小腿速度和足部落地峰值没有同步改善。相对Nov9，小腿负载、对称性及整体高度跟踪较好，但轮速和停稳明显退步，不能判定全面优于旧版。
+- 来源：2026-11-10_13-58-00/model_49999.pt，存储iter=49999、51个checkpoint；SHA256 0bcb6a3c82f1ee549db1f68da770f6feb2da6103e79352af47e869a380f318cb。用户明确确认 bash scripts/start_beyondmimic.sh --type wheel --num_envs 8192，无额外CLI/Hydra或配置环境变量覆盖。训练与评估HEAD ffecc6a56ef912db64a51f6eed0579a0dbcc45bb；8192环境、seed42、PPO/OnPolicyRunner，actor输入590、critic输入146。
+- 有效配置：高度weight=2、std=0.1、1.1–1.9s、ramp0.05；轮速weight=-0.1、轮加速度weight=-0.002，全程启用；wheel_contact_continuous=0；九个跟踪连杆，不含双轮。agent与两版基线完全一致，augmentation/mirror开启。相对Nov7，仅高度0→2、轮接触0.5→0及日志路径不同；相对Nov9还删除双轮跟踪并恢复全程轮惩罚，因此都不是单变量因果消融。完整语义差异见analysis.json。
+- 预算与完整性：标称nominal_start、随机化randomized_start各1环境、1000控制步、seed42、无视频、每进程600s上限；均5个成功完整周期、0失败、1截尾周期。每组1000条20ms控制样本和4000条5ms物理样本完整，新旧6个结果包通过校验，必需信号均完整。旧评估只读复用。标称周期完全重复，不能当作5个独立seed；随机化也仅一个seed。
+- 统计口径：全周期高度RMSE对齐到控制步后的参考帧min(frame+1,169)；落地描述窗口1.45–1.90s，跳跃最高点窗口1.10–1.70s。全周期最大高度可能来自结束站立，不等于跳跃高度。旧原始证据按同一方法重算，旧报告的窗口/参考时序汇总数不直接拼接；任何旧文件均未改写。曲线为20ms采样，关节速度/驱动力矩/加速度峰值取全部5ms样本。
+- 同口径对比：每格为标称 / 随机化。峰值包含截尾周期已观察样本，周期均值只使用5个完整周期。
+
+| 指标 | Nov7 全程轮约束 | Nov9 双轮连杆跟踪 | Nov10 本次 |
+|---|---:|---:|---:|
+| 全周期高度RMSE cm | 2.491 / 2.548 | 2.931 / 2.847 | 1.135 / 1.742 |
+| 落地窗口高度RMSE cm | 5.452 / 4.951 | 0.728 / 3.312 | 2.162 / 2.829 |
+| 跳跃最高基座Z m | 0.682 / 0.684 | 0.731 / 0.734 | 0.697 / 0.700 |
+| 最低落地基座Z m（周期均值） | 0.423 / 0.423 | 0.464 / 0.471 | 0.469 / 0.470 |
+| 共同九连杆位置RMSE cm | 3.694 / 3.744 | 3.647 / 4.003 | 2.644 / 3.266 |
+| 锚点位置RMSE cm | 9.406 / 17.928 | 10.105 / 15.891 | 6.408 / 18.638 |
+| 锚点姿态RMSE rad | 0.058 / 0.109 | 0.065 / 0.168 | 0.068 / 0.145 |
+| 轮速峰值 rad/s | 5.977 / 13.728 | 5.047 / 12.187 | 7.542 / 13.239 |
+| 轮速RMS rad/s（完整周期均值） | 1.771 / 3.365 | 1.118 / 2.841 | 2.274 / 3.410 |
+| 2s后轮速RMS rad/s | 0.907 / 0.729 | 0.031 / 0.054 | 1.361 / 1.253 |
+| 小腿速度峰值 rad/s | 14.984 / 17.622 | 17.543 / 19.579 | 16.024 / 18.707 |
+| 小腿驱动力矩峰值 N·m | 79.152 / 106.983 | 100.923 / 120.000 | 86.238 / 105.767 |
+| 足速度峰值 rad/s | 4.542 / 10.054 | 7.801 / 10.110 | 10.343 / 12.710 |
+| 轮加速度RMS rad/s² | 36.526 / 79.618 | 31.174 / 80.745 | 42.742 / 82.530 |
+| 轮加速度峰值 rad/s² | 847.760 / 1292.827 | 412.524 / 1769.559 | 727.182 / 1529.503 |
+- 高度与落地：本次标称跳跃最高0.6973m，参考0.7135m；随机化五周期0.6759–0.7239m。标称落地最低基座Z由Nov7的0.4235m升至0.4693m，接近参考0.4732m；随机化最差由0.4047m升至0.4592m。标称预蹲最低0.5065m，较Nov9的0.545m更接近参考约0.490m。全周期高度RMSE改善不代表随机化锚点位置/姿态全面改善：随机化锚点位置RMSE为0.1864m，高于Nov7的0.1793m及Nov9的0.1589m。
+- 起跳和接触：以[1.0,2.3]s内总正法向力<10N、连续至少15ms的最长区间描述腾空。标称离地/落地1.320/1.570s，腾空0.250s；随机化均值1.338/1.589s，腾空0.251s。离地base COM向上速度标称1.552m/s，随机化均值1.462、范围1.290–1.666m/s；该速度不是整机质心速度，参考NPZ为连杆原点速度。1.0s至离地的正法向冲量均值121.57/132.42N·s。
+- 轮速与后退：本次标称右轮7.542rad/s峰值在1.190s推蹬前段；随机化全局左轮13.239rad/s在第3周期0.300s初始调整，固定[1.0,1.3)s推蹬窗口峰值13.036rad/s。2s后完整周期轮速RMS为1.361/1.253rad/s，明显高于Nov9的0.031/0.054。推蹬轮轴世界X速度最小值的周期均值为-0.888/-1.152m/s；轮轴后退是运动学现象，不是接触滑移的直接证明。
+- 小腿伸展：本次标称左/右最小绝对角0.143/0.140rad，同窗口参考最低约0.694rad；随机化左/右最小分别0.100/0.131rad。虽较Nov9更少接近直腿，仍明显偏离参考，不能因高度改善判断蹬伸已经解决。小腿峰速16.024/18.707rad/s均高于Nov7的14.984/17.622；驱动力矩86.238/105.767N·m，较Nov9的100.923/120下降。
+- 落地重点：随机化第5周期右足在1.580s达到12.710rad/s，配置参考速度10rad/s；标称右足10.343rad/s在1.570s重复出现。4000个物理样本中，标称右足超参考6个样本（含截尾周期），随机化左/右足分别3/2个样本；这不是失败次数，也不是已证明的硬安全边界。本次无关节驱动力矩达到限幅99%，但随机化左足最大26.708N·m接近27N·m限幅。
+- 接触负载：最大单足正法向力标称1081.2N（右足1.570s），随机化2051.3N（第5周期左足1.560s）；Nov7随机化为1400.9N，Nov9为1638.3N。本次随机化落地峰值更高。所有大腿/小腿额外地面接触力峰值为0，接触力交叉核验误差0N。这是5ms平均仿真接触力；applied torque是执行器驱动力矩，不含被动碰撞结构负载。
+- 姿态与对称性：完整周期腾空横滚峰值标称1.725°，随机化平均2.848°、最坏5.880°；Nov7为0.651°、平均3.093°/最坏4.588°，Nov9为2.866°、平均3.871°/最坏7.448°。本次随机化平均虽下降，最坏值未优于Nov7。[1.0,1.8]s参考校正左右角度和RMSE（无1/2系数），本次髋/大腿/小腿/足标称0.55/1.70/2.11/1.15°，随机化周期均值2.19/2.69/2.56/2.31°；相对Nov9均改善，标称小腿仍高于Nov7的1.52°。
+- 本次各关节5ms全样本绝对峰值；括号为动作相位秒，不是进程墙钟时间。详细周期编号见joint-loads.csv。
+
+| 关节 | 标称速度 rad/s（相位） | 随机速度 rad/s（相位） | 标称力矩 N·m（相位） | 随机力矩 N·m（相位） |
+|---|---:|---:|---:|---:|
+| 左髋 | 1.016 (1.345) | 2.784 (1.335) | 49.795 (1.260) | 63.584 (1.260) |
+| 右髋 | 1.771 (1.575) | 2.935 (0.035) | 49.701 (1.245) | 46.691 (0.140) |
+| 左大腿 | 11.869 (1.305) | 13.417 (1.350) | 22.523 (1.205) | 41.278 (0.050) |
+| 右大腿 | 11.577 (1.315) | 12.754 (1.345) | 21.528 (1.605) | 52.798 (1.760) |
+| 左小腿 | 15.783 (1.305) | 18.707 (1.350) | 79.346 (1.265) | 105.767 (1.300) |
+| 右小腿 | 16.024 (1.320) | 16.790 (1.345) | 86.238 (1.265) | 90.559 (1.265) |
+| 左足 | 9.067 (1.585) | 10.096 (1.585) | 17.995 (1.590) | 26.708 (1.645) |
+| 右足 | 10.343 (1.570) | 12.710 (1.580) | 18.769 (1.575) | 16.618 (1.580) |
+| 左轮 | 6.498 (1.300) | 13.239 (0.300) | 2.153 (0.665) | 6.966 (0.140) |
+| 右轮 | 7.542 (1.190) | 13.166 (0.270) | 3.708 (0.545) | 6.348 (0.120) |
+
+- 可比性：三版同场景、同参考动作SHA256、同seed/环境数/时长；已核对共同九连杆的名称与顺序，避免11/9连杆平均误差混比。8份评估器来源文件哈希完全一致，初始质量、COM、材料、PhysX刚度和阻尼逐项相同；未独立证明每次软件PD增益/延迟及后续随机流完全同轨。Nov7场景含hip_pos_zero_l2=-2显式覆盖，与其保存值一致。独立训练及多项配置变化限制因果解释。
+- 训练统计：TensorBoard的55项标量均到达49999，48000–49999尾段无非有限值。前后两个1000轮窗口：mean reward 6.7440→6.9039，episode length 70.27→71.72，value loss 0.01520→0.01605，symmetry loss 0.0001363→0.0001404。训练motion_finished均值约0.9966，受自适应起始帧影响，不能替代固定起点成功率或证明收敛。
+- 保护核验：1696个已有文件哈希保持，包括模型、exports、旧证据、相关源码和Kit持久配置；HEAD及两份stash未变。新增内容仅本次run的来源、评估和离线分析证据；未训练、导出、安装、删除用户文件、改源码或Git提交。图phase-comparison.png已检查；方法源码和输入哈希随分析保留，无临时脚本。
+- 限制：单seed、小样本、仿真评估，没有批准的收敛或实物验收判据；assessment=insufficient_evidence，convergence=indeterminate。报告模板中通用tracking_xy等unavailable不适用于本任务，BeyondMimic指标与信号完整性以本报告和原始结果为准。仅可进入受监督实物测试；未经实物验证，不代表hardware-ready。
+- 未提供用户批准的收敛判据时，不作收敛判断；缺失遥测不能按零值解释。
+- 视频需经机器人持续在画面内的人工检查后才可作为动作证据。
+
+## 相关证据
+
+- [analysis-method.json](<derived/analysis-method.json>)
+- [analysis.json](<derived/analysis.json>)
+- [cases-ready.json](<derived/cases-ready.json>)
+- [comparison-audit.json](<derived/comparison-audit.json>)
+- [cycle-metrics.csv](<derived/cycle-metrics.csv>)
+- [height-contact-audit.json](<derived/height-contact-audit.json>)
+- [height-contact-method.json](<derived/height-contact-method.json>)
+- [joint-loads.csv](<derived/joint-loads.csv>)
+- [phase-comparison.png](<derived/phase-comparison.png>)
+- [supplemental-method.json](<derived/supplemental-method.json>)
+- [supplemental-metrics.json](<derived/supplemental-metrics.json>)
+- [batch-driver-method-20261111-001.json](<../../evidence/training/batch-driver-method-20261111-001.json>)
+- [evaluation-request-20261111-001.json](<../../evidence/training/evaluation-request-20261111-001.json>)
+- [protection-after-20261111-001.json](<../../evidence/training/protection-after-20261111-001.json>)
+- [protection-before-20261111-001.json](<../../evidence/training/protection-before-20261111-001.json>)
+- [tensorboard-summary-20261111-001.json](<../../evidence/training/tensorboard-summary-20261111-001.json>)
+- [training-origin-20261111-001.json](<../../evidence/training/training-origin-20261111-001.json>)
+- [manifest.json](<../../../2026-11-07_15-01-47/evaluations/wheel-to-leg-fixed-start-20261108-001/manifest.json>)
+- [manifest.json](<../../../2026-11-09_12-58-20/evaluations/wheel-to-leg-wheel-links-20261110-001/manifest.json>)
+- [report-input.json](<derived/report-input.json>)
+
+## 建议与待授权事项
+
+- 保留本次策略作为高度轨迹和落地支撑改善的候选，同时保留Nov7和Nov9各自的对照价值；本次证据不支持宣布整体最优或据此自动导出。
+- 下一优先问题是随机化落地足部速度/接触峰值，以及落地后轮速残留。若要扩大结论，应另行定义有限多seed测试，保持场景和预算匹配，观察逐周期尾部而非只看平均高度或成功次数。当前不扩展测试。
+- 若后续提出参数修改，应把小腿伸展、足部落地负载及轮停稳分别作为问题，并同时监测高度/姿态反向指标；当前没有足够单变量证据推荐确定数值。direct_parameter_change_supported=false，任何代码或奖励修改须先提案并获批准。
