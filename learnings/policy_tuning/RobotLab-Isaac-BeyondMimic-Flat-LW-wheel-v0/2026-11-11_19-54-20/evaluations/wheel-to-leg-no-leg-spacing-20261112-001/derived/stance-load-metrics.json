@@ -1,0 +1,1099 @@
+{
+  "version": 1,
+  "methods": {
+    "joint_peaks": "all 4000 physics samples, 5ms, includes censored tail; applied drive torque not contact force",
+    "nominal_velocity_references_rad_s": "legs20, feet10, wheels33; descriptive configured motor values, not proven hardware limits",
+    "wheel_spacing": "world XY wheel-center Euclidean distance, reference frames0..62 inclusive; original band .496..536m descriptive, not acceptance criterion",
+    "hips": "right,left ordering; actual measured encoder coordinates; target raw action[:2]*.25, P2P independent of default offset, not delayed motor target",
+    "early_window": "reference frames0..54; target corresponds command time, actual feedback post-step",
+    "cycle_scope": "only previously validated successful full cycles, all data retained in raw files",
+    "reference_error": "anchor_position_error is reference minus measured; reported forward X uses negative sign, positive means ahead; same recorded step convention as evaluator",
+    "force": "normal contact-force vector norm sampled5ms, not complete force including friction"
+  },
+  "cases": {
+    "latest/nominal": {
+      "cycles": [
+        {
+          "episode": 0,
+          "wheel_spacing_early_m": {
+            "mean": 0.5164613723142115,
+            "min": 0.5158314406966035,
+            "max": 0.5170267711877711
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            5.5120693819060715,
+            5.5059495324097405
+          ],
+          "hip_early_p2p_deg_RL": [
+            1.1243749889556416,
+            1.0971989202282038
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            13.360533035461941,
+            13.323083108242763
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            5.119063712158122,
+            5.040849508425014
+          ],
+          "late_wheel_speed_rms_rad_s": 0.1576056831334471,
+          "anchor_xyz_rmse_m": 0.029815173187254948,
+          "anchor_x_rmse_m": 0.02691722767736198,
+          "landing_abs_pitch_peak_deg": 11.219752874158411,
+          "first_foot_contact_phase_s": 1.61,
+          "first_foot_contact_x_error_m": -0.04334716498851776,
+          "final_x_error_m": -0.03922721743583679
+        },
+        {
+          "episode": 1,
+          "wheel_spacing_early_m": {
+            "mean": 0.5164613723142115,
+            "min": 0.5158314406966035,
+            "max": 0.5170267711877711
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            5.5120693819060715,
+            5.5059495324097405
+          ],
+          "hip_early_p2p_deg_RL": [
+            1.1243749889556416,
+            1.0971989202282038
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            13.360533035461941,
+            13.323083108242763
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            5.119063712158122,
+            5.040849508425014
+          ],
+          "late_wheel_speed_rms_rad_s": 0.1576056831334471,
+          "anchor_xyz_rmse_m": 0.029815173187254948,
+          "anchor_x_rmse_m": 0.02691722767736198,
+          "landing_abs_pitch_peak_deg": 11.219752874158411,
+          "first_foot_contact_phase_s": 1.61,
+          "first_foot_contact_x_error_m": -0.04334716498851776,
+          "final_x_error_m": -0.03922721743583679
+        },
+        {
+          "episode": 2,
+          "wheel_spacing_early_m": {
+            "mean": 0.5164613723142115,
+            "min": 0.5158314406966035,
+            "max": 0.5170267711877711
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            5.5120693819060715,
+            5.5059495324097405
+          ],
+          "hip_early_p2p_deg_RL": [
+            1.1243749889556416,
+            1.0971989202282038
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            13.360533035461941,
+            13.323083108242763
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            5.119063712158122,
+            5.040849508425014
+          ],
+          "late_wheel_speed_rms_rad_s": 0.1576056831334471,
+          "anchor_xyz_rmse_m": 0.029815173187254948,
+          "anchor_x_rmse_m": 0.02691722767736198,
+          "landing_abs_pitch_peak_deg": 11.219752874158411,
+          "first_foot_contact_phase_s": 1.61,
+          "first_foot_contact_x_error_m": -0.04334716498851776,
+          "final_x_error_m": -0.03922721743583679
+        },
+        {
+          "episode": 3,
+          "wheel_spacing_early_m": {
+            "mean": 0.5164613723142115,
+            "min": 0.5158314406966035,
+            "max": 0.5170267711877711
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            5.5120693819060715,
+            5.5059495324097405
+          ],
+          "hip_early_p2p_deg_RL": [
+            1.1243749889556416,
+            1.0971989202282038
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            13.360533035461941,
+            13.323083108242763
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            5.119063712158122,
+            5.040849508425014
+          ],
+          "late_wheel_speed_rms_rad_s": 0.1576056831334471,
+          "anchor_xyz_rmse_m": 0.029815173187254948,
+          "anchor_x_rmse_m": 0.02691722767736198,
+          "landing_abs_pitch_peak_deg": 11.219752874158411,
+          "first_foot_contact_phase_s": 1.61,
+          "first_foot_contact_x_error_m": -0.04334716498851776,
+          "final_x_error_m": -0.03922721743583679
+        },
+        {
+          "episode": 4,
+          "wheel_spacing_early_m": {
+            "mean": 0.5164613723142115,
+            "min": 0.5158314406966035,
+            "max": 0.5170267711877711
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            5.5120693819060715,
+            5.5059495324097405
+          ],
+          "hip_early_p2p_deg_RL": [
+            1.1243749889556416,
+            1.0971989202282038
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            13.360533035461941,
+            13.323083108242763
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            5.119063712158122,
+            5.040849508425014
+          ],
+          "late_wheel_speed_rms_rad_s": 0.1576056831334471,
+          "anchor_xyz_rmse_m": 0.029815173187254948,
+          "anchor_x_rmse_m": 0.02691722767736198,
+          "landing_abs_pitch_peak_deg": 11.219752874158411,
+          "first_foot_contact_phase_s": 1.61,
+          "first_foot_contact_x_error_m": -0.04334716498851776,
+          "final_x_error_m": -0.03922721743583679
+        }
+      ],
+      "joint_limits": {
+        "left_hip_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.32365217208862307
+        },
+        "right_hip_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.3177348772684733
+        },
+        "left_thigh_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.2903771718343099
+        },
+        "right_thigh_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.22277123133341473
+        },
+        "left_shank_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.6656617482503255
+        },
+        "right_shank_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.7331241607666016
+        },
+        "left_foot_joint": {
+          "configured_velocity_rad_s": 10,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 27.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.6308027196813513
+        },
+        "left_wheel_joint": {
+          "configured_velocity_rad_s": 33,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 40.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.06752567887306213
+        },
+        "right_foot_joint": {
+          "configured_velocity_rad_s": 10,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 27.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.6141884415237991
+        },
+        "right_wheel_joint": {
+          "configured_velocity_rad_s": 33,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 40.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.08400219678878784
+        }
+      },
+      "contact_peaks_n": {
+        "right_foot_link": 705.2904052734439,
+        "left_foot_link": 884.0379638671955,
+        "right_wheel_link": 699.0161132812564,
+        "left_wheel_link": 748.0489501953193
+      },
+      "summary": {
+        "wheel_spacing_early_mean_m": 0.5164613723142115,
+        "wheel_spacing_early_min_m": 0.5158314406966035,
+        "wheel_spacing_early_max_m": 0.5170267711877711,
+        "outside_old_band_fraction": 0.0,
+        "hip_full_abs_peak_deg_RL": [
+          5.5120693819060715,
+          5.5059495324097405
+        ],
+        "hip_target_early_p2p_mean_deg_RL": [
+          13.360533035461941,
+          13.323083108242765
+        ],
+        "hip_target_early_max_step_deg_RL": [
+          5.119063712158122,
+          5.040849508425014
+        ],
+        "landing_abs_pitch_peak_deg": 11.219752874158411
+      }
+    },
+    "latest/randomized": {
+      "cycles": [
+        {
+          "episode": 0,
+          "wheel_spacing_early_m": {
+            "mean": 0.4755684327856737,
+            "min": 0.47099573400898576,
+            "max": 0.5192215424362382
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.9563492063492064,
+          "hip_full_abs_peak_deg_RL": [
+            9.387314665069852,
+            7.584518677043544
+          ],
+          "hip_early_p2p_deg_RL": [
+            7.192319183061068,
+            2.1932315856556275
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            14.760376036987825,
+            13.823682613551806
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            5.1087731783998525,
+            4.276401929912493
+          ],
+          "late_wheel_speed_rms_rad_s": 0.28081889632843926,
+          "anchor_xyz_rmse_m": 0.2152387670963038,
+          "anchor_x_rmse_m": 0.2117356615721986,
+          "landing_abs_pitch_peak_deg": 9.70433413509632,
+          "first_foot_contact_phase_s": 1.6500000000000001,
+          "first_foot_contact_x_error_m": -0.2667115330696106,
+          "final_x_error_m": -0.3019256293773651
+        },
+        {
+          "episode": 1,
+          "wheel_spacing_early_m": {
+            "mean": 0.48604512459242544,
+            "min": 0.4849151782974615,
+            "max": 0.4889873728679971
+          },
+          "wheel_spacing_outside_old_band_fraction": 1.0,
+          "hip_full_abs_peak_deg_RL": [
+            5.977154037965165,
+            8.550506354942923
+          ],
+          "hip_early_p2p_deg_RL": [
+            5.397994977483104,
+            4.39999153490123
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            12.82990503035376,
+            18.650458198576164
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            3.239676544100231,
+            6.876641286558009
+          ],
+          "late_wheel_speed_rms_rad_s": 0.26118761154236914,
+          "anchor_xyz_rmse_m": 0.1344707923159712,
+          "anchor_x_rmse_m": 0.1312494486144185,
+          "landing_abs_pitch_peak_deg": 13.372308262651812,
+          "first_foot_contact_phase_s": 1.615,
+          "first_foot_contact_x_error_m": -0.17562376707792277,
+          "final_x_error_m": -0.18214914202690125
+        },
+        {
+          "episode": 2,
+          "wheel_spacing_early_m": {
+            "mean": 0.48522962464584884,
+            "min": 0.48220132527263737,
+            "max": 0.5072286514481189
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.9682539682539683,
+          "hip_full_abs_peak_deg_RL": [
+            8.466153518693266,
+            5.510059171855972
+          ],
+          "hip_early_p2p_deg_RL": [
+            3.849969314366502,
+            3.3836417239610252
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            14.935026855551108,
+            18.140699409590134
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            4.908767310255307,
+            3.929519673855994
+          ],
+          "late_wheel_speed_rms_rad_s": 0.12461819410010913,
+          "anchor_xyz_rmse_m": 0.21400084656328205,
+          "anchor_x_rmse_m": 0.17892388815092278,
+          "landing_abs_pitch_peak_deg": 11.144557684433217,
+          "first_foot_contact_phase_s": 1.585,
+          "first_foot_contact_x_error_m": 0.17184684425592425,
+          "final_x_error_m": 0.11949536204338074
+        },
+        {
+          "episode": 3,
+          "wheel_spacing_early_m": {
+            "mean": 0.4163388584830579,
+            "min": 0.406377856925259,
+            "max": 0.4862076254548197
+          },
+          "wheel_spacing_outside_old_band_fraction": 1.0,
+          "hip_full_abs_peak_deg_RL": [
+            11.238717694324556,
+            11.061280478745026
+          ],
+          "hip_early_p2p_deg_RL": [
+            5.247758563386326,
+            11.11187297058778
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            12.299274784089757,
+            15.392683360722692
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            4.2983336673374035,
+            5.120145443367924
+          ],
+          "late_wheel_speed_rms_rad_s": 0.17292881300223348,
+          "anchor_xyz_rmse_m": 0.21071837240913063,
+          "anchor_x_rmse_m": 0.208264174407273,
+          "landing_abs_pitch_peak_deg": 12.928850853158563,
+          "first_foot_contact_phase_s": 1.625,
+          "first_foot_contact_x_error_m": 0.16779170930385592,
+          "final_x_error_m": 0.24437126517295837
+        },
+        {
+          "episode": 4,
+          "wheel_spacing_early_m": {
+            "mean": 0.48932073985269425,
+            "min": 0.48544730748898757,
+            "max": 0.4920945991930966
+          },
+          "wheel_spacing_outside_old_band_fraction": 1.0,
+          "hip_full_abs_peak_deg_RL": [
+            4.303457589875383,
+            6.028342890699825
+          ],
+          "hip_early_p2p_deg_RL": [
+            2.944666906747334,
+            5.253680230675021
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            14.558548642769004,
+            19.3733799344823
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            2.996082969993603,
+            6.878521723013876
+          ],
+          "late_wheel_speed_rms_rad_s": 0.16952293690186357,
+          "anchor_xyz_rmse_m": 0.08133898863198687,
+          "anchor_x_rmse_m": 0.05157703788723565,
+          "landing_abs_pitch_peak_deg": 9.979787918881199,
+          "first_foot_contact_phase_s": 1.575,
+          "first_foot_contact_x_error_m": -0.0003008246421813826,
+          "final_x_error_m": -0.01627752184867859
+        }
+      ],
+      "joint_limits": {
+        "left_hip_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.34301347732543946
+        },
+        "right_hip_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.2602715810139974
+        },
+        "left_thigh_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.3207601229349772
+        },
+        "right_thigh_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.3963356018066406
+        },
+        "left_shank_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.9385008494059245
+        },
+        "right_shank_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.7541446685791016
+        },
+        "left_foot_joint": {
+          "configured_velocity_rad_s": 10,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 27.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.7870787867793331
+        },
+        "left_wheel_joint": {
+          "configured_velocity_rad_s": 33,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 40.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.17138047218322755
+        },
+        "right_foot_joint": {
+          "configured_velocity_rad_s": 10,
+          "speed_exceedance_samples": 1,
+          "speed_exceedance_duration_s": 0.005,
+          "effort_limit_nm": 27.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.7644093831380209
+        },
+        "right_wheel_joint": {
+          "configured_velocity_rad_s": 33,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 40.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.1572302460670471
+        }
+      },
+      "contact_peaks_n": {
+        "right_foot_link": 1076.1793212890723,
+        "left_foot_link": 1457.0437011718882,
+        "right_wheel_link": 951.9146118164149,
+        "left_wheel_link": 1078.6779785156348
+      },
+      "summary": {
+        "wheel_spacing_early_mean_m": 0.47050055607193997,
+        "wheel_spacing_early_min_m": 0.406377856925259,
+        "wheel_spacing_early_max_m": 0.5192215424362382,
+        "outside_old_band_fraction": 0.984920634920635,
+        "hip_full_abs_peak_deg_RL": [
+          11.238717694324556,
+          11.061280478745026
+        ],
+        "hip_target_early_p2p_mean_deg_RL": [
+          13.876626269950293,
+          17.07618070338462
+        ],
+        "hip_target_early_max_step_deg_RL": [
+          5.1087731783998525,
+          6.878521723013876
+        ],
+        "landing_abs_pitch_peak_deg": 13.372308262651812
+      }
+    },
+    "Nov10/nominal": {
+      "cycles": [
+        {
+          "episode": 0,
+          "wheel_spacing_early_m": {
+            "mean": 0.5171350747446257,
+            "min": 0.5159706816898402,
+            "max": 0.5176287997573212
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            2.7136708695128546,
+            2.210024032616927
+          ],
+          "hip_early_p2p_deg_RL": [
+            0.7582378693399214,
+            0.6678576712922054
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            10.390545656966019,
+            10.785990131134486
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            3.1061378080900193,
+            3.0852207806436778
+          ],
+          "late_wheel_speed_rms_rad_s": 1.3609756095769943,
+          "anchor_xyz_rmse_m": 0.06393756219665621,
+          "anchor_x_rmse_m": 0.05933146023977484,
+          "landing_abs_pitch_peak_deg": 7.41174386685795,
+          "first_foot_contact_phase_s": 1.57,
+          "first_foot_contact_x_error_m": -0.06715881824493408,
+          "final_x_error_m": -0.04999193549156189
+        },
+        {
+          "episode": 1,
+          "wheel_spacing_early_m": {
+            "mean": 0.5171350747446257,
+            "min": 0.5159706816898402,
+            "max": 0.5176287997573212
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            2.7136708695128546,
+            2.210024032616927
+          ],
+          "hip_early_p2p_deg_RL": [
+            0.7582378693399214,
+            0.6678576712922054
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            10.390545656966019,
+            10.785990131134486
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            3.1061378080900193,
+            3.0852207806436778
+          ],
+          "late_wheel_speed_rms_rad_s": 1.3609756095769943,
+          "anchor_xyz_rmse_m": 0.06393756219665621,
+          "anchor_x_rmse_m": 0.05933146023977484,
+          "landing_abs_pitch_peak_deg": 7.41174386685795,
+          "first_foot_contact_phase_s": 1.57,
+          "first_foot_contact_x_error_m": -0.06715881824493408,
+          "final_x_error_m": -0.04999193549156189
+        },
+        {
+          "episode": 2,
+          "wheel_spacing_early_m": {
+            "mean": 0.5171350747446257,
+            "min": 0.5159706816898402,
+            "max": 0.5176287997573212
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            2.7136708695128546,
+            2.210024032616927
+          ],
+          "hip_early_p2p_deg_RL": [
+            0.7582378693399214,
+            0.6678576712922054
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            10.390545656966019,
+            10.785990131134486
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            3.1061378080900193,
+            3.0852207806436778
+          ],
+          "late_wheel_speed_rms_rad_s": 1.3609756095769943,
+          "anchor_xyz_rmse_m": 0.06393756219665621,
+          "anchor_x_rmse_m": 0.05933146023977484,
+          "landing_abs_pitch_peak_deg": 7.41174386685795,
+          "first_foot_contact_phase_s": 1.57,
+          "first_foot_contact_x_error_m": -0.06715881824493408,
+          "final_x_error_m": -0.04999193549156189
+        },
+        {
+          "episode": 3,
+          "wheel_spacing_early_m": {
+            "mean": 0.5171350747446257,
+            "min": 0.5159706816898402,
+            "max": 0.5176287997573212
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            2.7136708695128546,
+            2.210024032616927
+          ],
+          "hip_early_p2p_deg_RL": [
+            0.7582378693399214,
+            0.6678576712922054
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            10.390545656966019,
+            10.785990131134486
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            3.1061378080900193,
+            3.0852207806436778
+          ],
+          "late_wheel_speed_rms_rad_s": 1.3609756095769943,
+          "anchor_xyz_rmse_m": 0.06393756219665621,
+          "anchor_x_rmse_m": 0.05933146023977484,
+          "landing_abs_pitch_peak_deg": 7.41174386685795,
+          "first_foot_contact_phase_s": 1.57,
+          "first_foot_contact_x_error_m": -0.06715881824493408,
+          "final_x_error_m": -0.04999193549156189
+        },
+        {
+          "episode": 4,
+          "wheel_spacing_early_m": {
+            "mean": 0.5171350747446257,
+            "min": 0.5159706816898402,
+            "max": 0.5176287997573212
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.0,
+          "hip_full_abs_peak_deg_RL": [
+            2.7136708695128546,
+            2.210024032616927
+          ],
+          "hip_early_p2p_deg_RL": [
+            0.7582378693399214,
+            0.6678576712922054
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            10.390545656966019,
+            10.785990131134486
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            3.1061378080900193,
+            3.0852207806436778
+          ],
+          "late_wheel_speed_rms_rad_s": 1.3609756095769943,
+          "anchor_xyz_rmse_m": 0.06393756219665621,
+          "anchor_x_rmse_m": 0.05933146023977484,
+          "landing_abs_pitch_peak_deg": 7.41174386685795,
+          "first_foot_contact_phase_s": 1.57,
+          "first_foot_contact_x_error_m": -0.06715881824493408,
+          "final_x_error_m": -0.04999193549156189
+        }
+      ],
+      "joint_limits": {
+        "left_hip_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.414959716796875
+        },
+        "right_hip_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.41417195002237955
+        },
+        "left_thigh_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.1876908779144287
+        },
+        "right_thigh_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.179398250579834
+        },
+        "left_shank_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.6612125396728515
+        },
+        "right_shank_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.7186529159545898
+        },
+        "left_foot_joint": {
+          "configured_velocity_rad_s": 10,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 27.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.6664833492702908
+        },
+        "left_wheel_joint": {
+          "configured_velocity_rad_s": 33,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 40.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.05381931066513061
+        },
+        "right_foot_joint": {
+          "configured_velocity_rad_s": 10,
+          "speed_exceedance_samples": 6,
+          "speed_exceedance_duration_s": 0.03,
+          "effort_limit_nm": 27.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.6951586405436198
+        },
+        "right_wheel_joint": {
+          "configured_velocity_rad_s": 33,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 40.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.09270727038383483
+        }
+      },
+      "contact_peaks_n": {
+        "right_foot_link": 1081.2209472656348,
+        "left_foot_link": 928.7692871093834,
+        "right_wheel_link": 469.4168090820355,
+        "left_wheel_link": 543.3128662109424
+      },
+      "summary": {
+        "wheel_spacing_early_mean_m": 0.5171350747446257,
+        "wheel_spacing_early_min_m": 0.5159706816898402,
+        "wheel_spacing_early_max_m": 0.5176287997573212,
+        "outside_old_band_fraction": 0.0,
+        "hip_full_abs_peak_deg_RL": [
+          2.7136708695128546,
+          2.210024032616927
+        ],
+        "hip_target_early_p2p_mean_deg_RL": [
+          10.390545656966019,
+          10.785990131134486
+        ],
+        "hip_target_early_max_step_deg_RL": [
+          3.1061378080900193,
+          3.0852207806436778
+        ],
+        "landing_abs_pitch_peak_deg": 7.41174386685795
+      }
+    },
+    "Nov10/randomized": {
+      "cycles": [
+        {
+          "episode": 0,
+          "wheel_spacing_early_m": {
+            "mean": 0.49792679653224114,
+            "min": 0.4825492651091532,
+            "max": 0.5192249562216883
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.16666666666666666,
+          "hip_full_abs_peak_deg_RL": [
+            6.955413004482119,
+            4.693878459909305
+          ],
+          "hip_early_p2p_deg_RL": [
+            5.5251348934580715,
+            2.458949369783543
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            19.071428797220264,
+            17.766449866189863
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            5.55888221781687,
+            4.055058550800829
+          ],
+          "late_wheel_speed_rms_rad_s": 1.3174169536888432,
+          "anchor_xyz_rmse_m": 0.09121896152205851,
+          "anchor_x_rmse_m": 0.0774912764397387,
+          "landing_abs_pitch_peak_deg": 10.571313553548688,
+          "first_foot_contact_phase_s": 1.6300000000000001,
+          "first_foot_contact_x_error_m": -0.0688633918762207,
+          "final_x_error_m": -0.09414315223693848
+        },
+        {
+          "episode": 1,
+          "wheel_spacing_early_m": {
+            "mean": 0.493353090869375,
+            "min": 0.48880281089769156,
+            "max": 0.49836958842669415
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.7658730158730159,
+          "hip_full_abs_peak_deg_RL": [
+            4.092291192627038,
+            4.761955382253645
+          ],
+          "hip_early_p2p_deg_RL": [
+            4.502172552266796,
+            4.75555616826523
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            8.375710288138073,
+            13.053328202067693
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            2.321001586581529,
+            5.185371188620606
+          ],
+          "late_wheel_speed_rms_rad_s": 1.2260992208943324,
+          "anchor_xyz_rmse_m": 0.13419536009248473,
+          "anchor_x_rmse_m": 0.13030673633806633,
+          "landing_abs_pitch_peak_deg": 10.272172991547356,
+          "first_foot_contact_phase_s": 1.585,
+          "first_foot_contact_x_error_m": -0.16958509013056752,
+          "final_x_error_m": -0.15270748734474182
+        },
+        {
+          "episode": 2,
+          "wheel_spacing_early_m": {
+            "mean": 0.5039134556656116,
+            "min": 0.4946939466181225,
+            "max": 0.5155290454388846
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.08333333333333333,
+          "hip_full_abs_peak_deg_RL": [
+            3.6402586011850158,
+            4.038996080307075
+          ],
+          "hip_early_p2p_deg_RL": [
+            2.6433490427471886,
+            1.8954244680705854
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            17.71272317129172,
+            21.103336223878657
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            4.050461193159175,
+            3.1728130475506253
+          ],
+          "late_wheel_speed_rms_rad_s": 1.1510643345187985,
+          "anchor_xyz_rmse_m": 0.26482035334218945,
+          "anchor_x_rmse_m": 0.24526413373413058,
+          "landing_abs_pitch_peak_deg": 10.273989626668492,
+          "first_foot_contact_phase_s": 1.575,
+          "first_foot_contact_x_error_m": 0.2788669466972351,
+          "final_x_error_m": 0.24296215176582336
+        },
+        {
+          "episode": 3,
+          "wheel_spacing_early_m": {
+            "mean": 0.4846386436278893,
+            "min": 0.43584643795193945,
+            "max": 0.49528219376277455
+          },
+          "wheel_spacing_outside_old_band_fraction": 1.0,
+          "hip_full_abs_peak_deg_RL": [
+            8.276192297496872,
+            5.126085573511719
+          ],
+          "hip_early_p2p_deg_RL": [
+            7.636229185476064,
+            7.682371168744321
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            31.18577119361175,
+            33.28011892900193
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            6.361589527852041,
+            8.511675128685814
+          ],
+          "late_wheel_speed_rms_rad_s": 1.3138854426613327,
+          "anchor_xyz_rmse_m": 0.15463896776091726,
+          "anchor_x_rmse_m": 0.14972109970646286,
+          "landing_abs_pitch_peak_deg": 9.772040689337665,
+          "first_foot_contact_phase_s": 1.595,
+          "first_foot_contact_x_error_m": 0.15950992703437808,
+          "final_x_error_m": 0.15826651453971863
+        },
+        {
+          "episode": 4,
+          "wheel_spacing_early_m": {
+            "mean": 0.5002139393049105,
+            "min": 0.4916040860503426,
+            "max": 0.5040907654891993
+          },
+          "wheel_spacing_outside_old_band_fraction": 0.15873015873015872,
+          "hip_full_abs_peak_deg_RL": [
+            4.0177396778363486,
+            4.571800354439552
+          ],
+          "hip_early_p2p_deg_RL": [
+            3.8416004449930656,
+            3.3700073323563577
+          ],
+          "hip_target_early_p2p_deg_RL": [
+            11.678233110338883,
+            15.270188613713568
+          ],
+          "hip_target_early_max_step_deg_RL": [
+            3.540196329844329,
+            6.029361442659804
+          ],
+          "late_wheel_speed_rms_rad_s": 1.2544682841807542,
+          "anchor_xyz_rmse_m": 0.08410855751982492,
+          "anchor_x_rmse_m": 0.052348291602181136,
+          "landing_abs_pitch_peak_deg": 7.587318112390561,
+          "first_foot_contact_phase_s": 1.56,
+          "first_foot_contact_x_error_m": 0.0380706787109375,
+          "final_x_error_m": 0.04206204414367676
+        }
+      ],
+      "joint_limits": {
+        "left_hip_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.5298644701639811
+        },
+        "right_hip_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.38909454345703126
+        },
+        "left_thigh_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.3439802169799805
+        },
+        "right_thigh_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.43998568852742515
+        },
+        "left_shank_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.8813899993896485
+        },
+        "right_shank_joint": {
+          "configured_velocity_rad_s": 20,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 120.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.7546546300252278
+        },
+        "left_foot_joint": {
+          "configured_velocity_rad_s": 10,
+          "speed_exceedance_samples": 3,
+          "speed_exceedance_duration_s": 0.015,
+          "effort_limit_nm": 27.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.9891819424099393
+        },
+        "left_wheel_joint": {
+          "configured_velocity_rad_s": 33,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 40.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.17413965463638306
+        },
+        "right_foot_joint": {
+          "configured_velocity_rad_s": 10,
+          "speed_exceedance_samples": 2,
+          "speed_exceedance_duration_s": 0.01,
+          "effort_limit_nm": 27.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.6154844495985243
+        },
+        "right_wheel_joint": {
+          "configured_velocity_rad_s": 33,
+          "speed_exceedance_samples": 0,
+          "speed_exceedance_duration_s": 0.0,
+          "effort_limit_nm": 40.0,
+          "effort_at_99pct_samples": 0,
+          "max_effort_fraction": 0.15870423316955568
+        }
+      },
+      "contact_peaks_n": {
+        "right_foot_link": 1256.9699707031364,
+        "left_foot_link": 2051.3059082031436,
+        "right_wheel_link": 927.176208496102,
+        "left_wheel_link": 889.7900390625081
+      },
+      "summary": {
+        "wheel_spacing_early_mean_m": 0.4960091852000056,
+        "wheel_spacing_early_min_m": 0.43584643795193945,
+        "wheel_spacing_early_max_m": 0.5192249562216883,
+        "outside_old_band_fraction": 0.4349206349206349,
+        "hip_full_abs_peak_deg_RL": [
+          8.276192297496872,
+          5.126085573511719
+        ],
+        "hip_target_early_p2p_mean_deg_RL": [
+          17.604773312120138,
+          20.09468436697034
+        ],
+        "hip_target_early_max_step_deg_RL": [
+          6.361589527852041,
+          8.511675128685814
+        ],
+        "landing_abs_pitch_peak_deg": 10.571313553548688
+      }
+    }
+  }
+}

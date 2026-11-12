@@ -1,0 +1,724 @@
+{
+  "version": 1,
+  "methods": {
+    "scope": "height and angle summaries over complete cycles only; 20ms control sampling; joint velocity/acceleration and contact peaks use all 4000 physics samples including tail",
+    "height_reference": "post-step frame min(frame+1,169); fixed landing window 1.45<=phase<=1.90, jump apex window 1.10<=phase<=1.70; whole-cycle maximum can be final standing height and is not jump apex",
+    "shank": "minimum absolute left/right shank angle in 1.10<=phase<=1.70, describing proximity to straight configuration rather than a safety limit",
+    "common_bodies": "verified first nine tracked names identical before comparing subset",
+    "contact": "5ms average simulated contact force; not physical impact or drive torque"
+  },
+  "cases": {
+    "latest/nominal": {
+      "common_body_names": [
+        "base_link",
+        "right_hip_link",
+        "left_hip_link",
+        "right_thigh_link",
+        "left_thigh_link",
+        "right_shank_link",
+        "left_shank_link",
+        "right_foot_link",
+        "left_foot_link"
+      ],
+      "wheel_acceleration_peak_rad_s2": 602.2075805664062,
+      "wheel_acceleration_rms_rad_s2": 41.04085269333708,
+      "wheel_speed_rms_all_rad_s": 2.6984122518484916,
+      "contact_body_names": [
+        "right_foot_link",
+        "left_foot_link",
+        "right_wheel_link",
+        "left_wheel_link"
+      ],
+      "contact_peak_positive_fz_n": [
+        705.2904052734375,
+        884.0379638671875,
+        699.01611328125,
+        748.0489501953125
+      ],
+      "max_contact_crosscheck_error_n": 0.0,
+      "cycles": [
+        {
+          "episode": 0,
+          "jump_apex_m": 0.7010863423347473,
+          "landing_height_rmse_m": 0.014209708700289328,
+          "landing_min_height_m": 0.4744160771369934,
+          "left_shank_min_abs_angle_rad": 0.1937519758939743,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.2246823012828827,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 1,
+          "jump_apex_m": 0.7010863423347473,
+          "landing_height_rmse_m": 0.014209708700289328,
+          "landing_min_height_m": 0.4744160771369934,
+          "left_shank_min_abs_angle_rad": 0.1937519758939743,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.2246823012828827,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 2,
+          "jump_apex_m": 0.7010863423347473,
+          "landing_height_rmse_m": 0.014209708700289328,
+          "landing_min_height_m": 0.4744160771369934,
+          "left_shank_min_abs_angle_rad": 0.1937519758939743,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.2246823012828827,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 3,
+          "jump_apex_m": 0.7010863423347473,
+          "landing_height_rmse_m": 0.014209708700289328,
+          "landing_min_height_m": 0.4744160771369934,
+          "left_shank_min_abs_angle_rad": 0.1937519758939743,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.2246823012828827,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 4,
+          "jump_apex_m": 0.7010863423347473,
+          "landing_height_rmse_m": 0.014209708700289328,
+          "landing_min_height_m": 0.4744160771369934,
+          "left_shank_min_abs_angle_rad": 0.1937519758939743,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.2246823012828827,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        }
+      ],
+      "summary": {
+        "jump_apex_m": {
+          "mean": 0.7010863423347473,
+          "min": 0.7010863423347473,
+          "max": 0.7010863423347473
+        },
+        "landing_height_rmse_m": {
+          "mean": 0.014209708700289328,
+          "min": 0.014209708700289328,
+          "max": 0.014209708700289328
+        },
+        "landing_min_height_m": {
+          "mean": 0.4744160771369934,
+          "min": 0.4744160771369934,
+          "max": 0.4744160771369934
+        },
+        "left_shank_min_abs_angle_rad": {
+          "mean": 0.1937519758939743,
+          "min": 0.1937519758939743,
+          "max": 0.1937519758939743
+        },
+        "left_shank_reference_min_abs_angle_rad": {
+          "mean": 0.6940677165985107,
+          "min": 0.6940677165985107,
+          "max": 0.6940677165985107
+        },
+        "right_shank_min_abs_angle_rad": {
+          "mean": 0.2246823012828827,
+          "min": 0.2246823012828827,
+          "max": 0.2246823012828827
+        },
+        "right_shank_reference_min_abs_angle_rad": {
+          "mean": 0.694057047367096,
+          "min": 0.694057047367096,
+          "max": 0.694057047367096
+        }
+      }
+    },
+    "latest/randomized": {
+      "common_body_names": [
+        "base_link",
+        "right_hip_link",
+        "left_hip_link",
+        "right_thigh_link",
+        "left_thigh_link",
+        "right_shank_link",
+        "left_shank_link",
+        "right_foot_link",
+        "left_foot_link"
+      ],
+      "wheel_acceleration_peak_rad_s2": 1248.6776123046875,
+      "wheel_acceleration_rms_rad_s2": 74.81204784745479,
+      "wheel_speed_rms_all_rad_s": 3.8714691586274665,
+      "contact_body_names": [
+        "right_foot_link",
+        "left_foot_link",
+        "right_wheel_link",
+        "left_wheel_link"
+      ],
+      "contact_peak_positive_fz_n": [
+        1076.1793212890625,
+        1457.043701171875,
+        951.9146118164062,
+        1078.677978515625
+      ],
+      "max_contact_crosscheck_error_n": 0.0,
+      "cycles": [
+        {
+          "episode": 0,
+          "jump_apex_m": 0.7099992632865906,
+          "landing_height_rmse_m": 0.06582039583368728,
+          "landing_min_height_m": 0.5216389298439026,
+          "left_shank_min_abs_angle_rad": 0.18758541345596313,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.14853069186210632,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 1,
+          "jump_apex_m": 0.7186831831932068,
+          "landing_height_rmse_m": 0.04444984213920369,
+          "landing_min_height_m": 0.49197736382484436,
+          "left_shank_min_abs_angle_rad": 0.19200849533081055,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.22999759018421173,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 2,
+          "jump_apex_m": 0.6890583038330078,
+          "landing_height_rmse_m": 0.017010386032125634,
+          "landing_min_height_m": 0.46073976159095764,
+          "left_shank_min_abs_angle_rad": 0.1677892953157425,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.21898597478866577,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 3,
+          "jump_apex_m": 0.6881833076477051,
+          "landing_height_rmse_m": 0.021345052809587664,
+          "landing_min_height_m": 0.4737227261066437,
+          "left_shank_min_abs_angle_rad": 0.26285016536712646,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.3475595712661743,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 4,
+          "jump_apex_m": 0.6771413087844849,
+          "landing_height_rmse_m": 0.05449438206707121,
+          "landing_min_height_m": 0.417761892080307,
+          "left_shank_min_abs_angle_rad": 0.1653118133544922,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.16701239347457886,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        }
+      ],
+      "summary": {
+        "jump_apex_m": {
+          "mean": 0.696613073348999,
+          "min": 0.6771413087844849,
+          "max": 0.7186831831932068
+        },
+        "landing_height_rmse_m": {
+          "mean": 0.040624011776335095,
+          "min": 0.017010386032125634,
+          "max": 0.06582039583368728
+        },
+        "landing_min_height_m": {
+          "mean": 0.47316813468933105,
+          "min": 0.417761892080307,
+          "max": 0.5216389298439026
+        },
+        "left_shank_min_abs_angle_rad": {
+          "mean": 0.19510903656482698,
+          "min": 0.1653118133544922,
+          "max": 0.26285016536712646
+        },
+        "left_shank_reference_min_abs_angle_rad": {
+          "mean": 0.6940677165985107,
+          "min": 0.6940677165985107,
+          "max": 0.6940677165985107
+        },
+        "right_shank_min_abs_angle_rad": {
+          "mean": 0.2224172443151474,
+          "min": 0.14853069186210632,
+          "max": 0.3475595712661743
+        },
+        "right_shank_reference_min_abs_angle_rad": {
+          "mean": 0.694057047367096,
+          "min": 0.694057047367096,
+          "max": 0.694057047367096
+        }
+      }
+    },
+    "Nov10/nominal": {
+      "common_body_names": [
+        "base_link",
+        "right_hip_link",
+        "left_hip_link",
+        "right_thigh_link",
+        "left_thigh_link",
+        "right_shank_link",
+        "left_shank_link",
+        "right_foot_link",
+        "left_foot_link"
+      ],
+      "wheel_acceleration_peak_rad_s2": 727.181640625,
+      "wheel_acceleration_rms_rad_s2": 42.74166122978968,
+      "wheel_speed_rms_all_rad_s": 2.2854374349263895,
+      "contact_body_names": [
+        "right_foot_link",
+        "left_foot_link",
+        "right_wheel_link",
+        "left_wheel_link"
+      ],
+      "contact_peak_positive_fz_n": [
+        1081.220947265625,
+        928.769287109375,
+        469.41680908203125,
+        543.3128662109375
+      ],
+      "max_contact_crosscheck_error_n": 0.0,
+      "cycles": [
+        {
+          "episode": 0,
+          "jump_apex_m": 0.6972522735595703,
+          "landing_height_rmse_m": 0.021619803477766122,
+          "landing_min_height_m": 0.4693089723587036,
+          "left_shank_min_abs_angle_rad": 0.14346128702163696,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.1400386095046997,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 1,
+          "jump_apex_m": 0.6972522735595703,
+          "landing_height_rmse_m": 0.021619803477766122,
+          "landing_min_height_m": 0.4693089723587036,
+          "left_shank_min_abs_angle_rad": 0.14346128702163696,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.1400386095046997,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 2,
+          "jump_apex_m": 0.6972522735595703,
+          "landing_height_rmse_m": 0.021619803477766122,
+          "landing_min_height_m": 0.4693089723587036,
+          "left_shank_min_abs_angle_rad": 0.14346128702163696,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.1400386095046997,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 3,
+          "jump_apex_m": 0.6972522735595703,
+          "landing_height_rmse_m": 0.021619803477766122,
+          "landing_min_height_m": 0.4693089723587036,
+          "left_shank_min_abs_angle_rad": 0.14346128702163696,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.1400386095046997,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 4,
+          "jump_apex_m": 0.6972522735595703,
+          "landing_height_rmse_m": 0.021619803477766122,
+          "landing_min_height_m": 0.4693089723587036,
+          "left_shank_min_abs_angle_rad": 0.14346128702163696,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.1400386095046997,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        }
+      ],
+      "summary": {
+        "jump_apex_m": {
+          "mean": 0.6972522735595703,
+          "min": 0.6972522735595703,
+          "max": 0.6972522735595703
+        },
+        "landing_height_rmse_m": {
+          "mean": 0.021619803477766122,
+          "min": 0.021619803477766122,
+          "max": 0.021619803477766122
+        },
+        "landing_min_height_m": {
+          "mean": 0.4693089723587036,
+          "min": 0.4693089723587036,
+          "max": 0.4693089723587036
+        },
+        "left_shank_min_abs_angle_rad": {
+          "mean": 0.14346128702163696,
+          "min": 0.14346128702163696,
+          "max": 0.14346128702163696
+        },
+        "left_shank_reference_min_abs_angle_rad": {
+          "mean": 0.6940677165985107,
+          "min": 0.6940677165985107,
+          "max": 0.6940677165985107
+        },
+        "right_shank_min_abs_angle_rad": {
+          "mean": 0.1400386095046997,
+          "min": 0.1400386095046997,
+          "max": 0.1400386095046997
+        },
+        "right_shank_reference_min_abs_angle_rad": {
+          "mean": 0.694057047367096,
+          "min": 0.694057047367096,
+          "max": 0.694057047367096
+        }
+      }
+    },
+    "Nov10/randomized": {
+      "common_body_names": [
+        "base_link",
+        "right_hip_link",
+        "left_hip_link",
+        "right_thigh_link",
+        "left_thigh_link",
+        "right_shank_link",
+        "left_shank_link",
+        "right_foot_link",
+        "left_foot_link"
+      ],
+      "wheel_acceleration_peak_rad_s2": 1529.503173828125,
+      "wheel_acceleration_rms_rad_s2": 82.52992400937224,
+      "wheel_speed_rms_all_rad_s": 3.4505893654021036,
+      "contact_body_names": [
+        "right_foot_link",
+        "left_foot_link",
+        "right_wheel_link",
+        "left_wheel_link"
+      ],
+      "contact_peak_positive_fz_n": [
+        1256.969970703125,
+        2051.305908203125,
+        927.1762084960938,
+        889.7900390625
+      ],
+      "max_contact_crosscheck_error_n": 0.0,
+      "cycles": [
+        {
+          "episode": 0,
+          "jump_apex_m": 0.7239193320274353,
+          "landing_height_rmse_m": 0.045693476090000434,
+          "landing_min_height_m": 0.48719364404678345,
+          "left_shank_min_abs_angle_rad": 0.1000322699546814,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.13070787489414215,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 1,
+          "jump_apex_m": 0.7078839540481567,
+          "landing_height_rmse_m": 0.015743702291278232,
+          "landing_min_height_m": 0.46398061513900757,
+          "left_shank_min_abs_angle_rad": 0.15837165713310242,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.18734675645828247,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 2,
+          "jump_apex_m": 0.6774274110794067,
+          "landing_height_rmse_m": 0.027741327554918333,
+          "landing_min_height_m": 0.47199487686157227,
+          "left_shank_min_abs_angle_rad": 0.20556986331939697,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.22687235474586487,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 3,
+          "jump_apex_m": 0.7126671671867371,
+          "landing_height_rmse_m": 0.016055980634954024,
+          "landing_min_height_m": 0.45916858315467834,
+          "left_shank_min_abs_angle_rad": 0.11797632277011871,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.1444961130619049,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 4,
+          "jump_apex_m": 0.6759230494499207,
+          "landing_height_rmse_m": 0.036201109345473596,
+          "landing_min_height_m": 0.46530967950820923,
+          "left_shank_min_abs_angle_rad": 0.22211569547653198,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.20284996926784515,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        }
+      ],
+      "summary": {
+        "jump_apex_m": {
+          "mean": 0.6995641827583313,
+          "min": 0.6759230494499207,
+          "max": 0.7239193320274353
+        },
+        "landing_height_rmse_m": {
+          "mean": 0.028287119183324928,
+          "min": 0.015743702291278232,
+          "max": 0.045693476090000434
+        },
+        "landing_min_height_m": {
+          "mean": 0.46952947974205017,
+          "min": 0.45916858315467834,
+          "max": 0.48719364404678345
+        },
+        "left_shank_min_abs_angle_rad": {
+          "mean": 0.1608131617307663,
+          "min": 0.1000322699546814,
+          "max": 0.22211569547653198
+        },
+        "left_shank_reference_min_abs_angle_rad": {
+          "mean": 0.6940677165985107,
+          "min": 0.6940677165985107,
+          "max": 0.6940677165985107
+        },
+        "right_shank_min_abs_angle_rad": {
+          "mean": 0.17845461368560792,
+          "min": 0.13070787489414215,
+          "max": 0.22687235474586487
+        },
+        "right_shank_reference_min_abs_angle_rad": {
+          "mean": 0.694057047367096,
+          "min": 0.694057047367096,
+          "max": 0.694057047367096
+        }
+      }
+    },
+    "Nov09/nominal": {
+      "common_body_names": [
+        "base_link",
+        "right_hip_link",
+        "left_hip_link",
+        "right_thigh_link",
+        "left_thigh_link",
+        "right_shank_link",
+        "left_shank_link",
+        "right_foot_link",
+        "left_foot_link"
+      ],
+      "wheel_acceleration_peak_rad_s2": 412.5240783691406,
+      "wheel_acceleration_rms_rad_s2": 31.173565064438748,
+      "wheel_speed_rms_all_rad_s": 1.12880619059675,
+      "contact_body_names": [
+        "right_foot_link",
+        "left_foot_link",
+        "right_wheel_link",
+        "left_wheel_link"
+      ],
+      "contact_peak_positive_fz_n": [
+        1025.1314697265625,
+        1719.1917724609375,
+        486.7107849121094,
+        475.8299865722656
+      ],
+      "max_contact_crosscheck_error_n": 0.0,
+      "cycles": [
+        {
+          "episode": 0,
+          "jump_apex_m": 0.7309318780899048,
+          "landing_height_rmse_m": 0.007277206160818567,
+          "landing_min_height_m": 0.46374720335006714,
+          "left_shank_min_abs_angle_rad": 0.013512193225324154,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.04645955190062523,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 1,
+          "jump_apex_m": 0.7309318780899048,
+          "landing_height_rmse_m": 0.007277206160818567,
+          "landing_min_height_m": 0.46374720335006714,
+          "left_shank_min_abs_angle_rad": 0.013512193225324154,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.04645955190062523,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 2,
+          "jump_apex_m": 0.7309318780899048,
+          "landing_height_rmse_m": 0.007277206160818567,
+          "landing_min_height_m": 0.46374720335006714,
+          "left_shank_min_abs_angle_rad": 0.013512193225324154,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.04645955190062523,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 3,
+          "jump_apex_m": 0.7309318780899048,
+          "landing_height_rmse_m": 0.007277206160818567,
+          "landing_min_height_m": 0.46374720335006714,
+          "left_shank_min_abs_angle_rad": 0.013512193225324154,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.04645955190062523,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 4,
+          "jump_apex_m": 0.7309318780899048,
+          "landing_height_rmse_m": 0.007277206160818567,
+          "landing_min_height_m": 0.46374720335006714,
+          "left_shank_min_abs_angle_rad": 0.013512193225324154,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.04645955190062523,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        }
+      ],
+      "summary": {
+        "jump_apex_m": {
+          "mean": 0.7309318780899048,
+          "min": 0.7309318780899048,
+          "max": 0.7309318780899048
+        },
+        "landing_height_rmse_m": {
+          "mean": 0.007277206160818566,
+          "min": 0.007277206160818567,
+          "max": 0.007277206160818567
+        },
+        "landing_min_height_m": {
+          "mean": 0.46374720335006714,
+          "min": 0.46374720335006714,
+          "max": 0.46374720335006714
+        },
+        "left_shank_min_abs_angle_rad": {
+          "mean": 0.013512193225324154,
+          "min": 0.013512193225324154,
+          "max": 0.013512193225324154
+        },
+        "left_shank_reference_min_abs_angle_rad": {
+          "mean": 0.6940677165985107,
+          "min": 0.6940677165985107,
+          "max": 0.6940677165985107
+        },
+        "right_shank_min_abs_angle_rad": {
+          "mean": 0.04645955190062523,
+          "min": 0.04645955190062523,
+          "max": 0.04645955190062523
+        },
+        "right_shank_reference_min_abs_angle_rad": {
+          "mean": 0.694057047367096,
+          "min": 0.694057047367096,
+          "max": 0.694057047367096
+        }
+      }
+    },
+    "Nov09/randomized": {
+      "common_body_names": [
+        "base_link",
+        "right_hip_link",
+        "left_hip_link",
+        "right_thigh_link",
+        "left_thigh_link",
+        "right_shank_link",
+        "left_shank_link",
+        "right_foot_link",
+        "left_foot_link"
+      ],
+      "wheel_acceleration_peak_rad_s2": 1769.55908203125,
+      "wheel_acceleration_rms_rad_s2": 80.74546708177697,
+      "wheel_speed_rms_all_rad_s": 3.002389721138975,
+      "contact_body_names": [
+        "right_foot_link",
+        "left_foot_link",
+        "right_wheel_link",
+        "left_wheel_link"
+      ],
+      "contact_peak_positive_fz_n": [
+        1360.241943359375,
+        1638.3287353515625,
+        914.7341918945312,
+        946.30419921875
+      ],
+      "max_contact_crosscheck_error_n": 0.0,
+      "cycles": [
+        {
+          "episode": 0,
+          "jump_apex_m": 0.7531802654266357,
+          "landing_height_rmse_m": 0.06394154028847822,
+          "landing_min_height_m": 0.48084214329719543,
+          "left_shank_min_abs_angle_rad": 0.035737182945013046,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.001957808155566454,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 1,
+          "jump_apex_m": 0.7633525729179382,
+          "landing_height_rmse_m": 0.058924517949536855,
+          "landing_min_height_m": 0.5031808018684387,
+          "left_shank_min_abs_angle_rad": 0.027344144880771637,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.01581737957894802,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 2,
+          "jump_apex_m": 0.714105486869812,
+          "landing_height_rmse_m": 0.016920311586690696,
+          "landing_min_height_m": 0.45435282588005066,
+          "left_shank_min_abs_angle_rad": 0.028037378564476967,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.14358824491500854,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 3,
+          "jump_apex_m": 0.7138220071792603,
+          "landing_height_rmse_m": 0.007912120103070883,
+          "landing_min_height_m": 0.4669601321220398,
+          "left_shank_min_abs_angle_rad": 0.17991815507411957,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.17557571828365326,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        },
+        {
+          "episode": 4,
+          "jump_apex_m": 0.726720929145813,
+          "landing_height_rmse_m": 0.017895065848711953,
+          "landing_min_height_m": 0.45090362429618835,
+          "left_shank_min_abs_angle_rad": 0.046952709555625916,
+          "left_shank_reference_min_abs_angle_rad": 0.6940677165985107,
+          "right_shank_min_abs_angle_rad": 0.0024888478219509125,
+          "right_shank_reference_min_abs_angle_rad": 0.694057047367096
+        }
+      ],
+      "summary": {
+        "jump_apex_m": {
+          "mean": 0.7342362523078918,
+          "min": 0.7138220071792603,
+          "max": 0.7633525729179382
+        },
+        "landing_height_rmse_m": {
+          "mean": 0.03311871115529772,
+          "min": 0.007912120103070883,
+          "max": 0.06394154028847822
+        },
+        "landing_min_height_m": {
+          "mean": 0.4712479054927826,
+          "min": 0.45090362429618835,
+          "max": 0.5031808018684387
+        },
+        "left_shank_min_abs_angle_rad": {
+          "mean": 0.06359791420400143,
+          "min": 0.027344144880771637,
+          "max": 0.17991815507411957
+        },
+        "left_shank_reference_min_abs_angle_rad": {
+          "mean": 0.6940677165985107,
+          "min": 0.6940677165985107,
+          "max": 0.6940677165985107
+        },
+        "right_shank_min_abs_angle_rad": {
+          "mean": 0.06788559975102544,
+          "min": 0.001957808155566454,
+          "max": 0.17557571828365326
+        },
+        "right_shank_reference_min_abs_angle_rad": {
+          "mean": 0.694057047367096,
+          "min": 0.694057047367096,
+          "max": 0.694057047367096
+        }
+      }
+    }
+  },
+  "reference": {
+    "jump_apex_m": 0.713509202003479,
+    "landing_min_height_m": 0.4732118248939514
+  }
+}

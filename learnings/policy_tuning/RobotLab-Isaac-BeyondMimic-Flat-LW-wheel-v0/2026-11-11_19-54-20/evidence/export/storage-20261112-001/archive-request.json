@@ -1,0 +1,753 @@
+{
+  "version": 2,
+  "archive_authorized": true,
+  "storage_root": "/home/server/liufengrong/policy_storage",
+  "collection": "LW/wheel_to_leg",
+  "task": "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+  "algorithm": "PPO",
+  "runner": "OnPolicyRunner",
+  "selected_checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-11_19-54-20/model_49999.pt",
+    "sha256": "078d1aac4c78970d392517395761a2ddf195265f5d29086fff7bd4f7b48d2906",
+    "iteration": 49999
+  },
+  "artifacts": {
+    "jit": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/export/storage-20261112-001/policy.pt",
+      "sha256": "6a0a16b3541fa460061485097ac4a9d17559d2451cdd4fd81b19777225ccf9fe"
+    },
+    "onnx": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/export/storage-20261112-001/policy.onnx",
+      "sha256": "b51a9fb89569c5beeb6dce3d393cd00e7e707116795cd0a9cc145571f43b6583"
+    }
+  },
+  "source": {
+    "commit": "ff2ade8bb00a4d0900172329113b4fbddd1f5e7d",
+    "dirty": true
+  },
+  "parameters": {
+    "policy_interface": {
+      "actor_obs_normalization": false,
+      "dtype": "float32",
+      "history_length": 10,
+      "input_name": "obs",
+      "input_shape": [
+        1,
+        590
+      ],
+      "layout": "term-major; within each term 10 frames oldest to newest",
+      "output_name": "actions",
+      "output_shape": [
+        1,
+        10
+      ],
+      "reset": "Environment clears history; first observation fills all history slots; previous action resets to zero. Network stateless.",
+      "terms": [
+        {
+          "frame_width": 20,
+          "history_width": 200,
+          "name": "command"
+        },
+        {
+          "frame_width": 6,
+          "history_width": 60,
+          "name": "motion_anchor_ori_b"
+        },
+        {
+          "frame_width": 3,
+          "history_width": 30,
+          "name": "base_ang_vel"
+        },
+        {
+          "frame_width": 10,
+          "history_width": 100,
+          "name": "joint_pos"
+        },
+        {
+          "frame_width": 10,
+          "history_width": 100,
+          "name": "joint_vel"
+        },
+        {
+          "frame_width": 10,
+          "history_width": 100,
+          "name": "actions"
+        }
+      ]
+    },
+    "action_interface": {
+      "default_joint_positions": {
+        "left_foot_joint": "0.0",
+        "left_hip_joint": "0.0",
+        "left_shank_joint": "0.1745",
+        "left_thigh_joint": "-0.733",
+        "left_wheel_joint": "0.0",
+        "right_foot_joint": "0.0",
+        "right_hip_joint": "0.0",
+        "right_shank_joint": "-0.1745",
+        "right_thigh_joint": "0.733",
+        "right_wheel_joint": "0.0"
+      },
+      "joint_order": [
+        "right_hip_joint",
+        "left_hip_joint",
+        "right_thigh_joint",
+        "left_thigh_joint",
+        "right_shank_joint",
+        "left_shank_joint",
+        "right_foot_joint",
+        "left_foot_joint",
+        "right_wheel_joint",
+        "left_wheel_joint"
+      ],
+      "position_joint_names": [
+        "right_hip_joint",
+        "left_hip_joint",
+        "right_thigh_joint",
+        "left_thigh_joint",
+        "right_shank_joint",
+        "left_shank_joint",
+        "right_foot_joint",
+        "left_foot_joint"
+      ],
+      "position_scale": 0.25,
+      "use_default_offset": true,
+      "wheel_velocity_joint_names": [
+        "right_wheel_joint",
+        "left_wheel_joint"
+      ],
+      "wheel_velocity_scale": 1.0,
+      "processed_target_clip": [
+        -100,
+        100
+      ],
+      "raw_action_clip": null
+    },
+    "training_start_local": "2026-11-11 19:54:20 Asia/Shanghai",
+    "training_num_envs": 4096,
+    "num_envs": 4096,
+    "num_steps_per_env": 24,
+    "max_iterations": 50000,
+    "seed": 42,
+    "control_dt_seconds": 0.02,
+    "physics_dt_seconds": 0.005,
+    "decimation": 4,
+    "motion_reference": {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz",
+      "sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+    },
+    "motion_fps": 50,
+    "motion_frames": 170,
+    "reference_conversion_manifest": {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/conversion_manifest.json",
+      "sha256": "1bad5b8e64a06d9f80d1082378291382e74be175358354749e9a606432183fc2"
+    },
+    "effective_config": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/provenance/config-0d1eb6af4e96f8535d40767e5e9b94ee17c530e6a2324e3d9d11b9eafd54ba69.json",
+      "sha256": "0d1eb6af4e96f8535d40767e5e9b94ee17c530e6a2324e3d9d11b9eafd54ba69",
+      "fingerprints": {
+        "agent": "f012563e684bd734544f045649feb9b011a1b70c5ae65ce868de71015f221b7e",
+        "effective_config": "cafbe7b14d3f5815f9a9b614db09fd0bc6f067abc02556d348da2fe4b4096a07",
+        "environment": "f4d2d0c66b99b483a377956773e6579f1bd9257bb84963f918d23182ddcb1400",
+        "reward": "faefb31e3e8068257f76f3655cc2a13e304b5b734939b8febe5d8fcd628d771b"
+      }
+    },
+    "saved_env": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-11_19-54-20/params/env.yaml",
+      "sha256": "4bf7017873da26fd6aae7b88ea33b779ae2c689e88ffe14230fb9d3204062ac7"
+    },
+    "saved_agent": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-11_19-54-20/params/agent.yaml",
+      "sha256": "072673d2cbf1944e9a0d5b48b6f574b55cbfa6706cd456bc9fd6afc06e11b6ad"
+    },
+    "training_command": {
+      "command": [
+        "python",
+        "scripts/reinforcement_learning/rsl_rl/train.py",
+        "--task=RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+        "--log_project_name=LW_wheel_beyondmimic",
+        "--logger=wandb",
+        "--num_envs=4096",
+        "--headless"
+      ],
+      "hydra_overrides": []
+    },
+    "training_source_provenance": {
+      "training_head": "bca81448975fba069befc8cf6f33bb0a497e0307",
+      "training_clean": false,
+      "training_git_record": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-11_19-54-20/git/robot_lab.diff",
+        "sha256": "44e4acbd5ffe748df6129e8be8c6c5c407bbc2e8a02ff625ec803c4fe2b3eba1"
+      },
+      "training_origin": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/training/training-origin-20261112-001.json",
+        "sha256": "b1464b2c960a310f5dde84c06afa784b7cb4e34b04d150446c365e691505cf9c"
+      },
+      "evaluation_export_context_head": "ff2ade8bb00a4d0900172329113b4fbddd1f5e7d",
+      "note": "Archive source.commit binds the freshly captured and validated equivalent-source evaluation/export context; original training HEAD and uncommitted patch are recorded separately here."
+    },
+    "symmetry": {
+      "use_data_augmentation": true,
+      "use_mirror_loss": true,
+      "mirror_loss_coeff": 0.1
+    },
+    "training_reward_weights": {
+      "action_rate_l2": -0.2,
+      "action_smoothness": -0.075,
+      "feet_distance_penalize": -0.0,
+      "hip_pos_zero_l2": -1.0,
+      "joint_acc_wheel_l2": -0.1,
+      "joint_limit": -10.0,
+      "joint_power": 0.0,
+      "joint_symmetry": -0.5,
+      "joint_torques_l2": 0.0,
+      "joint_vel_wheel_l2": -0.5,
+      "leg_symmetry": 0.0,
+      "motion_anchor_roll_horizontal": 0.5,
+      "motion_body_ang_vel": 1.0,
+      "motion_body_lin_vel": 1.0,
+      "motion_body_ori": 1.0,
+      "motion_body_pos": 1.0,
+      "motion_flight_height": 0.0,
+      "motion_global_anchor_ori": 0.5,
+      "motion_global_anchor_pos": 0.5,
+      "motion_takeoff_anchor_ori": 0.5,
+      "motion_takeoff_pitch_ang_vel": -0.03,
+      "same_foot_x_position": -10.0,
+      "torque_limit": -0.0,
+      "undesired_contacts": -0.1,
+      "wheel_contact_continuous": 0.5
+    },
+    "training_reward_parameters": {
+      "global_anchor_position_std": 0.3,
+      "wheel_velocity_start_s": 1.65,
+      "wheel_velocity_ramp_s": 0.1,
+      "wheel_acceleration_start_s": 1.65,
+      "wheel_acceleration_ramp_s": 0.2
+    },
+    "tracked_bodies": [
+      "base_link",
+      "right_hip_link",
+      "left_hip_link",
+      "right_thigh_link",
+      "left_thigh_link",
+      "right_shank_link",
+      "left_shank_link",
+      "right_foot_link",
+      "left_foot_link"
+    ],
+    "export_command": {
+      "argv": [
+        "/home/server/miniconda3/envs/isaacsim-5.1/bin/python",
+        "-B",
+        ".agents/skills/monitor-tune-isaaclab-training/scripts/rsl_rl_export_policy.py",
+        "--task",
+        "RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0",
+        "--run_id",
+        "2026-11-11_19-54-20",
+        "--export_run_id",
+        "storage-20261112-001",
+        "--checkpoint_id",
+        "model_49999",
+        "--checkpoint",
+        "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_wheel_beyongdmimic/2026-11-11_19-54-20/model_49999.pt",
+        "--checkpoint_sha256",
+        "078d1aac4c78970d392517395761a2ddf195265f5d29086fff7bd4f7b48d2906",
+        "--selection_receipt_path",
+        "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/checkpoint_selection/selection-storage-20261112-001.json",
+        "--selection_receipt_sha256",
+        "02774afc53803a38600b5e884ab448415137b35471e7f10d339f8aad9354901d",
+        "--jit_path",
+        "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/export/storage-20261112-001/policy.pt",
+        "--onnx_path",
+        "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/export/storage-20261112-001/policy.onnx",
+        "--result_path",
+        "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/export/storage-20261112-001/receipt.json",
+        "--history_contract",
+        "current_observation",
+        "--normalization_contract",
+        "backend_export_helper",
+        "--reset_contract",
+        "stateless_environment_reset",
+        "--onnx_export_profile",
+        "static_batch_1_simplified",
+        "--parity_steps",
+        "8",
+        "--reset_step",
+        "4",
+        "--minimum_parity_samples",
+        "8",
+        "--max_abs_action_error",
+        "1e-5",
+        "--num_envs",
+        "1",
+        "--seed",
+        "42",
+        "--device",
+        "cuda:0",
+        "--headless",
+        "--require_idle_gpu",
+        "--kit_args=--/app/settings/persistent=false"
+      ],
+      "timeout_seconds": 600,
+      "export_checkout_head": "ff2ade8bb00a4d0900172329113b4fbddd1f5e7d",
+      "runtime_overrides": [],
+      "runtime_audit": "Current config bytes match evaluated and preserved training worktree; original training HEAD bca8144 recorded separately; saved590/10 interface,term-major history10 matches runtime."
+    },
+    "export_parity": {
+      "boundaries": [
+        {
+          "input_shape": [
+            1,
+            590
+          ],
+          "label": "initial",
+          "native_output_sha256": "1e5787a16696e1bd2026de596a024f891bc1ff27136892fb2aa0c93cb273a0aa",
+          "observation_sha256": "b24df06fadc1315ba12494351f40441aa82ef3b98ad4b2a557c49c4e4a80973d",
+          "output_shape": [
+            1,
+            10
+          ],
+          "step": 0
+        },
+        {
+          "input_shape": [
+            1,
+            590
+          ],
+          "label": "pre_reset",
+          "native_output_sha256": "1da397df7837622f06231db89ba66aa7ee7a518d6fee01f30c8df943ce4e55f7",
+          "observation_sha256": "45eca08b3fd1f453be3e78f1f513cdc4100203e8e598561cd9707aee1fbccf0f",
+          "output_shape": [
+            1,
+            10
+          ],
+          "step": 3
+        },
+        {
+          "input_shape": [
+            1,
+            590
+          ],
+          "label": "post_reset",
+          "native_output_sha256": "63b70a70ab4d61b4c94ef6a169954e765a208f0e587628e9b2202428c8313930",
+          "observation_sha256": "ad473d7f834c24dfe8f6fb0552002ab4e449a708549e0e4c598369915c3913ee",
+          "output_shape": [
+            1,
+            10
+          ],
+          "step": 4
+        },
+        {
+          "input_shape": [
+            1,
+            590
+          ],
+          "label": "final",
+          "native_output_sha256": "d9168a282e9b26e3fc8c4b3d8bb2008967c2065c18111408d3e2792aa015d693",
+          "observation_sha256": "0ca8b61537f24a41d18e8a4ade371e09a13de7f20a797963974767e8fe96db5e",
+          "output_shape": [
+            1,
+            10
+          ],
+          "step": 7
+        }
+      ],
+      "history_contract": "current_observation",
+      "jit": {
+        "finite": true,
+        "input_shape": [
+          8,
+          590
+        ],
+        "max_abs_action_error": 0.0,
+        "output_shape": [
+          8,
+          10
+        ]
+      },
+      "native_device_to_cpu_max_abs_action_error": 3.814697265625e-06,
+      "native_output_sha256": "67d1e0aeb5aaa3bff8269e510207e46495d6f43c7bac7da0a76437126f58ecc9",
+      "normalization_contract": "backend_export_helper",
+      "observation_batch_sha256": "5042c9aef355eba0d4b21a686527cd25907d809ddcebafe0ca5db026855d4abf",
+      "onnx": {
+        "finite": true,
+        "input_shape": [
+          8,
+          590
+        ],
+        "max_abs_action_error": 1.9073486328125e-06,
+        "output_shape": [
+          8,
+          10
+        ]
+      },
+      "sample_count": 8
+    },
+    "analysis_artifact_equivalence": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/export/storage-20261112-001/analysis-artifact-equivalence.json",
+      "sha256": "eb78484722ee709ef68383802a1023511da76465b9701e0276be2a690f2f8e83"
+    },
+    "evaluation_report": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evaluations/wheel-to-leg-no-leg-spacing-20261112-001/report.md",
+      "sha256": "83d979793f5a77deece6797cd6dddb5fd20d07bc6217be77dee359ca38cce8ee"
+    },
+    "sensitivity_evidence": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/feedback/hip-sensitivity-20261112-001/manifest.json",
+        "sha256": "0c231c867dca52c1bca9de20c4690285b15a86becafaba29e878d528e05c8744"
+      }
+    ],
+    "sensitivity_report": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/feedback/hip-sensitivity-20261112-001/report.md",
+      "sha256": "3ea3ccecf2f969ac5c44ba30b4f440a3daae42c2cfbb0e5c7eeec16bc0b307a1"
+    },
+    "observed_joint_loads_all_physics_samples": {
+      "nominal": {
+        "left_hip_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "left_hip_joint",
+          "speed_peak_rad_s": 1.2665947675704956,
+          "speed_signed_rad_s": 1.2665947675704956,
+          "speed_peak_phase_s": 1.3900000000000001,
+          "speed_episode": 0,
+          "torque_peak_nm": 38.838260650634766,
+          "torque_peak_phase_s": 1.2349999999999999,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 137.98345947265625,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_hip_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "right_hip_joint",
+          "speed_peak_rad_s": 1.2462975978851318,
+          "speed_signed_rad_s": -1.2462975978851318,
+          "speed_peak_phase_s": 1.3900000000000001,
+          "speed_episode": 0,
+          "torque_peak_nm": 38.1281852722168,
+          "torque_peak_phase_s": 1.2249999999999999,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 213.62644958496094,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "left_thigh_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "left_thigh_joint",
+          "speed_peak_rad_s": 13.689437866210938,
+          "speed_signed_rad_s": 13.689437866210938,
+          "speed_peak_phase_s": 1.345,
+          "speed_episode": 0,
+          "torque_peak_nm": 34.84526062011719,
+          "torque_peak_phase_s": 1.285,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 699.4961547851562,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_thigh_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "right_thigh_joint",
+          "speed_peak_rad_s": 13.419848442077637,
+          "speed_signed_rad_s": -13.419848442077637,
+          "speed_peak_phase_s": 1.34,
+          "speed_episode": 0,
+          "torque_peak_nm": 26.732547760009766,
+          "torque_peak_phase_s": 1.305,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 416.08477783203125,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "left_shank_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "left_shank_joint",
+          "speed_peak_rad_s": 15.347856521606445,
+          "speed_signed_rad_s": -15.347856521606445,
+          "speed_peak_phase_s": 1.34,
+          "speed_episode": 0,
+          "torque_peak_nm": 79.87940979003906,
+          "torque_peak_phase_s": 1.305,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 767.6036987304688,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_shank_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "right_shank_joint",
+          "speed_peak_rad_s": 14.803022384643555,
+          "speed_signed_rad_s": 14.803022384643555,
+          "speed_peak_phase_s": 1.34,
+          "speed_episode": 0,
+          "torque_peak_nm": 87.97489929199219,
+          "torque_peak_phase_s": 1.305,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 671.026611328125,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "left_foot_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "left_foot_joint",
+          "speed_peak_rad_s": 8.08598518371582,
+          "speed_signed_rad_s": 8.08598518371582,
+          "speed_peak_phase_s": 1.61,
+          "speed_episode": 0,
+          "torque_peak_nm": 17.031673431396484,
+          "torque_peak_phase_s": 1.62,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 2368.8115234375,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "left_wheel_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "left_wheel_joint",
+          "speed_peak_rad_s": 11.39828872680664,
+          "speed_signed_rad_s": -11.39828872680664,
+          "speed_peak_phase_s": 1.33,
+          "speed_episode": 0,
+          "torque_peak_nm": 2.7010271549224854,
+          "torque_peak_phase_s": 0.545,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 602.2075805664062,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_foot_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "right_foot_joint",
+          "speed_peak_rad_s": 8.420940399169922,
+          "speed_signed_rad_s": -8.420940399169922,
+          "speed_peak_phase_s": 1.615,
+          "speed_episode": 0,
+          "torque_peak_nm": 16.583087921142578,
+          "torque_peak_phase_s": 1.62,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 2141.628173828125,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_wheel_joint": {
+          "policy": "latest",
+          "case": "nominal",
+          "scope": "all_observed",
+          "joint": "right_wheel_joint",
+          "speed_peak_rad_s": 11.305871963500977,
+          "speed_signed_rad_s": 11.305871963500977,
+          "speed_peak_phase_s": 1.33,
+          "speed_episode": 0,
+          "torque_peak_nm": 3.3600878715515137,
+          "torque_peak_phase_s": 1.125,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 443.6750793457031,
+          "torque_at_99pct_limit_fraction": 0.0
+        }
+      },
+      "randomized": {
+        "left_hip_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "left_hip_joint",
+          "speed_peak_rad_s": 2.54472017288208,
+          "speed_signed_rad_s": 2.54472017288208,
+          "speed_peak_phase_s": 1.3800000000000001,
+          "speed_episode": 1,
+          "torque_peak_nm": 41.161617279052734,
+          "torque_peak_phase_s": 1.265,
+          "torque_episode": 2,
+          "acceleration_peak_rad_s2": 622.266357421875,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_hip_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "right_hip_joint",
+          "speed_peak_rad_s": 3.191053628921509,
+          "speed_signed_rad_s": -3.191053628921509,
+          "speed_peak_phase_s": 1.6700000000000002,
+          "speed_episode": 0,
+          "torque_peak_nm": 31.232589721679688,
+          "torque_peak_phase_s": 0.9400000000000001,
+          "torque_episode": 4,
+          "acceleration_peak_rad_s2": 481.0135498046875,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "left_thigh_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "left_thigh_joint",
+          "speed_peak_rad_s": 13.992233276367188,
+          "speed_signed_rad_s": 13.992233276367188,
+          "speed_peak_phase_s": 1.32,
+          "speed_episode": 2,
+          "torque_peak_nm": 38.491214752197266,
+          "torque_peak_phase_s": 0.06999999999999999,
+          "torque_episode": 2,
+          "acceleration_peak_rad_s2": 936.2473754882812,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_thigh_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "right_thigh_joint",
+          "speed_peak_rad_s": 15.102276802062988,
+          "speed_signed_rad_s": -15.102276802062988,
+          "speed_peak_phase_s": 1.3800000000000001,
+          "speed_episode": 0,
+          "torque_peak_nm": 47.560272216796875,
+          "torque_peak_phase_s": 1.71,
+          "torque_episode": 3,
+          "acceleration_peak_rad_s2": 684.07861328125,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "left_shank_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "left_shank_joint",
+          "speed_peak_rad_s": 16.76051902770996,
+          "speed_signed_rad_s": -16.76051902770996,
+          "speed_peak_phase_s": 1.375,
+          "speed_episode": 0,
+          "torque_peak_nm": 112.62010192871094,
+          "torque_peak_phase_s": 1.35,
+          "torque_episode": 3,
+          "acceleration_peak_rad_s2": 1436.119140625,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_shank_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "right_shank_joint",
+          "speed_peak_rad_s": 17.6291446685791,
+          "speed_signed_rad_s": 17.6291446685791,
+          "speed_peak_phase_s": 1.3800000000000001,
+          "speed_episode": 0,
+          "torque_peak_nm": 90.49736022949219,
+          "torque_peak_phase_s": 1.4200000000000002,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 1014.9520874023438,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "left_foot_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "left_foot_joint",
+          "speed_peak_rad_s": 9.354936599731445,
+          "speed_signed_rad_s": 9.354936599731445,
+          "speed_peak_phase_s": 1.615,
+          "speed_episode": 1,
+          "torque_peak_nm": 21.251127243041992,
+          "torque_peak_phase_s": 1.6500000000000001,
+          "torque_episode": 3,
+          "acceleration_peak_rad_s2": 2991.26806640625,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "left_wheel_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "left_wheel_joint",
+          "speed_peak_rad_s": 15.316289901733398,
+          "speed_signed_rad_s": -15.316289901733398,
+          "speed_peak_phase_s": 1.34,
+          "speed_episode": 0,
+          "torque_peak_nm": 6.855218887329102,
+          "torque_peak_phase_s": 0.19999999999999998,
+          "torque_episode": 0,
+          "acceleration_peak_rad_s2": 1248.6776123046875,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_foot_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "right_foot_joint",
+          "speed_peak_rad_s": 10.245529174804688,
+          "speed_signed_rad_s": -10.245529174804688,
+          "speed_peak_phase_s": 1.585,
+          "speed_episode": 2,
+          "torque_peak_nm": 20.639053344726562,
+          "torque_peak_phase_s": 1.6500000000000001,
+          "torque_episode": 3,
+          "acceleration_peak_rad_s2": 2719.7724609375,
+          "torque_at_99pct_limit_fraction": 0.0
+        },
+        "right_wheel_joint": {
+          "policy": "latest",
+          "case": "randomized",
+          "scope": "all_observed",
+          "joint": "right_wheel_joint",
+          "speed_peak_rad_s": 13.21199893951416,
+          "speed_signed_rad_s": 13.21199893951416,
+          "speed_peak_phase_s": 1.35,
+          "speed_episode": 0,
+          "torque_peak_nm": 6.289209842681885,
+          "torque_peak_phase_s": 0.78,
+          "torque_episode": 2,
+          "acceleration_peak_rad_s2": 1112.638427734375,
+          "torque_at_99pct_limit_fraction": 0.0
+        }
+      }
+    }
+  },
+  "evaluation": {
+    "results": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evaluations/wheel-to-leg-no-leg-spacing-20261112-001/raw/fixed-start-nominal-a01/result.json",
+        "sha256": "9d1b9ce811305063037edec74d8c0e9622d5e5c9e9cdae3dde17a25db898b416"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evaluations/wheel-to-leg-no-leg-spacing-20261112-001/raw/fixed-start-randomized-a01/result.json",
+        "sha256": "7fca4262a97e4a18363d4d70c33560c3d8b11d46fffd6cf1c3f97ed61e9d6223"
+      }
+    ]
+  },
+  "export_receipt": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0/2026-11-11_19-54-20/evidence/export/storage-20261112-001/receipt.json",
+    "sha256": "d8cbb00324910dcba528ee0f50c8c0d38f8294a255b4116d16c88a04fd379f04"
+  },
+  "reference_csv": {
+    "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_60hz.csv",
+    "sha256": "791632a4bbd9d19da77fed85b0d291e65a992f941cf7a8484f15e2bb9519df1c",
+    "fps": 60,
+    "frames": 204,
+    "columns": 17,
+    "quaternion_order": "xyzw",
+    "joint_names": [
+      "right_hip_joint",
+      "left_hip_joint",
+      "right_thigh_joint",
+      "left_thigh_joint",
+      "right_shank_joint",
+      "left_shank_joint",
+      "right_foot_joint",
+      "left_foot_joint",
+      "right_wheel_joint",
+      "left_wheel_joint"
+    ],
+    "generated_npz": {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/motion_beyondmimic/se3_trajopt/wheel_to_leg/2026-10-23/wheel_to_leg_transform_50hz.npz",
+      "sha256": "8ffd6f093bdeacf2f8aec5fa0ccf0c660a51d0fdc6e073ecc7bc0ffe6fa5da03"
+    }
+  },
+  "description_notes": "归档本机server策略2026-11-11_19-54-20/model_49999.pt；checkpoint SHA-256=078d1aac4c78970d392517395761a2ddf195265f5d29086fff7bd4f7b48d2906，PPO/OnPolicyRunner，4096环境、seed42、50000迭代。不是youngHit的19-51-59策略。\n原始训练HEAD bca8144，训练时含flat_env_cfg.py本地修改；本次评估/导出源码上下文HEAD ff2ade8，相关源码内容与保存训练版本等价，差异及原始训练Git记录单独保留。archive source.commit为校验绑定的评估/导出上下文，不把它伪称原始训练提交。\n数据增强和镜像损失开启，mirror_loss_coeff=0.1；leg_symmetry=0、feet_distance_penalize=0，joint_symmetry=-0.5仍开启。hip_pos_zero_l2=-1、wheel_contact_continuous=0.5；独立高度奖励0，全局XYZ位置weight0.5/std0.30。落地后轮速度-0.5/轮加速度-0.1，参考相位1.65s开始，ramp0.10/0.20s；非接触事件门控。\n部署输入float32 obs[1,590]、输出actions[1,10]。观测term-major：command200、motion_anchor_ori_b60、base_ang_vel30、joint_pos100、joint_vel100、actions100，各项内部10帧从旧到新；不能将10个完整59维帧直接串接。actor归一化关闭；网络无内部状态，消费端负责历史重置、首观测填满、上一动作归零。joint_pos按default offset相减并屏蔽两轮位置。控制20ms、物理5ms。\n动作顺序右髋、左髋、右大腿、左大腿、右小腿、左小腿、右足、左足、右轮、左轮；前8维位置偏移scale0.25、后2维轮速度scale1。原始action无裁剪，缩放/default offset后的目标裁剪[-100,100]；不能把训练的历史布局或目标裁剪解释成另一套部署规则。标称PD腿90/3、足28/1.4、轮0/0.5；实际部署需核对同一契约。\n复用标称/随机化各1环境、1000控制步、seed42的Native评估；两场各5完整动作成功、0失败、1截断尾段。完整记录每场1000控制样本和4000个5ms物理样本。单seed和重复标称轨迹不能支持普遍成功率。\n相对本机11月10日策略，标称anchor位置RMSE6.408→2.958cm，随机18.638→17.142cm。落地后[2.0,3.4]s轮速RMS标称1.361→0.158rad/s，随机1.253→0.202rad/s。标称跟踪和落地后轮速改善不等于整体更好；全程轮速RMS反而增大。\n已知退步：随机起跳前轮心XY平均距离49.601→47.050cm，最窄40.638cm；原[49.6,53.6]cm区间外样本98.49%。完整周期随机右/左髋最大偏角11.239/11.061度。随机落地高度RMSE2.829→4.062cm，落地俯仰峰值10.571→13.372度。不能仅凭5/5周期成功判定可替代旧版。\n物理步关节峰值包含截断尾段：随机右足10.246rad/s，仅1个5ms样本略高于10rad/s配置参考值；左小腿112.620Nm/120Nm=93.85%。所有关节无>=99%力矩上限样本。完整10关节标称/随机速度、力矩峰值已列于parameters.observed_joint_loads_all_physics_samples。仿真载荷不等于实物保证。\n同一实机状态历史下的离线敏感度：相对确认实际部署的youngHit11月10日模型，本次最新帧双髋位置/速度/上一目标角敏感度分别下降43.4%/50.3%/23.2%，10Hz速度响应下降54.1%；7–13Hz预测目标功率右/左下降57.2%/57.5%。但相比youngHit11月11日对照，右/左目标功率高46.5%/69.8%。该分析固定记录状态和上一目标，不是新策略实机闭环；旧模型重构RMSE约5.09/4.59度，不能认为实机抖动已解决。\n本次正式导出一致性校验1环境8步、step4重置，含initial/pre_reset/post_reset/final：JIT误差0、ONNX1.90735e-6、设备到CPU3.81470e-6，均低于1e-5。正式导出模型与敏感度分析原模型在45组输入上输出完全一致，全部actor权重与checkpoint一致。\n原始60Hz CSV204帧17列（baseXYZ、quatXYZW、声明关节顺序）按原文件名及字节归档。训练NPZ50Hz170帧仅记录路径及哈希，不拷贝NPZ、不重建或重采样CSV。\n仅可进入受监督实物测试；未经实物验证，不代表 hardware-ready。"
+}
