@@ -161,7 +161,7 @@ class JointReferenceSymmetryTests(unittest.TestCase):
             torch.testing.assert_close(current, original)
         self.assertEqual(vars(cfg), config_before)
 
-    def test_registered_joint_symmetry_has_valid_zero_weight_config_for_both_lw_tasks(self):
+    def test_registered_joint_symmetry_is_enabled_for_both_lw_tasks(self):
         path = TASK / "tracking_env_cfg.py"
         tree = ast.parse(path.read_text())
         rewards = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "RewardsCfg")
@@ -189,7 +189,7 @@ class JointReferenceSymmetryTests(unittest.TestCase):
                 })
                 term = cfg.rewards.joint_symmetry
                 self.assertIs(term.func, REWARD)
-                self.assertEqual(term.weight, 0.0)
+                self.assertEqual(term.weight, -0.5)
                 self.assertEqual(set(term.params), {"command_name", "asset_cfg", "joint_scales"})
                 self.assertEqual(term.params["asset_cfg"].joint_names, ORDERED_NAMES)
                 self.assertTrue(term.params["asset_cfg"].preserve_order)
