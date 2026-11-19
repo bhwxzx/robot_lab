@@ -8,7 +8,7 @@ from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 
 from robot_lab.assets.LW import LW_LEG_CFG  
-from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import RewardsCfg, TrackingEnvCfg
+from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import LWTerminationsCfg, RewardsCfg, TrackingEnvCfg
 import robot_lab.tasks.manager_based.beyondmimic.mdp as mdp
 from robot_lab.tasks.manager_based.locomotion.velocity.mdp.noise import UniformJointPositionNoiseCfg
 
@@ -67,6 +67,7 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
 
     actions: LWActionsCfg = LWActionsCfg()
     rewards: LWLegRewardsCfg = LWLegRewardsCfg()
+    terminations: LWTerminationsCfg = LWTerminationsCfg()
 
     base_link_name = "base_link"
     foot_link_name = ".*_foot_link"
@@ -90,6 +91,7 @@ class LWLegBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         super().__post_init__()
         # scene
         self.scene.robot = LW_LEG_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.contact_forces.history_length = self.decimation
         # observations
         self.observations.policy.history_length = 10
         self.observations.policy.flatten_history_dim = True

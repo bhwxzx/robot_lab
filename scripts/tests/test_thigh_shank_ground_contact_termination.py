@@ -1,7 +1,7 @@
 """Ground-contact termination regressions; use --sim for a bounded 4-env PhysX smoke test.
 
 CPU: conda run -n isaacsim-5.1 python -B scripts/tests/test_thigh_shank_ground_contact_termination.py
-Sim: append --sim (headless, persistent settings disabled, eight control steps).
+Sim: append --sim for wheel or --sim --leg for leg (headless, eight control steps).
 USD filter check: --filter-probe, then --filter-probe --unfiltered for the positive control.
 """
 
@@ -101,7 +101,7 @@ class GroundContactTests(unittest.TestCase):
                 TERM(make_env(), SENSOR_CFG, threshold)
 
 
-def run_sim_smoke(filter_probe=False, unfiltered=False):
+def run_sim_smoke(filter_probe=False, unfiltered=False, leg=False):
     """Verify USD filters or control-step ground termination and reset isolation."""
     import json
 
@@ -113,11 +113,20 @@ def run_sim_smoke(filter_probe=False, unfiltered=False):
         import gymnasium as gym
         import robot_lab.tasks  # noqa: F401
         from isaaclab_tasks.utils import parse_env_cfg
-        from robot_lab.tasks.manager_based.beyondmimic.config.LW_Leg.flat_env_cfg import LWLegBeyondMimicFlatEnvCfg
         from robot_lab.tasks.manager_based.beyondmimic import mdp
 
-        assert not hasattr(LWLegBeyondMimicFlatEnvCfg().terminations, "thigh_shank_ground_contact")
-        cfg = parse_env_cfg("RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0", device="cuda:0", num_envs=4)
+        configs = {}
+        for variant in ("leg", "wheel"):
+            task = f"RobotLab-Isaac-BeyondMimic-Flat-LW-{variant}-v0"
+            cfg = parse_env_cfg(task, device="cuda:0", num_envs=4)
+            term = cfg.terminations.thigh_shank_ground_contact
+            assert term.func is mdp.thigh_shank_ground_contact and term.time_out is False
+            assert term.params["threshold"] == 1.0
+            assert term.params["sensor_cfg"].name == "contact_forces"
+            assert set(term.params["sensor_cfg"].body_names) == set(BODIES)
+            assert cfg.scene.contact_forces.history_length == cfg.decimation == 4
+            configs[variant] = (task, cfg)
+        task, cfg = configs["leg" if leg else "wheel"]
         cfg.seed = 42
         cfg.commands.motion.debug_vis = False
         cfg.commands.motion.pose_range = {}
@@ -166,7 +175,7 @@ def run_sim_smoke(filter_probe=False, unfiltered=False):
                 return prim
 
             cfg.scene.robot.spawn.func = spawn_overlap
-        env = gym.make("RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-v0", cfg=cfg).unwrapped
+        env = gym.make(task, cfg=cfg).unwrapped
         command = env.command_manager.get_term("motion")
         command._adaptive_sampling = lambda ids: command.time_steps.__setitem__(ids, 0)
         env.reset()
@@ -198,7 +207,9 @@ def run_sim_smoke(filter_probe=False, unfiltered=False):
         assert set(sensor_cfg.body_names) == set(BODIES)
         assert env.scene["contact_forces"].data.net_forces_w_history.shape == (4, 4, 11, 3)
         assert env.scene["contact_forces"].contact_physx_view.filter_count == 0
-        record = {"contact_env_ids": [], "reset_histories_cleared": True, "normal_wheel_support_seen": False,
+        support_body = "foot" if leg else "wheel"
+        support_key = f"normal_{support_body}_support_seen"
+        record = {"task": task, "contact_env_ids": [], "reset_histories_cleared": True, support_key: False,
                   "num_envs": 4, "control_steps": 8, "sensor_names": list(env.scene.sensors)}
         original_reset = env._reset_idx
 
@@ -216,16 +227,16 @@ def run_sim_smoke(filter_probe=False, unfiltered=False):
         state[[1, 3], 2] -= 0.40  # Deliberate thigh/shank ground intersection in two environments.
         robot.write_root_state_to_sim(state)
         robot.set_joint_position_target(robot.data.joint_pos.clone())
-        wheel_ids, _ = env.scene["contact_forces"].find_bodies(["right_wheel_link", "left_wheel_link"])
+        support_ids, _ = env.scene["contact_forces"].find_bodies([f"right_{support_body}_link", f"left_{support_body}_link"])
         for _ in range(8):
             _, _, terminated, truncated, _ = env.step(torch.zeros(4, env.action_manager.total_action_dim, device=env.device))
             assert not truncated.any()
             assert not terminated[[0, 2]].any()
-            forces = env.scene["contact_forces"].data.net_forces_w[0, wheel_ids]
-            record["normal_wheel_support_seen"] |= bool((forces.norm(dim=-1) > 1.0).any())
+            forces = env.scene["contact_forces"].data.net_forces_w[0, support_ids]
+            record[support_key] |= bool((forces.norm(dim=-1) > 1.0).any())
         assert set(record["contact_env_ids"]) == {1, 3}, record
         assert len(record["contact_env_ids"]) == 2, record
-        assert record["normal_wheel_support_seen"], record
+        assert record[support_key], record
         print("GROUND_CONTACT_SMOKE=" + json.dumps(record), flush=True)
     except BaseException:
         # SimulationApp.close() can exit before Python prints a pending traceback.
@@ -244,9 +255,10 @@ if __name__ == "__main__":
     if "--sim" in sys.argv or "--filter-probe" in sys.argv:
         filter_probe = "--filter-probe" in sys.argv
         unfiltered = "--unfiltered" in sys.argv
-        for arg in ("--sim", "--filter-probe", "--unfiltered"):
+        leg = "--leg" in sys.argv
+        for arg in ("--sim", "--filter-probe", "--unfiltered", "--leg"):
             if arg in sys.argv:
                 sys.argv.remove(arg)
-        run_sim_smoke(filter_probe, unfiltered)
+        run_sim_smoke(filter_probe, unfiltered, leg)
     else:
         unittest.main()

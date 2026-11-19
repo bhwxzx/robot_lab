@@ -9,7 +9,7 @@ from isaaclab.managers import SceneEntityCfg
 
 from robot_lab.assets.LW import LW_WHEEL_CFG  
 from robot_lab.tasks.manager_based.beyondmimic.tracking_env_cfg import (
-    LWWheelTerminationsCfg, RewardsCfg, TrackingEnvCfg,
+    LWTerminationsCfg, RewardsCfg, TrackingEnvCfg,
 )
 import robot_lab.tasks.manager_based.beyondmimic.mdp as mdp
 from robot_lab.tasks.manager_based.locomotion.velocity.mdp.noise import UniformJointPositionNoiseCfg
@@ -61,7 +61,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
 
     actions: LWActionsCfg = LWActionsCfg()
     rewards: LWWheelRewardsCfg = LWWheelRewardsCfg()
-    terminations: LWWheelTerminationsCfg = LWWheelTerminationsCfg()
+    terminations: LWTerminationsCfg = LWTerminationsCfg()
 
     base_link_name = "base_link"
     foot_link_name = ".*_foot_link"

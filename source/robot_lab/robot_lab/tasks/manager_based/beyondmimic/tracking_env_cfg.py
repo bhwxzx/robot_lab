@@ -433,8 +433,8 @@ class TerminationsCfg:
 
 
 @configclass
-class LWWheelTerminationsCfg(TerminationsCfg):
-    """LW wheel terms using the robot's USD self-collision group filters."""
+class LWTerminationsCfg(TerminationsCfg):
+    """Termination terms shared by LW Leg and LW Wheel using the LW USD collision filters."""
 
     thigh_shank_ground_contact = DoneTerm(
         func=mdp.thigh_shank_ground_contact,
