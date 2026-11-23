@@ -162,7 +162,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         self.rewards.torque_limit.weight = -0.0
         # Suppress wheel spin after reference landing; phase follows the motion, not contact.
         self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2
-        self.rewards.joint_vel_wheel_l2.weight = 0.0
+        self.rewards.joint_vel_wheel_l2.weight = -0.5
         self.rewards.joint_vel_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
@@ -172,7 +172,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
         }
         # Ramp acceleration regularization more slowly to allow initial braking.
         self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2
-        self.rewards.joint_acc_wheel_l2.weight = 0.0
+        self.rewards.joint_acc_wheel_l2.weight = -0.1
         self.rewards.joint_acc_wheel_l2.params = {
             "command_name": "motion",
             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
