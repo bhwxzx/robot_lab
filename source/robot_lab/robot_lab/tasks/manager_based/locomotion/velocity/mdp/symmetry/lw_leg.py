@@ -6,13 +6,73 @@
 from __future__ import annotations
 
 import torch
+from functools import lru_cache
 from tensordict import TensorDict
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedRLEnv
 
-__all__ = ["compute_symmetric_states"]
+__all__ = ["compute_symmetric_states", "compute_roa_symmetric_states"]
+
+
+@lru_cache(maxsize=4)
+def _gain_mirror_order(joint_names: tuple[str, ...]) -> list[int]:
+    """Gain observations follow articulation order, independently of the action order."""
+    order = []
+    for name in joint_names:
+        side, joint = name.split("_", 1)
+        other_side = {"left": "right", "right": "left"}[side]
+        order.append(joint_names.index(f"{other_side}_{joint}"))
+    return order
+
+
+def _mirror_roa_privileged(obs: torch.Tensor, gain_order: list[int]) -> torch.Tensor:
+    mirrored = obs.clone()
+    # Mass, left/right foot material triples, stiffness, damping, base COM xyz.
+    mirrored[..., 1:4] = obs[..., 4:7]
+    mirrored[..., 4:7] = obs[..., 1:4]
+    mirrored[..., 7:17] = obs[..., 7:17][..., gain_order]
+    mirrored[..., 17:27] = obs[..., 17:27][..., gain_order]
+    mirrored[..., 28] = -obs[..., 28]
+    return mirrored
+
+
+@torch.no_grad()
+def compute_roa_symmetric_states(env, obs: TensorDict | None = None, actions: torch.Tensor | None = None):
+    """Append a sagittal reflection of each Flat LW_Leg ROA sample."""
+    obs_aug = None
+    if obs is not None:
+        policy, critic, privileged = obs["policy"], obs["critic"], obs["privileged"]
+        if (policy.shape[-1], critic.shape[-1], privileged.shape[-1]) != (41, 74, 30):
+            raise ValueError("Flat LW_Leg ROA symmetry expects 41 policy, 74 critic and 30 privileged features")
+        unknown = set(obs.keys()) - {"policy", "critic", "privileged", "_roa_actor_velocity", "_roa_estimated_velocity_mask"}
+        if unknown:
+            raise ValueError(f"Undefined Flat LW_Leg ROA symmetry for observation groups {unknown}")
+        gain_order = _gain_mirror_order(tuple(env.unwrapped.scene["robot"].joint_names))
+        batch = obs.batch_size[0]
+        obs_aug = obs.repeat(2)
+        for key, original in (("policy", policy), ("critic", critic)):
+            mirrored = _transform_policy_obs_left_right(env.unwrapped, original[..., :41])
+            # Exchanging the stance leg advances the sin/cos clock by half a stride.
+            mirrored[..., 39:41].neg_()
+            obs_aug[key][batch:, ..., :41] = mirrored
+        obs_aug["critic"][batch:, 42].neg_()  # body-frame lateral linear velocity
+        obs_aug["critic"][batch:, 44:] = _mirror_roa_privileged(critic[..., 44:], gain_order)
+        obs_aug["privileged"][batch:] = _mirror_roa_privileged(privileged, gain_order)
+        if "_roa_actor_velocity" in obs:
+            # Preserve the rollout's estimated/true selection for each reflected sample.
+            obs_aug["_roa_actor_velocity"][batch:, 1].neg_()
+
+    actions_aug = None
+    if actions is not None:
+        if actions.shape[-1] != 10:
+            raise ValueError("Flat LW_Leg ROA symmetry expects 10 actions")
+        actions_aug = torch.cat((actions, _switch_lw_joints_left_right(actions)), dim=0)
+    return obs_aug, actions_aug
+
+
+compute_roa_symmetric_states.supports_roa_velocity_curriculum = True
 
 
 @torch.no_grad()

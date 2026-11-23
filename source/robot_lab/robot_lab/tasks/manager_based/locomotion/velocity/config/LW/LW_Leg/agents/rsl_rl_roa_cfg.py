@@ -1,4 +1,5 @@
 from isaaclab.utils import configclass
+from isaaclab_rl.rsl_rl import RslRlSymmetryCfg
 
 from robot_lab.utils.wrappers.rsl_rl.rl_roa_cfg import (
     RslRlOnPolicyRunnerRoaCfg,
@@ -56,6 +57,14 @@ class LWRoughRoaRunnerCfg(RslRlOnPolicyRunnerRoaCfg):
 class LWFlatRoaRunnerCfg(LWRoughRoaRunnerCfg):
     max_iterations = 50000
     experiment_name = "LW_leg_flat_roa"
+    algorithm = LWRoughRoaRunnerCfg().algorithm.replace(
+        symmetry_cfg=RslRlSymmetryCfg(
+            use_data_augmentation=True,
+            use_mirror_loss=True,
+            mirror_loss_coeff=0.1,
+            data_augmentation_func="robot_lab.tasks.manager_based.locomotion.velocity.mdp.symmetry.lw_leg:compute_roa_symmetric_states",
+        )
+    )
     policy = RslRlActorCriticRoaCfg(
         use_velocity_estimation=True,  # Flat 单独定义 policy，在此切换显式速度模块。
         init_noise_std=1.0,

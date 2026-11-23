@@ -88,8 +88,11 @@ class ROAPPO(PPO):
         if schedule is not None:
             if self.policy.history_encoder is None:
                 raise ValueError("estimated velocity curriculum requires a history encoder")
-            if self.symmetry:
-                raise ValueError("estimated velocity curriculum does not support symmetry augmentation/loss")
+            if self.symmetry and not (
+                self.symmetry.get("use_data_augmentation")
+                and getattr(self.symmetry.get("data_augmentation_func"), "supports_roa_velocity_curriculum", False)
+            ):
+                raise ValueError("estimated velocity curriculum requires symmetry augmentation of stored actor velocities")
         self.estimated_velocity_schedule = schedule
         self._ensure_velocity_storage()
 
@@ -323,7 +326,10 @@ class ROAPPO(PPO):
                 if not self.symmetry["use_data_augmentation"]:
                     data_augmentation_func = self.symmetry["data_augmentation_func"]
                     obs_batch, _ = data_augmentation_func(obs=obs_batch, actions=None, env=self.symmetry["_env"])
-                mean_actions_batch = self.policy.act_inference(obs_batch, hist_encoding=False)
+                    mean_actions_batch = self.policy.act_inference(obs_batch, hist_encoding=False)
+                else:
+                    # Use the distribution conditioned on the velocity actually selected at rollout.
+                    mean_actions_batch = self.policy.action_mean
                 action_mean_orig = mean_actions_batch[:original_batch_size]
                 _, actions_mean_symm_batch = data_augmentation_func(
                     obs=None, actions=action_mean_orig, env=self.symmetry["_env"]
