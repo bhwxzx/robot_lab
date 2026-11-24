@@ -199,8 +199,14 @@ def validate_scenario_contract(value: Any) -> dict[str, Any]:
     for key, setting in value["scenario_overrides"].items():
         if key.startswith("evaluation."):
             from policy_evaluation_telemetry import (
-                ROA_CONTROL_MODES, DWAQ_CONTROL_MODES, ROA_SENSOR_DELAY_OPTION, MOTION_MODES,
+                ROA_CONTROL_MODES, DWAQ_CONTROL_MODES, ROA_SENSOR_DELAY_OPTION, MOTION_MODES, ROA_FOOT_OPTION,
             )
+            if key == ROA_FOOT_OPTION:
+                overrides = value["scenario_overrides"]
+                if (setting is not True or overrides.get("evaluation.roa_mode") != "student"
+                        or overrides.get("scene.terrain.terrain_type") != "plane" or value["num_envs"] != 1):
+                    raise EvaluationEvidenceError("foot ground probe requires one ROA student on a plane")
+                continue
             if key == ROA_SENSOR_DELAY_OPTION:
                 if (type(setting) is not int or setting not in (0, 1)
                         or value["scenario_overrides"].get("evaluation.roa_mode") != "student"):
@@ -925,6 +931,9 @@ def validate_evaluation_bundle(
             raise EvaluationEvidenceError("incomplete ROA diagnostic signals")
         if ROA_SENSOR_DELAY_OPTION in scenario_contract["scenario_overrides"]:
             validate_roa_sensor_delay(telemetry, scenario_contract["scenario_overrides"][ROA_SENSOR_DELAY_OPTION])
+        from policy_evaluation_telemetry import ROA_FOOT_OPTION
+        if ROA_FOOT_OPTION in scenario_contract["scenario_overrides"]:
+            validate_roa_foot_ground(telemetry, scenario_contract["duration_steps"])
 
     dwaq_mode = scenario_contract["scenario_overrides"].get("evaluation.dwaq_mode")
     if dwaq_mode is not None:
@@ -992,6 +1001,79 @@ def validate_landing_pull_config(config):
             or any(type(v) not in (int, float) or not math.isfinite(v) for v in point)):
         raise EvaluationEvidenceError("invalid landing pull attachment point")
     _validate_reference(config["geometry"], label="pull attachment geometry")
+
+
+def validate_roa_foot_ground(telemetry, duration):
+    from policy_evaluation_telemetry import ROA_FOOT_NAMES
+
+    probe = telemetry.get("foot_ground", {})
+    dt = probe.get("physics_dt_s")
+    records = probe.get("records", [])
+    if (probe.get("feet") != list(ROA_FOOT_NAMES) or dt != 0.005 or telemetry.get("stride") != 1
+            or telemetry.get("step_dt_seconds") != 4 * dt or len(records) != duration * 4):
+        raise EvaluationEvidenceError("incomplete foot ground physics sampling")
+    loaded = set()
+    for i, row in enumerate(records):
+        if (row.get("control_step"), row.get("substep")) != divmod(i, 4):
+            raise EvaluationEvidenceError("misaligned foot ground substep")
+        for foot in ROA_FOOT_NAMES:
+            sample = row[foot]
+            force, gap, speed = (sample[k] for k in ("normal_force_n", "sole_clearance_m", "contact_slip_speed_m_s"))
+            if any(type(x) not in (int, float) or not math.isfinite(x) for x in (force, gap)) or force < 0:
+                raise EvaluationEvidenceError("invalid foot ground force or clearance")
+            if force > 0:
+                loaded.add(foot)
+                if type(speed) not in (int, float) or not math.isfinite(speed) or speed < 0:
+                    raise EvaluationEvidenceError("invalid loaded foot slip speed")
+            elif speed is not None:
+                raise EvaluationEvidenceError("unloaded foot has a contact slip speed")
+    if len(loaded) != 2:
+        raise EvaluationEvidenceError("no measured ground loading for one or both feet in this walking trial")
+    if "reward_comparison" in probe:
+        _validate_foot_reward_comparison(probe, telemetry["step_dt_seconds"], duration)
+
+
+def _validate_foot_reward_comparison(probe, dt, duration):
+    """Recompute both weighted terms from the independent 5 ms USD/PhysX probe."""
+    import numpy as np
+
+    comparison = probe["reward_comparison"]
+    feet = probe["feet"]
+    if len(comparison["records"]) != duration or sorted(comparison["gait_feet"]) != sorted(feet):
+        raise EvaluationEvidenceError("incomplete foot reward comparison")
+    params = comparison["swing_params"]
+    for i, row in enumerate(comparison["records"]):
+        # IsaacLab computes rewards after the final physics substep and before resetting.
+        sample = probe["records"][4 * i + 3]
+        if row["control_step"] != i or type(row["episode_step"]) is not int or row["episode_step"] < 1:
+            raise EvaluationEvidenceError("misaligned foot reward comparison")
+        for key, ref_key, atol in (("load_n", "normal_force_n", .02), ("slip_m_s", "contact_slip_speed_m_s", 2e-5),
+                                   ("clearance_m", "sole_clearance_m", 1e-4)):
+            expected = [sample[foot][ref_key] or 0.0 for foot in feet]
+            if len(row[key]) != len(feet) or not np.allclose(row[key], expected, atol=atol, rtol=1e-5):
+                raise EvaluationEvidenceError(f"foot reward {key} differs from the ground probe at step {i}")
+        slip = sum(sample[f]["contact_slip_speed_m_s"] for f in feet
+                   if sample[f]["normal_force_n"] > comparison["slide_support_force"])
+        scores = []
+        for n, foot in enumerate(comparison["gait_feet"]):
+            air = sample[foot]["normal_force_n"] <= params["support_force"]
+            target = params["target_height"]
+            if comparison["gait_params"] is not None:
+                frequency, offset, duty = comparison["gait_params"]
+                # Match the clock's float32 rounding at exact phase boundaries.
+                phase = np.float32(row["episode_step"]) * np.float32(dt) * np.float32(frequency) % np.float32(1)
+                phase = (phase + np.float32(n * offset)) % np.float32(1)
+                if phase < duty:
+                    continue
+                target *= math.sin(math.pi * (float(phase) - duty) / (1 - duty))
+            elif not air:
+                continue
+            gap = sample[foot]["sole_clearance_m"]
+            scores.append(math.exp(-((gap - target) / params["std"]) ** 2) if air and gap > 0 else 0.0)
+        clearance = sum(scores) / max(len(scores), 1) if math.dist(row["command"], (0, 0, 0)) > 0.1 else 0.0
+        expected = np.array([slip, clearance]) * comparison["weights"]
+        if len(row["weighted_terms"]) != 2 or not np.allclose(row["weighted_terms"], expected, atol=1e-3, rtol=1e-5):
+            raise EvaluationEvidenceError(f"weighted foot rewards differ from the ground probe at step {i}")
 
 
 def validate_motion_telemetry(result, telemetry, scenario):

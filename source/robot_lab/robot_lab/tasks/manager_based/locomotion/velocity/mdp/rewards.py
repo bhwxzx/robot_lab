@@ -17,6 +17,8 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor, RayCaster
 from isaaclab.utils.math import quat_apply_inverse, yaw_quat, euler_xyz_from_quat, quat_apply, wrap_to_pi
 
+from .foot_rewards import GroundContactSlip, SwingSoleClearance, feet_clearance_reward, feet_slide
+
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
     from isaaclab.managers import RewardTermCfg
@@ -595,25 +597,6 @@ def feet_height(
     # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
-def feet_clearance_reward(
-    env: ManagerBasedRLEnv, 
-    command_name: str,
-    asset_cfg: SceneEntityCfg, 
-    target_height: float, 
-    std: float, 
-    tanh_mult: float
-) -> torch.Tensor:
-    """Reward the swinging feet for clearing a specified height off the ground"""
-    asset: RigidObject = env.scene[asset_cfg.name]
-    foot_z_target_error = torch.square(asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - target_height)
-    foot_velocity_tanh = torch.tanh(
-        tanh_mult * torch.norm(asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2], dim=2)
-    )
-    error = foot_z_target_error * foot_velocity_tanh
-    reward = torch.exp(-torch.sum(error, dim=1) / std)
-    reward *= torch.linalg.norm(env.command_manager.get_command(command_name), dim=1) > 0.1
-    # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
-    return reward
 
 def feet_height_body(
     env: ManagerBasedRLEnv,
@@ -645,37 +628,6 @@ def feet_height_body(
     return reward
 
 
-def feet_slide(
-    env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
-) -> torch.Tensor:
-    """Penalize feet sliding.
-
-    This function penalizes the agent for sliding its feet on the ground. The reward is computed as the
-    norm of the linear velocity of the feet multiplied by a binary contact sensor. This ensures that the
-    agent is penalized only when the feet are in contact with the ground.
-    """
-    # Penalize feet sliding
-    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
-    asset: RigidObject = env.scene[asset_cfg.name]
-
-    # feet_vel = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2]
-    # reward = torch.sum(feet_vel.norm(dim=-1) * contacts, dim=1)
-
-    cur_footvel_translated = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :] - asset.data.root_lin_vel_w[
-        :, :
-    ].unsqueeze(1)
-    footvel_in_body_frame = torch.zeros(env.num_envs, len(asset_cfg.body_ids), 3, device=env.device)
-    for i in range(len(asset_cfg.body_ids)):
-        footvel_in_body_frame[:, i, :] = math_utils.quat_apply_inverse(
-            asset.data.root_quat_w, cur_footvel_translated[:, i, :]
-        )
-    foot_leteral_vel = torch.sqrt(torch.sum(torch.square(footvel_in_body_frame[:, :, :2]), dim=2)).view(
-        env.num_envs, -1
-    )
-    reward = torch.sum(foot_leteral_vel * contacts, dim=1)
-    # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
-    return reward
 
 
 # def smoothness_1(env: ManagerBasedRLEnv) -> torch.Tensor:

@@ -69,6 +69,25 @@ DWAQ_DIAGNOSTIC_SIGNALS = (
 )
 
 ROA_SENSOR_DELAY_OPTION = "evaluation.roa_sensor_delay_steps"
+ROA_FOOT_OPTION = "evaluation.roa_foot_ground"
+ROA_FOOT_NAMES = ("left_foot_link", "right_foot_link")
+
+
+def foot_ground_measurement(clearance, link_position, link_twist, points, loads):
+    """World-frame rigid-body velocity at the measured points on a static horizontal plane."""
+    import numpy as np
+
+    loads = np.asarray(loads, dtype=float)
+    total = float(loads.sum())
+    if not np.isfinite(loads).all() or np.any(loads < 0) or not math.isfinite(clearance):
+        raise ValueError("invalid foot ground measurement")
+    speed = None
+    if total > 0:
+        velocity = link_twist[:3] + np.cross(link_twist[3:], points - link_position)
+        speed = float(loads @ np.linalg.norm(velocity[:, :2], axis=1) / total)
+        if not math.isfinite(speed):
+            raise ValueError("nonfinite loaded point speed")
+    return {"normal_force_n": total, "sole_clearance_m": clearance, "contact_slip_speed_m_s": speed}
 ROA_SENSOR_DELAY_SIGNALS = (
     "roa_sensor_source_step", "roa_sensor_age_s",
     "roa_fresh_policy_frame", "roa_delayed_policy_frame",

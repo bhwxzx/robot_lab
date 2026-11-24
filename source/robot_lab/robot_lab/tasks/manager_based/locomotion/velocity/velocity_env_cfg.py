@@ -270,6 +270,7 @@ class EventCfg:
             "dynamic_friction_range": (0.3, 1.2), # (0.3, 0.8)
             "restitution_range": (0.0, 0.5), # (0.0, 0.5)
             "num_buckets": 64,
+            "make_consistent": True,
         },
     )
 
@@ -639,11 +640,12 @@ class RewardsCfg:
     )
 
     feet_slide = RewTerm(
-        func=mdp.feet_slide,
+        func=mdp.GroundContactSlip,
         weight=0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=""),
             "asset_cfg": SceneEntityCfg("robot", body_names=""),
+            "support_force": 5.0,
         },
     )
 
@@ -659,12 +661,12 @@ class RewardsCfg:
     )
 
     feet_clearance = RewTerm(
-        func=mdp.feet_clearance_reward,
+        func=mdp.SwingSoleClearance,
         weight=0.0,
         params={
-            "std": 0.05,
-            "tanh_mult": 2.0,
-            "target_height": 0.1,
+            "std": 0.05,  # m, exp(-(sole gap - target)**2 / std**2)
+            "target_height": 0.1,  # m above the local terrain
+            "support_force": 5.0,
             "asset_cfg": SceneEntityCfg("robot", body_names=""),
             "command_name": "base_velocity",
         },
@@ -779,6 +781,10 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
 
     def __post_init__(self):
         """Post initialization."""
+        # Position-controlled leg joints define the standing pose of a wheeled robot.
+        leg_joints = getattr(self, "joint_names_without_wheels", None) or getattr(self, "leg_joint_names", None)
+        if leg_joints and self.rewards.stand_still is not None:
+            self.rewards.stand_still.params["asset_cfg"].joint_names = leg_joints
         # general settings
         self.decimation = 4
         self.episode_length_s = 20.0

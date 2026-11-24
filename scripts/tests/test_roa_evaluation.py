@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import unittest
 
+import numpy as np
 import torch
 from tensordict import TensorDict
 
@@ -15,11 +16,54 @@ from policy_evaluation_telemetry import (
     roa_diagnostic_signals, SignalLedger,
     capture_roa_diagnostics, telemetry_report,
     RoaSensorDelay, ROA_SENSOR_DELAY_OPTION, ROA_SENSOR_COLUMNS,
-    ROA_CURRENT_COLUMNS,
+    ROA_CURRENT_COLUMNS, ROA_FOOT_NAMES, foot_ground_measurement,
 )
 from policy_evaluation_evidence import (
-    build_scenario_contract, EvaluationEvidenceError, scenario_sha256, validate_roa_sensor_delay,
+    build_scenario_contract, EvaluationEvidenceError, scenario_sha256, validate_roa_sensor_delay, validate_roa_foot_ground,
 )
+
+
+class FootGroundTests(unittest.TestCase):
+    def test_training_terms_compare_to_final_pre_reset_substep(self):
+        left, right = ROA_FOOT_NAMES
+        stance = {"normal_force_n": 10., "sole_clearance_m": 0., "contact_slip_speed_m_s": .2}
+        swing = {"normal_force_n": 0., "sole_clearance_m": .125, "contact_slip_speed_m_s": None}
+        records = [dict(control_step=0, substep=i, **{left: stance, right: swing}) for i in range(3)]
+        records.append(dict(control_step=0, substep=3, **{left: swing, right: stance}))
+        frame = dict(control_step=0, episode_step=30, command=[-.4, 0., 0.], weighted_terms=[-.05, 2.],
+                     load_n=[0., 10.], slip_m_s=[0., .2], clearance_m=[.125, 0.])
+        comparison = dict(weights=[-.25, 2.], gait_params=[1.25, .5, .5], gait_feet=[left, right],
+                          swing_params=dict(target_height=.125, std=.05, support_force=5.),
+                          slide_support_force=5., records=[frame])
+        telemetry = {"stride": 1, "step_dt_seconds": .02, "foot_ground": {
+            "feet": [left, right], "physics_dt_s": .005, "records": records, "reward_comparison": comparison}}
+        validate_roa_foot_ground(telemetry, 1)
+        frame["weighted_terms"][0] = 0.
+        with self.assertRaisesRegex(EvaluationEvidenceError, "weighted foot rewards"):
+            validate_roa_foot_ground(telemetry, 1)
+
+    def test_loaded_point_slip_includes_rotation_and_multiple_contacts(self):
+        origin = np.zeros(3)
+        twist = np.array([1., 0., 0., 0., 1., 0.])
+        points = np.array([[0., 0., -1.], [0., 0., 1.]])
+        sample = foot_ground_measurement(-.001, origin, twist, points, [3., 1.])
+        self.assertEqual(sample, {"normal_force_n": 4., "sole_clearance_m": -.001, "contact_slip_speed_m_s": .5})
+        airborne = foot_ground_measurement(.02, origin, twist, points[:0], [])
+        self.assertIsNone(airborne["contact_slip_speed_m_s"])
+
+    def test_substep_integrity_and_missing_loads(self):
+        sample = {"normal_force_n": 10., "sole_clearance_m": 0., "contact_slip_speed_m_s": .03}
+        records = [dict(control_step=0, substep=i, **{foot: sample.copy() for foot in ROA_FOOT_NAMES}) for i in range(4)]
+        telemetry = {"stride": 1, "step_dt_seconds": .02, "foot_ground": {
+            "feet": list(ROA_FOOT_NAMES), "physics_dt_s": .005, "records": records}}
+        validate_roa_foot_ground(telemetry, 1)
+        records[-1]["substep"] = 0
+        with self.assertRaisesRegex(EvaluationEvidenceError, "misaligned"):
+            validate_roa_foot_ground(telemetry, 1)
+        records[-1]["substep"] = 3
+        records[0][ROA_FOOT_NAMES[0]]["contact_slip_speed_m_s"] = None
+        with self.assertRaisesRegex(EvaluationEvidenceError, "slip speed"):
+            validate_roa_foot_ground(telemetry, 1)
 
 
 class RoaEvaluationTests(unittest.TestCase):

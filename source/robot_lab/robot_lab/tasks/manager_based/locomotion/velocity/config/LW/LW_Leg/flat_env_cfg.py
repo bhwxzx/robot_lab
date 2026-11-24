@@ -50,7 +50,7 @@ class LWLegFlatNormalPPOEnvCfg(LWLegRoughNormalPPOEnvCfg):
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.bipedal_gait_reward.weight = 5.0
         self.rewards.feet_clearance.weight = 1.0
-        self.rewards.feet_clearance.params["target_height"] = 0.15 + 0.071 # foot_radius
+        self.rewards.feet_clearance.params["target_height"] = 0.15
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = -0.5 # -0.15
         self.rewards.feet_landing_vel.params["asset_cfg"].body_names = [self.foot_link_name]
@@ -132,7 +132,7 @@ class LWLegFlatDwaqEnvCfg(LWLegRoughDwaqEnvCfg):
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.bipedal_gait_reward.weight = 2.0
         self.rewards.feet_clearance.weight = 2.0
-        self.rewards.feet_clearance.params["target_height"] = 0.15 + 0.071 # foot_radius
+        self.rewards.feet_clearance.params["target_height"] = 0.15
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = -0.25 # -0.15
         self.rewards.feet_landing_vel.params["asset_cfg"].body_names = [self.foot_link_name]
@@ -216,7 +216,7 @@ class LWLegFlatAmpEnvCfg(LWLegRoughAmpEnvCfg):
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.bipedal_gait_reward.weight = 0.0
         self.rewards.feet_clearance.weight = 0.0
-        self.rewards.feet_clearance.params["target_height"] = 0.10 + 0.071 # foot_radius
+        self.rewards.feet_clearance.params["target_height"] = 0.10
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = 0.0 # -0.15
         self.rewards.feet_landing_vel.params["asset_cfg"].body_names = [self.foot_link_name]
@@ -306,7 +306,7 @@ class LWLegFlatAmpDwaqEnvCfg(LWLegRoughAmpDwaqEnvCfg):
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.bipedal_gait_reward.weight = 5.0 # 2.0
         self.rewards.feet_clearance.weight = 2.0  # 2.0
-        self.rewards.feet_clearance.params["target_height"] = 0.125 + 0.071 # 0.125 + 0.071 foot_radius 
+        self.rewards.feet_clearance.params["target_height"] = 0.125
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = -0.25 # -0.15
         self.rewards.feet_landing_vel.params["asset_cfg"].body_names = [self.foot_link_name]
@@ -409,7 +409,7 @@ class LWLegFlatAmpRoaEnvCfg(LWLegRoughAmpRoaEnvCfg):
         self.rewards.track_adaptive_swing_height.weight = 0.0
         self.rewards.bipedal_gait_reward.weight = 2.0
         self.rewards.feet_clearance.weight = 2.0
-        self.rewards.feet_clearance.params["target_height"] = 0.125 + 0.071 # 0.125 + 0.071 foot_radius 
+        self.rewards.feet_clearance.params["target_height"] = 0.125
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = -0.25 # -0.15
         self.rewards.feet_landing_vel.params["asset_cfg"].body_names = [self.foot_link_name]
@@ -484,15 +484,15 @@ class LWLegFlatRoaEnvCfg(LWLegRoughRoaEnvCfg):
         self.events.randomize_rigid_body_mass_others.params["mass_distribution_params"] = (0.7, 1.3)
 
         # Rewards
-        self.rewards.base_height_l2.weight = -10.0
+        self.rewards.base_height_l2.weight = -30.0
         self.rewards.lin_vel_z_l2.weight = -2.0
         self.rewards.track_lin_vel_xy_exp.weight = 5.0
         self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
         self.rewards.track_ang_vel_z_exp.weight = 4.0
         self.rewards.track_ang_vel_z_exp.params["std"] = math.sqrt(0.25)
         self.rewards.ang_vel_xy_l2.weight = -0.1 # -0.05
-        self.rewards.flat_orientation_l2.weight = -5.0  # -5.0
-        self.rewards.body_orientation_l2.weight = -3.0
+        self.rewards.flat_orientation_l2.weight = -8.0  # -5.0
+        self.rewards.body_orientation_l2.weight = -0.0
         self.rewards.stand_still.weight = -3.0
         self.rewards.joint_pos_penalty.weight = -0.0
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
@@ -507,9 +507,9 @@ class LWLegFlatRoaEnvCfg(LWLegRoughRoaEnvCfg):
         self.rewards.feet_air_time_variance.weight = -10.0
         self.rewards.feet_height_body.weight = 0.0
         self.rewards.track_adaptive_swing_height.weight = 0.0
-        self.rewards.bipedal_gait_reward.weight = 2.0
+        self.rewards.bipedal_gait_reward.weight = 5.0
         self.rewards.feet_clearance.weight = 2.0
-        self.rewards.feet_clearance.params["target_height"] = 0.125 + 0.071 # 0.125 + 0.071 foot_radius 
+        self.rewards.feet_clearance.params["target_height"] = 0.125
         self.rewards.feet_clearance.params["asset_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_landing_vel.weight = -0.25 # -0.15
         self.rewards.feet_landing_vel.params["asset_cfg"].body_names = [self.foot_link_name]
@@ -525,7 +525,7 @@ class LWLegFlatRoaEnvCfg(LWLegRoughRoaEnvCfg):
         self.rewards.ankle_torque.weight = -0.001 # -0.0005
         self.rewards.ankle_torque_limit.weight = -0.01
         self.rewards.ankle_action.weight = -0.002  # -0.001
-        self.rewards.penalize_hip_roll_action.weight = -1.0
+        self.rewards.penalize_hip_roll_action.weight = -0.0
         self.rewards.feet_impact_reduction.weight = -2.5e-3
         self.rewards.feet_impact_reduction.params["max_delta_v_sq"] = 2.0
 

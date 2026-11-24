@@ -28,6 +28,9 @@ from policy_evaluation_telemetry import (
     capture_roa_diagnostics,
     RoaSensorDelay,
     ROA_SENSOR_DELAY_OPTION,
+    ROA_FOOT_OPTION,
+    ROA_FOOT_NAMES,
+    foot_ground_measurement,
     ROA_SENSOR_DELAY_SIGNALS,
     DWAQ_DIAGNOSTIC_SIGNALS,
     capture_dwaq_diagnostics,
@@ -247,6 +250,133 @@ RUNNER_CLASSES = {
     "OnPolicyRunnerROA": OnPolicyRunnerROA,
     "OnPolicyRunnerAmpROA": OnPolicyRunnerAmpROA,
 }
+
+
+class RoaFootGroundProbe:
+    """Read both feet after each physics update, before command updates or reset."""
+
+    def __init__(self, env):
+        import omni.usd
+        from pxr import Gf, Usd, UsdGeom, UsdPhysics
+
+        self.env = env
+        self.robot = env.scene["robot"]
+        self.ids, names = self.robot.find_bodies(list(ROA_FOOT_NAMES), preserve_order=True)
+        if tuple(names) != ROA_FOOT_NAMES or env.cfg.decimation != 4 or env.physics_dt != 0.005:
+            raise ValueError("foot probe requires LW feet and four 5 ms substeps")
+        stage = omni.usd.get_context().get_stage()
+        cache = UsdGeom.XformCache()
+        terrain = stage.GetPrimAtPath(env.cfg.scene.terrain.prim_path)
+        planes = [p for p in Usd.PrimRange(terrain, Usd.TraverseInstanceProxies())
+                  if p.GetTypeName() == "Plane" and p.HasAPI(UsdPhysics.CollisionAPI)]
+        if len(planes) != 1 or planes[0].GetAttribute("axis").Get() != "Z":
+            raise ValueError("foot probe requires one horizontal static collision plane")
+        plane = planes[0]
+        transform = cache.GetLocalToWorldTransform(plane)
+        normal = np.array(transform.TransformDir(Gf.Vec3d(0, 0, 1)).GetNormalized())
+        if not np.allclose(normal, [0, 0, 1]):
+            raise ValueError("foot probe requires a horizontal plane")
+        self.ground_z = float(transform.ExtractTranslation()[2])
+        self.vertices = []
+        self.views = []
+        mesh_paths = []
+        for name in names:
+            link = stage.GetPrimAtPath(f"/World/envs/env_0/Robot/{name}")
+            subtree = Usd.PrimRange(link, Usd.TraverseInstanceProxies())
+            colliders = [p for p in subtree if p.HasAPI(UsdPhysics.CollisionAPI)]
+            if len(colliders) != 1 or colliders[0].GetAttribute("physics:approximation").Get() != "convexHull":
+                raise ValueError(f"unsupported foot collision geometry for {name}")
+            meshes = [p for p in Usd.PrimRange(colliders[0], Usd.TraverseInstanceProxies()) if p.IsA(UsdGeom.Mesh)]
+            if len(meshes) != 1:
+                raise ValueError(f"expected one collision mesh for {name}")
+            mesh = meshes[0]
+            to_link = cache.GetLocalToWorldTransform(mesh) * cache.GetLocalToWorldTransform(link).GetInverse()
+            points = UsdGeom.Mesh(mesh).GetPointsAttr().Get()
+            vertices = np.unique([to_link.Transform(Gf.Vec3d(*pt)) for pt in points], axis=0)
+            self.vertices.append(vertices)
+            mesh_paths.append(str(mesh.GetPath()))
+            view = env.sim.physics_sim_view.create_rigid_contact_view(str(link.GetPath()), [str(plane.GetPath())],
+                                                                      max_contact_data_count=128)
+            if view.sensor_count != 1 or view.filter_count != 1:
+                raise ValueError("failed to bind foot-ground contact view")
+            self.views.append(view)
+        self.data = dict(feet=list(names), physics_dt_s=env.physics_dt, ground_prim=str(plane.GetPath()),
+                         ground_height_m=self.ground_z, collision_meshes=mesh_paths, records=[],
+                         clearance_source="lowest transformed source vertex of USD convex-hull collider",
+                         slip_source="vertical-load-weighted horizontal material point speed relative to static ground")
+        self.original_update = env.scene.update
+        # When the training terms are active, retain their actual outputs alongside the independent probe.
+        from robot_lab.tasks.manager_based.locomotion.velocity.mdp.foot_rewards import (
+            GroundContactSlip, SwingSoleClearance,
+        )
+        manager = env.reward_manager
+        self.reward_indices = []
+        if {"feet_slide", "feet_clearance"} <= set(manager.active_terms):
+            slide, clearance = [manager.get_term_cfg(n) for n in ("feet_slide", "feet_clearance")]
+            if isinstance(slide.func, GroundContactSlip) and isinstance(clearance.func, SwingSoleClearance):
+                self.reward_indices = [manager.active_terms.index(n) for n in ("feet_slide", "feet_clearance")]
+                self.clearance_term = clearance
+                self.slide_term = slide
+                self.slide_feet = [slide.func.contacts.body_ids.index(i) for i in self.ids]
+                self.clearance_feet = [clearance.func.contacts.body_ids.index(i) for i in self.ids]
+                gait_order = list(range(len(self.ids)))[clearance.func.gait_order] if isinstance(
+                    clearance.func.gait_order, slice) else clearance.func.gait_order
+                gait_feet = [self.robot.body_names[clearance.func.contacts.body_ids[i]] for i in gait_order]
+                self.data["reward_comparison"] = {
+                    "weights": [slide.weight, clearance.weight], "gait_feet": gait_feet,
+                    "gait_params": clearance.func.gait_params,
+                    "swing_params": {k: clearance.params[k] for k in ("support_force", "target_height", "std")},
+                    "slide_support_force": slide.params["support_force"], "records": [],
+                }
+
+    def update(self, dt):
+        from scipy.spatial.transform import Rotation
+
+        self.original_update(dt)
+        if dt == 0:
+            return
+        if dt != self.env.physics_dt:
+            raise ValueError("unexpected physics update interval")
+        i = len(self.data["records"])
+        step, substep = divmod(i, self.env.cfg.decimation)
+        row = dict(control_step=step, substep=substep)
+        state = self.robot.data.body_link_state_w[0, self.ids].cpu().numpy()
+        for name, link, vertices, view in zip(ROA_FOOT_NAMES, state, self.vertices, self.views):
+            rot = Rotation.from_quat(link[[4, 5, 6, 3]])
+            gap = float(link[2] + (vertices @ rot.as_matrix()[2]).min() - self.ground_z)
+            forces, coords, normals, _, counts, offsets = view.get_contact_data(dt)
+            count, offset = int(counts.item()), int(offsets.item())
+            sl = slice(offset, offset + count)
+            loads = (forces[sl].reshape(-1) * normals[sl, 2]).cpu().numpy()
+            points = coords[sl].cpu().numpy()
+            fz = float(view.get_contact_force_matrix(dt).reshape(-1, 3)[0, 2])
+            if not np.isclose(loads.sum(), fz, atol=.02, rtol=.001) or np.any(loads < -.001):
+                raise ValueError(f"inconsistent detailed foot-ground force for {name}: {loads.sum()} vs {fz}")
+            row[name] = foot_ground_measurement(gap, link[:3], link[7:], points, loads.clip(0))
+        self.data["records"].append(row)
+
+    def step(self, wrapped_env, actions, step):
+        if self.reward_indices:
+            episode_step = self.env.episode_length_buf[0].item() + 1
+            command = self.env.command_manager.get_command(self.clearance_term.params["command_name"])[0].tolist()
+        self.env.scene.update = self.update
+        try:
+            result = wrapped_env.step(actions)
+        finally:
+            self.env.scene.update = self.original_update
+        if len(self.data["records"]) != (step + 1) * self.env.cfg.decimation:
+            raise ValueError("foot probe missed a physics substep")
+        if self.reward_indices:
+            term = self.clearance_term.func
+            # RewardManager keeps the last pre-reset weighted terms (before multiplication by step_dt).
+            weighted = self.env.reward_manager._step_reward[0, self.reward_indices].tolist()
+            self.data["reward_comparison"]["records"].append(dict(
+                control_step=step, episode_step=episode_step, command=command, weighted_terms=weighted,
+                load_n=self.slide_term.func.contacts.load[0, self.slide_feet].tolist(),
+                slip_m_s=self.slide_term.func.contacts.speed[0, self.slide_feet].tolist(),
+                clearance_m=term.gap[0, self.clearance_feet].tolist(),
+            ))
+        return result
 
 
 def _scheduled_command(
@@ -1083,7 +1213,7 @@ def _evaluate(
         "scenario_overrides"
     ].items():
         if dotted_path in (
-            "evaluation.roa_mode", "evaluation.dwaq_mode", ROA_SENSOR_DELAY_OPTION,
+            "evaluation.roa_mode", "evaluation.dwaq_mode", ROA_SENSOR_DELAY_OPTION, ROA_FOOT_OPTION,
             "evaluation.motion_mode", "evaluation.motion_sha256", "evaluation.motion_physics_window",
             "evaluation.motion_action_mode",
             "evaluation.motion_ground_contacts",
@@ -1194,6 +1324,11 @@ def _evaluate(
     previous_actions: torch.Tensor | None = None
     robot = env.unwrapped.scene["robot"]
     roa_diagnostics = None
+    foot_probe = None
+    if evaluation_plan.scenario_contract["scenario_overrides"].get(ROA_FOOT_OPTION):
+        if args_cli.telemetry_stride != 1:
+            raise ValueError("foot ground telemetry requires stride 1")
+        foot_probe = RoaFootGroundProbe(env.unwrapped)
     dwaq_diagnostics = None
     if roa_mode is not None or dwaq_mode is not None:
         velocity_scale = env_cfg.observations.critic.base_lin_vel.scale
@@ -1398,7 +1533,9 @@ def _evaluate(
                     peak_steps["max_abs_action_error"] = step
             if not torch.isfinite(actions).all():
                 raise FloatingPointError("policy produced non-finite actions")
-            observations, rewards, dones, extras = env.step(actions)
+            observations, rewards, dones, extras = (
+                foot_probe.step(env, actions, step) if foot_probe is not None else env.step(actions)
+            )
             if sensor_delay is not None:
                 sensor_delay.reset(dones)
             if hasattr(policy_module, "reset"):
@@ -1830,6 +1967,8 @@ def _evaluate(
             **telemetry_evidence,
             "samples": telemetry_samples,
         }
+        if foot_probe is not None:
+            telemetry["foot_ground"] = foot_probe.data
         if roa_diagnostics is not None:
             telemetry["roa_diagnostics"] = roa_diagnostics
         if dwaq_diagnostics is not None:
