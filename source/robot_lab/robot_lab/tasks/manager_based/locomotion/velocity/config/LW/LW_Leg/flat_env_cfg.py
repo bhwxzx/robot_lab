@@ -494,7 +494,7 @@ class LWLegFlatRoaEnvCfg(LWLegRoughRoaEnvCfg):
         self.rewards.flat_orientation_l2.weight = -8.0  # -5.0
         self.rewards.body_orientation_l2.weight = -0.0
         self.rewards.stand_still.weight = -3.0
-        self.rewards.joint_pos_penalty.weight = -0.0
+        self.rewards.joint_pos_penalty.weight = -1.0
         self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
         self.rewards.stop_motion.weight = -3.0 # -3.0
         self.rewards.action_rate_l2.weight = -0.2
