@@ -1,0 +1,86 @@
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/__init__.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/__init__.py
+index 4dc6a43ce3d9da6c6e38c6f0891b4fcee71b53f2..a5ebb8ca2d55193856014d7eb655e92888db03db 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/__init__.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/__init__.py
+@@ -3,7 +3,7 @@
+ 
+ import gymnasium as gym
+ 
+-from . import agents, flat_env_cfg
++from . import agents, dynamic_env_cfg, flat_env_cfg
+ 
+ ##
+ # Register Gym environments.
+@@ -18,3 +18,13 @@ gym.register(
+         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:LWBeyondMimicFlatPPORunnerCfg",
+     },
+ )
++
++gym.register(
++    id="RobotLab-Isaac-BeyondMimic-Flat-LW-wheel-dynamic-v0",
++    entry_point="isaaclab.envs:ManagerBasedRLEnv",
++    disable_env_checker=True,
++    kwargs={
++        "env_cfg_entry_point": f"{__name__}.dynamic_env_cfg:LWWheelBeyondMimicDynamicEnvCfg",
++        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:LWBeyondMimicDynamicPPORunnerCfg",
++    },
++)
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/agents/rsl_rl_ppo_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/agents/rsl_rl_ppo_cfg.py
+index a14dbd44ea19f232816fbb3865d7c4a6b5ac9caa..6f673a0d2aa90c602b7611738d5e8e8a5997e073 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/agents/rsl_rl_ppo_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/agents/rsl_rl_ppo_cfg.py
+@@ -42,3 +42,9 @@ class LWBeyondMimicFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+             data_augmentation_func="robot_lab.tasks.manager_based.beyondmimic.mdp.symmetry:compute_symmetric_states",
+         ),
+     )
++
++@configclass
++class LWBeyondMimicDynamicPPORunnerCfg(LWBeyondMimicFlatPPORunnerCfg):
++    """Use the baseline PPO settings with a separate dynamic-transition log directory."""
++
++    experiment_name = "LW_wheel_beyondmimic_dynamic"
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+index 954ececc0480a1a93b1e8dbd69186c6cfc2dfdcf..0aeb073bff2bd337d923bb1be061f1b96a9245ec 100644
+--- a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
++++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/flat_env_cfg.py
+@@ -162,7 +162,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
+         self.rewards.torque_limit.weight = -0.0
+         # Suppress wheel spin after reference landing; phase follows the motion, not contact.
+         self.rewards.joint_vel_wheel_l2.func = mdp.wheel_phase_joint_velocity_l2
+-        self.rewards.joint_vel_wheel_l2.weight = -0.5
++        self.rewards.joint_vel_wheel_l2.weight = 0.0
+         self.rewards.joint_vel_wheel_l2.params = {
+             "command_name": "motion",
+             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
+@@ -172,7 +172,7 @@ class LWWheelBeyondMimicFlatEnvCfg(TrackingEnvCfg):
+         }
+         # Ramp acceleration regularization more slowly to allow initial braking.
+         self.rewards.joint_acc_wheel_l2.func = mdp.wheel_phase_joint_acceleration_l2
+-        self.rewards.joint_acc_wheel_l2.weight = -0.1
++        self.rewards.joint_acc_wheel_l2.weight = 0.0
+         self.rewards.joint_acc_wheel_l2.params = {
+             "command_name": "motion",
+             "asset_cfg": SceneEntityCfg("robot", joint_names=self.wheel_joint_names),
+diff --git a/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/dynamic_env_cfg.py b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/dynamic_env_cfg.py
+new file mode 100644
+index 0000000..0b71ad9
+--- /dev/null
++++ b/source/robot_lab/robot_lab/tasks/manager_based/beyondmimic/config/LW_Wheel/dynamic_env_cfg.py
+@@ -0,0 +1,17 @@
++# SPDX-License-Identifier: Apache-2.0
++
++"""Baseline environment for developing dynamic wheel-to-leg transitions."""
++
++from isaaclab.utils import configclass
++
++from .flat_env_cfg import LWWheelBeyondMimicFlatEnvCfg
++
++
++@configclass
++class LWWheelBeyondMimicDynamicEnvCfg(LWWheelBeyondMimicFlatEnvCfg):
++    """Start from the existing reference-tracking task under a separate task ID.
++
++    The initial baseline inherits the motion, observations, actions, rewards,
++    resets and terminations of the flat wheel task. Velocity-conditioned
++    transitions and the handoff to legged walking will be added here later.
++    """
