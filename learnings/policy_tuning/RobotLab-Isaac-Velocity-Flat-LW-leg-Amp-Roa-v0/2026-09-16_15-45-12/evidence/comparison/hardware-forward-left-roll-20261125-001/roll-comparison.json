@@ -1,0 +1,618 @@
+{
+  "hardware_commit": "58d8fbc1a98da8dc27cb8027ae71fd9507141721",
+  "simulation_source_head": "7da0f830f450d73515f8304f80081093c38e699a",
+  "inputs": {
+    "hardware_manifest": {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/leg/20261123-162458-biped-walking-left-lean/manifest.json",
+      "sha256": "f95cae73a3e6f366bcd0f154900d93c84704a714b70abbe3e64dee5beae3f083"
+    },
+    "hardware_csv": {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/leg/20261123-162458-biped-walking-left-lean/exports/joint_states.csv",
+      "sha256": "0cf13f3cd9de71ec057d2bdf1dedad73ee8ec2983d316971ae5c2a202998816c"
+    },
+    "hardware_bag": {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/leg/20261123-162458-biped-walking-left-lean/raw/lw_real_20261123-162458/lw_real_20261123-162458_0.db3",
+      "sha256": "73ca07d982be4b06d9ceabe3e29593c8ddb587a0b2fea912284f8871c436e29b"
+    },
+    "simulation_manifest": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/hardware-forward-left-roll-20261125-001/manifest.json",
+      "sha256": "435d9bbd27810af862a9838a57b553721cb6924aa54680e1104d6c77218dd414"
+    },
+    "simulation_contract": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/hardware-forward-left-roll-20261125-001/contract.json",
+      "sha256": "8b5b73fa2f8a84f26428d8974919756e281476c01153d9d321ad9dbbc0c9839d"
+    },
+    "onnx_archive": {
+      "path": "/home/young/liufengrong/policy_storage/LW/leg_loco/2026-09-16-15-45-12/policy.onnx",
+      "sha256": "c5d94cd109557baaf3b3a57b9e146a95555ea7c323b538fcf8830aea829f42eb"
+    },
+    "nominal_plane_result": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/hardware-forward-left-roll-20261125-001/raw/nominal-plane-a01/result.json",
+      "sha256": "c6b3007cd0e7e0bbc107dfe5ae1a0e511380b8aa874f9291c979fcdd435516e6"
+    },
+    "nominal_plane_telemetry": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/hardware-forward-left-roll-20261125-001/raw/nominal-plane-a01/telemetry.json.gz",
+      "sha256": "d9a95b0d3ec68c026ed9f39ddfa1040202eb62a62a5082ae615076eba2fdd66e"
+    },
+    "checkpoint": {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-16_15-45-12/model_50000.pt",
+      "sha256": "f8956bb1f9b43bdc638a52dbaf0a3301b022a4f967b581f2ed40663eb797d16a"
+    },
+    "randomized_plane_result": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/hardware-forward-left-roll-20261125-001/raw/randomized-plane-a01/result.json",
+      "sha256": "98bdb9c32acec449f5dd69a35e577642e9367ad47c6f9e1e3eb312b397ecef7e"
+    },
+    "randomized_plane_telemetry": {
+      "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evaluations/hardware-forward-left-roll-20261125-001/raw/randomized-plane-a01/telemetry.json.gz",
+      "sha256": "35857bcde1adda1f4a29813c7c852de45fd2a132a3dcf84e40ace794e10dffbd"
+    }
+  },
+  "policy_identity_evidence": "Operator confirms 2026-09-16 AMP-ROA model_50000 on hardware. Test-time process checksum absent from bag.",
+  "hardware_row_range_zero_based_inclusive": [
+    1600,
+    4249
+  ],
+  "first_last_hardware_time_s": [
+    32.000757157,
+    84.982207404
+  ],
+  "forward_windows_s": [
+    [
+      38.380955995,
+      45.961141312
+    ],
+    [
+      49.441280678,
+      55.10140734
+    ],
+    [
+      65.621663864,
+      69.121734066
+    ],
+    [
+      72.161864004,
+      76.921999263
+    ]
+  ],
+  "forward_command_mean_mps_by_bout": [
+    0.34674228238628096,
+    0.3439933240387431,
+    0.2684487913819877,
+    0.3481628029104556
+  ],
+  "definitions": {
+    "roll_deg": "degrees(atan2(2*(w*x+y*z),1-2*(x*x+y*y))) from normalized wxyz, body x forward/y left/z up; negative = left down",
+    "positive": "cmd_x > .001; lateral and yaw zero throughout",
+    "at_035": "absolute tolerance 1e-6 about recorded full forward .3499893248081207 m/s",
+    "near_035": "0.34 <= cmd_x <= 0.35 m/s",
+    "interior_035": "at_035 after excluding first and last 40 control frames (0.8 s) of each positive bout; the third bout has no retained frames",
+    "alignment": "Hardware and IsaacLab compared by 50 Hz command frame, not phase-locked gait or matched initial joint states.",
+    "shank_abs_right_minus_left_deg": "mean of absolute right minus absolute left shank angle; no causal inference",
+    "measured_speed": "Hardware bag has no independent base translation measurement."
+  },
+  "conditions": {
+    "nominal_plane": {
+      "resets": [],
+      "roll_gravity_crosscheck_max_deg": 1.4973075286306425e-06,
+      "maximum_logged_command_error_mps": 0.0,
+      "seed": 42,
+      "overrides": {
+        "curriculum.terrain_levels": null,
+        "episode_length_s": 75.0,
+        "events.add_joint_default_pos": null,
+        "events.randomize_actuator_gains": null,
+        "events.randomize_com_positions": null,
+        "events.randomize_push_robot": null,
+        "events.randomize_reset_base.params.pose_range": {},
+        "events.randomize_reset_base.params.velocity_range": {},
+        "events.randomize_reset_joints.params.position_range": [
+          0.0,
+          0.0
+        ],
+        "events.randomize_reset_joints.params.velocity_range": [
+          0.0,
+          0.0
+        ],
+        "events.randomize_rigid_body_mass_base": null,
+        "events.randomize_rigid_body_mass_others": null,
+        "events.randomize_rigid_body_material": null,
+        "observations.policy.enable_corruption": false,
+        "scene.robot.actuators.foots.max_delay": 0,
+        "scene.robot.actuators.legs.max_delay": 0,
+        "scene.robot.actuators.wheels.max_delay": 0,
+        "scene.terrain.terrain_generator": null,
+        "scene.terrain.terrain_type": "plane"
+      },
+      "telemetry_status": "complete"
+    },
+    "randomized_plane": {
+      "resets": [],
+      "roll_gravity_crosscheck_max_deg": 1.930181632303629e-06,
+      "maximum_logged_command_error_mps": 0.0,
+      "seed": 42,
+      "overrides": {
+        "curriculum.terrain_levels": null,
+        "episode_length_s": 75.0,
+        "events.randomize_push_robot": null,
+        "events.randomize_rigid_body_material.params.make_consistent": false,
+        "scene.terrain.terrain_generator": null,
+        "scene.terrain.terrain_type": "plane"
+      },
+      "telemetry_status": "complete"
+    }
+  },
+  "statistics": {
+    "hardware": {
+      "positive": {
+        "frames": 1079,
+        "duration_s": 21.580000000000002,
+        "mean_roll_deg": -3.1295495188300673,
+        "median_roll_deg": -2.622164212245479,
+        "sd_roll_deg": 2.171139569307821,
+        "p05_roll_deg": -7.2447776011948,
+        "p95_roll_deg": 0.023845577887421535,
+        "min_roll_deg": -11.217660437957651,
+        "max_roll_deg": 4.127065623336743,
+        "negative_roll_pct": 94.90268767377201,
+        "shank_abs_right_minus_left_deg": 12.099121621693259,
+        "mean_measured_body_vx_mps": null
+      },
+      "near_035": {
+        "frames": 894,
+        "duration_s": 17.88,
+        "mean_roll_deg": -3.228953033947178,
+        "median_roll_deg": -2.6897118766776877,
+        "sd_roll_deg": 2.283127056808611,
+        "p05_roll_deg": -7.519230657747053,
+        "p95_roll_deg": 0.050352410457603046,
+        "min_roll_deg": -11.217660437957651,
+        "max_roll_deg": 4.127065623336743,
+        "negative_roll_pct": 94.63087248322147,
+        "shank_abs_right_minus_left_deg": 12.939894353260376,
+        "mean_measured_body_vx_mps": null
+      },
+      "at_035": {
+        "frames": 890,
+        "duration_s": 17.8,
+        "mean_roll_deg": -3.2257948785048245,
+        "median_roll_deg": -2.678052067573864,
+        "sd_roll_deg": 2.287601824316252,
+        "p05_roll_deg": -7.5213760732953725,
+        "p95_roll_deg": 0.0537777776298095,
+        "min_roll_deg": -11.217660437957651,
+        "max_roll_deg": 4.127065623336743,
+        "negative_roll_pct": 94.6067415730337,
+        "shank_abs_right_minus_left_deg": 12.934371348194905,
+        "mean_measured_body_vx_mps": null
+      },
+      "interior_035": {
+        "frames": 659,
+        "duration_s": 13.18,
+        "mean_roll_deg": -3.111693726856101,
+        "median_roll_deg": -2.5457232569135093,
+        "sd_roll_deg": 2.022491097496966,
+        "p05_roll_deg": -6.655986103381334,
+        "p95_roll_deg": 0.04607070149234789,
+        "min_roll_deg": -8.939953949150016,
+        "max_roll_deg": 2.360153229313882,
+        "negative_roll_pct": 94.68892261001517,
+        "shank_abs_right_minus_left_deg": 13.599062021707887,
+        "mean_measured_body_vx_mps": null
+      },
+      "pre_stand_32_to_36": {
+        "frames": 200,
+        "duration_s": 4.0,
+        "mean_roll_deg": 0.18441210817100484,
+        "median_roll_deg": 0.18477210361008092,
+        "sd_roll_deg": 0.02069851762016345,
+        "p05_roll_deg": 0.14990715476959712,
+        "p95_roll_deg": 0.21971077225094754,
+        "min_roll_deg": 0.13361425415239303,
+        "max_roll_deg": 0.2415618687457527,
+        "negative_roll_pct": 0.0,
+        "shank_abs_right_minus_left_deg": 0.44259625821682635,
+        "mean_measured_body_vx_mps": null
+      },
+      "settled_pre_33_to_36": {
+        "frames": 150,
+        "duration_s": 3.0,
+        "mean_roll_deg": 0.18538907064894242,
+        "median_roll_deg": 0.18572542457816482,
+        "sd_roll_deg": 0.023031490844428997,
+        "p05_roll_deg": 0.14646103088508142,
+        "p95_roll_deg": 0.22170888314826892,
+        "min_roll_deg": 0.13361425415239303,
+        "max_roll_deg": 0.2415618687457527,
+        "negative_roll_pct": 0.0,
+        "shank_abs_right_minus_left_deg": 0.4423776921633859,
+        "mean_measured_body_vx_mps": null
+      },
+      "post_stand_80_to_85": {
+        "frames": 250,
+        "duration_s": 5.0,
+        "mean_roll_deg": 0.10923616102284288,
+        "median_roll_deg": 0.0922428227501427,
+        "sd_roll_deg": 0.10961418604447618,
+        "p05_roll_deg": -0.041763460530852475,
+        "p95_roll_deg": 0.27314721935328484,
+        "min_roll_deg": -0.05672809422320379,
+        "max_roll_deg": 0.28865842060455194,
+        "negative_roll_pct": 24.4,
+        "shank_abs_right_minus_left_deg": 2.469796403876611,
+        "mean_measured_body_vx_mps": null
+      },
+      "forward_1": {
+        "frames": 380,
+        "duration_s": 7.6000000000000005,
+        "mean_roll_deg": -2.928300650849647,
+        "median_roll_deg": -2.150991237142774,
+        "sd_roll_deg": 2.298053098542257,
+        "p05_roll_deg": -8.05677336968353,
+        "p95_roll_deg": -0.4969481348051195,
+        "min_roll_deg": -11.217660437957651,
+        "max_roll_deg": 0.5987003275496223,
+        "negative_roll_pct": 96.84210526315789,
+        "shank_abs_right_minus_left_deg": 11.884879580474973,
+        "mean_measured_body_vx_mps": null
+      },
+      "forward_2": {
+        "frames": 284,
+        "duration_s": 5.68,
+        "mean_roll_deg": -2.990524585639945,
+        "median_roll_deg": -3.1832332774934846,
+        "sd_roll_deg": 2.270644863446919,
+        "p05_roll_deg": -6.621932419150497,
+        "p95_roll_deg": 0.44360319066997267,
+        "min_roll_deg": -8.097234235349966,
+        "max_roll_deg": 4.127065623336743,
+        "negative_roll_pct": 90.84507042253522,
+        "shank_abs_right_minus_left_deg": 13.363363427374058,
+        "mean_measured_body_vx_mps": null
+      },
+      "forward_3": {
+        "frames": 176,
+        "duration_s": 3.52,
+        "mean_roll_deg": -2.906302790727013,
+        "median_roll_deg": -2.637903132468023,
+        "sd_roll_deg": 1.1441224704445654,
+        "p05_roll_deg": -4.4187176850413366,
+        "p95_roll_deg": -1.1018909190255666,
+        "min_roll_deg": -5.219011920724199,
+        "max_roll_deg": -1.0480637094316239,
+        "negative_roll_pct": 100.0,
+        "shank_abs_right_minus_left_deg": 8.371578450577038,
+        "mean_measured_body_vx_mps": null
+      },
+      "forward_4": {
+        "frames": 239,
+        "duration_s": 4.78,
+        "mean_roll_deg": -3.77912723851497,
+        "median_roll_deg": -4.024820172967153,
+        "sd_roll_deg": 2.2908797505771408,
+        "p05_roll_deg": -7.035914786906358,
+        "p95_roll_deg": 0.23411653620033623,
+        "min_roll_deg": -8.327372841986922,
+        "max_roll_deg": 2.360153229313882,
+        "negative_roll_pct": 92.88702928870293,
+        "shank_abs_right_minus_left_deg": 13.682447567157933,
+        "mean_measured_body_vx_mps": null
+      }
+    },
+    "nominal_plane": {
+      "positive": {
+        "frames": 1079,
+        "duration_s": 21.580000000000002,
+        "mean_roll_deg": 1.7394454557251902,
+        "median_roll_deg": 1.60469996572428,
+        "sd_roll_deg": 2.2716953887181397,
+        "p05_roll_deg": -1.7143158938577463,
+        "p95_roll_deg": 5.42254353759802,
+        "min_roll_deg": -4.181199259646625,
+        "max_roll_deg": 6.366608699477988,
+        "negative_roll_pct": 25.949953660797032,
+        "shank_abs_right_minus_left_deg": -2.4919339775028577,
+        "mean_measured_body_vx_mps": 0.17616833735622492
+      },
+      "near_035": {
+        "frames": 894,
+        "duration_s": 17.88,
+        "mean_roll_deg": 2.067629870279507,
+        "median_roll_deg": 1.983006922599194,
+        "sd_roll_deg": 2.2269080111231876,
+        "p05_roll_deg": -1.353740823500001,
+        "p95_roll_deg": 5.481686357173584,
+        "min_roll_deg": -4.181199259646625,
+        "max_roll_deg": 6.366608699477988,
+        "negative_roll_pct": 20.022371364653242,
+        "shank_abs_right_minus_left_deg": -3.178232464108085,
+        "mean_measured_body_vx_mps": 0.19081726655394246
+      },
+      "at_035": {
+        "frames": 890,
+        "duration_s": 17.8,
+        "mean_roll_deg": 2.0768633250841155,
+        "median_roll_deg": 1.9922486961642458,
+        "sd_roll_deg": 2.2269593874802016,
+        "p05_roll_deg": -1.357105391588821,
+        "p95_roll_deg": 5.481996057262968,
+        "min_roll_deg": -4.181199259646625,
+        "max_roll_deg": 6.366608699477988,
+        "negative_roll_pct": 19.8876404494382,
+        "shank_abs_right_minus_left_deg": -3.1710660161048714,
+        "mean_measured_body_vx_mps": 0.19086684316862373
+      },
+      "interior_035": {
+        "frames": 659,
+        "duration_s": 13.18,
+        "mean_roll_deg": 2.4916732854278627,
+        "median_roll_deg": 2.621097163375103,
+        "sd_roll_deg": 2.1690219683559095,
+        "p05_roll_deg": -0.9762502155528334,
+        "p95_roll_deg": 5.627935743724832,
+        "min_roll_deg": -4.181199259646625,
+        "max_roll_deg": 6.366608699477988,
+        "negative_roll_pct": 13.657056145675265,
+        "shank_abs_right_minus_left_deg": -4.021210349976383,
+        "mean_measured_body_vx_mps": 0.19598479859519619
+      },
+      "pre_stand_32_to_36": {
+        "frames": 200,
+        "duration_s": 4.0,
+        "mean_roll_deg": 0.3132278803689508,
+        "median_roll_deg": 0.27650520500726294,
+        "sd_roll_deg": 0.13751801100616265,
+        "p05_roll_deg": 0.14043879682391572,
+        "p95_roll_deg": 0.6242778125699852,
+        "min_roll_deg": -0.14523643861345403,
+        "max_roll_deg": 0.846519887551561,
+        "negative_roll_pct": 1.0,
+        "shank_abs_right_minus_left_deg": -0.44596121921332466,
+        "mean_measured_body_vx_mps": -0.001988094355906469
+      },
+      "settled_pre_33_to_36": {
+        "frames": 150,
+        "duration_s": 3.0,
+        "mean_roll_deg": 0.27795696807291914,
+        "median_roll_deg": 0.2758489598052063,
+        "sd_roll_deg": 0.017531945558010312,
+        "p05_roll_deg": 0.26284705952593884,
+        "p95_roll_deg": 0.3108862973224988,
+        "min_roll_deg": 0.2624371622876676,
+        "max_roll_deg": 0.358913447603777,
+        "negative_roll_pct": 0.0,
+        "shank_abs_right_minus_left_deg": -0.25983751703480457,
+        "mean_measured_body_vx_mps": -0.0018435878419101452
+      },
+      "post_stand_80_to_85": {
+        "frames": 250,
+        "duration_s": 5.0,
+        "mean_roll_deg": 0.7205152846442245,
+        "median_roll_deg": 0.7224095280778826,
+        "sd_roll_deg": 0.004807918741489076,
+        "p05_roll_deg": 0.7098380516153162,
+        "p95_roll_deg": 0.724175694595147,
+        "min_roll_deg": 0.7075470746980655,
+        "max_roll_deg": 0.7275403148083106,
+        "negative_roll_pct": 0.0,
+        "shank_abs_right_minus_left_deg": -0.5244068434158917,
+        "mean_measured_body_vx_mps": 6.98008209708405e-05
+      },
+      "forward_1": {
+        "frames": 380,
+        "duration_s": 7.6000000000000005,
+        "mean_roll_deg": 2.0271294772639084,
+        "median_roll_deg": 2.0639886480265934,
+        "sd_roll_deg": 2.353358435099038,
+        "p05_roll_deg": -1.89864798622803,
+        "p95_roll_deg": 5.5043981102207695,
+        "min_roll_deg": -4.181199259646625,
+        "max_roll_deg": 6.249201507462306,
+        "negative_roll_pct": 21.578947368421055,
+        "shank_abs_right_minus_left_deg": -3.011533415095815,
+        "mean_measured_body_vx_mps": 0.18592923871099054
+      },
+      "forward_2": {
+        "frames": 284,
+        "duration_s": 5.68,
+        "mean_roll_deg": 2.235709769619172,
+        "median_roll_deg": 2.2215333600315166,
+        "sd_roll_deg": 2.0354598100089665,
+        "p05_roll_deg": -1.024320797979181,
+        "p95_roll_deg": 5.210753339259231,
+        "min_roll_deg": -1.5470792670301634,
+        "max_roll_deg": 5.8425881342186585,
+        "negative_roll_pct": 17.95774647887324,
+        "shank_abs_right_minus_left_deg": -3.1687311767916126,
+        "mean_measured_body_vx_mps": 0.20289478061398844
+      },
+      "forward_3": {
+        "frames": 176,
+        "duration_s": 3.52,
+        "mean_roll_deg": -0.010760985893407238,
+        "median_roll_deg": -0.38050711323506103,
+        "sd_roll_deg": 1.6616680900740268,
+        "p05_roll_deg": -2.288842808781756,
+        "p95_roll_deg": 3.674628421607796,
+        "min_roll_deg": -2.727876877764939,
+        "max_roll_deg": 4.459533619632748,
+        "negative_roll_pct": 61.36363636363637,
+        "shank_abs_right_minus_left_deg": 0.6530661702092954,
+        "mean_measured_body_vx_mps": 0.1074801349717828
+      },
+      "forward_4": {
+        "frames": 239,
+        "duration_s": 4.78,
+        "mean_roll_deg": 1.9811916498434725,
+        "median_roll_deg": 1.7012563179762028,
+        "sd_roll_deg": 2.1903624937339563,
+        "p05_roll_deg": -1.6000415413252018,
+        "p95_roll_deg": 5.732329386760645,
+        "min_roll_deg": -2.796243858467991,
+        "max_roll_deg": 6.366608699477988,
+        "negative_roll_pct": 16.317991631799163,
+        "shank_abs_right_minus_left_deg": -3.1775483503648174,
+        "mean_measured_body_vx_mps": 0.17947240103675233
+      }
+    },
+    "randomized_plane": {
+      "positive": {
+        "frames": 1079,
+        "duration_s": 21.580000000000002,
+        "mean_roll_deg": -1.3847989560182854,
+        "median_roll_deg": -1.593446672234684,
+        "sd_roll_deg": 3.151551073251469,
+        "p05_roll_deg": -6.405064621171834,
+        "p95_roll_deg": 3.847543283577347,
+        "min_roll_deg": -8.487669203806398,
+        "max_roll_deg": 6.120415285790963,
+        "negative_roll_pct": 65.61631139944393,
+        "shank_abs_right_minus_left_deg": 1.1584190735654973,
+        "mean_measured_body_vx_mps": 0.25869785559055525
+      },
+      "near_035": {
+        "frames": 894,
+        "duration_s": 17.88,
+        "mean_roll_deg": -1.205545177697458,
+        "median_roll_deg": -1.2116055662221545,
+        "sd_roll_deg": 3.2891418222905817,
+        "p05_roll_deg": -6.496025234012978,
+        "p95_roll_deg": 4.139435057399113,
+        "min_roll_deg": -8.487669203806398,
+        "max_roll_deg": 6.120415285790963,
+        "negative_roll_pct": 61.96868008948546,
+        "shank_abs_right_minus_left_deg": 0.6731651390782785,
+        "mean_measured_body_vx_mps": 0.27995568398548754
+      },
+      "at_035": {
+        "frames": 890,
+        "duration_s": 17.8,
+        "mean_roll_deg": -1.1978883282677086,
+        "median_roll_deg": -1.182298414809605,
+        "sd_roll_deg": 3.294341635124918,
+        "p05_roll_deg": -6.502845801430911,
+        "p95_roll_deg": 4.146352628372094,
+        "min_roll_deg": -8.487669203806398,
+        "max_roll_deg": 6.120415285790963,
+        "negative_roll_pct": 61.79775280898876,
+        "shank_abs_right_minus_left_deg": 0.687212438269307,
+        "mean_measured_body_vx_mps": 0.27998373874808463
+      },
+      "interior_035": {
+        "frames": 659,
+        "duration_s": 13.18,
+        "mean_roll_deg": -1.1284498166458525,
+        "median_roll_deg": -1.0365702232536835,
+        "sd_roll_deg": 3.380494006608039,
+        "p05_roll_deg": -6.487499524740564,
+        "p95_roll_deg": 4.341062789677437,
+        "min_roll_deg": -8.487669203806398,
+        "max_roll_deg": 6.120415285790963,
+        "negative_roll_pct": 60.09104704097117,
+        "shank_abs_right_minus_left_deg": 0.3044337510237527,
+        "mean_measured_body_vx_mps": 0.2938342855533808
+      },
+      "pre_stand_32_to_36": {
+        "frames": 200,
+        "duration_s": 4.0,
+        "mean_roll_deg": -1.6746660689510724,
+        "median_roll_deg": -1.6338309242655507,
+        "sd_roll_deg": 0.6704195081112291,
+        "p05_roll_deg": -2.7494445261529137,
+        "p95_roll_deg": -1.0357481778513922,
+        "min_roll_deg": -4.234068177365948,
+        "max_roll_deg": 0.8599455070888986,
+        "negative_roll_pct": 97.0,
+        "shank_abs_right_minus_left_deg": 1.1536675134601524,
+        "mean_measured_body_vx_mps": 0.0446721783047542
+      },
+      "settled_pre_33_to_36": {
+        "frames": 150,
+        "duration_s": 3.0,
+        "mean_roll_deg": -1.5889538600264925,
+        "median_roll_deg": -1.5991072986683852,
+        "sd_roll_deg": 0.26248015388338153,
+        "p05_roll_deg": -2.0132307999960593,
+        "p95_roll_deg": -1.187938400923348,
+        "min_roll_deg": -2.2163891942317266,
+        "max_roll_deg": -1.0520207099914318,
+        "negative_roll_pct": 100.0,
+        "shank_abs_right_minus_left_deg": 1.4309661586678248,
+        "mean_measured_body_vx_mps": -0.001902715681741635
+      },
+      "post_stand_80_to_85": {
+        "frames": 250,
+        "duration_s": 5.0,
+        "mean_roll_deg": -1.233964023172255,
+        "median_roll_deg": -1.2113082660165846,
+        "sd_roll_deg": 0.19762331107158035,
+        "p05_roll_deg": -1.5820747333516654,
+        "p95_roll_deg": -0.9256473134277822,
+        "min_roll_deg": -1.6997524738829544,
+        "max_roll_deg": -0.7721231037775055,
+        "negative_roll_pct": 100.0,
+        "shank_abs_right_minus_left_deg": 2.4658569146878873,
+        "mean_measured_body_vx_mps": -0.00424593445379287
+      },
+      "forward_1": {
+        "frames": 380,
+        "duration_s": 7.6000000000000005,
+        "mean_roll_deg": -1.1603312483236952,
+        "median_roll_deg": -1.233580383028741,
+        "sd_roll_deg": 3.225124310944521,
+        "p05_roll_deg": -6.031068788300068,
+        "p95_roll_deg": 4.024803106103192,
+        "min_roll_deg": -8.487669203806398,
+        "max_roll_deg": 5.975204294925209,
+        "negative_roll_pct": 62.10526315789474,
+        "shank_abs_right_minus_left_deg": 0.8091943496025729,
+        "mean_measured_body_vx_mps": 0.28458294791267497
+      },
+      "forward_2": {
+        "frames": 284,
+        "duration_s": 5.68,
+        "mean_roll_deg": -1.1127214644054804,
+        "median_roll_deg": -1.5753372954150922,
+        "sd_roll_deg": 3.397473752652398,
+        "p05_roll_deg": -6.773918663268859,
+        "p95_roll_deg": 4.531477290079291,
+        "min_roll_deg": -8.155025820215757,
+        "max_roll_deg": 6.120415285790963,
+        "negative_roll_pct": 61.267605633802816,
+        "shank_abs_right_minus_left_deg": 0.6838084531993815,
+        "mean_measured_body_vx_mps": 0.26938747113544337
+      },
+      "forward_3": {
+        "frames": 176,
+        "duration_s": 3.52,
+        "mean_roll_deg": -2.6514944893952714,
+        "median_roll_deg": -2.8581525131322016,
+        "sd_roll_deg": 2.206348385444195,
+        "p05_roll_deg": -6.128889047355677,
+        "p95_roll_deg": 1.4154548130901992,
+        "min_roll_deg": -6.848306679988074,
+        "max_roll_deg": 2.4675044651946494,
+        "negative_roll_pct": 85.79545454545455,
+        "shank_abs_right_minus_left_deg": 3.6202977614145837,
+        "mean_measured_body_vx_mps": 0.16006851208724335
+      },
+      "forward_4": {
+        "frames": 239,
+        "duration_s": 4.78,
+        "mean_roll_deg": -1.1322019797322245,
+        "median_roll_deg": -0.8002840898713355,
+        "sd_roll_deg": 3.096522998750588,
+        "p05_roll_deg": -6.740260142922718,
+        "p95_roll_deg": 3.407356663431305,
+        "min_roll_deg": -7.310642760179166,
+        "max_roll_deg": 5.176784221440822,
+        "negative_roll_pct": 61.50627615062761,
+        "shank_abs_right_minus_left_deg": 0.4647126393749064,
+        "mean_measured_body_vx_mps": 0.2774701508182923
+      }
+    }
+  },
+  "figure": {
+    "path": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Amp-Roa-v0/2026-09-16_15-45-12/evidence/comparison/hardware-forward-left-roll-20261125-001/roll-comparison.png",
+    "sha256": "4e163b9319321f0fbba9ddabafeac1dc7296654c821b6017b349259e1f990b6e"
+  }
+}

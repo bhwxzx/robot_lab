@@ -1,0 +1,3506 @@
+{
+  "analysis": "11 月 23 日双足策略的实机观测离线推理与小腿跟踪复核",
+  "policy_identity": "Operator confirms the 2026-09-16 model_50000 AMP-ROA; the running process SHA and FSM/inference captures were not saved.",
+  "hardware_experiment_id": "20261123-162458-biped-walking-left-lean",
+  "sim2real_commit": "58d8fbc1a98da8dc27cb8027ae71fd9507141721",
+  "robot_lab_commit": "7da0f830f450d73515f8304f80081093c38e699a",
+  "hardware_sources": [
+    {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/leg/20261123-162458-biped-walking-left-lean/manifest.json",
+      "sha256": "f95cae73a3e6f366bcd0f154900d93c84704a714b70abbe3e64dee5beae3f083"
+    },
+    {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/leg/20261123-162458-biped-walking-left-lean/exports/joint_states.csv",
+      "sha256": "0cf13f3cd9de71ec057d2bdf1dedad73ee8ec2983d316971ae5c2a202998816c"
+    },
+    {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/leg/20261123-162458-biped-walking-left-lean/analysis/left-lean.md",
+      "sha256": "00f030fc0852a5ea70fe9ac4b302d215c0a1bbdc70c21f814d366539a69086df"
+    },
+    {
+      "path": "/home/young/liufengrong/sim2real_test/experiments/leg/20261123-162458-biped-walking-left-lean/raw/lw_real_20261123-162458/lw_real_20261123-162458_0.db3",
+      "sha256": "73ca07d982be4b06d9ceabe3e29593c8ddb587a0b2fea912284f8871c436e29b"
+    }
+  ],
+  "archive": [
+    {
+      "path": "/home/young/liufengrong/policy_storage/LW/leg_loco/2026-09-16-15-45-12/policy.onnx",
+      "sha256": "c5d94cd109557baaf3b3a57b9e146a95555ea7c323b538fcf8830aea829f42eb"
+    },
+    {
+      "path": "/home/young/liufengrong/policy_storage/LW/leg_loco/2026-09-16-15-45-12/policy.pt",
+      "sha256": "1c95ccb2d3b424a8f0b7c338de57d028f33a5b363a6370bd8a9a2e340cade107"
+    },
+    {
+      "path": "/home/young/liufengrong/policy_storage/LW/leg_loco/2026-09-16-15-45-12/archive_manifest.json",
+      "sha256": "375a5acaabc9685cd972eb26c18276542a63234587708ce2152cfdd7de6b90a8"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-16_15-45-12/params/agent.yaml",
+      "sha256": "5d2cb81c5c6dcdb3675c62ff53e1e7b11c3c2b5afb0ea57238a4ee58e1663987"
+    },
+    {
+      "path": "/home/young/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_amp_roa/2026-09-16_15-45-12/params/env.yaml",
+      "sha256": "021af09f2981e0c38d23ab34f11527d14194168f906e6953161013edef2e6b23"
+    }
+  ],
+  "deployment_reference": {
+    "source_commit": "7f07ea35df927638318a9cc0dbd9ee68ac12e080",
+    "binary_digest_at_test": null,
+    "leg_policy_onnx_matches_archive": true,
+    "files": [
+      {
+        "path": "policy/LW/robot_lab/leg_loco/config.yaml",
+        "content_sha256": "a576534bd7ebdd2d0b173d0bb64e7f33f360e9f671304e3b7cad76cb2e602409"
+      },
+      {
+        "path": "policy/LW/base.yaml",
+        "content_sha256": "1943f3093f2d5acfadf0b3f476802143dfbc1e1125e0768cf6f1a88137477eb7"
+      },
+      {
+        "path": "src/rl_sar/src/rl_real_LW.cpp",
+        "content_sha256": "bfa6008f0e62b4163108bea20912084ac10c43d396ce659c61c9bfc5e0bd0651"
+      },
+      {
+        "path": "src/rl_sar/library/core/safety/lw_runtime_core.hpp",
+        "content_sha256": "21bc5bce6e86ec777e8764f786b4508d645655395766925cdd5d45bb891b8209"
+      },
+      {
+        "path": "src/rl_sar/library/core/rl_sdk/rl_sdk.cpp",
+        "content_sha256": "8aec7b752ec8dc803806e05f05c3babe336240feb9b5a3a95f441605df6133fb"
+      },
+      {
+        "path": "src/rl_sar/library/core/observation_buffer/observation_buffer.cpp",
+        "content_sha256": "8140e69359d23f915f30ba9063e44be8b190d4aa07347d0a4d6e5e5021654b8c"
+      },
+      {
+        "path": "src/rl_sar/library/core/debug/lw_debug_publisher.cpp",
+        "content_sha256": "4ecb802937e55f41c4f90b4d347c2a2dc742de4833d573f3fb8e722f6c9fac7a"
+      },
+      {
+        "path": "src/rl_sar/fsm_robot/fsm_LW.hpp",
+        "content_sha256": "d47a32d046de68348cade5e9fdc02fc4cc59bc4d9360c3bd9b48fe0f6ad9c4ff"
+      }
+    ],
+    "leg_settings": {
+      "model_name": "policy.onnx",
+      "num_observations": 41,
+      "observations": [
+        "ang_vel",
+        "gravity_vec",
+        "commands",
+        "dof_pos",
+        "dof_vel",
+        "actions",
+        "gait_phase"
+      ],
+      "observations_history": [
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        0
+      ],
+      "observations_history_priority": "time",
+      "clip_obs": 100.0,
+      "clip_actions_lower": [
+        -100.0,
+        -100.0,
+        -100.0,
+        -100.0,
+        -100.0,
+        -100.0,
+        -100.0,
+        -100.0,
+        -100.0,
+        -100.0
+      ],
+      "clip_actions_upper": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ],
+      "rl_kp": [
+        90.0,
+        90.0,
+        90.0,
+        90.0,
+        90.0,
+        90.0,
+        28.0,
+        28.0,
+        0.0,
+        0.0
+      ],
+      "rl_kd": [
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        1.4,
+        1.4,
+        0.5,
+        0.5
+      ],
+      "fixed_kp": [
+        160.0,
+        160.0,
+        160.0,
+        160.0,
+        160.0,
+        160.0,
+        50.0,
+        50.0,
+        0.0,
+        0.0
+      ],
+      "fixed_kd": [
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0
+      ],
+      "num_of_dofs": 10,
+      "action_scale": [
+        0.25,
+        0.25,
+        0.25,
+        0.25,
+        0.25,
+        0.25,
+        0.25,
+        0.25,
+        1.0,
+        1.0
+      ],
+      "wheel_indices": [
+        8,
+        9
+      ],
+      "ang_vel_scale": 0.25,
+      "dof_pos_scale": 1.0,
+      "dof_vel_scale": 0.05,
+      "commands_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "torque_limits": [
+        120.0,
+        120.0,
+        120.0,
+        120.0,
+        120.0,
+        120.0,
+        27.0,
+        27.0,
+        40.0,
+        40.0
+      ],
+      "default_dof_pos": [
+        0.0,
+        0.0,
+        -0.4363,
+        0.4363,
+        -2.234,
+        2.234,
+        -0.4712,
+        0.4712,
+        0.0,
+        0.0
+      ],
+      "gait_command": [
+        1.25,
+        0.5,
+        0.5
+      ],
+      "vel_command": [
+        0.35,
+        0.0,
+        0.5
+      ],
+      "joint_mapping": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  },
+  "backend": {
+    "onnxruntime": "1.23.2",
+    "torch": "2.7.0+cu128",
+    "device": "CPU",
+    "raw_action_max_abs_onnx_vs_jit_same_2403_reconstructed_histories": 4.291534423828125e-06
+  },
+  "joint_order": [
+    "right_hip",
+    "left_hip",
+    "right_thigh",
+    "left_thigh",
+    "right_shank",
+    "left_shank",
+    "right_foot",
+    "left_foot",
+    "right_wheel",
+    "left_wheel"
+  ],
+  "recording": {
+    "total_frames": 4716,
+    "policy_rows_inclusive": [
+      1884,
+      4286
+    ],
+    "policy_time_s": [
+      37.680923657,
+      85.722228193
+    ],
+    "state_identification": "First/last continuously nonzero wheel-velocity targets of the leg policy. Before/after: static/interpolated FSM command. No mode flag recorded.",
+    "first_10ch_one_step_residual_above_1e-5": {
+      "row": 2450,
+      "time_s": 49.001288344,
+      "consecutive_frames_before": 566
+    },
+    "repeated_10ch_published_target_in_active_span": 97,
+    "first_repeat_row": 2578,
+    "median_message_period_ms": 19.999674999997552,
+    "four_forward_bouts": [
+      {
+        "first_row": 1919,
+        "last_row": 2298,
+        "begin_s": 38.380955995,
+        "end_s": 45.961141312
+      },
+      {
+        "first_row": 2472,
+        "last_row": 2755,
+        "begin_s": 49.441280678,
+        "end_s": 55.10140734
+      },
+      {
+        "first_row": 3281,
+        "last_row": 3456,
+        "begin_s": 65.621663864,
+        "end_s": 69.121734066
+      },
+      {
+        "first_row": 3608,
+        "last_row": 3846,
+        "begin_s": 72.161864004,
+        "end_s": 76.921999263
+      }
+    ],
+    "debug_PD_formula_max_error_each_of_8_joints_Nm": [
+      1.9073486328125e-06,
+      1.7881393432617188e-06,
+      1.6689300537109375e-06,
+      2.384185791015625e-06,
+      3.337860107421875e-06,
+      3.814697265625e-06,
+      1.3351440415476645e-06,
+      2.0027160658742105e-06
+    ]
+  },
+  "method": {
+    "input": "410 = 10 x 41 oldest to newest. Unnormalized hardware channels scaled/clipped exactly as deployment configuration, wheel relative positions zero. Project gravity via reference C++ inverse quaternion rotation. Built-in model transformations are internal.",
+    "first_step": "First successful action gets zero last raw action and ten copies of the first observation. Phase starts at zero and advances after every successful output. Reconstructed clock assumes one output per published row.",
+    "one_step": "Recover prior raw actions from preceding published position/velocity targets (invert the verified scale/default, no values at limits), also used in history. Current target is never used as an input or used in the 410-vector.",
+    "recursive": "Carry only previous model-generated actions from the first policy frame. IMU, joint observations and velocity commands stay fixed to the bag, so this is an open-loop input replay, not a dynamic simulation.",
+    "correlation": "Pearson correlation of predicted vs published target on identical frames. Position measures radians before conversion to degrees; wheel velocity uses rad/s.",
+    "side_difference": "abs(right shank angle)-abs(left shank angle), degrees. Measured minus target difference equals left minus right shortfall in angle magnitude. This is a difference of averages, not a causal percentage.",
+    "counterfactuals": {
+      "mirror_same_clock": "Project LW leg convention, reflect body/command channels and swap-negate all five joint pairs for positions, velocities and prior actions throughout history, same global gait phase.",
+      "source": {
+        "path": "/home/young/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/symmetry/lw_leg.py",
+        "sha256": "33f95e80ad292e675f6a95bea4874d13f4ad0d82d59168581848c1f7318ee874"
+      },
+      "mirror_half_cycle": "Sensitivity only, also negate the two phase channels to swap the half cycle.",
+      "zero_roll_gravity_and_x_gyro": "Set projected gravity y=0, z=-hypot(y,z), keep gravity x, zero the body x gyroscope, hold all other measured histories fixed. Conditional single-step response only."
+    },
+    "availability": "No physical pressure, external velocity, measured drive gains, inference or source-snapshot frame IDs, raw deployed actions, firmware trace, or runtime model digest in this bag. Debug messages are a separately timed 50 Hz publication.",
+    "pd_check": "The data publisher computes its own estimate with the configured gains. Agreement verifies the debug channel, not hardware-loop gains or a force measurement."
+  },
+  "alignment": {
+    "period_seconds": 0.019999999552965164,
+    "gait_frequency_hz": 1.25,
+    "phase_gate_cmd_norm_gt": 0.1,
+    "newest_sensor_and_command_relative_to_published_target_rows": -1,
+    "phase_offset_ticks": 0,
+    "sampled_by": "first forward bout, every third row (127 of 380), minimize RMS over eight position outputs; rest held out",
+    "tested_data_delay_control_periods": [
+      0,
+      0.25,
+      0.5,
+      0.75,
+      1,
+      1.25,
+      1.5
+    ],
+    "tested_clock_offsets_ticks": [
+      -20,
+      -19,
+      -18,
+      -17,
+      -16,
+      -15,
+      -14,
+      -13,
+      -12,
+      -11,
+      -10,
+      -9,
+      -8,
+      -7,
+      -6,
+      -5,
+      -4,
+      -3,
+      -2,
+      -1,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "best_per_delay": [
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 1.8633737895487974
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 1.4230672455295121
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 0.9884023310429516
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 0.5016899343378659
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 6.032856171361037e-06
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 0.5030853740018112
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 1,
+        "eight_joint_RMSE_deg": 0.9602097647483719
+      }
+    ],
+    "all_candidates_first_bout": [
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 6.032856171361037e-06
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 0.3510497653476909
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 1,
+        "eight_joint_RMSE_deg": 0.36115217541909506
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 0.5016899343378659
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 0.5030853740018112
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 1,
+        "eight_joint_RMSE_deg": 0.532984046845866
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 0.559962013406947
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 1,
+        "eight_joint_RMSE_deg": 0.6648025356805867
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 0.6792842442683061
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -2,
+        "eight_joint_RMSE_deg": 0.6862022654021771
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 2,
+        "eight_joint_RMSE_deg": 0.727989896352844
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 2,
+        "eight_joint_RMSE_deg": 0.7603804143051899
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -2,
+        "eight_joint_RMSE_deg": 0.7754322836060468
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -2,
+        "eight_joint_RMSE_deg": 0.9351836314643279
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 2,
+        "eight_joint_RMSE_deg": 0.9477281276487025
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 1,
+        "eight_joint_RMSE_deg": 0.9602097647483719
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 0.986734057338176
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 0.9884023310429516
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 0.9918632092397383
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -3,
+        "eight_joint_RMSE_deg": 1.0021460590351925
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -3,
+        "eight_joint_RMSE_deg": 1.0450631257981444
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 2,
+        "eight_joint_RMSE_deg": 1.0576575677408249
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 3,
+        "eight_joint_RMSE_deg": 1.063466857073332
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 3,
+        "eight_joint_RMSE_deg": 1.0909476963120555
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -2,
+        "eight_joint_RMSE_deg": 1.0980126732347872
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 1,
+        "eight_joint_RMSE_deg": 1.1172878939593864
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 1.120082721990391
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -3,
+        "eight_joint_RMSE_deg": 1.210031937769522
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 3,
+        "eight_joint_RMSE_deg": 1.250614894105328
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 3,
+        "eight_joint_RMSE_deg": 1.267555470794252
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -3,
+        "eight_joint_RMSE_deg": 1.283436941275001
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -4,
+        "eight_joint_RMSE_deg": 1.3104940953417719
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -2,
+        "eight_joint_RMSE_deg": 1.3167208799872963
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -4,
+        "eight_joint_RMSE_deg": 1.3329058669992877
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 2,
+        "eight_joint_RMSE_deg": 1.3334870734089734
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 4,
+        "eight_joint_RMSE_deg": 1.3810608350819933
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 1.4230672455295121
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 4,
+        "eight_joint_RMSE_deg": 1.4416058730408077
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 1.4533017182208083
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -2,
+        "eight_joint_RMSE_deg": 1.47943647658451
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -4,
+        "eight_joint_RMSE_deg": 1.491738607775055
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 4,
+        "eight_joint_RMSE_deg": 1.4950136834820762
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -4,
+        "eight_joint_RMSE_deg": 1.5185433650076527
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -3,
+        "eight_joint_RMSE_deg": 1.5417346320041962
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 1,
+        "eight_joint_RMSE_deg": 1.5719110480875473
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 4,
+        "eight_joint_RMSE_deg": 1.5927501686886678
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 3,
+        "eight_joint_RMSE_deg": 1.5967002591847566
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -3,
+        "eight_joint_RMSE_deg": 1.6080002735580137
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -5,
+        "eight_joint_RMSE_deg": 1.6278625703861167
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -5,
+        "eight_joint_RMSE_deg": 1.6435507678576955
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 5,
+        "eight_joint_RMSE_deg": 1.6972454462441044
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 2,
+        "eight_joint_RMSE_deg": 1.7603391052586856
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 5,
+        "eight_joint_RMSE_deg": 1.7609386678017658
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -5,
+        "eight_joint_RMSE_deg": 1.7724505247609992
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 5,
+        "eight_joint_RMSE_deg": 1.7768055174088229
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -4,
+        "eight_joint_RMSE_deg": 1.7779898081778795
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -4,
+        "eight_joint_RMSE_deg": 1.7966533000849394
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -5,
+        "eight_joint_RMSE_deg": 1.7976411161936525
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -1,
+        "eight_joint_RMSE_deg": 1.8633737895487974
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 4,
+        "eight_joint_RMSE_deg": 1.8798870525277727
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -2,
+        "eight_joint_RMSE_deg": 1.8917276123408129
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 0,
+        "eight_joint_RMSE_deg": 1.9086167491675503
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 5,
+        "eight_joint_RMSE_deg": 1.9104199191084337
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -6,
+        "eight_joint_RMSE_deg": 1.9525942027991467
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -6,
+        "eight_joint_RMSE_deg": 1.9688094987755802
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -3,
+        "eight_joint_RMSE_deg": 1.9862328844614596
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 3,
+        "eight_joint_RMSE_deg": 1.9887869483242213
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 6,
+        "eight_joint_RMSE_deg": 2.0007446885702094
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -5,
+        "eight_joint_RMSE_deg": 2.0140629171214997
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 1,
+        "eight_joint_RMSE_deg": 2.0260212976977225
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 6,
+        "eight_joint_RMSE_deg": 2.0301187708694957
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -5,
+        "eight_joint_RMSE_deg": 2.0401800664037473
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -6,
+        "eight_joint_RMSE_deg": 2.058058086556256
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 6,
+        "eight_joint_RMSE_deg": 2.090954838919976
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -6,
+        "eight_joint_RMSE_deg": 2.101096175733564
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -4,
+        "eight_joint_RMSE_deg": 2.141864294228901
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 5,
+        "eight_joint_RMSE_deg": 2.164010755725844
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 2,
+        "eight_joint_RMSE_deg": 2.1971612923059123
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 6,
+        "eight_joint_RMSE_deg": 2.210675035022194
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 4,
+        "eight_joint_RMSE_deg": 2.2374071147731547
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -6,
+        "eight_joint_RMSE_deg": 2.2528796276773493
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -7,
+        "eight_joint_RMSE_deg": 2.2530557184918885
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 7,
+        "eight_joint_RMSE_deg": 2.2815679162952835
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -7,
+        "eight_joint_RMSE_deg": 2.282863304360059
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 7,
+        "eight_joint_RMSE_deg": 2.289087314241233
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -6,
+        "eight_joint_RMSE_deg": 2.3196551855413903
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -7,
+        "eight_joint_RMSE_deg": 2.323597058466134
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -5,
+        "eight_joint_RMSE_deg": 2.354651153857832
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 7,
+        "eight_joint_RMSE_deg": 2.3767406259638877
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 3,
+        "eight_joint_RMSE_deg": 2.401731007476495
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -7,
+        "eight_joint_RMSE_deg": 2.4081964218561467
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 6,
+        "eight_joint_RMSE_deg": 2.435104592421647
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -7,
+        "eight_joint_RMSE_deg": 2.479748629827554
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 7,
+        "eight_joint_RMSE_deg": 2.4824888163451986
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 5,
+        "eight_joint_RMSE_deg": 2.4911855681493287
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 8,
+        "eight_joint_RMSE_deg": 2.5275138502407457
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 8,
+        "eight_joint_RMSE_deg": 2.5289503244005638
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -8,
+        "eight_joint_RMSE_deg": 2.529801323282465
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -8,
+        "eight_joint_RMSE_deg": 2.568557737623822
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -8,
+        "eight_joint_RMSE_deg": 2.570963031428724
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -7,
+        "eight_joint_RMSE_deg": 2.6073508642319667
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -6,
+        "eight_joint_RMSE_deg": 2.6082629079295754
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 8,
+        "eight_joint_RMSE_deg": 2.6212859442426737
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 4,
+        "eight_joint_RMSE_deg": 2.6270100696539678
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 7,
+        "eight_joint_RMSE_deg": 2.680781160781716
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -8,
+        "eight_joint_RMSE_deg": 2.6893112132814156
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -8,
+        "eight_joint_RMSE_deg": 2.6913126721516414
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 8,
+        "eight_joint_RMSE_deg": 2.712687322272373
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 6,
+        "eight_joint_RMSE_deg": 2.733892071437501
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 9,
+        "eight_joint_RMSE_deg": 2.740202312456946
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 9,
+        "eight_joint_RMSE_deg": 2.7490081338443852
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -9,
+        "eight_joint_RMSE_deg": 2.7938357325842365
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -9,
+        "eight_joint_RMSE_deg": 2.8032509349116874
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 9,
+        "eight_joint_RMSE_deg": 2.8379965341063658
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -9,
+        "eight_joint_RMSE_deg": 2.843883943727505
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 5,
+        "eight_joint_RMSE_deg": 2.857908029640834
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -7,
+        "eight_joint_RMSE_deg": 2.8733555696658755
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -9,
+        "eight_joint_RMSE_deg": 2.8772690546168813
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -8,
+        "eight_joint_RMSE_deg": 2.8790752127655264
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 8,
+        "eight_joint_RMSE_deg": 2.8884157098989305
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 9,
+        "eight_joint_RMSE_deg": 2.9129369427929226
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 10,
+        "eight_joint_RMSE_deg": 2.930445705843427
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 10,
+        "eight_joint_RMSE_deg": 2.9423223375930214
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 7,
+        "eight_joint_RMSE_deg": 2.95280518386511
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -9,
+        "eight_joint_RMSE_deg": 2.9618421644672717
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -10,
+        "eight_joint_RMSE_deg": 3.0070718905945073
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -10,
+        "eight_joint_RMSE_deg": 3.0273355677580542
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 10,
+        "eight_joint_RMSE_deg": 3.0285918956785136
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -10,
+        "eight_joint_RMSE_deg": 3.051580177990661
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 9,
+        "eight_joint_RMSE_deg": 3.0665771389738934
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 6,
+        "eight_joint_RMSE_deg": 3.0780855808385414
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -10,
+        "eight_joint_RMSE_deg": 3.0897869755472427
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 10,
+        "eight_joint_RMSE_deg": 3.093638775352307
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 11,
+        "eight_joint_RMSE_deg": 3.1111460442989305
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 11,
+        "eight_joint_RMSE_deg": 3.1178584127057607
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -8,
+        "eight_joint_RMSE_deg": 3.132540544656938
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 8,
+        "eight_joint_RMSE_deg": 3.1375188987882305
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -9,
+        "eight_joint_RMSE_deg": 3.143436830817224
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -11,
+        "eight_joint_RMSE_deg": 3.196399398301972
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 11,
+        "eight_joint_RMSE_deg": 3.1982435493778754
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -10,
+        "eight_joint_RMSE_deg": 3.209250399225351
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -11,
+        "eight_joint_RMSE_deg": 3.2232638129681015
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -11,
+        "eight_joint_RMSE_deg": 3.232025238125935
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 10,
+        "eight_joint_RMSE_deg": 3.2322487133778415
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 11,
+        "eight_joint_RMSE_deg": 3.250506022472697
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 7,
+        "eight_joint_RMSE_deg": 3.276336090366393
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 12,
+        "eight_joint_RMSE_deg": 3.280607733362001
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 12,
+        "eight_joint_RMSE_deg": 3.284697522570958
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 9,
+        "eight_joint_RMSE_deg": 3.295003851141684
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -11,
+        "eight_joint_RMSE_deg": 3.3046807350917113
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 12,
+        "eight_joint_RMSE_deg": 3.345874673193116
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 11,
+        "eight_joint_RMSE_deg": 3.374011850922395
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 12,
+        "eight_joint_RMSE_deg": 3.3824970803056664
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -12,
+        "eight_joint_RMSE_deg": 3.3834165945226795
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -10,
+        "eight_joint_RMSE_deg": 3.389738361486349
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -9,
+        "eight_joint_RMSE_deg": 3.3901863792072198
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -12,
+        "eight_joint_RMSE_deg": 3.4006956924623424
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -12,
+        "eight_joint_RMSE_deg": 3.4238071316229615
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -11,
+        "eight_joint_RMSE_deg": 3.429502015286871
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 13,
+        "eight_joint_RMSE_deg": 3.4301675318441243
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 10,
+        "eight_joint_RMSE_deg": 3.4425696612729864
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 8,
+        "eight_joint_RMSE_deg": 3.4431453181539715
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 13,
+        "eight_joint_RMSE_deg": 3.44775292107938
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 13,
+        "eight_joint_RMSE_deg": 3.474690760279087
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 12,
+        "eight_joint_RMSE_deg": 3.4889468591807846
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 13,
+        "eight_joint_RMSE_deg": 3.49714031142045
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -12,
+        "eight_joint_RMSE_deg": 3.498944548578391
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 14,
+        "eight_joint_RMSE_deg": 3.5615780235976424
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -13,
+        "eight_joint_RMSE_deg": 3.5632684954172205
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 11,
+        "eight_joint_RMSE_deg": 3.5679407716963323
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -13,
+        "eight_joint_RMSE_deg": 3.5781553196000866
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 14,
+        "eight_joint_RMSE_deg": 3.582075207853439
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 9,
+        "eight_joint_RMSE_deg": 3.584457236326481
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 13,
+        "eight_joint_RMSE_deg": 3.5859449369050744
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 14,
+        "eight_joint_RMSE_deg": 3.5984988245995577
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -13,
+        "eight_joint_RMSE_deg": 3.6016398578441176
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -11,
+        "eight_joint_RMSE_deg": 3.611276400989359
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 14,
+        "eight_joint_RMSE_deg": 3.6137732620178222
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -12,
+        "eight_joint_RMSE_deg": 3.624031779264358
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -10,
+        "eight_joint_RMSE_deg": 3.63480597579323
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 12,
+        "eight_joint_RMSE_deg": 3.6654474850703767
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 15,
+        "eight_joint_RMSE_deg": 3.6666081903424557
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -13,
+        "eight_joint_RMSE_deg": 3.6738759385061726
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 14,
+        "eight_joint_RMSE_deg": 3.6896425764315004
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 15,
+        "eight_joint_RMSE_deg": 3.6901001991058915
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 15,
+        "eight_joint_RMSE_deg": 3.6987916148247324
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 10,
+        "eight_joint_RMSE_deg": 3.715373606582231
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 15,
+        "eight_joint_RMSE_deg": 3.7167195807355466
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -14,
+        "eight_joint_RMSE_deg": 3.718485184635995
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -14,
+        "eight_joint_RMSE_deg": 3.7346530961750615
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 13,
+        "eight_joint_RMSE_deg": 3.7465576890115706
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 16,
+        "eight_joint_RMSE_deg": 3.753166323920381
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -14,
+        "eight_joint_RMSE_deg": 3.753423736674726
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 16,
+        "eight_joint_RMSE_deg": 3.7772107242329414
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 16,
+        "eight_joint_RMSE_deg": 3.783883819052044
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -13,
+        "eight_joint_RMSE_deg": 3.792281963523398
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 15,
+        "eight_joint_RMSE_deg": 3.7956044236677857
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -12,
+        "eight_joint_RMSE_deg": 3.801570167020969
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 16,
+        "eight_joint_RMSE_deg": 3.807934195780128
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -14,
+        "eight_joint_RMSE_deg": 3.8205247957414006
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 11,
+        "eight_joint_RMSE_deg": 3.8259479659423907
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 17,
+        "eight_joint_RMSE_deg": 3.8273490084958897
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 14,
+        "eight_joint_RMSE_deg": 3.839245063595936
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -15,
+        "eight_joint_RMSE_deg": 3.8449371724954955
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -11,
+        "eight_joint_RMSE_deg": 3.85373829812788
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 17,
+        "eight_joint_RMSE_deg": 3.8544631519535475
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 17,
+        "eight_joint_RMSE_deg": 3.855804430351809
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -15,
+        "eight_joint_RMSE_deg": 3.8657052164405656
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -15,
+        "eight_joint_RMSE_deg": 3.874122997705783
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 17,
+        "eight_joint_RMSE_deg": 3.887296298180622
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 16,
+        "eight_joint_RMSE_deg": 3.8943757892553403
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 18,
+        "eight_joint_RMSE_deg": 3.8950903977972526
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 12,
+        "eight_joint_RMSE_deg": 3.9130392811624
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 18,
+        "eight_joint_RMSE_deg": 3.9190447249901337
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 18,
+        "eight_joint_RMSE_deg": 3.923980390439114
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -14,
+        "eight_joint_RMSE_deg": 3.9312891197378512
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -15,
+        "eight_joint_RMSE_deg": 3.933814582183463
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -16,
+        "eight_joint_RMSE_deg": 3.942883792740771
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 15,
+        "eight_joint_RMSE_deg": 3.946295472231192
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": 19,
+        "eight_joint_RMSE_deg": 3.953573892565487
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 18,
+        "eight_joint_RMSE_deg": 3.9556699068670347
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -13,
+        "eight_joint_RMSE_deg": 3.9632437328829324
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -16,
+        "eight_joint_RMSE_deg": 3.9638896126463217
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -16,
+        "eight_joint_RMSE_deg": 3.971923195770726
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": 19,
+        "eight_joint_RMSE_deg": 3.9738655308159485
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 17,
+        "eight_joint_RMSE_deg": 3.9804387341184397
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": 19,
+        "eight_joint_RMSE_deg": 3.984321696661592
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 13,
+        "eight_joint_RMSE_deg": 3.9853786684356516
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -20,
+        "eight_joint_RMSE_deg": 3.9960760253363605
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -17,
+        "eight_joint_RMSE_deg": 4.010297759848797
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": 19,
+        "eight_joint_RMSE_deg": 4.015462236634972
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -20,
+        "eight_joint_RMSE_deg": 4.0166122697364735
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -16,
+        "eight_joint_RMSE_deg": 4.016847911262839
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -17,
+        "eight_joint_RMSE_deg": 4.0239064848832236
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -19,
+        "eight_joint_RMSE_deg": 4.028870324862531
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -20,
+        "eight_joint_RMSE_deg": 4.029769348512033
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -15,
+        "eight_joint_RMSE_deg": 4.0391497595634
+      },
+      {
+        "input_delay_periods": 1.25,
+        "phase_offset_ticks": -18,
+        "eight_joint_RMSE_deg": 4.040101290292148
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -17,
+        "eight_joint_RMSE_deg": 4.040117938878249
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -12,
+        "eight_joint_RMSE_deg": 4.043861736317062
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -19,
+        "eight_joint_RMSE_deg": 4.0486834229842685
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 16,
+        "eight_joint_RMSE_deg": 4.050955314656944
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 18,
+        "eight_joint_RMSE_deg": 4.053528161539923
+      },
+      {
+        "input_delay_periods": 1,
+        "phase_offset_ticks": -18,
+        "eight_joint_RMSE_deg": 4.056136013142399
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -19,
+        "eight_joint_RMSE_deg": 4.060604237520057
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -20,
+        "eight_joint_RMSE_deg": 4.064897438300233
+      },
+      {
+        "input_delay_periods": 1.5,
+        "phase_offset_ticks": -18,
+        "eight_joint_RMSE_deg": 4.0690036626518795
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -17,
+        "eight_joint_RMSE_deg": 4.070611318427771
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 14,
+        "eight_joint_RMSE_deg": 4.070883672220925
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -14,
+        "eight_joint_RMSE_deg": 4.097017683532687
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -19,
+        "eight_joint_RMSE_deg": 4.097937624636523
+      },
+      {
+        "input_delay_periods": 0.75,
+        "phase_offset_ticks": -18,
+        "eight_joint_RMSE_deg": 4.100882716829267
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": 19,
+        "eight_joint_RMSE_deg": 4.1151023169075875
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -16,
+        "eight_joint_RMSE_deg": 4.118577602534655
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 17,
+        "eight_joint_RMSE_deg": 4.139581288006091
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -20,
+        "eight_joint_RMSE_deg": 4.164378289787821
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -17,
+        "eight_joint_RMSE_deg": 4.170017037834491
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 15,
+        "eight_joint_RMSE_deg": 4.171901743158591
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -19,
+        "eight_joint_RMSE_deg": 4.195603780239004
+      },
+      {
+        "input_delay_periods": 0.5,
+        "phase_offset_ticks": -18,
+        "eight_joint_RMSE_deg": 4.197246867621216
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -15,
+        "eight_joint_RMSE_deg": 4.200482669740509
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -13,
+        "eight_joint_RMSE_deg": 4.201429077827379
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 18,
+        "eight_joint_RMSE_deg": 4.210807781331453
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": 19,
+        "eight_joint_RMSE_deg": 4.266895587248305
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 16,
+        "eight_joint_RMSE_deg": 4.271194764444005
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -16,
+        "eight_joint_RMSE_deg": 4.275449972296923
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -20,
+        "eight_joint_RMSE_deg": 4.3098421092020525
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -17,
+        "eight_joint_RMSE_deg": 4.323501633768432
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -14,
+        "eight_joint_RMSE_deg": 4.327039671758499
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -19,
+        "eight_joint_RMSE_deg": 4.33871246505005
+      },
+      {
+        "input_delay_periods": 0.25,
+        "phase_offset_ticks": -18,
+        "eight_joint_RMSE_deg": 4.345161017400189
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 17,
+        "eight_joint_RMSE_deg": 4.35407782936164
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 18,
+        "eight_joint_RMSE_deg": 4.416483133373931
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -15,
+        "eight_joint_RMSE_deg": 4.419107633562509
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": 19,
+        "eight_joint_RMSE_deg": 4.464098943399029
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -16,
+        "eight_joint_RMSE_deg": 4.4802899068265445
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -20,
+        "eight_joint_RMSE_deg": 4.499538660568109
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -17,
+        "eight_joint_RMSE_deg": 4.516303359885906
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -19,
+        "eight_joint_RMSE_deg": 4.523772598630138
+      },
+      {
+        "input_delay_periods": 0,
+        "phase_offset_ticks": -18,
+        "eight_joint_RMSE_deg": 4.5308017170597275
+      }
+    ]
+  },
+  "sensor_delay_sensitivity_mae_deg_by_bout": {
+    "0": [
+      0.9842120099871488,
+      2.0953329901779543,
+      0.260357339609498,
+      1.710542970784473
+    ],
+    "0.5": [
+      0.4964008599601901,
+      1.3032675417564867,
+      0.1743868824446714,
+      1.2080726339730803
+    ],
+    "0.75": [
+      0.24483421393633661,
+      0.9642579324920739,
+      0.12205286578633621,
+      1.038863235022477
+    ],
+    "1.0": [
+      3.6239038520650692e-06,
+      0.7156552150420357,
+      0.08458322840211979,
+      0.9348060500692731
+    ],
+    "1.25": [
+      0.2464490734273686,
+      0.6070166273421929,
+      0.058234132832569216,
+      0.8660260451272447
+    ],
+    "1.5": [
+      0.48767027737532714,
+      0.8327839946844686,
+      0.07555997487936437,
+      0.9972452915840025
+    ],
+    "2.0": [
+      0.9644928269664989,
+      1.5554111253217948,
+      0.14300082918714055,
+      1.4754353731130576
+    ]
+  },
+  "window_metrics": {
+    "policy_active": {
+      "n": 2403,
+      "repeated_published_targets": 97,
+      "one_step": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.11252075560374376,
+          0.11619298572424876,
+          0.2817953870534006,
+          0.24382858249747977,
+          0.2803745783786941,
+          0.31345773230379415,
+          0.37554394578816763,
+          0.3788611306915184,
+          0.008403611670570278,
+          0.007143042535147863
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.40260057076229877,
+          0.44063183182992777,
+          0.8459811441981172,
+          0.8063939662890641,
+          0.9312953826082498,
+          1.1727796596108397,
+          1.2630458720498396,
+          1.2598591988684198,
+          0.028307593424853533,
+          0.02381570354508735
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          0.6273855747963226,
+          0.5840986853063264,
+          1.6589504965585473,
+          1.3944787417064848,
+          1.5718191393545289,
+          1.4866371181396314,
+          2.0958676232352373,
+          1.9324073652637637,
+          0.04245917797088624,
+          0.03445898294448853
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          7.782037502556558,
+          6.999693120871311,
+          9.954959734158564,
+          16.407649471386588,
+          15.279734229965484,
+          23.615338074184066,
+          29.7195600976945,
+          19.51556995884998,
+          0.3816966712474823,
+          0.31881415843963623
+        ],
+        "correlation_each_joint": [
+          0.9819327788691502,
+          0.9841459841546768,
+          0.9890075725489853,
+          0.9920912246235362,
+          0.9908453393675077,
+          0.9912893661110219,
+          0.9915404960007915,
+          0.9949126088743808,
+          0.9993535236900262,
+          0.9989662401165299
+        ],
+        "all_8_nonwheel_mae_deg": 0.2628218872551309,
+        "all_8_nonwheel_max_deg": 29.7195600976945,
+        "both_wheels_max_rad_s": 0.3816966712474823,
+        "all_ten_within_1e-5_in_native_target_units_frames": 567,
+        "predicted_shank_abs_RminusL_deg": 0.7317772584313414
+      },
+      "recursive": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.14931536300725978,
+          0.15629949035475665,
+          0.38879560566510674,
+          0.3592235903531455,
+          0.48198934725246234,
+          0.5215800399424008,
+          0.7787433015891893,
+          0.7835626729771751,
+          0.04744776817991294,
+          0.04580131450631546
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.5124247265045464,
+          0.517491658689704,
+          1.1601502351910884,
+          1.1568458860721098,
+          1.6846428289552298,
+          1.8493398446629894,
+          2.3151788866239853,
+          2.457454761005605,
+          0.1122554718389071,
+          0.12140665338668538
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          0.8163502393763011,
+          0.8852172545250544,
+          2.202094311056591,
+          2.110751288455612,
+          2.2766878315106744,
+          2.5849233404506786,
+          3.9574767480346007,
+          3.874466300088941,
+          0.2824883356690411,
+          0.21117065995931644
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          7.133426517272868,
+          6.821788464220458,
+          16.11303779927455,
+          16.663844744511888,
+          25.084375160870408,
+          28.200526026283665,
+          36.83403198624694,
+          41.46490878125205,
+          0.8826876655220985,
+          1.2860378324985504
+        ],
+        "correlation_each_joint": [
+          0.9709679522138056,
+          0.9780038791724786,
+          0.9793862190312939,
+          0.9836886714004193,
+          0.9696637441113405,
+          0.9781556679386221,
+          0.97166619909962,
+          0.9805831018033374,
+          0.9899695972791787,
+          0.97652902332617
+        ],
+        "all_8_nonwheel_mae_deg": 0.45243867639268703,
+        "all_8_nonwheel_max_deg": 41.46490878125205,
+        "both_wheels_max_rad_s": 1.2860378324985504,
+        "all_ten_within_1e-5_in_native_target_units_frames": 566,
+        "predicted_shank_abs_RminusL_deg": 0.57084606083482
+      },
+      "physical": {
+        "frames": 2403,
+        "recorded_target_abs_RminusL_deg": 0.7543809409417903,
+        "measured_abs_RminusL_deg": 7.707265909577332,
+        "tracking_residual_RminusL_deg": 6.952884968635542,
+        "mean_abs_target_angle_RL_deg": [
+          137.9411057773933,
+          137.1867248364515
+        ],
+        "mean_abs_encoder_angle_RL_deg": [
+          129.89225874775502,
+          122.1849928381777
+        ],
+        "mean_target_magnitude_shortfall_RL_deg": [
+          8.04884702963825,
+          15.001731998273792
+        ],
+        "mean_abs_tracking_error_RL_deg": [
+          9.228876357903632,
+          15.737945025426558
+        ],
+        "mean_abs_drive_feedback_torque_RL_Nm": [
+          14.250217585379115,
+          24.155499334886972
+        ]
+      },
+      "counterfactual_shank_abs_RminusL_deg": {
+        "mirror_same_clock": 1.2426059638281945,
+        "mirror_half_cycle": 0.8030715859026673,
+        "zero_roll_gravity_and_x_gyro": 1.6149557075558059
+      }
+    },
+    "forward_all": {
+      "n": 1079,
+      "repeated_published_targets": 29,
+      "one_step": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.16831665210014643,
+          0.16714359796948514,
+          0.4484527482156818,
+          0.38684262041288625,
+          0.4307292128260528,
+          0.47397761616438866,
+          0.6019459657600492,
+          0.5963840284604143,
+          0.011898372118621098,
+          0.010729739471814277
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.45950130030402137,
+          0.42524439901793193,
+          0.9903887821211806,
+          0.9000581750802555,
+          1.0486549019121216,
+          1.305291272954736,
+          1.6266140659296722,
+          1.5283210555705347,
+          0.03214807439937638,
+          0.02915788740283166
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          0.7778499891453304,
+          0.7831307925908073,
+          2.149099214795917,
+          1.8896717254006385,
+          2.0393455880419014,
+          1.9786497950014978,
+          2.6970038419001856,
+          2.6582577155312697,
+          0.057165637612342654,
+          0.046466781198978395
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          5.80393136926865,
+          3.4518256348154117,
+          9.954959734158564,
+          6.408144951008493,
+          11.80025828184257,
+          19.072743181748667,
+          29.7195600976945,
+          19.51556995884998,
+          0.28726696968078613,
+          0.31881415843963623
+        ],
+        "correlation_each_joint": [
+          0.9825244410481745,
+          0.9871894955246148,
+          0.9885703466924874,
+          0.9924233051096963,
+          0.9905971931178655,
+          0.9916616986344928,
+          0.9902322654416135,
+          0.9935438288118275,
+          0.9979057319030816,
+          0.9989315695668736
+        ],
+        "all_8_nonwheel_mae_deg": 0.4092240552386381,
+        "all_8_nonwheel_max_deg": 29.7195600976945,
+        "both_wheels_max_rad_s": 0.31881415843963623,
+        "all_ten_within_1e-5_in_native_target_units_frames": 381,
+        "predicted_shank_abs_RminusL_deg": 3.516255193810351
+      },
+      "recursive": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.22040738207831687,
+          0.23520839330583265,
+          0.6052757257086759,
+          0.5796052272390745,
+          0.7305286810598813,
+          0.8365758566024358,
+          1.075688304379423,
+          1.0891766722545386,
+          0.05470504215379022,
+          0.0669513468848985
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.5966813401066603,
+          0.6108767563990518,
+          1.4654085705582367,
+          1.4568316625818563,
+          1.9267180857994017,
+          2.4056811447560573,
+          2.5337452466103234,
+          2.539650329923365,
+          0.1119234839183606,
+          0.15823499378783057
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          1.0452242862460424,
+          1.143207031788727,
+          2.675799348867151,
+          2.718184087761669,
+          2.96946572279806,
+          3.4618677204426183,
+          5.135411769936547,
+          4.88940321169413,
+          0.2844145841896534,
+          0.2542942285537718
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          5.9710154054486155,
+          6.821788464220458,
+          16.11303779927455,
+          16.663844744511888,
+          21.302144247597507,
+          28.200526026283665,
+          23.59477408214045,
+          21.809565831226926,
+          0.6079282760620117,
+          1.2860378324985504
+        ],
+        "correlation_each_joint": [
+          0.970448211567393,
+          0.9736688879937574,
+          0.975285562106258,
+          0.9799818356884287,
+          0.9677795322609333,
+          0.970919862826814,
+          0.9771347500809661,
+          0.9821991821260242,
+          0.9754632410338734,
+          0.9724298120194499
+        ],
+        "all_8_nonwheel_mae_deg": 0.6715582803285224,
+        "all_8_nonwheel_max_deg": 28.200526026283665,
+        "both_wheels_max_rad_s": 1.2860378324985504,
+        "all_ten_within_1e-5_in_native_target_units_frames": 380,
+        "predicted_shank_abs_RminusL_deg": 3.2186085898087122
+      },
+      "physical": {
+        "frames": 1079,
+        "recorded_target_abs_RminusL_deg": 3.586058549727339,
+        "measured_abs_RminusL_deg": 12.099121621693259,
+        "tracking_residual_RminusL_deg": 8.51306307196592,
+        "mean_abs_target_angle_RL_deg": [
+          138.96195471883826,
+          135.37589616911092
+        ],
+        "mean_abs_encoder_angle_RL_deg": [
+          131.1079968055673,
+          119.00887518387405
+        ],
+        "mean_target_magnitude_shortfall_RL_deg": [
+          7.853957913270948,
+          16.36702098523687
+        ],
+        "mean_abs_tracking_error_RL_deg": [
+          9.814825375968459,
+          17.5412232523403
+        ],
+        "mean_abs_drive_feedback_torque_RL_Nm": [
+          14.922106215200344,
+          26.947168670173482
+        ]
+      },
+      "counterfactual_shank_abs_RminusL_deg": {
+        "mirror_same_clock": 0.3568663887313234,
+        "mirror_half_cycle": -0.6915924059275836,
+        "zero_roll_gravity_and_x_gyro": 5.753393028256788
+      }
+    },
+    "cmd035": {
+      "n": 890,
+      "repeated_published_targets": 24,
+      "one_step": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.19207096494561102,
+          0.19229930490862057,
+          0.5065202768548828,
+          0.44221832811759126,
+          0.4901923163325123,
+          0.5374317004348663,
+          0.69051775674933,
+          0.6717190568348872,
+          0.013732499939002349,
+          0.012188737035802241
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.49941909978699567,
+          0.4637016725698681,
+          1.073855605992341,
+          0.9794489933778463,
+          1.134229770329053,
+          1.4166961894271706,
+          1.7788468551014616,
+          1.6486612714426074,
+          0.03519055742695414,
+          0.03179557034831827
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          0.8620314196633324,
+          0.9297078794788983,
+          2.328213071061954,
+          1.9471107134900487,
+          2.1646590687441223,
+          2.2514605278112305,
+          2.8388811289812463,
+          2.8884251014090387,
+          0.07021893337368953,
+          0.054202264547348014
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          5.80393136926865,
+          3.4518256348154117,
+          9.954959734158564,
+          6.408144951008493,
+          11.80025828184257,
+          19.072743181748667,
+          29.7195600976945,
+          19.51556995884998,
+          0.28726696968078613,
+          0.31881415843963623
+        ],
+        "correlation_each_joint": [
+          0.9821294914861359,
+          0.9865788678025135,
+          0.9882758232820559,
+          0.991870419669279,
+          0.9904383820751785,
+          0.9912111508458993,
+          0.989622858498394,
+          0.9935215794752436,
+          0.9969436451512805,
+          0.9986495474765182
+        ],
+        "all_8_nonwheel_mae_deg": 0.4653712131472877,
+        "all_8_nonwheel_max_deg": 29.7195600976945,
+        "both_wheels_max_rad_s": 0.31881415843963623,
+        "all_ten_within_1e-5_in_native_target_units_frames": 372,
+        "predicted_shank_abs_RminusL_deg": 3.688590738810873
+      },
+      "recursive": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.2465299753153366,
+          0.2738093558701441,
+          0.674746677282449,
+          0.6310094477353169,
+          0.8098718532730913,
+          0.9018989058892986,
+          1.2327162442873558,
+          1.2217915677550915,
+          0.06035281475842669,
+          0.07289327112643906
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.6324224766503016,
+          0.6693340459456053,
+          1.5234422386889983,
+          1.3948424434812319,
+          2.0052194431723134,
+          2.3438652564271742,
+          2.724314052805318,
+          2.62408507958348,
+          0.11670506984870656,
+          0.16416339046414355
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          1.1099916084115435,
+          1.2404963530480948,
+          2.804940638334984,
+          2.800756464449434,
+          3.10802225728202,
+          3.6493946622188247,
+          5.5455877241729405,
+          5.198917246669397,
+          0.30608097612857815,
+          0.2560536742210388
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          5.9710154054486155,
+          6.821788464220458,
+          16.11303779927455,
+          11.826165189364428,
+          21.302144247597507,
+          24.390796771412294,
+          23.59477408214045,
+          21.809565831226926,
+          0.5755243897438049,
+          1.2860378324985504
+        ],
+        "correlation_each_joint": [
+          0.9712880401864545,
+          0.9721621110812274,
+          0.9767822821054781,
+          0.9833904756254046,
+          0.9696671384204044,
+          0.975381192761039,
+          0.976509668462586,
+          0.9836158144302382,
+          0.9684053816973986,
+          0.9691058539609417
+        ],
+        "all_8_nonwheel_mae_deg": 0.7490467534260105,
+        "all_8_nonwheel_max_deg": 24.390796771412294,
+        "both_wheels_max_rad_s": 1.2860378324985504,
+        "all_ten_within_1e-5_in_native_target_units_frames": 371,
+        "predicted_shank_abs_RminusL_deg": 3.425390980064621
+      },
+      "physical": {
+        "frames": 890,
+        "recorded_target_abs_RminusL_deg": 3.7707036874287394,
+        "measured_abs_RminusL_deg": 12.934371348194905,
+        "tracking_residual_RminusL_deg": 9.163667660766166,
+        "mean_abs_target_angle_RL_deg": [
+          138.93872234661475,
+          135.168018659186
+        ],
+        "mean_abs_encoder_angle_RL_deg": [
+          131.13033692887265,
+          118.19596558067776
+        ],
+        "mean_target_magnitude_shortfall_RL_deg": [
+          7.808385417742073,
+          16.97205307850824
+        ],
+        "mean_abs_tracking_error_RL_deg": [
+          10.120193606154022,
+          18.20650165446554
+        ],
+        "mean_abs_drive_feedback_torque_RL_Nm": [
+          15.317007909196146,
+          27.928605703289588
+        ]
+      },
+      "counterfactual_shank_abs_RminusL_deg": {
+        "mirror_same_clock": 0.2967725252458887,
+        "mirror_half_cycle": -0.776439949832123,
+        "zero_roll_gravity_and_x_gyro": 6.082877329333132
+      }
+    },
+    "bouts_2_to_4_held_out": {
+      "n": 699,
+      "repeated_published_targets": 29,
+      "one_step": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.2598183110607412,
+          0.25800756067251585,
+          0.6922452103059884,
+          0.5971416758454753,
+          0.6648863770313047,
+          0.7316449098060589,
+          0.9291812187467872,
+          0.9205955207252334,
+          0.018366630752710826,
+          0.01656268631908856
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.5708984700769651,
+          0.5283366481171363,
+          1.2304893155288297,
+          1.118259806433875,
+          1.3028809249135505,
+          1.6217338019260918,
+          2.020955068097549,
+          1.8988328255770177,
+          0.039941750933670486,
+          0.03622665114944094
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          0.9760379384092539,
+          1.1393735027396932,
+          2.6408094850322863,
+          2.473929009833929,
+          2.6810746454726178,
+          2.966080681045409,
+          3.3570000695113755,
+          4.196581265686598,
+          0.07859465777873995,
+          0.06397120356559753
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          5.80393136926865,
+          3.4518256348154117,
+          9.954959734158564,
+          6.408144951008493,
+          11.80025828184257,
+          19.072743181748667,
+          29.7195600976945,
+          19.51556995884998,
+          0.28726696968078613,
+          0.31881415843963623
+        ],
+        "correlation_each_joint": [
+          0.9735130523022587,
+          0.9806930852485918,
+          0.9832693050922564,
+          0.9878536089900274,
+          0.9872434951713847,
+          0.9873379606614838,
+          0.9875956807621237,
+          0.9903288447375259,
+          0.9970807885372855,
+          0.998416450173218
+        ],
+        "all_8_nonwheel_mae_deg": 0.6316900980242631,
+        "all_8_nonwheel_max_deg": 29.7195600976945,
+        "both_wheels_max_rad_s": 0.31881415843963623,
+        "all_ten_within_1e-5_in_native_target_units_frames": 1,
+        "predicted_shank_abs_RminusL_deg": 3.396444279566104
+      },
+      "recursive": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.3402264872544118,
+          0.36307409646466926,
+          0.934321187710056,
+          0.8946953591144599,
+          1.1276650625357423,
+          1.2913616755880375,
+          1.660463264981817,
+          1.6812852371300762,
+          0.08444406584608709,
+          0.10334774842205989
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.7413351473913996,
+          0.7589719667858971,
+          1.8206684299186355,
+          1.810012217108001,
+          2.393813481535707,
+          2.988891835827512,
+          3.1480025930217783,
+          3.1553392491519814,
+          0.13905715977590477,
+          0.1965959961482366
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          1.4502834789709216,
+          1.4855894098096343,
+          3.3106946312785452,
+          3.207991979559461,
+          3.865322896601774,
+          4.673878641491133,
+          6.557202559831891,
+          6.339964124411405,
+          0.3489229977130891,
+          0.3528592333197599
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          5.9710154054486155,
+          6.821788464220458,
+          16.11303779927455,
+          16.663844744511888,
+          21.302144247597507,
+          28.200526026283665,
+          23.59477408214045,
+          21.809565831226926,
+          0.6079282760620117,
+          1.2860378324985504
+        ],
+        "correlation_each_joint": [
+          0.9551376513165503,
+          0.9603933737397881,
+          0.9642062981498323,
+          0.9677334113607323,
+          0.9560624866159507,
+          0.9552150994865738,
+          0.9716181253326899,
+          0.9733551712417834,
+          0.9661438002658478,
+          0.9614898669182108
+        ],
+        "all_8_nonwheel_mae_deg": 1.0366365463474088,
+        "all_8_nonwheel_max_deg": 28.200526026283665,
+        "both_wheels_max_rad_s": 1.2860378324985504,
+        "all_ten_within_1e-5_in_native_target_units_frames": 0,
+        "predicted_shank_abs_RminusL_deg": 2.936987880153487
+      },
+      "physical": {
+        "frames": 699,
+        "recorded_target_abs_RminusL_deg": 3.504195751178556,
+        "measured_abs_RminusL_deg": 12.215590828650265,
+        "tracking_residual_RminusL_deg": 8.71139507747171,
+        "mean_abs_target_angle_RL_deg": [
+          138.85080095059368,
+          135.3466051994151
+        ],
+        "mean_abs_encoder_angle_RL_deg": [
+          130.99358999517705,
+          118.77799916652678
+        ],
+        "mean_target_magnitude_shortfall_RL_deg": [
+          7.8572109554166065,
+          16.56860603288832
+        ],
+        "mean_abs_tracking_error_RL_deg": [
+          9.874185770463411,
+          17.810350800816448
+        ],
+        "mean_abs_drive_feedback_torque_RL_Nm": [
+          14.979501574165662,
+          27.417014584520857
+        ]
+      },
+      "counterfactual_shank_abs_RminusL_deg": {
+        "mirror_same_clock": 0.21577630713365983,
+        "mirror_half_cycle": -0.7289023787697964,
+        "zero_roll_gravity_and_x_gyro": 5.712372282665691
+      }
+    },
+    "forward_1": {
+      "n": 380,
+      "repeated_published_targets": 0,
+      "one_step": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          1.758380526046457e-06,
+          1.7297341734419629e-06,
+          2.929791670294943e-06,
+          3.042130307959627e-06,
+          3.2713011287955806e-06,
+          5.410228789931153e-06,
+          5.329344970812581e-06,
+          5.520320654842542e-06,
+          1.8057854552018015e-07,
+          1.8724485447532252e-07
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          2.4998921896540733e-06,
+          2.3529591810066266e-06,
+          3.989195482215194e-06,
+          4.410318198271599e-06,
+          6.757910001681718e-06,
+          9.210431087663623e-06,
+          6.8922551172028896e-06,
+          7.37688410472881e-06,
+          2.393456484142603e-07,
+          2.476723139437733e-07
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          4.919870636524812e-06,
+          4.7064272249619135e-06,
+          8.537736462515939e-06,
+          6.830189170012751e-06,
+          1.3660378340025502e-05,
+          1.3660378340025502e-05,
+          1.3660378340025502e-05,
+          1.3745755704650681e-05,
+          4.76837158203125e-07,
+          4.76837158203125e-07
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          1.4834317103621443e-05,
+          9.178066697204635e-06,
+          1.3660378340025502e-05,
+          2.0490567510038253e-05,
+          2.7320756680051004e-05,
+          4.0981135020076506e-05,
+          2.390566209504463e-05,
+          3.073585126505738e-05,
+          8.344650268554688e-07,
+          9.5367431640625e-07
+        ],
+        "correlation_each_joint": [
+          0.9999999999994671,
+          0.999999999999595,
+          0.9999999999997732,
+          0.9999999999998308,
+          0.9999999999994931,
+          0.9999999999995762,
+          0.9999999999997123,
+          0.9999999999998438,
+          0.9999999999998171,
+          0.9999999999999165
+        ],
+        "all_8_nonwheel_mae_deg": 3.6239040277656056e-06,
+        "all_8_nonwheel_max_deg": 4.0981135020076506e-05,
+        "both_wheels_max_rad_s": 9.5367431640625e-07,
+        "all_ten_within_1e-5_in_native_target_units_frames": 380,
+        "predicted_shank_abs_RminusL_deg": 3.7366442176438484
+      },
+      "recursive": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          3.291241236981062e-06,
+          2.7972320778506166e-06,
+          5.257448242707184e-06,
+          5.221499878654484e-06,
+          6.758292441907354e-06,
+          9.31062628964896e-06,
+          1.0153166072134086e-05,
+          8.548970326282408e-06,
+          8.906776967801546e-07,
+          1.1240573305832713e-06
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          5.29279127979159e-06,
+          4.40628634009204e-06,
+          7.280431280490758e-06,
+          8.259082855295206e-06,
+          1.1809461632132668e-05,
+          1.5910552622841963e-05,
+          1.4391715103861177e-05,
+          1.1911112706028878e-05,
+          1.246959426242546e-06,
+          1.7303933863938751e-06
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          1.1525944224396517e-05,
+          9.829069102471477e-06,
+          1.536792563252869e-05,
+          1.3660378340025502e-05,
+          2.7320756680051004e-05,
+          2.7320756680051004e-05,
+          2.390566209504463e-05,
+          2.228349216716662e-05,
+          2.86102294921875e-06,
+          3.945827484130862e-06
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          3.5858493142566944e-05,
+          2.518632256442202e-05,
+          2.7320756680051004e-05,
+          4.781132419008926e-05,
+          4.0981135020076506e-05,
+          0.00010928302672020402,
+          7.171698628513389e-05,
+          7.171698628513389e-05,
+          4.410743713378906e-06,
+          7.450580596923828e-06
+        ],
+        "correlation_each_joint": [
+          0.9999999999977565,
+          0.9999999999985889,
+          0.9999999999992408,
+          0.9999999999994124,
+          0.999999999998455,
+          0.999999999998746,
+          0.999999999998764,
+          0.9999999999996148,
+          0.9999999999950321,
+          0.9999999999974497
+        ],
+        "all_8_nonwheel_mae_deg": 6.41730957077077e-06,
+        "all_8_nonwheel_max_deg": 0.00010928302672020402,
+        "both_wheels_max_rad_s": 7.450580596923828e-06,
+        "all_ten_within_1e-5_in_native_target_units_frames": 380,
+        "predicted_shank_abs_RminusL_deg": 3.736642474148192
+      },
+      "physical": {
+        "frames": 380,
+        "recorded_target_abs_RminusL_deg": 3.7366430133736537,
+        "measured_abs_RminusL_deg": 11.884879580474973,
+        "tracking_residual_RminusL_deg": 8.14823656710132,
+        "mean_abs_target_angle_RL_deg": [
+          139.16641915042504,
+          135.42977613705136
+        ],
+        "mean_abs_encoder_angle_RL_deg": [
+          131.31844512257464,
+          119.43356554209967
+        ],
+        "mean_target_magnitude_shortfall_RL_deg": [
+          7.847974027850381,
+          15.9962105949517
+        ],
+        "mean_abs_tracking_error_RL_deg": [
+          9.705633492410636,
+          17.046170209222325
+        ],
+        "mean_abs_drive_feedback_torque_RL_Nm": [
+          14.81652896278783,
+          26.082899475097655
+        ]
+      },
+      "counterfactual_shank_abs_RminusL_deg": {
+        "mirror_same_clock": 0.6163978809333418,
+        "mirror_half_cycle": -0.6229616927257239,
+        "zero_roll_gravity_and_x_gyro": 5.828849610278308
+      }
+    },
+    "forward_2": {
+      "n": 284,
+      "repeated_published_targets": 4,
+      "one_step": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.2785707999871616,
+          0.30995748944134,
+          0.8102770235075891,
+          0.6361586876343743,
+          0.7943897690110113,
+          0.8157312482218391,
+          1.0974279104369906,
+          0.9827285978173806,
+          0.020799173698039124,
+          0.01491973318264518
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.4423941779127925,
+          0.5381928202982857,
+          1.2154436923022778,
+          1.0332235825615794,
+          1.2616910036171436,
+          1.4075705317189968,
+          1.6946277027580883,
+          1.5629135254405913,
+          0.03928271043857685,
+          0.0238533818768992
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          0.9360580984493303,
+          1.1565748112280112,
+          2.454498487683074,
+          2.1418892671080503,
+          2.654005239754017,
+          3.044143596088383,
+          3.535761402638875,
+          3.2015525625873296,
+          0.07914587408304212,
+          0.05031527280807492
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          2.068777214684945,
+          2.490707028020605,
+          8.30853580453782,
+          5.316284570668595,
+          7.143503607619576,
+          8.787680405003385,
+          11.29280766990918,
+          7.242471341145768,
+          0.2757604122161865,
+          0.13201546669006348
+        ],
+        "correlation_each_joint": [
+          0.9856283120535692,
+          0.9856614752591605,
+          0.9886680504922144,
+          0.9918158161654672,
+          0.9921126132705977,
+          0.9930622832173938,
+          0.9937838132724861,
+          0.9951668188971713,
+          0.9967494222375736,
+          0.9986374325508449
+        ],
+        "all_8_nonwheel_mae_deg": 0.7156551907572108,
+        "all_8_nonwheel_max_deg": 11.29280766990918,
+        "both_wheels_max_rad_s": 0.2757604122161865,
+        "all_ten_within_1e-5_in_native_target_units_frames": 1,
+        "predicted_shank_abs_RminusL_deg": 3.9156310253029156
+      },
+      "recursive": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.33694356384581514,
+          0.4007530068441951,
+          1.0766993144418717,
+          1.0570730664863632,
+          1.2526303831220569,
+          1.439264821193418,
+          1.9740077086395185,
+          1.9477984089221352,
+          0.11301494481592951,
+          0.10526367004068804
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.5664804400568997,
+          0.6850342782810043,
+          1.6601743412393664,
+          1.952570152608484,
+          1.9756518927683926,
+          2.9082001992262163,
+          2.9152266515948586,
+          3.0400300386479553,
+          0.16933815347167064,
+          0.159149126615196
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          1.230025502295735,
+          1.3076324488507762,
+          3.044904991426123,
+          3.0320927518262843,
+          3.607884870556987,
+          4.544375522752018,
+          6.463615990843291,
+          6.302264724532782,
+          0.3864338159561157,
+          0.36943263635039253
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          3.045762777808514,
+          4.252886442373786,
+          11.3528433251663,
+          16.663844744511888,
+          13.014679576649176,
+          28.200526026283665,
+          12.830930412502909,
+          20.330925498567545,
+          0.6079282760620117,
+          0.6820504367351532
+        ],
+        "correlation_each_joint": [
+          0.9768026184744911,
+          0.9767367667327138,
+          0.980153088586684,
+          0.9696734173525997,
+          0.982199138854422,
+          0.9695267361103984,
+          0.9844850871582739,
+          0.9823597001398664,
+          0.9440393591276265,
+          0.9513668235547316
+        ],
+        "all_8_nonwheel_mae_deg": 1.1856462841869218,
+        "all_8_nonwheel_max_deg": 28.200526026283665,
+        "both_wheels_max_rad_s": 0.6820504367351532,
+        "all_ten_within_1e-5_in_native_target_units_frames": 0,
+        "predicted_shank_abs_RminusL_deg": 3.3300971135788555
+      },
+      "physical": {
+        "frames": 284,
+        "recorded_target_abs_RminusL_deg": 3.9635837392188167,
+        "measured_abs_RminusL_deg": 13.363363427374058,
+        "tracking_residual_RminusL_deg": 9.399779688155242,
+        "mean_abs_target_angle_RL_deg": [
+          139.00559344793118,
+          135.04200970871236
+        ],
+        "mean_abs_encoder_angle_RL_deg": [
+          131.13024295913223,
+          117.76687953175819
+        ],
+        "mean_target_magnitude_shortfall_RL_deg": [
+          7.875350488798951,
+          17.27513017695419
+        ],
+        "mean_abs_tracking_error_RL_deg": [
+          10.884087971527485,
+          19.14417988977821
+        ],
+        "mean_abs_drive_feedback_torque_RL_Nm": [
+          16.35488198508679,
+          29.275825769128932
+        ]
+      },
+      "counterfactual_shank_abs_RminusL_deg": {
+        "mirror_same_clock": -0.26038775867767167,
+        "mirror_half_cycle": -1.4903672864650555,
+        "zero_roll_gravity_and_x_gyro": 5.874996064972435
+      }
+    },
+    "forward_3": {
+      "n": 176,
+      "repeated_published_targets": 5,
+      "one_step": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.028146684450320234,
+          0.027990203142844856,
+          0.110404516616395,
+          0.08883646736084073,
+          0.07695387859966911,
+          0.08840445789583742,
+          0.12168121714792555,
+          0.13424838684379217,
+          0.0025501073422757063,
+          0.002711348912932656
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.04190855725710212,
+          0.0567136443551126,
+          0.16982599441230378,
+          0.18313550667315978,
+          0.13694270811642628,
+          0.17366236987004438,
+          0.20861894499387648,
+          0.29468234662570136,
+          0.00619783936463015,
+          0.006245057842146717
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          0.09247275723403904,
+          0.11404041355967656,
+          0.37025687094357496,
+          0.2601405611446294,
+          0.2730777932062798,
+          0.25487875416278083,
+          0.3906927969402531,
+          0.40542380743267814,
+          0.008748333901166916,
+          0.009123176336288452
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          0.15779337808316177,
+          0.3283997641624443,
+          0.6464466690904418,
+          1.9318097237113865,
+          0.9294384818769951,
+          1.7329282754589552,
+          1.316339670054245,
+          3.014725971333153,
+          0.04246652126312256,
+          0.05410277843475342
+        ],
+        "correlation_each_joint": [
+          0.9974809362028836,
+          0.9979195588751776,
+          0.9974670965540545,
+          0.9945697754445055,
+          0.998702792954303,
+          0.9978035349560631,
+          0.997546566929725,
+          0.9932836959364669,
+          0.9999157188225314,
+          0.9999275359533598
+        ],
+        "all_8_nonwheel_mae_deg": 0.08458322650720314,
+        "all_8_nonwheel_max_deg": 3.014725971333153,
+        "both_wheels_max_rad_s": 0.05410277843475342,
+        "all_ten_within_1e-5_in_native_target_units_frames": 0,
+        "predicted_shank_abs_RminusL_deg": 1.8746092955018965
+      },
+      "recursive": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.02568952268366149,
+          0.03114894491408425,
+          0.1112102557930717,
+          0.0854671757915611,
+          0.10958068325960173,
+          0.12171723087264018,
+          0.12791532678325593,
+          0.14485043155926544,
+          0.011262431571429426,
+          0.01360708475112915
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.04365037567331204,
+          0.059569405765725156,
+          0.18403353174260834,
+          0.18444144978735177,
+          0.20378037675763894,
+          0.2202111488752254,
+          0.2147998861653371,
+          0.2944398127042278,
+          0.014444958736197423,
+          0.01747065342142667
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          0.09276837635905365,
+          0.12989640423317028,
+          0.4494785275792604,
+          0.24636663090965244,
+          0.35165911960727647,
+          0.3868687447786922,
+          0.4263830966745085,
+          0.36865263026226824,
+          0.029047459363937378,
+          0.03302958607673645
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          0.31487150729417623,
+          0.35375171881423917,
+          0.7713196025911999,
+          1.924040383530497,
+          1.5979364167028232,
+          1.7154703119404024,
+          1.3062753863122312,
+          3.0286305289360067,
+          0.04692888259887695,
+          0.06051170825958252
+        ],
+        "correlation_each_joint": [
+          0.9971507937537498,
+          0.9978192854178667,
+          0.9972194193599088,
+          0.9944061065086873,
+          0.9971148664297816,
+          0.9968313882972933,
+          0.9974893303318226,
+          0.9933173101901811,
+          0.9996769713420636,
+          0.9996092171926656
+        ],
+        "all_8_nonwheel_mae_deg": 0.09469744645714272,
+        "all_8_nonwheel_max_deg": 3.0286305289360067,
+        "both_wheels_max_rad_s": 0.06051170825958252,
+        "all_ten_within_1e-5_in_native_target_units_frames": 0,
+        "predicted_shank_abs_RminusL_deg": 1.8717185731672605
+      },
+      "physical": {
+        "frames": 176,
+        "recorded_target_abs_RminusL_deg": 1.8559801873880446,
+        "measured_abs_RminusL_deg": 8.371578450577038,
+        "tracking_residual_RminusL_deg": 6.515598263188994,
+        "mean_abs_target_angle_RL_deg": [
+          139.0636138595905,
+          137.20763367220246
+        ],
+        "mean_abs_encoder_angle_RL_deg": [
+          131.11281798341594,
+          122.7412395328389
+        ],
+        "mean_target_magnitude_shortfall_RL_deg": [
+          7.950795876174582,
+          14.466394139363576
+        ],
+        "mean_abs_tracking_error_RL_deg": [
+          8.095454625848292,
+          14.466394139363576
+        ],
+        "mean_abs_drive_feedback_torque_RL_Nm": [
+          12.687312299554998,
+          22.534686955538664
+        ]
+      },
+      "counterfactual_shank_abs_RminusL_deg": {
+        "mirror_same_clock": 1.1753776050372335,
+        "mirror_half_cycle": 0.8588200694272289,
+        "zero_roll_gravity_and_x_gyro": 3.6699409733863857
+      }
+    },
+    "forward_4": {
+      "n": 239,
+      "repeated_published_targets": 20,
+      "one_step": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.4081383923508277,
+          0.3656614316134198,
+          0.9804582945742473,
+          0.9250951710138785,
+          0.9439539770385483,
+          1.1054097609613618,
+          1.3239006323090543,
+          1.4258310925619024,
+          0.027123391940005154,
+          0.028715130144332742
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          0.8481585386387563,
+          0.6854478658582233,
+          1.628368430690433,
+          1.537557318497747,
+          1.7490721786079557,
+          2.3055327903274985,
+          2.915588429042834,
+          2.7529222537543103,
+          0.05295198180196542,
+          0.055977104883018276
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          1.4287093553099124,
+          1.3957384420328447,
+          3.391941268248407,
+          3.8034881695172715,
+          3.432620850416626,
+          4.4921293567338445,
+          4.798701885365677,
+          6.547993245019232,
+          0.12975250482559203,
+          0.14372491538524626
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          5.80393136926865,
+          3.4518256348154117,
+          9.954959734158564,
+          6.408144951008493,
+          11.80025828184257,
+          19.072743181748667,
+          29.7195600976945,
+          19.51556995884998,
+          0.28726696968078613,
+          0.31881415843963623
+        ],
+        "correlation_each_joint": [
+          0.9615153193546737,
+          0.9680151155976262,
+          0.9737318539447636,
+          0.9799316330585844,
+          0.97932139596051,
+          0.979033036459227,
+          0.9785377827511313,
+          0.9834559685189732,
+          0.9946953736814742,
+          0.9966355724383418
+        ],
+        "all_8_nonwheel_mae_deg": 0.9348060940529049,
+        "all_8_nonwheel_max_deg": 29.7195600976945,
+        "both_wheels_max_rad_s": 0.31881415843963623,
+        "all_ten_within_1e-5_in_native_target_units_frames": 0,
+        "predicted_shank_abs_RminusL_deg": 3.900184536495167
+      },
+      "recursive": {
+        "mae_each_joint_deg_or_wheel_rad_s": [
+          0.5757530814489453,
+          0.562731067699471,
+          1.371275731750029,
+          1.2976614317973452,
+          1.7288897474984515,
+          1.9769387840314763,
+          2.416454123241898,
+          2.496024923287055,
+          0.10438481063648247,
+          0.16715626334420808
+        ],
+        "rmse_each_joint_deg_or_wheel_rad_s": [
+          1.1066250001352298,
+          1.0604197049431487,
+          2.528790720289443,
+          2.2419348290463774,
+          3.4771773397844603,
+          4.005225345087285,
+          4.341743792438508,
+          4.25122936899122,
+          0.14941935847715385,
+          0.28760548285078347
+        ],
+        "p95_abs_each_joint_deg_or_wheel_rad_s": [
+          2.424767058424149,
+          2.091668081424053,
+          5.115578266624665,
+          4.18216717597166,
+          7.033963765786579,
+          8.272723756681607,
+          10.54234012258984,
+          10.559360783246781,
+          0.38801939636468885,
+          0.872292014956474
+        ],
+        "max_abs_each_joint_deg_or_wheel_rad_s": [
+          5.9710154054486155,
+          6.821788464220458,
+          16.11303779927455,
+          11.826165189364428,
+          21.302144247597507,
+          24.390796771412294,
+          23.59477408214045,
+          21.809565831226926,
+          0.5755243897438049,
+          1.2860378324985504
+        ],
+        "correlation_each_joint": [
+          0.9347919860633152,
+          0.9249302991947991,
+          0.9402779238213776,
+          0.9570819787653017,
+          0.9153990937758714,
+          0.9336435509454742,
+          0.9535895492375226,
+          0.9592990770213733,
+          0.9607010802218027,
+          0.9381195247323422
+        ],
+        "all_8_nonwheel_mae_deg": 1.553216111344334,
+        "all_8_nonwheel_max_deg": 24.390796771412294,
+        "both_wheels_max_rad_s": 1.2860378324985504,
+        "all_ten_within_1e-5_in_native_target_units_frames": 0,
+        "predicted_shank_abs_RminusL_deg": 3.2543283644077596
+      },
+      "physical": {
+        "frames": 239,
+        "recorded_target_abs_RminusL_deg": 4.172060816549668,
+        "measured_abs_RminusL_deg": 13.682447567157933,
+        "tracking_residual_RminusL_deg": 9.510386750608266,
+        "mean_abs_target_angle_RL_deg": [
+          138.51014764001917,
+          134.33808682346952
+        ],
+        "mean_abs_encoder_angle_RL_deg": [
+          130.74340770357324,
+          117.06096013641532
+        ],
+        "mean_target_magnitude_shortfall_RL_deg": [
+          7.76673993644594,
+          17.277126687054203
+        ],
+        "mean_abs_tracking_error_RL_deg": [
+          9.983995211258657,
+          18.687877625714208
+        ],
+        "mean_abs_drive_feedback_torque_RL_Nm": [
+          15.033130342491502,
+          28.803572267668017
+        ]
+      },
+      "counterfactual_shank_abs_RminusL_deg": {
+        "mirror_same_clock": 0.07494269315620843,
+        "mirror_half_cycle": -0.9932668854527382,
+        "zero_roll_gravity_and_x_gyro": 7.02317879420562
+      }
+    }
+  },
+  "pre_walk_fixed_hold_32_36s": {
+    "frames": 200,
+    "recorded_target_abs_RminusL_deg": 0.0,
+    "measured_abs_RminusL_deg": 0.44259625821682635,
+    "tracking_residual_RminusL_deg": 0.44259625821682635,
+    "mean_abs_target_angle_RL_deg": [
+      127.99876957441445,
+      127.99876957441445
+    ],
+    "mean_abs_encoder_angle_RL_deg": [
+      121.75418716346026,
+      121.31159090524343
+    ],
+    "mean_target_magnitude_shortfall_RL_deg": [
+      6.244582410954198,
+      6.687178669171024
+    ],
+    "mean_abs_tracking_error_RL_deg": [
+      6.244582410954198,
+      6.687178669171024
+    ],
+    "mean_abs_drive_feedback_torque_RL_Nm": [
+      17.583885421752928,
+      18.498167037963867
+    ]
+  },
+  "worst_left_roll_during_forward": {
+    "original_bag_row": 2288,
+    "time_s": 45.761134291,
+    "roll_deg": -11.217660437957651,
+    "stored_target_repeated": false,
+    "R_L_stored_shank_target_deg": [
+      -125.96174621582031,
+      155.081787109375
+    ],
+    "R_L_onestep_shank_target_deg": [
+      -125.96174621582031,
+      155.081787109375
+    ],
+    "R_L_recursive_shank_target_deg": [
+      -125.96173858642578,
+      155.08180236816406
+    ],
+    "R_L_measured_shank_angle_deg": [
+      -131.0214385986328,
+      101.1211166381836
+    ],
+    "R_L_drive_torque_est_Nm": [
+      -7.4725341796875,
+      84.24908447265625
+    ]
+  },
+  "peak_shank_replay_error_within_forward": {
+    "one_step": {
+      "right_shank": {
+        "original_bag_row": 3806,
+        "time_s": 76.121973912,
+        "roll_deg": -7.0292048738768615,
+        "stored_target_repeated": false,
+        "R_L_stored_shank_target_deg": [
+          -130.25442504882812,
+          146.2766876220703
+        ],
+        "R_L_onestep_shank_target_deg": [
+          -142.0546875,
+          148.72792053222656
+        ],
+        "R_L_recursive_shank_target_deg": [
+          -143.27780151367188,
+          149.23617553710938
+        ],
+        "R_L_measured_shank_angle_deg": [
+          -125.40419006347656,
+          107.41592407226562
+        ],
+        "R_L_drive_torque_est_Nm": [
+          -29.25518798828125,
+          60.5128173828125
+        ]
+      },
+      "left_shank": {
+        "original_bag_row": 3827,
+        "time_s": 76.541991302,
+        "roll_deg": -2.2485889244173194,
+        "stored_target_repeated": false,
+        "R_L_stored_shank_target_deg": [
+          -150.59413146972656,
+          154.22024536132812
+        ],
+        "R_L_onestep_shank_target_deg": [
+          -142.4980926513672,
+          173.29299926757812
+        ],
+        "R_L_recursive_shank_target_deg": [
+          -132.91307067871094,
+          175.01329040527344
+        ],
+        "R_L_measured_shank_angle_deg": [
+          -133.73165893554688,
+          117.03299713134766
+        ],
+        "R_L_drive_torque_est_Nm": [
+          -18.02197265625,
+          77.41146850585938
+        ]
+      }
+    },
+    "recursive": {
+      "right_shank": {
+        "original_bag_row": 3828,
+        "time_s": 76.562014978,
+        "roll_deg": -2.145294703877601,
+        "stored_target_repeated": true,
+        "R_L_stored_shank_target_deg": [
+          -150.59413146972656,
+          154.22024536132812
+        ],
+        "R_L_onestep_shank_target_deg": [
+          -146.36903381347656,
+          143.70262145996094
+        ],
+        "R_L_recursive_shank_target_deg": [
+          -129.2919921875,
+          162.9376983642578
+        ],
+        "R_L_measured_shank_angle_deg": [
+          -136.66050720214844,
+          119.30608367919922
+        ],
+        "R_L_drive_torque_est_Nm": [
+          -15.579971313476562,
+          52.30769348144531
+        ]
+      },
+      "left_shank": {
+        "original_bag_row": 2751,
+        "time_s": 55.021398272,
+        "roll_deg": -0.4264289819764072,
+        "stored_target_repeated": false,
+        "R_L_stored_shank_target_deg": [
+          -158.06761169433594,
+          109.2271957397461
+        ],
+        "R_L_onestep_shank_target_deg": [
+          -154.94786071777344,
+          108.33842468261719
+        ],
+        "R_L_recursive_shank_target_deg": [
+          -145.0529327392578,
+          137.42771911621094
+        ],
+        "R_L_measured_shank_angle_deg": [
+          -138.34352111816406,
+          120.96723937988281
+        ],
+        "R_L_drive_torque_est_Nm": [
+          -24.4688720703125,
+          -4.8351593017578125
+        ]
+      }
+    }
+  },
+  "outputs": {
+    "frame_data": {
+      "name": "replay-frames.csv.gz",
+      "sha256": "834c54202b9c132249042d0751d8dda7cf5dd8ffebbd42b0640d7a7ed7c7464f",
+      "rows": 2403,
+      "columns": [
+        "bag_row",
+        "time_s",
+        "sensor_bag_row_used",
+        "forward_bout",
+        "cmd_x_published_mps",
+        "roll_measured_deg",
+        "repeated_published_target_all_10",
+        "reconstructed_obs_scaled_gyro_x",
+        "reconstructed_obs_scaled_gyro_y",
+        "reconstructed_obs_scaled_gyro_z",
+        "reconstructed_obs_gravity_b_x",
+        "reconstructed_obs_gravity_b_y",
+        "reconstructed_obs_gravity_b_z",
+        "reconstructed_obs_cmd_vx",
+        "reconstructed_obs_cmd_vy",
+        "reconstructed_obs_cmd_wz",
+        "reconstructed_obs_q_rel_right_hip",
+        "reconstructed_obs_q_rel_left_hip",
+        "reconstructed_obs_q_rel_right_thigh",
+        "reconstructed_obs_q_rel_left_thigh",
+        "reconstructed_obs_q_rel_right_shank",
+        "reconstructed_obs_q_rel_left_shank",
+        "reconstructed_obs_q_rel_right_foot",
+        "reconstructed_obs_q_rel_left_foot",
+        "reconstructed_obs_q_rel_right_wheel",
+        "reconstructed_obs_q_rel_left_wheel",
+        "reconstructed_obs_scaled_dq_right_hip",
+        "reconstructed_obs_scaled_dq_left_hip",
+        "reconstructed_obs_scaled_dq_right_thigh",
+        "reconstructed_obs_scaled_dq_left_thigh",
+        "reconstructed_obs_scaled_dq_right_shank",
+        "reconstructed_obs_scaled_dq_left_shank",
+        "reconstructed_obs_scaled_dq_right_foot",
+        "reconstructed_obs_scaled_dq_left_foot",
+        "reconstructed_obs_scaled_dq_right_wheel",
+        "reconstructed_obs_scaled_dq_left_wheel",
+        "reconstructed_obs_prev_raw_action_right_hip",
+        "reconstructed_obs_prev_raw_action_left_hip",
+        "reconstructed_obs_prev_raw_action_right_thigh",
+        "reconstructed_obs_prev_raw_action_left_thigh",
+        "reconstructed_obs_prev_raw_action_right_shank",
+        "reconstructed_obs_prev_raw_action_left_shank",
+        "reconstructed_obs_prev_raw_action_right_foot",
+        "reconstructed_obs_prev_raw_action_left_foot",
+        "reconstructed_obs_prev_raw_action_right_wheel",
+        "reconstructed_obs_prev_raw_action_left_wheel",
+        "reconstructed_obs_gait_sin",
+        "reconstructed_obs_gait_cos",
+        "published_target_right_hip_rad",
+        "one_step_target_right_hip_rad",
+        "recursive_target_right_hip_rad",
+        "published_target_left_hip_rad",
+        "one_step_target_left_hip_rad",
+        "recursive_target_left_hip_rad",
+        "published_target_right_thigh_rad",
+        "one_step_target_right_thigh_rad",
+        "recursive_target_right_thigh_rad",
+        "published_target_left_thigh_rad",
+        "one_step_target_left_thigh_rad",
+        "recursive_target_left_thigh_rad",
+        "published_target_right_shank_rad",
+        "one_step_target_right_shank_rad",
+        "recursive_target_right_shank_rad",
+        "published_target_left_shank_rad",
+        "one_step_target_left_shank_rad",
+        "recursive_target_left_shank_rad",
+        "published_target_right_foot_rad",
+        "one_step_target_right_foot_rad",
+        "recursive_target_right_foot_rad",
+        "published_target_left_foot_rad",
+        "one_step_target_left_foot_rad",
+        "recursive_target_left_foot_rad",
+        "published_target_right_wheel_rad_s",
+        "one_step_target_right_wheel_rad_s",
+        "recursive_target_right_wheel_rad_s",
+        "published_target_left_wheel_rad_s",
+        "one_step_target_left_wheel_rad_s",
+        "recursive_target_left_wheel_rad_s",
+        "encoder_right_shank_rad",
+        "drive_feedback_right_shank_Nm",
+        "encoder_left_shank_rad",
+        "drive_feedback_left_shank_Nm",
+        "mirror_same_clock_target_shank_abs_RminusL_deg",
+        "mirror_half_cycle_target_shank_abs_RminusL_deg",
+        "zero_roll_gravity_and_x_gyro_target_shank_abs_RminusL_deg"
+      ],
+      "feature_reconstruction": "Repeat the first 41-value row to fill the initial history; then concatenate the preceding nine feature rows and current feature row. CSV of reconstructed features reflects the one-step pass."
+    },
+    "figure": {
+      "name": "shank-replay.png",
+      "sha256": "aa8b9a5e42bac91adc8ab44f2a48babdff3b90bd96d89f20a620f218d381244a"
+    }
+  }
+}

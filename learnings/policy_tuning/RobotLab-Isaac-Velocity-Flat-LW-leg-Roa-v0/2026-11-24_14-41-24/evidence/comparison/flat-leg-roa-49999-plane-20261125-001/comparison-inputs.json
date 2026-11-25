@@ -1,0 +1,203 @@
+{
+  "batch_inputs": [
+    {
+      "group": "previous_seven",
+      "manifest": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-23_19-36-15/evaluations/flat-leg-roa-34000-plane-20261124-001/manifest.json",
+      "sha256": "ff6b2b7e4a6b7f63f562caa67ecb82d6ab05d905ddae8ca92b2ead2a649e2a68"
+    },
+    {
+      "group": "previous_foot_probe",
+      "manifest": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-23_19-36-15/evaluations/shared-foot-rewards-probe-20261124-002/manifest.json",
+      "sha256": "4ff3c3e0abdc8a1deaaa032e6d5036b3c66c71ab12de6b38976e4f4db3e3acbd"
+    },
+    {
+      "group": "latest_seven",
+      "manifest": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-41-24/evaluations/flat-leg-roa-49999-plane-20261125-001/manifest.json",
+      "sha256": "0ac34efee2266373b532227ee6c9c0534fae8dee40ac6c5ed07528bf71bcea39"
+    },
+    {
+      "group": "latest_followup",
+      "manifest": "/home/young/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-41-24/evaluations/flat-leg-roa-49999-gait-turn-check-20261125-001/manifest.json",
+      "sha256": "91c3bde9127e8dd7ba44cfdb34a70bf85cc16a9b3ed7a1b5af4c8c5c73c8d663"
+    }
+  ],
+  "training_run": {
+    "start_command": "bash scripts/start_roa.sh --terrain Flat --type leg",
+    "checkpoint": "model_49999.pt",
+    "checkpoint_sha256": "be1cdbe764c71a69fd5877a3ec0d301be7d7f1bb88225a1fb2ac45ac845e8ece",
+    "train_log": "/home/young/liufengrong/robot_lab/wandb/run-20261124_144138-qkg5wkh9/files/output.log",
+    "train_log_sha256": "f2706fd67615c6366702185d0fc89dbcb21c06f86fbe87cd8862d7c45cf42815",
+    "training_commit": "7da0f830f450d73515f8304f80081093c38e699a",
+    "iteration_count": 50000,
+    "last_logged_step": 49999,
+    "total_environment_steps": 4915200000,
+    "windows": {
+      "0-999": {
+        "Mean reward": {
+          "reported": 1000,
+          "mean": 78.99287
+        },
+        "Mean episode length": {
+          "reported": 1000,
+          "mean": 712.5144399999999
+        },
+        "Episode_Termination/time_out": {
+          "reported": 1000,
+          "mean": 0.508603
+        },
+        "Episode_Termination/illegal_contact": {
+          "reported": 1000,
+          "mean": 0.4896856
+        }
+      },
+      "24000-24999": {
+        "Mean reward": {
+          "reported": 1000,
+          "mean": 187.41823
+        },
+        "Mean episode length": {
+          "reported": 1000,
+          "mean": 993.36907
+        },
+        "Episode_Termination/time_out": {
+          "reported": 1000,
+          "mean": 0.9835849000000001
+        },
+        "Episode_Termination/illegal_contact": {
+          "reported": 1000,
+          "mean": 0.0164952
+        }
+      },
+      "45000-45999": {
+        "Mean reward": {
+          "reported": 1000,
+          "mean": 193.37969
+        },
+        "Mean episode length": {
+          "reported": 1000,
+          "mean": 994.92239
+        },
+        "Episode_Termination/time_out": {
+          "reported": 1000,
+          "mean": 0.987777
+        },
+        "Episode_Termination/illegal_contact": {
+          "reported": 1000,
+          "mean": 0.0122334
+        }
+      },
+      "48000-48999": {
+        "Mean reward": {
+          "reported": 1000,
+          "mean": 194.17194
+        },
+        "Mean episode length": {
+          "reported": 1000,
+          "mean": 995.28143
+        },
+        "Episode_Termination/time_out": {
+          "reported": 1000,
+          "mean": 0.9883071
+        },
+        "Episode_Termination/illegal_contact": {
+          "reported": 1000,
+          "mean": 0.011692899999999999
+        }
+      },
+      "49000-49999": {
+        "Mean reward": {
+          "reported": 1000,
+          "mean": 194.22260999999997
+        },
+        "Mean episode length": {
+          "reported": 1000,
+          "mean": 994.7876900000001
+        },
+        "Episode_Termination/time_out": {
+          "reported": 1000,
+          "mean": 0.9877934
+        },
+        "Episode_Termination/illegal_contact": {
+          "reported": 1000,
+          "mean": 0.0122261
+        }
+      }
+    }
+  },
+  "methods": {
+    "primary_cases": "Seven 20 s trials. At t=2 s apply command, set to zero at t=15 s. 1 environment, seed 42, no pushes, plane, student with estimated velocity, Native. All other trained dynamics randomization retained.",
+    "control_windows": "All scenario CSV metrics unless suffixed use control indices 200..749 (4 <= t < 15 s) and omit reset samples. Yaw is body z rate. Heading is unwrapped quaternion yaw change between steps 100 and 749; XY net movement is world-position displacement from just before command to step 749. Post-stop metrics use 17..20 s and can be from a new episode after a reset.",
+    "height": "Root-link z above an explicitly zero-height plane. P05/P95 and standard deviations cover the indicated interval.",
+    "foot_ground": "Four sensor substeps per control tick (5 ms each). For each foot contact is upward normal force >= listed Newton threshold. For the 4..15 s window count full stances/swings. A qualified touchdown follows at least 40 ms unloaded and peak sole clearance >= 5 mm. Also report threshold/80ms-10mm sensitivities. Simultaneous footfalls break ordering. Contact slip is vertically load-weighted horizontal material-point speed integrated over complete stance.",
+    "historical_comparison": "The old 34000 seven-scenario data used the older effective configuration. Its later frozen-checkpoint diagnostic used the current foot-reward and material source on the same seed. Compared with latest 49999 on same scenarios, seed and explicit overrides. Runs differ in training duration and several reward/material changes. Matched within-checkpoint gait comparison uses latest +0.30 forward versus -0.40 backward. Previous direct seven and foot baselines do not share equal actual speed with latest.",
+    "followup": "Single extra forward command at 0.30 m/s and same seed. Second turn-left has identical command/initial condition through step 749; command persists for two more seconds. This is a paired timing control, not an independent seed."
+  },
+  "turn_timing": {
+    "reference": {
+      "termination_terms": {
+        "illegal_contact": 754
+      },
+      "reset_steps": [
+        754
+      ],
+      "max_abs_roll_deg_between_14_and_15s": 56.54608694574063,
+      "lowest_z_m_between_14_and_15s": 0.3910951316356659,
+      "step_before_each_reset": [
+        {
+          "step": 753,
+          "time_s": 15.06,
+          "z_m": 0.2672463059425354,
+          "roll_deg": 20.613869410643087,
+          "pitch_deg": 41.32876823783222,
+          "command": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    "extended": {
+      "termination_terms": {
+        "illegal_contact": 754
+      },
+      "reset_steps": [
+        754
+      ],
+      "max_abs_roll_deg_between_14_and_15s": 56.54608694574063,
+      "lowest_z_m_between_14_and_15s": 0.3910951316356659,
+      "step_before_each_reset": [
+        {
+          "step": 753,
+          "time_s": 15.06,
+          "z_m": 0.2698920667171478,
+          "roll_deg": 18.4961388420555,
+          "pitch_deg": 43.564995296223316,
+          "command": [
+            0.0,
+            0.0,
+            0.5
+          ]
+        }
+      ]
+    },
+    "max_abs_common_prefix_diff_through_step_749": {
+      "root_position_w": 0.0,
+      "projected_gravity_b": 0.0,
+      "root_angular_velocity_b": 0.0,
+      "root_linear_velocity_b": 0.0,
+      "action": 0.0,
+      "command": 0.0
+    },
+    "turn_command_ends_s": [
+      15.0,
+      17.0
+    ]
+  },
+  "outputs": {
+    "scenario-comparison.csv": "95e7d67bad8c29a7a351dde2b26a4f1dd4639b242268aedfb40d83bc666babc1",
+    "foot-ground.csv": "c264bb0126fda9b0ec8f28219286557269cbf9205d6952146808375abe388d52",
+    "touchdowns.csv": "d55241ff6e6c30ec06178cd235d41db7d1a8f1f8679a0d554739c375ee47f945",
+    "posture-and-gait.png": "d1da1b6519555f2e4bf8a689f1be58c91898489a1df4afbbb8c730710f6f6c9e"
+  }
+}

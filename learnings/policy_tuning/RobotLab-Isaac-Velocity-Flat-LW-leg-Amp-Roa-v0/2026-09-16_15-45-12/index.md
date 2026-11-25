@@ -12,6 +12,8 @@
 - [flat-review-smoke-20260917-001](evaluations/flat-review-smoke-20260917-001/report.md) · [manifest](evaluations/flat-review-smoke-20260917-001/manifest.json)
 - [matched-plane-20260917-001](evaluations/matched-plane-20260917-001/report.md) · [manifest](evaluations/matched-plane-20260917-001/manifest.json)
 - [restitution-ablation-20260919-001](evaluations/restitution-ablation-20260919-001/report.md) · [manifest](evaluations/restitution-ablation-20260919-001/manifest.json)
+- [hardware-forward-left-roll-20261125-001](evaluations/hardware-forward-left-roll-20261125-001/report.md) · [manifest](evaluations/hardware-forward-left-roll-20261125-001/manifest.json) · [实机与仿真横滚对照](evidence/comparison/hardware-forward-left-roll-20261125-001/roll-comparison.json) · [对照图](evidence/comparison/hardware-forward-left-roll-20261125-001/roll-comparison.png)
+- [实机观测离线推理与左右小腿跟踪](evidence/comparison/hardware-policy-offline-replay-20261125-001/replay-summary.json) · [逐帧数据](evidence/comparison/hardware-policy-offline-replay-20261125-001/replay-frames.csv.gz) · [小腿对照图](evidence/comparison/hardware-policy-offline-replay-20261125-001/shank-replay.png)
 
 ## 导出记录
 
