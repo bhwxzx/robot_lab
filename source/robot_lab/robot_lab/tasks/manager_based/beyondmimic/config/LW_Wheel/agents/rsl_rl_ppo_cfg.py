@@ -42,3 +42,9 @@ class LWBeyondMimicFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
             data_augmentation_func="robot_lab.tasks.manager_based.beyondmimic.mdp.symmetry:compute_symmetric_states",
         ),
     )
+
+@configclass
+class LWBeyondMimicDynamicPPORunnerCfg(LWBeyondMimicFlatPPORunnerCfg):
+    """Use the baseline PPO settings with a separate dynamic-transition log directory."""
+
+    experiment_name = "LW_wheel_beyondmimic_dynamic"
