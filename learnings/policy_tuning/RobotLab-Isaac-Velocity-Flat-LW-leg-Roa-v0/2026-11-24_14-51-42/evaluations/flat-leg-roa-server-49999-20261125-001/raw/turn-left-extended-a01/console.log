@@ -1,0 +1,238 @@
+{"argv": ["/home/server/miniconda3/envs/isaacsim-5.1/bin/python", "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", "--task", "RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0", "--run_id", "2026-11-24_14-51-42", "--batch_id", "flat-leg-roa-server-49999-20261125-001", "--evaluation_id", "turn-left-extended-a01", "--candidate_id", "model_49999", "--checkpoint", "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/model_49999.pt", "--checkpoint_sha256", "dd24cbd6c1baf05e56645535f7b8ac4c2e0fffb8b3d5d3797383faaf34b61650", "--artifact_kind", "native", "--artifact_path", "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/model_49999.pt", "--artifact_sha256", "dd24cbd6c1baf05e56645535f7b8ac4c2e0fffb8b3d5d3797383faaf34b61650", "--run_identity_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/provenance/context-46f1813cdaad954a30cec57e0d1e3379e01013506ca3f2a3d3ba9395819cf52d.json", "--run_identity_file_sha256", "46f1813cdaad954a30cec57e0d1e3379e01013506ca3f2a3d3ba9395819cf52d", "--effective_config_reference_json", "{\"path\": \"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/provenance/config-4bae6b94de31c2d9886f91e98b1469651f9909fbfe916912c30e3dd34c6fbc40.json\", \"sha256\": \"4bae6b94de31c2d9886f91e98b1469651f9909fbfe916912c30e3dd34c6fbc40\"}", "--scenario_evidence_reference_json", "{\"path\": \"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/provenance/scenario-262996e2cbc4c666a82e3e7f65c773ce1aa806089dbd39a920a0d0b9f776547e.json\", \"sha256\": \"262996e2cbc4c666a82e3e7f65c773ce1aa806089dbd39a920a0d0b9f776547e\"}", "--scenario_id", "turn-left-extended", "--scenario_overrides_json", "{\"curriculum.terrain_levels\": null, \"episode_length_s\": 65.0, \"evaluation.roa_mode\": \"student\", \"events.randomize_push_robot\": null, \"scene.terrain.terrain_generator\": null, \"scene.terrain.terrain_type\": \"plane\"}", "--command_schedule_json", "[{\"command\": [0, 0, 0], \"end_step\": 99, \"start_step\": 0}, {\"command\": [0, 0, 0.5], \"end_step\": 849, \"start_step\": 100}, {\"command\": [0, 0, 0], \"end_step\": 999, \"start_step\": 850}]", "--duration_steps", "1000", "--num_envs", "1", "--seed", "42", "--result_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/turn-left-extended-a01/result.json", "--telemetry_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/turn-left-extended-a01/telemetry.json.gz", "--telemetry_stride", "1", "--headless", "--device", "cuda:0", "--require_idle_gpu", "--no_video"]}
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/server/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Leg.flat_env_cfg:LWLegFlatRoaEnvCfg
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Leg.agents.rsl_rl_roa_cfg:LWFlatRoaRunnerCfg
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-11-25_14-58-38.log[0m
+[36m======================================================================================[0m
+
+[33m14:58:38 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m14:58:39 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[INFO]: Time taken for scene creation : 2.688147 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 1
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[INFO]: Time taken for simulation start : 0.521349 seconds
+[33m14:58:42 [velocity_command.py] WARNING: The velocity command has the 'ranges.heading' attribute set to '(-0.5235987755982988, 0.5235987755982988)' but the heading command is not active. Consider setting the flag for the heading command to True.[0m
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++------------------------------------------------+
+|              Active Command Terms              |
++-------+---------------+------------------------+
+| Index | Name          |          Type          |
++-------+---------------+------------------------+
+|   0   | base_velocity | UniformVelocityCommand |
++-------+---------------+------------------------+
+
+[INFO] Event Manager:  <EventManager> contains 2 active terms.
++------------------------------------------+
+|  Active Event Terms in Mode: 'startup'   |
++-------+----------------------------------+
+| Index | Name                             |
++-------+----------------------------------+
+|   0   | randomize_rigid_body_material    |
+|   1   | randomize_rigid_body_mass_base   |
+|   2   | randomize_rigid_body_mass_others |
+|   3   | randomize_com_positions          |
+|   4   | add_joint_default_pos            |
++-------+----------------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++--------+-----------------------------+
+| Index  | Name                        |
++--------+-----------------------------+
+|   0    | randomize_reset_joints      |
+|   1    | randomize_actuator_gains    |
+|   2    | randomize_reset_base        |
++--------+-----------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 2 active terms.
++------------------------------------+
+|  Active Action Terms (shape: 10)   |
++--------+-------------+-------------+
+| Index  | Name        |   Dimension |
++--------+-------------+-------------+
+|   0    | joint_pos   |           8 |
+|   1    | joint_vel   |           2 |
++--------+-------------+-------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 3 groups.
++-------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (10, 41)) |
++-----------+--------------------------------+----------------+
+|   Index   | Name                           |     Shape      |
++-----------+--------------------------------+----------------+
+|     0     | base_ang_vel                   |    (10, 3)     |
+|     1     | projected_gravity              |    (10, 3)     |
+|     2     | velocity_commands              |    (10, 3)     |
+|     3     | joint_pos                      |    (10, 10)    |
+|     4     | joint_vel                      |    (10, 10)    |
+|     5     | actions                        |    (10, 10)    |
+|     6     | gait_phase                     |    (10, 2)     |
++-----------+--------------------------------+----------------+
++---------------------------------------------------------+
+| Active Observation Terms in Group: 'critic' (shape: (74,)) |
++-----------+---------------------------------+-----------+
+|   Index   | Name                            |   Shape   |
++-----------+---------------------------------+-----------+
+|     0     | base_ang_vel                    |    (3,)   |
+|     1     | projected_gravity               |    (3,)   |
+|     2     | velocity_commands               |    (3,)   |
+|     3     | joint_pos                       |   (10,)   |
+|     4     | joint_vel                       |   (10,)   |
+|     5     | actions                         |   (10,)   |
+|     6     | gait_phase                      |    (2,)   |
+|     7     | base_lin_vel                    |    (3,)   |
+|     8     | base_mass                       |    (1,)   |
+|     9     | feet_material                   |    (6,)   |
+|     10    | actuator_gains                  |   (20,)   |
+|     11    | base_com                        |    (3,)   |
++-----------+---------------------------------+-----------+
++-----------------------------------------------------------+
+| Active Observation Terms in Group: 'privileged' (shape: (30,)) |
++-------------+-------------------------------+-------------+
+|    Index    | Name                          |    Shape    |
++-------------+-------------------------------+-------------+
+|      0      | base_mass                     |     (1,)    |
+|      1      | feet_material                 |     (6,)    |
+|      2      | actuator_gains                |    (20,)    |
+|      3      | base_com                      |     (3,)    |
++-------------+-------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 3 active terms.
++------------------------------------------+
+|         Active Termination Terms         |
++-------+-----------------------+----------+
+| Index | Name                  | Time Out |
++-------+-----------------------+----------+
+|   0   | time_out              |   True   |
+|   1   | terrain_out_of_bounds |   True   |
+|   2   | illegal_contact       |  False   |
++-------+-----------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 37 active terms.
++--------------------------------------------+
+|            Active Reward Terms             |
++-------+------------------------+-----------+
+| Index | Name                   |    Weight |
++-------+------------------------+-----------+
+|   0   | is_terminated          |    -200.0 |
+|   1   | lin_vel_z_l2           |      -2.0 |
+|   2   | ang_vel_xy_l2          |      -0.1 |
+|   3   | flat_orientation_l2    |      -8.0 |
+|   4   | base_height_l2         |     -30.0 |
+|   5   | joint_torques_l2       | -1.25e-05 |
+|   6   | joint_vel_l2           |    -5e-05 |
+|   7   | joint_acc_l2           |  -2.5e-07 |
+|   8   | joint_pos_limits       |      -2.0 |
+|   9   | joint_power            |    -2e-05 |
+|   10  | stand_still            |      -3.0 |
+|   11  | joint_pos_penalty      |      -1.0 |
+|   12  | action_rate_l2         |      -0.2 |
+|   13  | undesired_contacts     |      -5.0 |
+|   14  | track_lin_vel_xy_exp   |       5.0 |
+|   15  | track_ang_vel_z_exp    |       4.0 |
+|   16  | feet_air_time          |       2.0 |
+|   17  | feet_air_time_variance |     -10.0 |
+|   18  | feet_slide             |     -0.25 |
+|   19  | feet_clearance         |       2.0 |
+|   20  | feet_distance_y_exp    |       5.0 |
+|   21  | feet_landing_vel       |     -0.25 |
+|   22  | joint_vel_wheel_l2     |    -0.005 |
+|   23  | joint_acc_wheel_l2     |  -1.5e-07 |
+|   24  | joint_torques_wheel_l2 |  -0.00016 |
+|   25  | bipedal_gait_reward    |       5.0 |
+|   26  | feet_distance_penalize |    -100.0 |
+|   27  | stop_motion            |      -3.0 |
+|   28  | action_smoothness      |    -0.075 |
+|   29  | keep_alive             |      0.15 |
+|   30  | joint_deviation_hip    |      -0.3 |
+|   31  | joint_deviation_ankle  |      -0.2 |
+|   32  | joint_deviation_legs   |     -0.02 |
+|   33  | ankle_torque           |    -0.001 |
+|   34  | ankle_torque_limit     |     -0.01 |
+|   35  | ankle_action           |    -0.002 |
+|   36  | feet_impact_reduction  |   -0.0025 |
++-------+------------------------+-----------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 policy :  ['policy']
+	 critic :  ['critic']
+	 privileged :  ['privileged']
+--------------------------------------------------------------------------------
+ActorCriticROA.__init__ 收到未知参数，将被忽略: ['state_dependent_std']
+[INFO] Evaluation result: /home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/turn-left-extended-a01/result.json
+Loading user config located at: '/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20261125_145833.log
+2026-11-25T06:58:33Z [50ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-11-25T06:58:34Z [302ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-11-25T06:58:34Z [307ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-11-25T06:58:36Z [2,839ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-11-25T06:58:36Z [2,839ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090 D        | Yes: 0 |     | 32607   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b87      | efbac165.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 71857   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 7.0.0-38-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101011 (1.21.1.11)
+| Processor: Intel(R) Core(TM) Ultra 7 265K
+| Cores: 20 | Logical Cores: 20
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 95810 | Free Memory: 84769
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-11-25T06:58:36Z [3,031ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-11-25T06:58:36Z [3,044ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-11-25T06:58:36Z [3,044ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1540.93 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   2.06 
+
+   CPU     0 
+     0   1.57 
+2026-11-25T06:58:42Z [8,998ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_goal.
+2026-11-25T06:58:42Z [8,998ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_current.

@@ -1,0 +1,176 @@
+{
+  "checkpoint_next_iteration": 50000,
+  "effective_yaml": [
+    {
+      "path": "logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/params/env.yaml",
+      "sha256": "935676a70c708063f3c44082a9a02e0971137f84b241e24a85e0994a0a9d88f8"
+    },
+    {
+      "path": "logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/params/agent.yaml",
+      "sha256": "6c4f780c20b34e10a17e595bfa9e9a54cb2ee16f807b558acc8be4f57b169b1e"
+    }
+  ],
+  "evaluation_commit": "59a6d2a5fa2daee97d32986e2f4905bc4fdba8e9",
+  "local_native_checkpoint": {
+    "path": "logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/model_49999.pt",
+    "sha256": "dd24cbd6c1baf05e56645535f7b8ac4c2e0fffb8b3d5d3797383faaf34b61650"
+  },
+  "local_validated_manifests": [
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/manifest.json",
+      "sha256": "9c3b9bf966e198b1623825192a5d824fbbef1002a9322c31acc543e564b8b735"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-training-distribution-20261125-001/manifest.json",
+      "sha256": "952930f2f1968d39cc307832df07fb01dd985940eed2655b3ae7e7cc3acd7bed"
+    }
+  ],
+  "methods": {
+    "controller": "Native ROA student with estimated velocity. Seed 42; fixed-plane cases keep trained dynamics randomization and disable timed pushes. Each fixed trial has one environment and 1,000 control steps at 0.02 s.",
+    "feet": "Steps 200..749, four 5 ms physics samples per tick. Support is upward force >=5 N. Median swing apex and integrated contact-point slip use complete swings and stances only. Qualified touchdown requires a complete swing of >=40 ms with >=5 mm apex.",
+    "limits": "Per-joint maximum absolute telemetry value divided by the simulator joint limit over all 1,000 control samples. These are 20 ms samples. Torque and joint speed are not 5 ms foot telemetry.",
+    "steady": "Control steps 200..749 (4 <= t < 15 s) within the first episode. Body forward and yaw are signed body-frame means. World heading change uses unwrapped wxyz quaternion yaw over steps 100..749 and truncates at first reset. Long-left matches the standard command up to step 749.",
+    "stop": "From 2 s after command release until step 999 or first reset. No post-reset samples are joined. Stand uses the same late analysis window as the main cases.",
+    "training_distribution": "32 environments, 2000 control steps each. Use original terrain, command resampling, pushes, noise and 20 s time limit. Termination counts are termination rate multiplied by 64,000 environment steps. XY and yaw errors use the evaluator metric accumulators."
+  },
+  "outputs": {
+    "foot-gait.csv": "80874ea28cff965b9e65ac9754155a377efb78b31b26c793922a4c7849e784e1",
+    "scenario-metrics.csv": "b625029e4ccaf78a67084d058c7774cf1b46a2903a9ff5bc12fb6ee4323fef54",
+    "tracking-and-gait.png": "a74130008203b4e12edbadef2483ac4c6df07b3b8d9a6b5341670cbd4d24649a"
+  },
+  "reference_verification": "已复核归档清单、结果、上下文、有效配置、场景及逐步遥测的哈希与绑定，并从原始轨迹重算同口径指标。youngHit 对照来自原测；本机未取得其原始 checkpoint 文件。",
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0",
+  "tensorboard": {
+    "path": "logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/events.out.tfevents.1795503113.server-System-Product-Name.1158305.0",
+    "sha256": "b8f8bd2d713e0dae9c04f7b07151a7605ed5d8996edb0bc26b530071d554350d"
+  },
+  "training_commit": "7da0f830f450d73515f8304f80081093c38e699a",
+  "training_distribution": {
+    "control_steps": 2000,
+    "environment_steps": 64000,
+    "first_termination_steps": {
+      "illegal_contact": 28,
+      "time_out": 999
+    },
+    "illegal_contacts": 2,
+    "non_timeout_terminations": 2,
+    "out_of_bounds": 0,
+    "parallel_environments": 32,
+    "timeouts": 62,
+    "tracking_xy_rmse_m_s": 0.2773345862548676,
+    "tracking_yaw_rmse_rad_s": 0.3429358134470485
+  },
+  "training_metric_windows": {
+    "Episode_Termination/illegal_contact": {
+      "first": 0,
+      "last": 49999,
+      "number": 50000,
+      "windows": {
+        "0-999": {
+          "mean": 0.5134434310495853,
+          "n": 1000
+        },
+        "24000-24999": {
+          "mean": 0.021535726526752116,
+          "n": 1000
+        },
+        "48000-48999": {
+          "mean": 0.015682719360105693,
+          "n": 1000
+        },
+        "49000-49999": {
+          "mean": 0.012579132413491607,
+          "n": 1000
+        }
+      }
+    },
+    "Episode_Termination/time_out": {
+      "first": 0,
+      "last": 49999,
+      "number": 50000,
+      "windows": {
+        "0-999": {
+          "mean": 0.48486160649022625,
+          "n": 1000
+        },
+        "24000-24999": {
+          "mean": 0.9784744662642479,
+          "n": 1000
+        },
+        "48000-48999": {
+          "mean": 0.9843274728655815,
+          "n": 1000
+        },
+        "49000-49999": {
+          "mean": 0.9874208853244781,
+          "n": 1000
+        }
+      }
+    },
+    "Train/mean_episode_length": {
+      "first": 0,
+      "last": 49999,
+      "number": 50000,
+      "windows": {
+        "0-999": {
+          "mean": 697.9833801784515,
+          "n": 1000
+        },
+        "24000-24999": {
+          "mean": 990.7682995605469,
+          "n": 1000
+        },
+        "48000-48999": {
+          "mean": 993.5219595336914,
+          "n": 1000
+        },
+        "49000-49999": {
+          "mean": 994.7717396240234,
+          "n": 1000
+        }
+      }
+    },
+    "Train/mean_reward": {
+      "first": 0,
+      "last": 49999,
+      "number": 50000,
+      "windows": {
+        "0-999": {
+          "mean": 50.0901372346431,
+          "n": 1000
+        },
+        "24000-24999": {
+          "mean": 130.7654097366333,
+          "n": 1000
+        },
+        "48000-48999": {
+          "mean": 140.45375897979736,
+          "n": 1000
+        },
+        "49000-49999": {
+          "mean": 140.3245055465698,
+          "n": 1000
+        }
+      }
+    }
+  },
+  "training_source_diff": {
+    "path": "logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/git/robot_lab.diff",
+    "sha256": "14e6fe17ceca46c92b731b28cdd474a3a65f26f987565a3f40c9bac013bd1357"
+  },
+  "younghit_archived_manifests": [
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-41-24/evaluations/flat-leg-roa-49999-plane-20261125-001/manifest.json",
+      "sha256": "0ac34efee2266373b532227ee6c9c0534fae8dee40ac6c5ed07528bf71bcea39"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-41-24/evaluations/flat-leg-roa-49999-gait-turn-check-20261125-001/manifest.json",
+      "sha256": "91c3bde9127e8dd7ba44cfdb34a70bf85cc16a9b3ed7a1b5af4c8c5c73c8d663"
+    }
+  ],
+  "younghit_original_comparison": {
+    "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-41-24/evidence/comparison/flat-leg-roa-49999-plane-20261125-001/comparison-inputs.json",
+    "sha256": "a5ff3b18aef94071cf8c2aa551b771713762b6fcd49edc700e85047e1ab5daea"
+  },
+  "younghit_recorded_checkpoint_sha256": "be1cdbe764c71a69fd5877a3ec0d301be7d7f1bb88225a1fb2ac45ac845e8ece"
+}
