@@ -1,0 +1,433 @@
+{
+  "algorithm": "ROAPPO",
+  "archive_authorized": true,
+  "artifacts": {
+    "jit": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evidence/export/leg-roa-49999-static-20261125-001/policy.pt",
+      "sha256": "c0a4cc3321b0de885007a957df4a2fb059db7fc3eb38ffd292c97a1a138f87e9"
+    },
+    "onnx": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evidence/export/leg-roa-49999-static-20261125-001/policy.onnx",
+      "sha256": "d0b9c0ffe826617a01f024840ed87b266e16d910283c51073234c325d2317938"
+    }
+  },
+  "collection": "LW/leg_loco",
+  "description_notes": "本机 LW 双足平地速度跟踪策略。训练从 2026-11-24 14:51:42 开始，共完成 50,000 轮，保存文件为 model_49999.pt。\n策略以 50 Hz 运行。每帧 41 个观测，按时间从旧到新排列 10 帧。复位后的第一帧填满历史。前 8 个动作控制腿部关节位置，后 2 个控制右、左轮速度。\n单种子 9 个平地指令场景各运行 20 秒，均完成且无复位。前进与后退指令为 +0.4 和 −0.4 m/s，稳态实测 +0.427 和 −0.334 m/s。原地左、右转指令为 ±0.5 rad/s，实测 +0.118 和 −0.092 rad/s，转向跟踪偏弱。\n训练分布测试使用 32 个环境，共 64,000 个环境步，出现 62 次正常超时和 2 次非法接触终止。左脚关节速度峰值 33.44 rad/s，训练配置上限为 10 rad/s。\n导出比对覆盖初始、复位前、复位后和末步，共 8 个样本。与原生 CPU 策略的最大绝对动作误差为 TorchScript 0、ONNX 1.31×10⁻⁶。",
+  "evaluation": {
+    "batches": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/manifest.json",
+        "sha256": "9c3b9bf966e198b1623825192a5d824fbbef1002a9322c31acc543e564b8b735"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-training-distribution-20261125-001/manifest.json",
+        "sha256": "952930f2f1968d39cc307832df07fb01dd985940eed2655b3ae7e7cc3acd7bed"
+      }
+    ],
+    "results": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/stand-a01/result.json",
+        "sha256": "c7d26a149a29c766d0eea66d1fffa9507952969e33e2f1f1a8bcba83486cb2d5"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/forward-a01/result.json",
+        "sha256": "e308e2ce5a2b964c58afd4e3e12b6e462ae6ab16d9e5b4d66c711413c7d177fe"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/backward-a01/result.json",
+        "sha256": "0028e74393162fe0179f507ab1fb461defaf966d92a169bd37f8bab0fc9ad1ae"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/turn-left-a01/result.json",
+        "sha256": "ade9fb9a9846b7f5abb4d1d9033602d931cfaa9ff3d8c1415e2c0394e766dbe5"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/turn-right-a01/result.json",
+        "sha256": "f3337a571c1fb6be9297b60ee46b4895e1d75a276cba1acc5c2543f2b60a4a7e"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/forward-left-a01/result.json",
+        "sha256": "ee5cd767048fb2b24fdf3d67f352510d01496b2fdfa5e8f4747f88c3286e429f"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/forward-right-a01/result.json",
+        "sha256": "aecb4dc9209ed57b8073d85bc2635a87e9ec85c8e2770f72fde2bd69d8c80ed3"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/forward-030-a01/result.json",
+        "sha256": "3f6123ad5e2f4f0e8f8eeb91aa446af18a7b2b7303a8a9169bc901561a08a650"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-49999-20261125-001/raw/turn-left-extended-a01/result.json",
+        "sha256": "a9f38d2783e793e524c0ffe802333fd6fd3e512ebe517624502141a173b812fc"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evaluations/flat-leg-roa-server-training-distribution-20261125-001/raw/trained-randomization-32-a01/result.json",
+        "sha256": "8794630bed984db13ef205c76b5b16ace06f95c87a29cd91f304cdbe100be7df"
+      }
+    ],
+    "simulation_summary": {
+      "flat_command_scenarios": {
+        "control_steps_per_case": 1000,
+        "count": 9,
+        "num_envs_per_case": 1,
+        "peak_speed": {
+          "case": "forward-right-a01",
+          "configured_limit_rad_s": 10.0,
+          "joint": "right_foot_joint",
+          "measured_rad_s": 13.230411529541016
+        },
+        "resets": 0,
+        "steady_tracking": [
+          {
+            "case": "stand",
+            "vx_command_m_s": 0.0,
+            "vx_mean_m_s": -0.001278746477539905,
+            "yaw_command_rad_s": 0.0,
+            "yaw_mean_rad_s": 0.0012386569620469923
+          },
+          {
+            "case": "forward",
+            "vx_command_m_s": 0.4,
+            "vx_mean_m_s": 0.42710597255013205,
+            "yaw_command_rad_s": 0.0,
+            "yaw_mean_rad_s": -0.00282012607881122
+          },
+          {
+            "case": "backward",
+            "vx_command_m_s": -0.4,
+            "vx_mean_m_s": -0.33441208858381616,
+            "yaw_command_rad_s": 0.0,
+            "yaw_mean_rad_s": 0.04152619488812475
+          },
+          {
+            "case": "turn-left",
+            "vx_command_m_s": 0.0,
+            "vx_mean_m_s": -0.004070275858975947,
+            "yaw_command_rad_s": 0.5,
+            "yaw_mean_rad_s": 0.11837344392118129
+          },
+          {
+            "case": "turn-right",
+            "vx_command_m_s": 0.0,
+            "vx_mean_m_s": 0.059819419341246516,
+            "yaw_command_rad_s": -0.5,
+            "yaw_mean_rad_s": -0.09206414296672764
+          },
+          {
+            "case": "forward-left",
+            "vx_command_m_s": 0.4,
+            "vx_mean_m_s": 0.47342140956358475,
+            "yaw_command_rad_s": 0.5,
+            "yaw_mean_rad_s": 0.06254113305952738
+          },
+          {
+            "case": "forward-right",
+            "vx_command_m_s": 0.4,
+            "vx_mean_m_s": 0.41158208390528506,
+            "yaw_command_rad_s": -0.5,
+            "yaw_mean_rad_s": -0.082622032281096
+          },
+          {
+            "case": "forward-030",
+            "vx_command_m_s": 0.3,
+            "vx_mean_m_s": 0.33845756189389664,
+            "yaw_command_rad_s": 0.0,
+            "yaw_mean_rad_s": 0.018220042522827332
+          },
+          {
+            "case": "turn-left-extended",
+            "vx_command_m_s": 0.0,
+            "vx_mean_m_s": -0.004070275858975947,
+            "yaw_command_rad_s": 0.5,
+            "yaw_mean_rad_s": 0.11837344392118129
+          }
+        ],
+        "steady_window_s": [
+          4,
+          15
+        ]
+      },
+      "seed": 42,
+      "training_distribution": {
+        "control_steps_per_env": 2000,
+        "env_steps": 64000,
+        "episode_end_counts": {
+          "illegal_contact": 2,
+          "terrain_out_of_bounds": 0,
+          "time_out": 62
+        },
+        "num_envs": 32,
+        "peak_speed": {
+          "configured_limit_rad_s": 10.0,
+          "joint": "left_foot_joint",
+          "measured_rad_s": 33.439483642578125
+        },
+        "tracking_xy_rmse_m_s": 0.2773345862548676,
+        "tracking_yaw_rmse_rad_s": 0.3429358134470485
+      }
+    },
+    "steady_tracking_csv": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evidence/comparison/flat-leg-roa-server-49999-20261125-001/scenario-metrics.csv",
+      "sha256": "b625029e4ccaf78a67084d058c7774cf1b46a2903a9ff5bc12fb6ee4323fef54"
+    }
+  },
+  "export_receipt": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0/2026-11-24_14-51-42/evidence/export/leg-roa-49999-static-20261125-001/receipt.json",
+    "sha256": "9cede284d7f3eed3ebb6854a495adc1877a7c6a568581c351b49b4fb2eadee37"
+  },
+  "parameters": {
+    "control": {
+      "action_terms": [
+        {
+          "joints": [
+            "right_hip_joint",
+            "left_hip_joint",
+            "right_thigh_joint",
+            "left_thigh_joint",
+            "right_shank_joint",
+            "left_shank_joint",
+            "right_foot_joint",
+            "left_foot_joint"
+          ],
+          "name": "joint_pos",
+          "scale": 0.25,
+          "target_clip": [
+            -100.0,
+            100.0
+          ],
+          "use_default_offset": true
+        },
+        {
+          "joints": [
+            "right_wheel_joint",
+            "left_wheel_joint"
+          ],
+          "name": "joint_vel",
+          "scale": 1.0,
+          "target_clip": [
+            -100.0,
+            100.0
+          ],
+          "use_default_offset": true
+        }
+      ],
+      "command_ranges": {
+        "ang_vel_z": [
+          -0.5,
+          0.5
+        ],
+        "lin_vel_x": [
+          -0.8,
+          0.8
+        ],
+        "lin_vel_y": [
+          -0.0,
+          0.0
+        ]
+      },
+      "decimation": 4,
+      "default_joint_position_rad": {
+        "left_foot_joint": 0.4712,
+        "left_hip_joint": 0.0,
+        "left_shank_joint": 2.234,
+        "left_thigh_joint": 0.4363,
+        "left_wheel_joint": 0.0,
+        "right_foot_joint": -0.4712,
+        "right_hip_joint": 0.0,
+        "right_shank_joint": -2.234,
+        "right_thigh_joint": -0.4363,
+        "right_wheel_joint": 0.0
+      },
+      "default_joint_velocity_rad_s": 0.0,
+      "frequency_hz": 50.0,
+      "physics_dt_s": 0.005
+    },
+    "onnx": {
+      "batch_contract": "static_batch_1",
+      "input_dtype": "float32",
+      "input_name": "obs",
+      "input_shape": [
+        1,
+        410
+      ],
+      "opset_version": 17,
+      "output_dtype": "float32",
+      "output_name": "actions",
+      "output_shape": [
+        1,
+        10
+      ],
+      "profile": "static_batch_1_simplified",
+      "simplified": true
+    },
+    "policy_input": {
+      "gait_frequency_hz": 1.25,
+      "gait_velocity_command_norm_threshold": 0.1,
+      "history_frames": 10,
+      "history_order": "oldest_to_newest",
+      "joint_column_order": [
+        "right_hip_joint",
+        "left_hip_joint",
+        "right_thigh_joint",
+        "left_thigh_joint",
+        "right_shank_joint",
+        "left_shank_joint",
+        "right_foot_joint",
+        "left_foot_joint",
+        "right_wheel_joint",
+        "left_wheel_joint"
+      ],
+      "mode": "student",
+      "per_frame": [
+        {
+          "scale": 0.25,
+          "term": "base_ang_vel",
+          "width": 3
+        },
+        {
+          "scale": 1.0,
+          "term": "projected_gravity",
+          "width": 3
+        },
+        {
+          "scale": 1.0,
+          "term": "velocity_commands",
+          "width": 3
+        },
+        {
+          "scale": 1.0,
+          "term": "joint_pos",
+          "width": 10
+        },
+        {
+          "scale": 0.05,
+          "term": "joint_vel",
+          "width": 10
+        },
+        {
+          "scale": 1.0,
+          "term": "actions",
+          "width": 10
+        },
+        {
+          "scale": 1.0,
+          "term": "gait_phase",
+          "width": 2
+        }
+      ],
+      "reset_fill": "repeat_first_post_reset_frame",
+      "tensor_contract": {
+        "actor_input_order": [
+          "current_obs",
+          "code_vel",
+          "hist_latent"
+        ],
+        "history_contract": "flat_time_major_history",
+        "normalization_contract": "current_frame_only",
+        "reset_contract": "environment_history_reset"
+      },
+      "wheel_position_observation": "Wheel position columns are zero before observation noise."
+    },
+    "training": {
+      "actor": {
+        "activation": "elu",
+        "actor_hidden_dims": [
+          512,
+          256,
+          128
+        ],
+        "actor_obs_normalization": false,
+        "class_name": "ActorCriticROA",
+        "critic_hidden_dims": [
+          512,
+          256,
+          128
+        ],
+        "critic_obs_normalization": false,
+        "init_noise_std": 1.0,
+        "noise_std_type": "scalar",
+        "priv_encoder_dims": [
+          64,
+          20
+        ],
+        "state_dependent_std": false,
+        "use_velocity_estimation": true,
+        "vel_offset": 41
+      },
+      "argv": [
+        "python",
+        "scripts/reinforcement_learning/rsl_rl/train.py",
+        "--task=RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0",
+        "--log_project_name=LW_leg_locomotion_roa",
+        "--logger=wandb",
+        "--num_envs=4096",
+        "--headless"
+      ],
+      "completed_iterations": 50000,
+      "device": "cuda:0",
+      "dirty_paths_at_training": [
+        "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/config/LW/LW_Leg/flat_env_cfg.py"
+      ],
+      "experiment_name": "LW_leg_flat_roa",
+      "host_id": "server",
+      "joint_pos_penalty_weight": -1.0,
+      "logger": "wandb",
+      "max_iterations": 50000,
+      "num_envs": 4096,
+      "num_steps_per_env": 24,
+      "ppo": {
+        "clip_param": 0.2,
+        "dagger_update_freq": 20,
+        "estimated_velocity_schedule": [
+          0.0,
+          1.0,
+          2000,
+          3000
+        ],
+        "gamma": 0.99,
+        "lam": 0.95,
+        "learning_rate": 0.001,
+        "num_learning_epochs": 5,
+        "num_mini_batches": 4,
+        "schedule": "adaptive",
+        "symmetry_cfg": {
+          "data_augmentation_func": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.symmetry.lw_leg:compute_roa_symmetric_states",
+          "mirror_loss_coeff": 0.1,
+          "use_data_augmentation": true,
+          "use_mirror_loss": true
+        }
+      },
+      "resume": false,
+      "run_id": "2026-11-24_14-51-42",
+      "run_name": "",
+      "saved_yaml": {
+        "agent": {
+          "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/params/agent.yaml",
+          "sha256": "6c4f780c20b34e10a17e595bfa9e9a54cb2ee16f807b558acc8be4f57b169b1e"
+        },
+        "environment": {
+          "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/params/env.yaml",
+          "sha256": "935676a70c708063f3c44082a9a02e0971137f84b241e24a85e0994a0a9d88f8"
+        }
+      },
+      "seed": 42,
+      "training_diff_sha256": "9f5cff47ba846c0955598ef07a2907afa79b5452aeb2c218a3d92c4e47f78ce5"
+    }
+  },
+  "runner": "OnPolicyRunnerROA",
+  "selected_checkpoint": {
+    "checkpoint_id": "model_49999",
+    "iteration": 49999,
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_roa/2026-11-24_14-51-42/model_49999.pt",
+    "sha256": "dd24cbd6c1baf05e56645535f7b8ac4c2e0fffb8b3d5d3797383faaf34b61650",
+    "size_bytes": 4953679
+  },
+  "source": {
+    "commit": "7da0f830f450d73515f8304f80081093c38e699a",
+    "dirty": true
+  },
+  "storage_root": "/home/server/liufengrong/policy_storage",
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-Roa-v0",
+  "version": 2
+}
