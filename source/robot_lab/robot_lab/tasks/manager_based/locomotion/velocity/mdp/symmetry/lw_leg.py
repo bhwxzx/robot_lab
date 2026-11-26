@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedRLEnv
 
-__all__ = ["compute_symmetric_states", "compute_roa_symmetric_states"]
+__all__ = ["compute_symmetric_states", "compute_roa_symmetric_states", "compute_flat_amp_symmetric_states"]
 
 
 @lru_cache(maxsize=4)
@@ -111,6 +111,58 @@ def compute_symmetric_states(
     return obs_aug, actions_aug
 
 
+_LW_JOINT_MIRROR = ((1, 0, 3, 2, 5, 4, 7, 6, 9, 8), (-1,) * 10)
+# Each term lists its source columns and signs for one frame.
+_FLAT_AMP_OBS_MIRROR = (
+    ((0, 1, 2), (-1, 1, -1)),  # angular velocity
+    ((0, 1, 2), (1, -1, 1)),   # projected gravity
+    ((0, 1, 2), (1, -1, -1)),  # velocity command
+    _LW_JOINT_MIRROR,           # joint position
+    _LW_JOINT_MIRROR,           # joint velocity
+    _LW_JOINT_MIRROR,           # last action
+    ((0, 1), (-1, -1)),         # half-stride shift of the sine/cosine clock
+)
+_FLAT_AMP_FRAME_WIDTH = sum(len(order) for order, _ in _FLAT_AMP_OBS_MIRROR)
+
+
+@lru_cache(maxsize=32)
+def _flat_amp_mirror_map(terms, history: int, device: torch.device, dtype: torch.dtype):
+    columns, signs = [], []
+    # Isaac Lab stores the complete history of each term before the next term.
+    for order, term_signs in terms:
+        for _ in range(history):
+            offset = len(columns)
+            columns.extend(offset + index for index in order)
+            signs.extend(term_signs)
+    return torch.tensor(columns, device=device, dtype=torch.long), torch.tensor(signs, device=device, dtype=dtype)
+
+
+def _append_flat_amp_mirror(values: torch.Tensor, terms, history: int) -> torch.Tensor:
+    columns, signs = _flat_amp_mirror_map(terms, history, values.device, values.dtype)
+    mirrored = values.index_select(-1, columns).mul_(signs)
+    return torch.cat((values, mirrored), dim=0)
+
+
+@torch.no_grad()
+def compute_flat_amp_symmetric_states(env, obs: TensorDict | None = None, actions: torch.Tensor | None = None):
+    """Mirror the flat AMP actor and critic in Isaac Lab's flattened, term-major history layout."""
+    obs_aug = None
+    if obs is not None:
+        groups = {}
+        for key in ("policy", "critic"):
+            flat = obs[key]
+            if flat.ndim != 2 or flat.shape[1] == 0 or flat.shape[1] % _FLAT_AMP_FRAME_WIDTH:
+                raise ValueError(f"Unexpected LW flat AMP {key} layout: {flat.shape}")
+            history = flat.shape[1] // _FLAT_AMP_FRAME_WIDTH
+            groups[key] = _append_flat_amp_mirror(flat, _FLAT_AMP_OBS_MIRROR, history)
+        obs_aug = TensorDict(groups, batch_size=[2 * obs.batch_size[0]], device=obs.device, names=obs.names)
+
+    actions_aug = None
+    if actions is not None:
+        actions_aug = _append_flat_amp_mirror(actions, (_LW_JOINT_MIRROR,), 1)
+    return obs_aug, actions_aug
+
+
 def _transform_policy_obs_left_right(env: ManagerBasedRLEnv, obs: torch.Tensor) -> torch.Tensor:
     """Apply a left-right symmetry transformation to the observation tensor."""
     obs = obs.clone()
@@ -130,7 +182,7 @@ def _transform_policy_obs_left_right(env: ManagerBasedRLEnv, obs: torch.Tensor) 
     # last actions
     obs[..., 29:39] = _switch_lw_joints_left_right(obs[..., 29:39])
     
-    # gait_phase (39:41) is a global time-based clock, remains unchanged
+    # Task-specific symmetry functions handle the gait clock (39:41).
 
     return obs
 

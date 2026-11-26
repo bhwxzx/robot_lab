@@ -17,7 +17,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor, RayCaster
 from isaaclab.utils.math import quat_apply_inverse, yaw_quat, euler_xyz_from_quat, quat_apply, wrap_to_pi
 
-from .foot_rewards import GroundContactSlip, SwingSoleClearance, feet_clearance_reward, feet_slide
+from .foot_rewards import GroundContactSlip, SwingSoleClearance, feet_clearance_reward, feet_slide, terrain_height_below
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -109,40 +109,25 @@ def joint_torque_limit_penalty(
 def stand_still(
     env: ManagerBasedRLEnv,
     command_name: str,
-    command_threshold: float = 0.06,
+    command_threshold: float = 0.1,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
     """Penalize offsets from the default joint positions when the command is very small."""
     # Penalize motion when command is nearly zero.
     reward = mdp.joint_deviation_l1(env, asset_cfg)
-    reward *= torch.norm(env.command_manager.get_command(command_name), dim=1) < command_threshold
+    reward *= torch.linalg.vector_norm(env.command_manager.get_command(command_name), dim=1) <= command_threshold
     # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
-def stop_motion(
-    env, lin_threshold: float = 0.05, ang_threshold: float = 0.05, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
-) -> torch.Tensor:
-    """
-    penalizing linear and angular motion when command velocities are near zero.
-    """
+def stop_motion(env, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Penalize planar and yaw drift when the base velocity command magnitude is at most 0.1."""
+    commands = env.command_manager.get_command("base_velocity")
+    command_norm = torch.linalg.vector_norm(commands, dim=1)
 
     asset = env.scene[asset_cfg.name]
-    base_lin_vel = asset.data.root_lin_vel_w[:, :2]
-    base_ang_vel = asset.data.root_ang_vel_w[:, -1]
-
-    commands = env.command_manager.get_command("base_velocity")
-
-    lin_commands = commands[:, :2]
-    ang_commands = commands[:, 2]
-
-    reward_lin = torch.sum(
-        torch.abs(base_lin_vel) * (torch.norm(lin_commands, dim=1, keepdim=True) < lin_threshold), dim=-1
-    )
-
-    reward_ang = torch.abs(base_ang_vel) * (torch.abs(ang_commands) < ang_threshold)
-
-    total_reward = reward_lin + reward_ang
-    return total_reward
+    planar_drift = asset.data.root_lin_vel_w[:, :2].abs().sum(dim=1)
+    yaw_drift = asset.data.root_ang_vel_w[:, 2].abs()
+    return torch.where(command_norm <= 0.1, planar_drift + yaw_drift, 0.0)
 
 
 def joint_pos_penalty(
@@ -659,29 +644,22 @@ def base_height_l2(
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     sensor_cfg: SceneEntityCfg | None = None,
 ) -> torch.Tensor:
-    """Penalize asset height from its target using L2 squared kernel.
+    """Squared height error relative to world zero or the mean valid terrain hits.
 
-    Note:
-        For flat terrain, target height is in the world frame. For rough terrain,
-        sensor readings can adjust the target height to account for the terrain.
+    With a scanner, an environment with no valid hits contributes zero for this step.
     """
-    # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
-    if sensor_cfg is not None:
-        sensor: RayCaster = env.scene[sensor_cfg.name]
-        # Adjust the target height using the sensor data
-        ray_hits = sensor.data.ray_hits_w[..., 2]
-        if torch.isnan(ray_hits).any() or torch.isinf(ray_hits).any() or torch.max(torch.abs(ray_hits)) > 1e6:
-            adjusted_target_height = asset.data.root_link_pos_w[:, 2]
-        else:
-            adjusted_target_height = target_height + torch.mean(ray_hits, dim=1)
-    else:
-        # Use the provided target height directly for flat terrain
-        adjusted_target_height = target_height
-    # Compute the L2 squared penalty
-    reward = torch.square(asset.data.root_pos_w[:, 2] - adjusted_target_height)
-    # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
-    return reward
+    base_z = asset.data.root_pos_w[:, 2]
+    if sensor_cfg is None:
+        return (base_z - target_height).square()
+
+    sensor: RayCaster = env.scene[sensor_cfg.name]
+    hits = sensor.data.ray_hits_w[..., 2]
+    valid = torch.isfinite(hits) & (hits.abs() <= 1e6)
+    count = valid.sum(dim=1)
+    ground_z = torch.where(valid, hits, 0.0).sum(dim=1) / count.clamp_min(1)
+    error = (base_z - (ground_z + target_height)).square()
+    return torch.where(count > 0, error, 0.0)
 
 
 def lin_vel_z_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
@@ -1045,46 +1023,21 @@ class ActionSmoothnessPenalty(ManagerTermBase):
         return penalty
     
 def foot_landing_vel(
-        env: ManagerBasedRLEnv,
-        asset_cfg: SceneEntityCfg,
-        sensor_cfg: SceneEntityCfg,
-        foot_radius: float,
-        about_landing_threshold: float,
-        height_scanner_cfg: SceneEntityCfg | None = None,
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg,
+    sensor_cfg: SceneEntityCfg,
+    foot_radius: float,
+    about_landing_threshold: float,
+    height_scanner_cfg: SceneEntityCfg | None = None,
 ) -> torch.Tensor:
-    """Penalize high foot landing velocities"""
+    """Penalize descending, airborne feet within the landing threshold of the local terrain."""
     asset = env.scene[asset_cfg.name]
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     z_vels = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, 2]
     contacts = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2] > 0.1
-
-    terrain_h_under_foot = torch.zeros_like(z_vels)
-
-    if height_scanner_cfg is not None:
-        scanner = env.scene.sensors[height_scanner_cfg.name]
-        ray_hits_w = scanner.data.ray_hits_w
-        feet_pos_w = asset.data.body_pos_w[:, asset_cfg.body_ids, :]
-        num_feet = feet_pos_w.shape[1]
-        
-        default_terrain_z = asset.data.root_pos_w[:, 2] - 0.69 # fallback standard height
-
-        for i in range(num_feet):
-            foot_xy = feet_pos_w[:, i, :2]
-            # 计算脚底周围的射线距离
-            rel_pos = ray_hits_w[..., :2] - foot_xy.unsqueeze(1)
-            dist_sq = torch.sum(rel_pos ** 2, dim=-1)
-            
-            # 取脚周围 15cm 内的探测点
-            near_mask = dist_sq < (0.15 ** 2)
-            near_z = torch.where(near_mask, ray_hits_w[..., 2], torch.tensor(float('inf'), device=env.device))
-            min_z, _ = torch.min(near_z, dim=-1)
-            terrain_h = torch.where(torch.isinf(min_z), default_terrain_z, min_z)
-            terrain_h_under_foot[:, i] = terrain_h
-
-    foot_heights = torch.clip(
-        asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - foot_radius - terrain_h_under_foot, 0, 1
-    )
-
+    feet_pos_w = asset.data.body_pos_w[:, asset_cfg.body_ids]
+    ground_z = terrain_height_below(env, feet_pos_w, height_scanner_cfg)
+    foot_heights = feet_pos_w[..., 2] - foot_radius - ground_z
     about_to_land = (foot_heights < about_landing_threshold) & (~contacts) & (z_vels < 0.0)
     landing_z_vels = torch.where(about_to_land, z_vels, torch.zeros_like(z_vels))
     reward = torch.sum(torch.square(landing_z_vels), dim=1)
@@ -1366,48 +1319,16 @@ def foot_impact_reduction(
     max_delta_v_sq: float,
     asset_cfg: SceneEntityCfg,
 ) -> torch.Tensor:
-    """
-    足部柔和落地奖励 (Impact Reduction Reward)
-    惩罚重力方向（Z轴）上连续两步之间的速度突变，并使用最大阈值进行截断以稳定训练。
-    
-    公式: sum( min( (v_{z,t} - v_{z,t-1})^2, max_delta_v_sq ) )
-    注意：此函数返回的是正的惩罚值，在配置中需将 weight 设为负数。
-    """
-    # 获取机器人的 asset 数据
+    """Sum capped squared changes in vertical foot velocity within the same episode."""
     asset = env.scene[asset_cfg.name]
-    
-    # 获取指定刚体（如左右脚）在世界坐标系下 Z 轴（索引2）的线速度
-    # body_lin_vel_w 的 shape 为[num_envs, num_bodies, 3]
-    # current_vel_z 的 shape 为 [num_envs, num_target_bodies]
     current_vel_z = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, 2]
-    
-    # 巧妙利用 asset 挂载自定义属性，来保存上一步的速度 (处理状态依赖)
     if not hasattr(asset, "prev_body_vel_z"):
-        asset.prev_body_vel_z = torch.zeros_like(current_vel_z)
-        asset.prev_body_vel_z.copy_(current_vel_z)
-        
-    # 【关键处理】处理环境重置 (Reset)
-    # 当某些环境发生重置时，上一步的速度必须与当前速度对齐，否则会产生因为“瞬移”导致的巨大惩罚
-    reset_env_ids = env.reset_buf.nonzero(as_tuple=False).squeeze(-1)
-    if len(reset_env_ids) > 0:
-        asset.prev_body_vel_z[reset_env_ids] = current_vel_z[reset_env_ids]
-        
-    # 计算当前步与上一步在 Z 轴上的速度变化量
-    delta_v_z = current_vel_z - asset.prev_body_vel_z
-    
-    # 计算速度变化的平方
-    delta_v_z_sq = torch.square(delta_v_z)
-    
-    # 模拟公式中的 min(Delta_v^2, Delta_v_max^2)，使用 clamp 截断上限，防止物理引擎结算时的突变毁掉 Critic 网络
-    penalty_per_body = torch.clamp(delta_v_z_sq, max=max_delta_v_sq)
-    
-    # 将两只脚的惩罚值相加，shape 变为 [num_envs]
-    total_penalty = torch.sum(penalty_per_body, dim=1)
-    
-    # 就地更新速度缓存，供下一个时间步使用
+        asset.prev_body_vel_z = current_vel_z.clone()
+
+    penalty = (current_vel_z - asset.prev_body_vel_z).square().clamp_max(max_delta_v_sq).sum(dim=1)
     asset.prev_body_vel_z.copy_(current_vel_z)
-    
-    return total_penalty
+    # Terminal rewards precede reset. The first reward in a new episode sees step 1.
+    return torch.where(env.episode_length_buf > 1, penalty, 0.0)
 
 def centrifugal_compensation_reward(
     env: ManagerBasedRLEnv, 

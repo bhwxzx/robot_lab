@@ -1,3 +1,5 @@
+from importlib.resources import files
+
 from isaaclab.utils import configclass
 
 from isaaclab_rl.rsl_rl import RslRlPpoActorCriticCfg, RslRlSymmetryCfg
@@ -58,3 +60,22 @@ class LWFlatAmpRunnerCfg(LWRoughAmpRunnerCfg):
 
         self.max_iterations = 50000
         self.experiment_name = "LW_leg_flat_amp"
+
+
+@configclass
+class LWFlatCommandAmpRunnerCfg(LWFlatAmpRunnerCfg):
+    amp_dataset_version: str = "lw_grid153_125hz_tracking_001"
+    amp_stand_threshold: float = 0.1
+    amp_reward_coef=2.0
+    amp_task_reward_lerp=0.3
+    amp_num_preload_transitions = 0  # Windows are gathered from the selected clip during each AMP update.
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name = "LW_leg_flat_command_amp"
+        self.algorithm.class_name = "CommandConditionedAMPPPO"
+        self.algorithm.symmetry_cfg.data_augmentation_func = (
+            "robot_lab.tasks.manager_based.locomotion.velocity.mdp.symmetry.lw_leg:compute_flat_amp_symmetric_states"
+        )
+        release = files("robot_lab").joinpath("datasets", "LW", self.amp_dataset_version)
+        self.amp_motion_files = [str(release.joinpath("motion_amp_expert", "motion_*.txt"))]

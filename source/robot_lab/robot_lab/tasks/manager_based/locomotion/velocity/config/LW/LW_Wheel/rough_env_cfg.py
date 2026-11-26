@@ -268,11 +268,7 @@ class LWWheelRewardsCfg(RewardsCfg):
         params={"min_feet_distance": 0.115, "max_feet_distance": 0.51, "feet_links_name": [".*_wheel_link"]}
     )
 
-    stop_motion = RewTerm(
-        func=mdp.stop_motion,
-        weight=0.0,
-        params={"lin_threshold": 0.1, "ang_threshold": 0.1}
-    )
+    stop_motion = RewTerm(func=mdp.stop_motion, weight=0.0)
 
     lazy_penalty = RewTerm(
         func=mdp.idle_when_commanded,

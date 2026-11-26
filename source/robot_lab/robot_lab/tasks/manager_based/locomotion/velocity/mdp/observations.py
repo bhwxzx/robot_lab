@@ -30,6 +30,14 @@ def joint_pos_rel_without_wheel(
     return joint_pos_rel[:, asset_cfg.joint_ids]
 
 
+def joint_pos_rel_nominal(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Return joint angles relative to the fixed nominal pose used by the AMP experts."""
+    asset: Articulation = env.scene[asset_cfg.name]
+    # Until the startup event applies calibration offsets, the configured defaults are nominal.
+    nominal_pos = getattr(asset.data, "default_joint_pos_nominal", asset.data.default_joint_pos)
+    return asset.data.joint_pos[:, asset_cfg.joint_ids] - nominal_pos[..., asset_cfg.joint_ids]
+
+
 def phase(env: ManagerBasedRLEnv, cycle_time: float) -> torch.Tensor:
     if not hasattr(env, "episode_length_buf") or env.episode_length_buf is None:
         env.episode_length_buf = torch.zeros(env.num_envs, device=env.device, dtype=torch.long)

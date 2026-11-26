@@ -278,11 +278,7 @@ class LWLegRewardsCfg(RewardsCfg):
         params={"min_feet_distance": 0.115,"feet_links_name": [".*_foot_link"]}
     )
 
-    stop_motion = RewTerm(
-        func=mdp.stop_motion,
-        weight=0.0,
-        params={"lin_threshold": 0.1, "ang_threshold": 0.1}
-    )
+    stop_motion = RewTerm(func=mdp.stop_motion, weight=0.0)
 
     action_smoothness = RewTerm(func=mdp.ActionSmoothnessPenalty, weight=0.0)
 
@@ -2025,6 +2021,353 @@ class LWLegRoughAmpEnvCfg_Play(LWLegRoughDwaqEnvCfg):
         # If the weight of rewards is 0, set rewards to None
         if self.__class__.__name__ == "LWLegRoughAmpEnvCfg_Play":
             self.disable_zero_weight_rewards()
+
+
+@configclass
+class LWLegCommandAmpObservationsCfg(ObservationsCfg):
+    """LW policy, critic, expert motion history and raw velocity command."""
+
+    @configclass
+    class PolicyCfg(ObsGroup):
+        """Observations for policy group."""
+
+        # observation terms (order preserved)
+        base_ang_vel = ObsTerm(
+            func=mdp.base_ang_vel,
+            noise=Unoise(n_min=-0.2, n_max=0.2),
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        projected_gravity = ObsTerm(
+            func=mdp.projected_gravity,
+            noise=Unoise(n_min=-0.05, n_max=0.05),
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        velocity_commands = ObsTerm(
+            func=mdp.generated_commands,
+            params={"command_name": "base_velocity"},
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        joint_pos = ObsTerm(
+            func=mdp.joint_pos_rel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
+            noise=Unoise(n_min=-0.01, n_max=0.01),
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        joint_vel = ObsTerm(
+            func=mdp.joint_vel_rel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
+            noise=Unoise(n_min=-1.5, n_max=1.5),
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        actions = ObsTerm(
+            func=mdp.last_action,
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+
+        gait_phase = ObsTerm(
+            func=mdp.get_gait_phase_from_param_with_mask,
+            params={"gait_freq": 1.25, "vel_command_name": "base_velocity", "vel_threshold": 0.1},
+        )
+
+        def __post_init__(self):
+            self.enable_corruption = True
+            self.concatenate_terms = True
+            self.flatten_history_dim = True
+            self.history_length = 10
+
+    @configclass
+    class CriticCfg(ObsGroup):
+        """Observations for critic group."""
+
+        # observation terms (order preserved)
+        base_ang_vel = ObsTerm(
+            func=mdp.base_ang_vel,
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        projected_gravity = ObsTerm(
+            func=mdp.projected_gravity,
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        velocity_commands = ObsTerm(
+            func=mdp.generated_commands,
+            params={"command_name": "base_velocity"},
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        joint_pos = ObsTerm(
+            func=mdp.joint_pos_rel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        joint_vel = ObsTerm(
+            func=mdp.joint_vel_rel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*", preserve_order=True)},
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        actions = ObsTerm(
+            func=mdp.last_action,
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+
+        gait_phase = ObsTerm(
+            func=mdp.get_gait_phase_from_param_with_mask,
+            params={"gait_freq": 1.25, "vel_command_name": "base_velocity", "vel_threshold": 0.1},
+        )
+
+        height_scan = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            clip=(-1.0, 1.0),
+            scale=1.0,
+        )
+
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+            self.history_length = 10
+
+    @configclass
+    class AmpCfg(ObsGroup):
+        joint_pos = ObsTerm(
+            func=mdp.joint_pos_rel_nominal,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names="", preserve_order=True)},
+            scale=1.0,
+        )
+        joint_vel = ObsTerm(
+            func=mdp.joint_vel_rel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names="", preserve_order=True)},
+            scale=1.0,
+        )
+        end_effort_pos = ObsTerm(
+            func=mdp.feet_pos_in_body,
+            params={
+                "asset_cfg": SceneEntityCfg(
+                    "robot", body_names=["left_foot_link", "right_foot_link"], preserve_order=True
+                )
+            },
+            scale=1.0,
+        )
+
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+            self.history_length = 10
+            self.flatten_history_dim = False
+
+    @configclass
+    class CommandCfg(ObsGroup):
+        velocity = ObsTerm(func=mdp.generated_commands, params={"command_name": "base_velocity"})
+
+    policy: PolicyCfg = PolicyCfg()
+    critic: CriticCfg = CriticCfg()
+    amp: AmpCfg = AmpCfg()
+    amp_command: CommandCfg = CommandCfg(enable_corruption=False)
+
+
+@configclass
+class LWLegRoughCommandAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
+
+    observations: LWLegCommandAmpObservationsCfg = LWLegCommandAmpObservationsCfg()
+    commands: LWLegCommandsCfg = LWLegCommandsCfg()
+    actions: LWLegActionsCfg = LWLegActionsCfg()
+    rewards: LWLegRewardsCfg = LWLegRewardsCfg()
+
+    base_link_name = "base_link"
+    foot_link_name = ".*_foot_link"
+    # fmt: off
+    joint_names_without_wheels = [
+        "right_hip_joint",
+        "left_hip_joint",
+        "right_thigh_joint",
+        "left_thigh_joint",
+        "right_shank_joint",
+        "left_shank_joint",
+        "right_foot_joint",
+        "left_foot_joint",
+    ]
+    wheel_joint_names = [
+        "right_wheel_joint",
+        "left_wheel_joint",
+    ]
+    joint_names = joint_names_without_wheels + wheel_joint_names
+    # fmt: on
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        # Scene
+        self.scene.robot = LW_LEG_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
+        self.scene.height_scanner_base.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
+        self.scene.base_contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
+        self.scene.base_contact_forces.filter_prim_paths_expr = [
+            "{ENV_REGEX_NS}/Robot/right_wheel_link", "{ENV_REGEX_NS}/Robot/left_wheel_link"
+        ]
+        self.scene.terrain.terrain_generator = BLIND_ROUGH_AND_STAIRS_TERRAINS_CFG
+
+        # Observations
+        self.observations.policy.joint_pos.func = mdp.joint_pos_rel_without_wheel
+        self.observations.policy.joint_pos.params["wheel_asset_cfg"] = SceneEntityCfg(
+            "robot", joint_names=self.wheel_joint_names
+        )
+        self.observations.critic.joint_pos.func = mdp.joint_pos_rel_without_wheel
+        self.observations.critic.joint_pos.params["wheel_asset_cfg"] = SceneEntityCfg(
+            "robot", joint_names=self.wheel_joint_names
+        )
+        self.observations.amp.joint_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.observations.amp.joint_vel.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+
+        self.observations.policy.base_ang_vel.scale = 0.25
+        self.observations.policy.joint_pos.scale = 1.0
+        self.observations.policy.joint_vel.scale = 0.05
+        self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        # Preserve leg position noise while keeping wheel columns exactly zero.
+        self.observations.policy.joint_pos.noise = mdp.UniformJointPositionNoiseCfg(
+            n_min=-0.01, n_max=0.01,
+            joint_names=self.joint_names,
+            wheel_joint_names=self.wheel_joint_names,
+        )
+        self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
+        self.observations.critic.base_ang_vel.scale = 0.25
+        self.observations.critic.joint_pos.scale = 1.0
+        self.observations.critic.joint_vel.scale = 0.05
+        self.observations.critic.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        self.observations.critic.joint_vel.params["asset_cfg"].joint_names = self.joint_names
+
+        self.observations.policy.height_scan = None
+
+        # Actions
+        self.actions.joint_pos.scale = 0.25
+        self.actions.joint_vel.scale = 1.0
+        self.actions.joint_pos.clip = {".*": (-100.0, 100.0)}
+        self.actions.joint_vel.clip = {".*": (-100.0, 100.0)}
+        self.actions.joint_pos.joint_names = self.joint_names_without_wheels
+        self.actions.joint_vel.joint_names = self.wheel_joint_names
+
+        # Events
+        self.events.randomize_rigid_body_mass_base.params["asset_cfg"].body_names = [self.base_link_name]
+        self.events.randomize_rigid_body_mass_others.params["asset_cfg"].body_names = [
+            "right_.*", "left_.*",
+            ]
+        
+        self.events.randomize_com_positions.params["com_range"] = {"x": (-0.075, 0.075), "y": (-0.075, 0.075), "z": (-0.075, 0.075)}
+        self.events.randomize_com_positions.params["asset_cfg"].body_names = [self.base_link_name]
+        self.events.randomize_reset_joints.func = mdp.reset_joints_by_offset
+        self.events.randomize_reset_joints.params["position_range"] = (-0.2, 0.2)
+        self.events.randomize_reset_joints.params["velocity_range"] = (-0.3, 0.3)
+        self.events.randomize_push_robot.params["velocity_range"] = {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}
+        self.events.randomize_apply_external_force_torque.params["asset_cfg"].body_names = [self.base_link_name]
+        self.events.add_joint_default_pos.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.events.randomize_actuator_gains.params["asset_cfg"].joint_names = self.joint_names
+                
+        self.events.push_robot_hard = None
+        self.events.randomize_actuator_gains.params["distribution"] = "uniform"
+        self.events.randomize_actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
+        self.events.randomize_actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
+        self.events.randomize_rigid_body_mass_others.params["mass_distribution_params"] = (0.7, 1.3) 
+        
+
+        # Rewards
+        self.rewards.upward.weight = 1.0
+
+        # Root penalties
+        self.rewards.lin_vel_z_l2.weight = -1.0
+        self.rewards.ang_vel_xy_l2.weight = -0.05
+        self.rewards.flat_orientation_l2.weight = -2.5
+        self.rewards.base_height_l2.weight = -50.0
+        self.rewards.base_height_l2.params["target_height"] = 0.69
+        self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
+
+        # Joint penalties
+        self.rewards.joint_torques_l2.weight = -8e-5
+        self.rewards.joint_torques_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_torques_wheel_l2.weight = -1.6e-4
+        self.rewards.joint_torques_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
+
+        self.rewards.joint_acc_l2.weight = -1e-6
+        self.rewards.joint_acc_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_acc_wheel_l2.weight = -1.5e-7
+        self.rewards.joint_acc_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
+
+        self.rewards.joint_vel_l2.weight = -5e-5
+        self.rewards.joint_vel_l2.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_vel_wheel_l2.weight = -5e-3
+        self.rewards.joint_vel_wheel_l2.params["asset_cfg"].joint_names = self.wheel_joint_names
+
+        self.rewards.joint_pos_limits.weight = -2.0
+        self.rewards.joint_pos_limits.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+
+        self.rewards.joint_power.weight = -2e-5
+
+        self.rewards.stop_motion.weight = -3.0
+        self.rewards.stand_still.weight = -3.0
+
+        self.rewards.joint_pos_penalty.weight = -0.5
+        self.rewards.joint_pos_penalty.params["asset_cfg"].joint_names = self.joint_names_without_wheels
+        self.rewards.joint_pos_penalty.params["stand_still_scale"] = 1.0
+
+        # Action penalties
+        self.rewards.action_rate_l2.weight = -0.02
+        self.rewards.action_smoothness.weight = -0.02
+
+        # Contacts
+        self.rewards.undesired_contacts.weight = -1.0
+        self.rewards.undesired_contacts.params["sensor_cfg"].body_names = [
+            "base_link", ".*hip_link", ".*thigh_link", ".*shank_link", ".*wheel_link"
+        ]
+
+        # Velocity-tracking rewards
+        self.rewards.track_lin_vel_xy_exp.weight = 5.0
+        self.rewards.track_lin_vel_xy_exp.func = mdp.track_lin_vel_xy_yaw_frame_exp
+        self.rewards.track_ang_vel_z_exp.weight = 4.0
+        self.rewards.track_ang_vel_z_exp.func = mdp.track_ang_vel_z_world_exp
+        self.rewards.lazy_penalty.weight = -1.0
+
+        self.rewards.feet_air_time.weight = 1.0
+        self.rewards.feet_air_time.func = mdp.feet_air_time_positive_biped
+        self.rewards.feet_air_time.params["threshold"] = 0.4
+        self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
+
+        self.rewards.feet_stumble.weight = -1.0
+        self.rewards.feet_stumble.params["sensor_cfg"].body_names = [self.foot_link_name]
+        self.rewards.feet_slide.weight = -0.25
+        self.rewards.feet_slide.params["sensor_cfg"].body_names = [self.foot_link_name]
+        self.rewards.feet_slide.params["asset_cfg"].body_names = [self.foot_link_name]
+        self.rewards.feet_height_body.weight = 0.0
+        self.rewards.feet_height_body.params["asset_cfg"].body_names = [self.foot_link_name]
+        self.rewards.feet_height_body.params["target_height"] = -0.5
+        self.rewards.feet_distance_y_exp.weight = 0.0
+        self.rewards.feet_distance_y_exp.params["stance_width"] = 0.40
+        self.rewards.feet_distance_y_exp.params["asset_cfg"].body_names = [self.foot_link_name]
+        self.rewards.feet_distance_penalize.weight = 0.0
+        self.rewards.feet_distance_penalize.params["min_feet_distance"] = 0.2
+
+        # Terminations
+        self.terminations.illegal_contact.params["sensor_cfg"].body_names = [self.base_link_name]
+
+        # Curriculum
+        self.curriculum.command_levels_ang_vel = None
+        self.curriculum.command_levels_lin_vel = None
+
+        # Expert velocity grid
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.8, 0.8)
+        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.35, 0.35)
+
+        if self.__class__.__name__ == "LWLegRoughCommandAmpEnvCfg":
+            self.disable_zero_weight_rewards()
+
 
 @configclass
 class LWLegAmpDwaqObservationsCfg(ObservationsCfg):

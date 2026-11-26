@@ -43,19 +43,69 @@ def _contact_motion(
     speed[i, foot] = weighted_speed / total if total > 0.0 else 0.0
 
 
+def _terrain_colliders(env):
+    root = env.sim.stage.GetPrimAtPath(env.cfg.scene.terrain.prim_path)
+    colliders = [p for p in Usd.PrimRange(root, Usd.TraverseInstanceProxies()) if p.HasAPI(UsdPhysics.CollisionAPI)]
+    if not colliders:
+        raise ValueError(f"Missing terrain collider under {root.GetPath()}")
+    return colliders
+
+
+def _terrain_height_geometry(env, height_scanner_cfg):
+    cache = UsdGeom.XformCache()
+    grounds = _terrain_colliders(env)
+    scanner_name = height_scanner_cfg.name if height_scanner_cfg is not None else "height_scanner_base"
+    scanner = env.scene.sensors.get(scanner_name)
+    cached_mesh = getattr(scanner, "meshes", {}).get(env.cfg.scene.terrain.prim_path)
+    plane_height = -float("inf")
+    meshes = []
+    for ground in grounds:
+        transform = cache.GetLocalToWorldTransform(ground)
+        if ground.IsA(UsdGeom.Plane):
+            if (ground.GetAttribute("axis").Get() != "Z" or
+                    not np.allclose(transform.TransformDir(Gf.Vec3d(0, 0, 1)).GetNormalized(), (0, 0, 1))):
+                raise ValueError(f"Expected a horizontal terrain plane at {ground.GetPath()}")
+            plane_height = max(plane_height, float(transform.ExtractTranslation()[2]))
+        elif len(grounds) == 1 and cached_mesh is not None:
+            meshes.append(cached_mesh)
+        else:
+            mesh = UsdGeom.Mesh(ground)
+            if not mesh or not np.all(np.asarray(mesh.GetFaceVertexCountsAttr().Get()) == 3):
+                raise ValueError(f"Expected a triangle terrain mesh at {ground.GetPath()}")
+            matrix = np.asarray(transform)
+            points = np.asarray(mesh.GetPointsAttr().Get()) @ matrix[:3, :3] + matrix[3, :3]
+            meshes.append(convert_to_warp_mesh(points, np.asarray(mesh.GetFaceVertexIndicesAttr().Get()),
+                                               device=env.device))
+    return plane_height, meshes
+
+
+def terrain_height_below(env, points_w, height_scanner_cfg=None):
+    """Cast down at the current points, reusing the static terrain mesh across reward terms.
+
+    A height scanner can supply its cached mesh. A ray that misses returns negative infinity.
+    """
+    if not hasattr(env, "_foot_terrain_geometry"):
+        env._foot_terrain_geometry = _terrain_height_geometry(env, height_scanner_cfg)
+    plane_height, meshes = env._foot_terrain_geometry
+    floor = torch.full_like(points_w[..., 2], plane_height)
+    if meshes:
+        starts = points_w.clone()
+        starts[..., 2] += 1.0  # Start above ground even if a sole is penetrating it.
+        down = torch.zeros_like(starts)
+        down[..., 2] = -1
+        for mesh in meshes:
+            height = raycast_mesh(starts, down, mesh)[0][..., 2]
+            floor = torch.where(torch.isfinite(height), torch.maximum(floor, height), floor)
+    return floor
+
+
 class _FootGround:
     """One terrain-filtered contact view per foot, shared by both reward terms."""
 
     def __init__(self, env, robot, body_ids):
         self.robot = robot
         self.body_ids = list(body_ids)
-        stage = env.sim.stage
-        root = stage.GetPrimAtPath(env.cfg.scene.terrain.prim_path)
-        self.grounds = [p for p in Usd.PrimRange(root, Usd.TraverseInstanceProxies())
-                        if p.HasAPI(UsdPhysics.CollisionAPI)]
-        if not self.grounds:
-            raise ValueError(f"Missing terrain collider under {root.GetPath()}")
-        ground_paths = [str(p.GetPath()) for p in self.grounds]
+        ground_paths = [str(p.GetPath()) for p in _terrain_colliders(env)]
         links = robot.root_physx_view.link_paths[0]
         self.link_paths = [links[body] for body in body_ids]
         first_env = env.scene.env_prim_paths[0]
@@ -225,27 +275,6 @@ class SwingSoleClearance(ManagerTermBase):
                 self.gait_params = gait.params["gait_params"]
                 if gait_ids != self.contacts.body_ids:
                     self.gait_order = [self.contacts.body_ids.index(i) for i in gait_ids]
-        self.meshes = []
-        self.plane_height = -float("inf")
-        scanner = env.scene.sensors.get("height_scanner_base")
-        cached = scanner.meshes.get(env.cfg.scene.terrain.prim_path) if scanner is not None else None
-        for ground in self.contacts.grounds:
-            transform = cache.GetLocalToWorldTransform(ground)
-            if ground.IsA(UsdGeom.Plane):
-                if (ground.GetAttribute("axis").Get() != "Z" or
-                        not np.allclose(transform.TransformDir(Gf.Vec3d(0, 0, 1)).GetNormalized(), (0, 0, 1))):
-                    raise ValueError(f"Expected a horizontal terrain plane at {ground.GetPath()}")
-                self.plane_height = max(self.plane_height, float(transform.ExtractTranslation()[2]))
-            elif len(self.contacts.grounds) == 1 and cached is not None:
-                self.meshes.append(cached)
-            else:
-                mesh = UsdGeom.Mesh(ground)
-                if not mesh or not np.all(np.asarray(mesh.GetFaceVertexCountsAttr().Get()) == 3):
-                    raise ValueError(f"Expected a triangle terrain mesh at {ground.GetPath()}")
-                matrix = np.asarray(transform)
-                points = np.asarray(mesh.GetPointsAttr().Get()) @ matrix[:3, :3] + matrix[3, :3]
-                self.meshes.append(convert_to_warp_mesh(points, np.asarray(mesh.GetFaceVertexIndicesAttr().Get()),
-                                                        device=env.device))
         self.contacts.clearance_term = self
 
     @cached_property
@@ -268,17 +297,7 @@ class SwingSoleClearance(ManagerTermBase):
         poses = self.contacts.robot.data.body_link_pose_w[:, self.contacts.body_ids]
         rotation_z = matrix_from_quat(poses[..., 3:])[..., 2, :]
         sole = torch.stack([s.lowest(poses[:, i], rotation_z[:, i]) for i, s in enumerate(self.soles)], dim=1)
-        floor = torch.full_like(sole[..., 2], self.plane_height)
-        if self.meshes:
-            # Query the static terrain directly below the lowest sole point, including on noisy tiles.
-            starts = sole.clone()
-            starts[..., 2] += 1.0  # Keep the ray above ground even with a penetrating sole.
-            down = torch.zeros_like(starts)
-            down[..., 2] = -1
-            for mesh in self.meshes:
-                height = raycast_mesh(starts, down, mesh)[0][..., 2]
-                floor = torch.where(torch.isfinite(height), torch.maximum(floor, height), floor)
-        self.gap = sole[..., 2] - floor
+        self.gap = sole[..., 2] - terrain_height_below(env, sole)
         return swing_clearance_score(
             self.gap[:, self.gait_order], self.contacts.load[:, self.gait_order], env.episode_length_buf, env.step_dt,
             env.command_manager.get_command(command_name), self.gait_params, target_height, std, support_force,
