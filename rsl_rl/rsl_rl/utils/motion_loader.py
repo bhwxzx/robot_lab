@@ -23,6 +23,19 @@ import numpy as np
 import torch
 
 
+def resolve_motion_files(patterns):
+    """Expand motion-file patterns in a reproducible order."""
+    files = []
+    for pattern in patterns:
+        matches = glob.glob(pattern)
+        if not matches:
+            print(f"[Warning] No files found for pattern: {pattern}")
+        files.extend(matches)
+    if not files:
+        raise ValueError(f"No motion files found in: {patterns}")
+    return sorted(files)
+
+
 class AMPLoader:
     JOINT_POS_SIZE = 8
 
@@ -57,20 +70,7 @@ class AMPLoader:
         self.time_between_frames = time_between_frames
         self.history_length = history_length
 
-        # --- [处理传入的路径列表，展开通配符] ---
-        expanded_motion_files = []
-        for file_path in motion_files:
-            # 即使传入的是普通路径，glob 也能处理；如果是通配符，则会展开
-            matches = glob.glob(file_path)
-            if not matches:
-                print(f"[Warning] No files found for pattern: {file_path}")
-            expanded_motion_files.extend(matches)
-        
-        # 排序：保证不同机器上加载顺序一致，确保训练可复现
-        expanded_motion_files.sort()
-        
-        if not expanded_motion_files:
-            raise ValueError(f"No motion files found in: {motion_files}")
+        expanded_motion_files = resolve_motion_files(motion_files)
 
         # Values to store for each trajectory.
         self.trajectories = []

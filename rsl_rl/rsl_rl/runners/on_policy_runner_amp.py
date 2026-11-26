@@ -13,10 +13,10 @@ import warnings
 from collections import deque
 
 import rsl_rl
-from rsl_rl.algorithms import AMPPPO, AMPROAPPO
+from rsl_rl.algorithms import AMPPPO, AMPROAPPO, CommandConditionedAMPPPO
 from rsl_rl.env import VecEnv
 from rsl_rl.modules import ActorCritic, ActorCriticRecurrent, ActorCriticROA, resolve_rnd_config, resolve_symmetry_config, Discriminator
-from rsl_rl.utils import resolve_obs_groups, store_code_state, AMPLoader, Normalizer
+from rsl_rl.utils import resolve_obs_groups, store_code_state, AMPLoader, CommandConditionedAMPLoader, Normalizer
 
 
 class OnPolicyRunnerAmp:
@@ -86,6 +86,11 @@ class OnPolicyRunnerAmp:
         lenbuffer = deque(maxlen=100)
         cur_reward_sum = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
         cur_episode_length = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
+        log_command_rewards = self.writer is not None and isinstance(self.alg, CommandConditionedAMPPPO)
+        if log_command_rewards:
+            command_episode_returns = deque(maxlen=rewbuffer.maxlen)
+            command_return_sums = cur_reward_sum.new_zeros((self.env.num_envs, 2))
+            weighted_style_sum, mixed_reward_sum = command_return_sums.unbind(dim=1)
 
         # Ensure all parameters are in-synced
         if self.is_distributed:
@@ -118,9 +123,10 @@ class OnPolicyRunnerAmp:
                     # 2. 处理 Terminal States (关键：防止重置干扰判别器)
                     # 我们需要构建一个用于判别器训练的 "next_amp_obs"，其中重置的环境使用其重置前的最后一帧
                     next_amp_obs_with_term = next_amp_obs.clone()
-                    amp_transition_valid = ~dones.bool()
+                    done_mask = dones.bool().reshape(-1)
+                    amp_transition_valid = ~done_mask
                     # 通过 dones 找到哪些环境刚重置了
-                    reset_env_ids = dones.nonzero(as_tuple=False).flatten()
+                    reset_env_ids = done_mask.nonzero(as_tuple=False).flatten()
 
                     if len(reset_env_ids) > 0:
                         # 安全获取 observations 字典，如果没有则返回空字典
@@ -134,9 +140,11 @@ class OnPolicyRunnerAmp:
                             terminal_obs_dict = extras.get("terminal_obs")
                         # -----------------------------------
                         if terminal_obs_dict is not None and "amp" in terminal_obs_dict:
-                            term_amp = terminal_obs_dict["amp"][reset_env_ids].to(self.device)
-                            if len(term_amp.shape) == 3:
-                                term_amp = term_amp.view(term_amp.shape[0], -1)
+                            term_amp = terminal_obs_dict["amp"].to(self.device).flatten(1)
+                            if term_amp.shape[0] == self.env.num_envs:
+                                term_amp = term_amp[reset_env_ids]
+                            if term_amp.shape != (len(reset_env_ids), next_amp_obs.shape[1]):
+                                raise ValueError("Expected a terminal AMP window per reset environment.")
                             next_amp_obs_with_term[reset_env_ids] = term_amp
                             amp_transition_valid[reset_env_ids] = True
                         else:
@@ -146,7 +154,7 @@ class OnPolicyRunnerAmp:
 
                     # 3. 调用算法处理 (传入 amp_obs)
                     # 在 AMPPPO.process_env_step 内部已经封装好了奖励计算逻辑
-                    self.alg.process_env_step(
+                    mixed_rewards = self.alg.process_env_step(
                         obs,
                         rewards,
                         dones,
@@ -167,15 +175,18 @@ class OnPolicyRunnerAmp:
                             ep_infos.append(extras["log"])
 
                         cur_reward_sum += rewards
-                        # Update episode length
                         cur_episode_length += 1
-                        # Clear data for completed episodes
-                        # -- common
-                        new_ids = (dones > 0).nonzero(as_tuple=False)
-                        rewbuffer.extend(cur_reward_sum[new_ids][:, 0].cpu().numpy().tolist())
-                        lenbuffer.extend(cur_episode_length[new_ids][:, 0].cpu().numpy().tolist())
-                        cur_reward_sum[new_ids] = 0
-                        cur_episode_length[new_ids] = 0
+                        if log_command_rewards:
+                            weighted_style_sum += mixed_rewards - self.alg.discriminator.task_reward_lerp * rewards
+                            mixed_reward_sum += mixed_rewards
+                        if len(reset_env_ids) > 0:
+                            rewbuffer.extend(cur_reward_sum[reset_env_ids].tolist())
+                            lenbuffer.extend(cur_episode_length[reset_env_ids].tolist())
+                            cur_reward_sum[reset_env_ids] = 0
+                            cur_episode_length[reset_env_ids] = 0
+                            if log_command_rewards:
+                                command_episode_returns.extend(command_return_sums[reset_env_ids].tolist())
+                                command_return_sums[reset_env_ids] = 0
 
                 stop = time.time()
                 collection_time = stop - start
@@ -264,10 +275,23 @@ class OnPolicyRunnerAmp:
 
         # -- Training
         if len(locs["rewbuffer"]) > 0:
-            self.writer.add_scalar("Train/mean_reward", statistics.mean(locs["rewbuffer"]), locs["it"])
+            mean_task_reward = statistics.mean(locs["rewbuffer"])
+            self.writer.add_scalar("Train/mean_reward", mean_task_reward, locs["it"])
+            reward_summary = f"{'Mean reward:':>{pad}} {mean_task_reward:.2f}\n"
+            if locs.get("command_episode_returns"):
+                weighted_style_returns, mixed_returns = zip(*locs["command_episode_returns"])
+                reward_summary = ""
+                for name, value in (
+                    ("task", mean_task_reward),
+                    ("weighted_style", statistics.mean(weighted_style_returns)),
+                    ("mixed", statistics.mean(mixed_returns)),
+                ):
+                    self.writer.add_scalar(f"Train/mean_{name}_reward", value, locs["it"])
+                    label = f"Mean {name.replace('_', ' ')} reward:"
+                    reward_summary += f"{label:>{pad}} {value:.4f}\n"
             self.writer.add_scalar("Train/mean_episode_length", statistics.mean(locs["lenbuffer"]), locs["it"])
             if self.logger_type != "wandb":  # wandb does not support non-integer x-axis logging
-                self.writer.add_scalar("Train/mean_reward/time", statistics.mean(locs["rewbuffer"]), self.tot_time)
+                self.writer.add_scalar("Train/mean_reward/time", mean_task_reward, self.tot_time)
                 self.writer.add_scalar(
                     "Train/mean_episode_length/time", statistics.mean(locs["lenbuffer"]), self.tot_time
                 )
@@ -286,7 +310,7 @@ class OnPolicyRunnerAmp:
             for key, value in locs["loss_dict"].items():
                 log_string += f"""{f'Mean {key} loss:':>{pad}} {value:.4f}\n"""
             # -- Rewards
-            log_string += f"""{'Mean reward:':>{pad}} {statistics.mean(locs['rewbuffer']):.2f}\n"""
+            log_string += reward_summary
             # -- episode info
             log_string += f"""{'Mean episode length:':>{pad}} {statistics.mean(locs['lenbuffer']):.2f}\n"""
         else:
@@ -329,6 +353,8 @@ class OnPolicyRunnerAmp:
         if hasattr(self.alg, "discriminator"):
             saved_dict["discriminator_state_dict"] = self.alg.discriminator.state_dict()
             saved_dict["amp_normalizer"] = self.alg.amp_normalizer
+        if isinstance(self.alg, CommandConditionedAMPPPO):
+            saved_dict["amp_conditioning"] = self.amp_conditioning
         if hasattr(self.alg, "amp_optimizer"):
             saved_dict["amp_optimizer_state_dict"] = self.alg.amp_optimizer.state_dict()
         if getattr(self.alg, "hist_encoder_optimizer", None) is not None:
@@ -343,6 +369,22 @@ class OnPolicyRunnerAmp:
 
     def load(self, path: str, load_optimizer: bool = True, map_location: str | None = None):
         loaded_dict = torch.load(path, weights_only=False, map_location=map_location)
+        saved_condition = loaded_dict.get("amp_conditioning")
+        if isinstance(self.alg, CommandConditionedAMPPPO):
+            expected = self.amp_conditioning
+            contract = ("command_axes", "command_scale", "history_length", "frame_dim", "step_dt")
+            if saved_condition is None or any(saved_condition.get(k) != expected[k] for k in contract):
+                raise ValueError("Checkpoint AMP command or observation layout differs from this task.")
+            if saved_condition.get("dataset_sha256") != expected["dataset_sha256"]:
+                warnings.warn("Command-conditioned AMP expert files differ from those in the checkpoint.")
+            saved_threshold = saved_condition.get("stand_threshold", 0.0)
+            if saved_threshold != expected["stand_threshold"]:
+                warnings.warn(
+                    f"Checkpoint AMP standing command threshold was {saved_threshold}, "
+                    f"the current task uses {expected['stand_threshold']}."
+                )
+        elif saved_condition is not None:
+            raise ValueError("This checkpoint requires the command-conditioned AMP runner configuration.")
         self._loaded_checkpoint_metadata = {
             "iteration_is_next": bool(loaded_dict.get("iteration_is_next", False)),
             "algorithm_counter_present": "algorithm_counter" in loaded_dict,
@@ -518,20 +560,41 @@ class OnPolicyRunnerAmp:
             print(f"[Warning] Could not automatically determine step_dt, using default 0.02s. Error: {e}")
             step_dt = 0.02
         print(f"[AMP] Time between frames (step_dt) set to: {step_dt}s")
-        # 初始化 AMP 专用组件
-        amp_data = AMPLoader(
-            self.device,
-            time_between_frames=step_dt,
-            preload_transitions=True,
-            num_preload_transitions=self.cfg["amp_num_preload_transitions"],
-            motion_files=self.cfg["amp_motion_files"],
-            history_length=self.cfg.get("amp_history_length", 1),
-        )
+        loader_args = {
+            "device": self.device,
+            "time_between_frames": step_dt,
+            "motion_files": self.cfg["amp_motion_files"],
+            "history_length": self.cfg.get("amp_history_length", 1),
+        }
+        use_history_window = self.cfg.get("amp_discriminator_history_window", False)
+        command_scale = None
+        if issubclass(alg_class, CommandConditionedAMPPPO):
+            if not use_history_window:
+                raise ValueError("Command-conditioned AMP requires a post-step discriminator history window.")
+            amp_data = CommandConditionedAMPLoader(
+                **loader_args, stand_threshold=self.cfg.get("amp_stand_threshold", 0.0)
+            )
+            command_scale = amp_data.command_scale
+            self.amp_conditioning = {
+                "command_axes": ("vx", "wz"),
+                "command_scale": command_scale,
+                "stand_threshold": amp_data.stand_threshold,
+                "frame_dim": amp_data.frame_dim,
+                "history_length": amp_data.history_length,
+                "step_dt": step_dt,
+                "dataset_version": self.cfg.get("amp_dataset_version"),
+                "dataset_sha256": amp_data.dataset_sha256,
+            }
+        else:
+            amp_data = AMPLoader(
+                preload_transitions=True, num_preload_transitions=self.cfg["amp_num_preload_transitions"], **loader_args
+            )
         print(f"AMP Observation Dim: {amp_data.observation_dim}")
         print(f"AMP Frame Dim for Normalizer: {amp_data.frame_dim}")
         amp_normalizer = Normalizer(amp_data.frame_dim)
-        use_history_window = self.cfg.get("amp_discriminator_history_window", False)
         discriminator_input_dim = amp_data.observation_dim if use_history_window else amp_data.observation_dim * 2
+        if command_scale is not None:
+            discriminator_input_dim += len(command_scale)
         discriminator = Discriminator(
             discriminator_input_dim,
             self.cfg["amp_reward_coef"],
@@ -540,6 +603,7 @@ class OnPolicyRunnerAmp:
             self.cfg["amp_task_reward_lerp"],
             dt=step_dt,
             use_history_window=use_history_window,
+            command_scale=command_scale,
         ).to(self.device)
         min_std = torch.zeros(len(self.cfg["min_normalized_std"]), device=self.device, requires_grad=False)
 

@@ -48,6 +48,7 @@ class Discriminator(nn.Module):
         task_reward_lerp=0.0,
         dt=0.02,
         use_history_window=False,
+        command_scale=None,
     ):
         super().__init__()
 
@@ -55,6 +56,11 @@ class Discriminator(nn.Module):
         self.dt = dt
         self.input_dim = input_dim
         self.use_history_window = use_history_window
+        if command_scale is not None:
+            command_scale = torch.as_tensor(command_scale, dtype=torch.float32, device=device)
+            if command_scale.ndim != 1 or not (torch.isfinite(command_scale) & (command_scale > 0)).all():
+                raise ValueError("Discriminator command scales must be a vector of positive, finite values.")
+        self.register_buffer("command_scale", command_scale)
 
         self.amp_reward_coef = amp_reward_coef
         amp_layers = []
@@ -88,15 +94,23 @@ class Discriminator(nn.Module):
         d = self.amp_linear(h)
         return d
 
-    def prepare_input(self, state, next_state):
-        """Build the discriminator input from an AMP transition.
-
-        History-window mode uses the post-step window directly. Legacy AMP mode
-        keeps the original concatenated state-transition representation.
-        """
+    def _motion_input(self, state, next_state):
         if self.use_history_window:
             return next_state
         return torch.cat([state, next_state], dim=-1)
+
+    def _condition_motion(self, motion, command):
+        if self.command_scale is None:
+            if command is not None:
+                raise ValueError("Received velocity commands for an unconditional AMP discriminator.")
+            return motion
+        if command is None or command.shape != (motion.shape[0], self.command_scale.numel()):
+            raise ValueError("Expected a velocity command for every discriminator input.")
+        return torch.cat((motion, command.detach() / self.command_scale), dim=-1)
+
+    def prepare_input(self, state, next_state, command=None):
+        """Build the same input for discriminator learning and the PPO style reward."""
+        return self._condition_motion(self._motion_input(state, next_state), command)
 
     def normalize_amp_observation(self, observation, normalizer):
         """Normalize a flattened AMP history with shared per-frame statistics.
@@ -153,7 +167,7 @@ class Discriminator(nn.Module):
         normalizer.update_from_torch_batches(frame_batches)
         self._normalizer_cache_key = None
 
-    def compute_grad_pen(self, expert_state, expert_next_state, lambda_=10):
+    def compute_grad_pen(self, expert_state, expert_next_state, lambda_=10, command=None):
         """
         Compute gradient penalty for the expert data, used to regularize the discriminator.
 
@@ -165,20 +179,20 @@ class Discriminator(nn.Module):
         Returns:
             torch.Tensor: Scalar gradient penalty loss.
         """
-        expert_data = self.prepare_input(expert_state, expert_next_state).detach().clone()
-        expert_data.requires_grad = True
+        expert_data = self._motion_input(expert_state, expert_next_state).detach().clone().requires_grad_(True)
 
-        disc = self.amp_linear(self.trunk(expert_data))
-        ones = torch.ones(disc.size(), device=disc.device)
+        disc = self(self._condition_motion(expert_data, command))
+        return self.grad_pen_from_score(disc, expert_data, lambda_)
+
+    @staticmethod
+    def grad_pen_from_score(expert_score, expert_motion, lambda_):
+        """Penalize the score gradient with respect to its motion features."""
         grad = autograd.grad(
-            outputs=disc, inputs=expert_data, grad_outputs=ones, create_graph=True, retain_graph=True, only_inputs=True
+            outputs=expert_score, inputs=expert_motion, grad_outputs=torch.ones_like(expert_score), create_graph=True
         )[0]
+        return lambda_ * grad.norm(2, dim=1).square().mean()
 
-        # Enforce that the grad norm approaches 0.
-        grad_pen = lambda_ * (grad.norm(2, dim=1) - 0).pow(2).mean()
-        return grad_pen
-
-    def predict_amp_reward(self, state, next_state, task_reward, normalizer=None):
+    def predict_amp_reward(self, state, next_state, task_reward, normalizer=None, command=None):
         """
         Predict the AMP reward given current and next states, optionally interpolated with a task reward.
 
@@ -201,7 +215,7 @@ class Discriminator(nn.Module):
                 if not self.use_history_window:
                     state = self.normalize_amp_observation(state, normalizer)
 
-            d = self.amp_linear(self.trunk(self.prepare_input(state, next_state)))
+            d = self(self.prepare_input(state, next_state, command))
             reward = self.dt * self.amp_reward_coef * torch.clamp(1 - (1 / 4) * torch.square(d - 1), min=0)
             if self.task_reward_lerp > 0:
                 reward = self._lerp_reward(reward, task_reward.unsqueeze(-1))

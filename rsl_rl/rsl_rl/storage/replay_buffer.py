@@ -22,36 +22,47 @@ import torch
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
 
-    def __init__(self, obs_dim, buffer_size, device):
+    def __init__(self, obs_dim, buffer_size, device, command_dim=0):
         """Initialize a ReplayBuffer object.
         Arguments:
             buffer_size (int): maximum size of buffer
         """
-        self.states = torch.zeros(buffer_size, obs_dim).to(device)
-        self.next_states = torch.zeros(buffer_size, obs_dim).to(device)
+        if buffer_size < 1:
+            raise ValueError("Replay buffer capacity must be positive.")
+        self.states = torch.zeros(buffer_size, obs_dim, device=device)
+        self.next_states = torch.zeros_like(self.states)
+        self.commands = torch.zeros(buffer_size, command_dim, device=device) if command_dim else None
         self.buffer_size = buffer_size
         self.device = device
 
         self.step = 0
         self.num_samples = 0
 
-    def insert(self, states, next_states):
+    def insert(self, states, next_states, commands=None):
         """Add new states to memory."""
 
-        num_states = states.shape[0]
-        start_idx = self.step
-        end_idx = self.step + num_states
-        if end_idx > self.buffer_size:
-            self.states[self.step : self.buffer_size] = states[: self.buffer_size - self.step]
-            self.next_states[self.step : self.buffer_size] = next_states[: self.buffer_size - self.step]
-            self.states[: end_idx - self.buffer_size] = states[self.buffer_size - self.step :]
-            self.next_states[: end_idx - self.buffer_size] = next_states[self.buffer_size - self.step :]
-        else:
-            self.states[start_idx:end_idx] = states
-            self.next_states[start_idx:end_idx] = next_states
+        n = states.shape[0]
+        if states.shape != next_states.shape or states.shape[1:] != self.states.shape[1:]:
+            raise ValueError("AMP replay requires equally shaped current and next observations.")
+        fields = [(self.states, states), (self.next_states, next_states)]
+        if self.commands is not None:
+            if commands is None or commands.shape != (n, self.commands.shape[1]):
+                raise ValueError("Expected one correctly sized command per AMP transition.")
+            fields.append((self.commands, commands))
+        elif commands is not None:
+            raise ValueError("This replay buffer does not store commands.")
 
-        self.num_samples = min(self.buffer_size, max(end_idx, self.num_samples))
-        self.step = (self.step + num_states) % self.buffer_size
+        # A single insert may exceed capacity. The most recent rows occupy the ring.
+        count = min(n, self.buffer_size)
+        start = (self.step + n - count) % self.buffer_size
+        first = min(count, self.buffer_size - start)
+        for buffer, values in fields:
+            values = values[n - count :]
+            buffer[start : start + first].copy_(values[:first])
+            if first < count:
+                buffer[: count - first].copy_(values[first:])
+        self.num_samples = min(self.num_samples + n, self.buffer_size)
+        self.step = (self.step + n) % self.buffer_size
 
     def feed_forward_generator(self, num_mini_batch, mini_batch_size):
         for _ in range(num_mini_batch):
@@ -60,4 +71,8 @@ class ReplayBuffer:
                 (mini_batch_size,),
                 device=self.device,
             )
-            yield self.states[sample_idxs], self.next_states[sample_idxs]
+            pair = (self.states[sample_idxs], self.next_states[sample_idxs])
+            if self.commands is None:
+                yield pair
+            else:
+                yield (*pair, self.commands[sample_idxs])

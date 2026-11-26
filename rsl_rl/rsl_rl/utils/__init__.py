@@ -7,9 +7,11 @@
 
 from .utils import *
 from .motion_loader import AMPLoader
+from .command_amp_loader import CommandConditionedAMPLoader
 from .motion_loader_for_display import AMPLoaderDisplay
 
 __all__ = [
     "AMPLoader",
+    "CommandConditionedAMPLoader",
     "AMPLoaderDisplay",
 ]

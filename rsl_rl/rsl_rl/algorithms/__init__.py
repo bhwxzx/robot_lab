@@ -9,8 +9,9 @@ from .distillation import Distillation
 from .ppo import PPO
 from .dwaq_ppo import DWAQPPO
 from .amp_ppo import AMPPPO
+from .command_conditioned_amp_ppo import CommandConditionedAMPPPO
 from .amp_dwaq_ppo import AMPDWAQPPO
 from .roa_ppo import ROAPPO
 from .amp_roa_ppo import AMPROAPPO
 
-__all__ = ["PPO", "Distillation", "DWAQPPO", "AMPPPO", "AMPDWAQPPO", "ROAPPO", "AMPROAPPO"]
+__all__ = ["PPO", "Distillation", "DWAQPPO", "AMPPPO", "CommandConditionedAMPPPO", "AMPDWAQPPO", "ROAPPO", "AMPROAPPO"]

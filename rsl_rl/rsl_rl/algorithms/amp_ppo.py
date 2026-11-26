@@ -8,7 +8,7 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from itertools import chain
+from itertools import chain, repeat
 
 from rsl_rl.modules import ActorCritic
 from rsl_rl.modules.rnd import RandomNetworkDistillation
@@ -19,6 +19,7 @@ from rsl_rl.utils import string_to_callable
 class AMPPPO:
     """Proximal Policy Optimization algorithm with AMP (Adversarial Motion Prior)."""
 
+    amp_command_dim = 0
     policy: ActorCritic
     """The actor critic module."""
 
@@ -96,7 +97,7 @@ class AMPPPO:
         self.min_std = min_std
 
         # 初始化 AMP 回放池 (用于存储 Policy 产生的动作序列，供判别器训练)
-        self.amp_storage = ReplayBuffer(amp_data.observation_dim, amp_replay_buffer_size, device)
+        self.amp_storage = ReplayBuffer(amp_data.observation_dim, amp_replay_buffer_size, device, self.amp_command_dim)
         self.amp_transition = RolloutStorage.Transition() # 临时的 AMP transition 存储
 
         # PPO components
@@ -160,7 +161,8 @@ class AMPPPO:
             self.amp_transition.observations = amp_obs
         return self.transition.actions
 
-    def process_env_step(self, obs, rewards, dones, extras, amp_obs, amp_transition_valid=None):
+    def process_env_step(self, obs, rewards, dones, extras, amp_obs, amp_transition_valid=None) -> torch.Tensor:
+        """Store the PPO transition and return its mixed reward before timeout bootstrapping."""
         # 1. 常规处理
         self.policy.update_normalization(obs)
         self.transition.dones = dones
@@ -173,29 +175,12 @@ class AMPPPO:
         if amp_transition_valid is None:
             amp_transition_valid = ~dones.bool()
         amp_transition_valid = amp_transition_valid.reshape(-1)
-        if torch.any(amp_transition_valid):
-            self.amp_storage.insert(
-                self.amp_transition.observations[amp_transition_valid],
-                amp_obs[amp_transition_valid],
-            )
-
-        # 3. --- [AMP 核心: 计算风格奖励] ---
-        # 使用 Discriminator 封装的 predict_amp_reward 方法
-        # 该方法内部会自动处理：归一化 -> 拼接 -> 判别器推理 -> 奖励公式计算 -> Lerp混合
-        amp_rewards, _ = self.discriminator.predict_amp_reward(
-            self.amp_transition.observations,  # state (s)
-            amp_obs,                           # next_state (s')
-            task_reward=rewards,               # 传入当前任务奖励，供 Lerp 使用
-            normalizer=self.amp_normalizer     # 传入归一化器
-        )
-
-        # 4. 设置最终奖励。predict_amp_reward 返回 PPO 应使用的完整奖励：
-        # lerp=0 为纯 AMP，0<lerp<1 为任务/AMP 混合，lerp=1 为纯任务奖励。
-        self.transition.rewards = amp_rewards
+        mixed_rewards = self._record_amp_step(rewards, amp_obs, amp_transition_valid, dones)
+        self.transition.rewards = mixed_rewards
 
         # 5. Bootstrapping (超时处理)
         if "time_outs" in extras:
-            self.transition.rewards += self.gamma * torch.squeeze(
+            self.transition.rewards = mixed_rewards + self.gamma * torch.squeeze(
                 self.transition.values * extras["time_outs"].unsqueeze(1).to(self.device), 1
             )
 
@@ -203,6 +188,45 @@ class AMPPPO:
         self.storage.add_transitions(self.transition)
         self.transition.clear()
         self.policy.reset(dones)
+        return mixed_rewards
+
+    def _record_amp_step(self, rewards, amp_obs, valid, dones):
+        state = self.amp_transition.observations
+        if torch.any(valid):
+            self.amp_storage.insert(state[valid], amp_obs[valid])
+        total, _ = self.discriminator.predict_amp_reward(state, amp_obs, rewards, normalizer=self.amp_normalizer)
+        return total
+
+    def _amp_batches(self, count, size):
+        policies = self.amp_storage.feed_forward_generator(count, size)
+        experts = self.amp_data.feed_forward_generator(count, size)
+        for policy, expert in zip(policies, experts):
+            yield policy, expert, None
+
+    def _discriminator_losses(self, policy, expert, command):
+        def normalize(pair):
+            state, next_state = pair
+            if self.amp_normalizer is not None:
+                with torch.no_grad():
+                    next_state = self.discriminator.normalize_amp_observation(next_state, self.amp_normalizer)
+                    if not self.discriminator.use_history_window:
+                        state = self.discriminator.normalize_amp_observation(state, self.amp_normalizer)
+            return state, next_state
+
+        policy_state, policy_next = normalize(policy)
+        expert_state, expert_next = normalize(expert)
+        policy_d = self.discriminator(self.discriminator.prepare_input(policy_state, policy_next, command))
+        # CommandAMP's normalized post-step history is the full motion input to both losses.
+        reuse_expert_score = command is not None and self.discriminator.use_history_window
+        if reuse_expert_score:
+            expert_next = expert_next.detach().clone().requires_grad_(True)
+        expert_d = self.discriminator(self.discriminator.prepare_input(expert_state, expert_next, command))
+        amp_loss = 0.5 * ((expert_d - 1).square().mean() + (policy_d + 1).square().mean())
+        if reuse_expert_score:
+            penalty = self.discriminator.grad_pen_from_score(expert_d, expert_next, lambda_=10)
+        else:
+            penalty = self.discriminator.compute_grad_pen(expert_state, expert_next, lambda_=10, command=command)
+        return amp_loss, penalty, policy_d, expert_d
 
     def compute_returns(self, obs):
         # compute value for the last step
@@ -229,20 +253,18 @@ class AMPPPO:
         # generator for mini batches
         generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
 
-        # --- [AMP Generators] ---
-        # 1. 策略数据生成器 (从 ReplayBuffer 采样)
-        amp_policy_generator = self.amp_storage.feed_forward_generator(
-            self.num_learning_epochs * self.num_mini_batches,
-            self.storage.num_envs * self.storage.num_transitions_per_env // self.num_mini_batches,
-        )
-        # 2. 专家数据生成器 (从 Dataset 采样)
-        amp_expert_generator = self.amp_data.feed_forward_generator(
-            self.num_learning_epochs * self.num_mini_batches,
-            self.storage.num_envs * self.storage.num_transitions_per_env // self.num_mini_batches,
-        )
+        num_updates = self.num_learning_epochs * self.num_mini_batches
+        size = self.storage.num_envs * self.storage.num_transitions_per_env // self.num_mini_batches
+        ready = self.amp_storage.num_samples > 0
+        if self.is_multi_gpu:
+            # All ranks must reduce the same gradients while the replay buffers warm up.
+            ready_flag = torch.tensor(int(ready), device=self.device)
+            torch.distributed.all_reduce(ready_flag, op=torch.distributed.ReduceOp.MIN)
+            ready = bool(ready_flag.item())
+        amp_batches = self._amp_batches(num_updates, size) if ready else repeat(None, num_updates)
 
         # iterate over batches
-        for sample, sample_amp_policy, sample_amp_expert in zip(generator, amp_policy_generator, amp_expert_generator):
+        for sample, amp_batch in zip(generator, amp_batches):
             (
                 obs_batch,
                 actions_batch,
@@ -362,7 +384,15 @@ class AMPPPO:
                     obs_batch, _ = data_augmentation_func(obs=obs_batch, actions=None, env=self.symmetry["_env"])
                     num_aug = int(obs_batch.shape[0] / original_batch_size)
 
-                mean_actions_batch = self.policy.act_inference(obs_batch.detach().clone())
+                if (
+                    self.amp_command_dim
+                    and self.symmetry["use_data_augmentation"]
+                    and type(self.policy) is ActorCritic
+                ):
+                    # act() already evaluated this feed-forward actor on the full augmented batch.
+                    mean_actions_batch = self.policy.action_mean
+                else:
+                    mean_actions_batch = self.policy.act_inference(obs_batch.detach().clone())
                 action_mean_orig = mean_actions_batch[:original_batch_size]
                 _, actions_mean_symm_batch = data_augmentation_func(
                     obs=None, actions=action_mean_orig, env=self.symmetry["_env"]
@@ -378,43 +408,6 @@ class AMPPPO:
                 else:
                     symmetry_loss = symmetry_loss.detach()
 
-            # --- [AMP 核心: 判别器训练] ---
-            policy_state, policy_next_state = sample_amp_policy
-            expert_state, expert_next_state = sample_amp_expert
-
-            # 归一化
-            if self.amp_normalizer is not None:
-                with torch.no_grad():
-                    policy_next_state = self.discriminator.normalize_amp_observation(
-                        policy_next_state, self.amp_normalizer
-                    )
-                    expert_next_state = self.discriminator.normalize_amp_observation(
-                        expert_next_state, self.amp_normalizer
-                    )
-                    if not self.discriminator.use_history_window:
-                        policy_state = self.discriminator.normalize_amp_observation(
-                            policy_state, self.amp_normalizer
-                        )
-                        expert_state = self.discriminator.normalize_amp_observation(
-                            expert_state, self.amp_normalizer
-                        )
-            
-            # 判别器前向传播：历史窗口模式直接使用动作后的单个窗口。
-            policy_d = self.discriminator(self.discriminator.prepare_input(policy_state, policy_next_state))
-            expert_d = self.discriminator(self.discriminator.prepare_input(expert_state, expert_next_state))
-
-            # Least Squares GAN Loss
-            # 专家数据的目标是 1，策略数据的目标是 -1 (或者 0，取决于具体实现，AMP常用 -1)
-            expert_loss = torch.nn.MSELoss()(expert_d, torch.ones_like(expert_d))
-            policy_loss = torch.nn.MSELoss()(policy_d, -1 * torch.ones_like(policy_d))
-            amp_loss = 0.5 * (expert_loss + policy_loss)
-            
-            # Gradient Penalty (关键! 防止判别器梯度爆炸)
-            grad_pen_loss = self.discriminator.compute_grad_pen(expert_state, expert_next_state, lambda_=10)
-            
-            # 分离 AMP Loss
-            amp_total_loss = self.amploss_coef * amp_loss + self.amploss_coef * grad_pen_loss
-
             # Compute the gradients
             # -- For PPO
             self.optimizer.zero_grad()
@@ -422,7 +415,12 @@ class AMPPPO:
             
             # -- For AMP
             self.amp_optimizer.zero_grad()
-            amp_total_loss.backward()
+            if amp_batch is not None:
+                policy_sample, expert_sample, command = amp_batch
+                amp_loss, grad_pen_loss, policy_d, expert_d = self._discriminator_losses(
+                    policy_sample, expert_sample, command
+                )
+                (self.amploss_coef * (amp_loss + grad_pen_loss)).backward()
 
             # Collect gradients from all GPUs
             if self.is_multi_gpu:
@@ -434,28 +432,26 @@ class AMPPPO:
             self.optimizer.step()
             
             # -- For AMP
-            nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.max_grad_norm)
-            self.amp_optimizer.step()
-
-             # 更新 AMP Normalizer
-            if self.amp_normalizer is not None:
-                self.discriminator.update_amp_normalizer(self.amp_normalizer, sample_amp_policy[1])
-                self.discriminator.update_amp_normalizer(self.amp_normalizer, sample_amp_expert[1])
+            if amp_batch is not None:
+                nn.utils.clip_grad_norm_(self.discriminator.parameters(), self.max_grad_norm)
+                self.amp_optimizer.step()
+                if self.amp_normalizer is not None:
+                    self.discriminator.update_amp_normalizer(self.amp_normalizer, policy_sample[1])
+                    self.discriminator.update_amp_normalizer(self.amp_normalizer, expert_sample[1])
+                mean_amp_loss += amp_loss.item()
+                mean_grad_pen_loss += grad_pen_loss.item()
+                mean_policy_pred += policy_d.mean().item()
+                mean_expert_pred += expert_d.mean().item()
 
             # Store the losses
             mean_value_loss += value_loss.item()
             mean_surrogate_loss += surrogate_loss.item()
             mean_entropy += entropy_batch.mean().item()
-            mean_amp_loss += amp_loss.item()
-            mean_grad_pen_loss += grad_pen_loss.item()
-            mean_policy_pred += policy_d.mean().item()
-            mean_expert_pred += expert_d.mean().item()
             # -- Symmetry loss
             if mean_symmetry_loss is not None:
                 mean_symmetry_loss += symmetry_loss.item()
 
         # -- For PPO
-        num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_value_loss /= num_updates
         mean_surrogate_loss /= num_updates
         mean_entropy /= num_updates
