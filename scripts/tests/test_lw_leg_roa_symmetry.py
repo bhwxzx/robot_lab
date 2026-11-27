@@ -41,33 +41,41 @@ class FlatLegSymmetryTests(unittest.TestCase):
         torch.set_num_threads(1)
         self.env = FlatLegEnv()
 
-    def test_command_amp_mirrors_all_term_major_history_frames_and_critic(self):
+    def test_command_amp_mirrors_each_frame_in_time_first_and_legacy_layouts(self):
         widths = (3, 3, 3, 10, 10, 10, 2)
-        def flatten_terms(history):
-            return torch.cat([term.flatten(1) for term in history.split(widths, dim=-1)], dim=1)
 
-        histories = {k: torch.randn(4, 10, 41) for k in ("policy", "critic")}
+        def flatten_terms(history):
+            term_widths = (*widths, 3) if history.shape[-1] == 44 else widths
+            return torch.cat([term.flatten(1) for term in history.split(term_widths, dim=-1)], dim=1)
+
+        policy = torch.randn(4, 10, 41)
+        critic = torch.randn(4, 10, 44)
         phase = torch.arange(10) * (2 * torch.pi / 40)
         clock = torch.stack((phase.sin(), phase.cos()), dim=-1)
-        for frames in histories.values():
+        for frames in (policy, critic):
             frames[..., 39:41] = clock
             frames[0, :, 39:41] = 0  # A stationary command has no clock.
             frames[1, :3, 39:41] = 0  # A command change can occur within the history.
-        obs = TensorDict({k: flatten_terms(v) for k, v in histories.items()}, batch_size=[4])
-        obs["amp"] = torch.randn(4, 10, 22)
         actions = torch.randn(4, 10)
-        reflected, reflected_actions = _module.compute_flat_amp_symmetric_states(self.env, obs, actions)
-        self.assertEqual(set(reflected.keys()), set(histories))
         expected_actions = torch.cat((actions, _module._transform_actions_left_right(actions)))
-        torch.testing.assert_close(reflected_actions, expected_actions)
-        for key, frames in histories.items():
-            expected = _module._transform_policy_obs_left_right(self.env.unwrapped, frames)
-            expected[..., 39:41] = -frames[..., 39:41]
-            torch.testing.assert_close(reflected[key][:4], obs[key])
-            torch.testing.assert_close(reflected[key][4:], flatten_terms(expected))
-        twice, _ = _module.compute_flat_amp_symmetric_states(self.env, reflected[4:])
-        for key in histories:
-            torch.testing.assert_close(twice[key][4:], obs[key])
+        for critic_width in (41, 44):
+            histories = {"policy": policy, "critic": critic[..., :critic_width]}
+            for layout in (lambda frames: frames, flatten_terms):
+                obs = TensorDict({k: layout(v) for k, v in histories.items()}, batch_size=[4])
+                obs["amp"] = torch.randn(4, 10, 28)
+                reflected, reflected_actions = _module.compute_flat_amp_symmetric_states(self.env, obs, actions)
+                self.assertEqual(set(reflected.keys()), set(histories))
+                torch.testing.assert_close(reflected_actions, expected_actions)
+                for key, frames in histories.items():
+                    expected = _module._transform_policy_obs_left_right(self.env.unwrapped, frames)
+                    expected[..., 39:41] = -frames[..., 39:41]
+                    if key == "critic" and critic_width == 44:
+                        expected[..., 41:44] = frames[..., 41:44] * torch.tensor([1, -1, 1])
+                    torch.testing.assert_close(reflected[key][:4], obs[key])
+                    torch.testing.assert_close(reflected[key][4:], layout(expected))
+                twice, _ = _module.compute_flat_amp_symmetric_states(self.env, reflected[4:])
+                for key in histories:
+                    torch.testing.assert_close(twice[key][4:], obs[key])
 
     def test_history_privileged_actions_and_rollout_velocity(self):
         obs = self.env.get_observations()

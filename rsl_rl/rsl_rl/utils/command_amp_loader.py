@@ -14,16 +14,28 @@ from .motion_loader import AMPLoader, resolve_motion_files
 
 
 class CommandConditionedAMPLoader:
-    frame_dim = AMPLoader.END_POS_END_IDX
+    """Match the online AMP frame width, or keep the full expert layout if no width is requested."""
 
-    def __init__(self, device, time_between_frames, motion_files, history_length, stand_threshold=0.0):
+    _joint_foot_dim = AMPLoader.END_POS_END_IDX
+    _joint_foot_layout = ["joint_position_offset", "joint_velocity", "foot_position_base"]
+    _heading_velocity_layout = ["base_linear_velocity_heading", "base_angular_velocity_heading", *_joint_foot_layout]
+
+    def __init__(
+        self,
+        device,
+        time_between_frames,
+        motion_files,
+        history_length,
+        stand_threshold=0.0,
+        *,
+        frame_dim: int | None = None,
+    ):
         if history_length < 1 or not math.isfinite(time_between_frames) or time_between_frames <= 0:
             raise ValueError("AMP history length and control timestep must be positive.")
         if not math.isfinite(stand_threshold) or stand_threshold < 0:
             raise ValueError("AMP standing command threshold must be finite and non-negative.")
         self.stand_threshold = stand_threshold
         self.history_length = history_length
-        self.observation_dim = history_length * self.frame_dim
         self.motion_files = list(dict.fromkeys(resolve_motion_files(motion_files)))
         groups = defaultdict(list)
         segments = []
@@ -40,7 +52,9 @@ class CommandConditionedAMPLoader:
                 stand = (vx, wz) == (0, 0)
                 if motion["ClipType"] != ("stand" if stand else "episode"):
                     raise ValueError("zero command must denote a stand, moving commands an episode")
-                segment = self._sampled_segment(motion, stand, time_between_frames)
+                segment = self._sampled_segment(motion, stand, time_between_frames, frame_dim)
+                if segments and segment.shape[1] != segments[0].shape[1]:
+                    raise ValueError("expert clips must share the same AMP observation layout")
                 if len(segment) <= history_length:
                     raise ValueError(f"segment needs at least {history_length + 1} control frames")
             except (KeyError, ValueError, TypeError) as exc:
@@ -69,15 +83,30 @@ class CommandConditionedAMPLoader:
         self.starts = torch.as_tensor(lengths.cumsum() - lengths, device=device)
         self.window_counts = torch.as_tensor(lengths - history_length, device=device)
         self.frames = torch.as_tensor(np.concatenate(segments), device=device)
+        self.frame_dim = self.frames.shape[1]
+        self.observation_dim = history_length * self.frame_dim
         self.offsets = torch.arange(history_length + 1, device=device)
         self.dataset_sha256 = digest.hexdigest()
 
     @classmethod
-    def _sampled_segment(cls, motion, stand, step_dt):
+    def _sampled_segment(cls, motion, stand, step_dt, frame_dim=None):
         frames = np.asarray(motion["Frames"], dtype=np.float32)
         frame_dt = float(motion["FrameDuration"])
-        if frames.ndim != 2 or frames.shape[1] != cls.frame_dim or not np.isfinite(frames).all():
-            raise ValueError(f"expected finite frames of width {cls.frame_dim}")
+        layout = motion.get("FrameLayout")
+        source_width = cls._joint_foot_dim  # Legacy joint and foot frames have no layout header.
+        if layout == cls._heading_velocity_layout:
+            if motion.get("RootVelocityFrame") != "heading" or motion.get("RootVelocityPoint") != "base_link":
+                raise ValueError("expected heading-frame velocities at the base_link origin")
+            source_width += 6
+        elif layout is not None and layout != cls._joint_foot_layout:
+            raise ValueError(f"unsupported AMP FrameLayout: {layout!r}")
+        if frames.ndim != 2 or frames.shape[1] != source_width or not np.isfinite(frames).all():
+            raise ValueError(f"expected finite frames of width {source_width} for this AMP layout")
+        if frame_dim == cls._joint_foot_dim:
+            # Legacy online observations contain only the trailing joint and foot features.
+            frames = frames[:, -frame_dim:]
+        elif frame_dim is not None and frame_dim != source_width:
+            raise ValueError(f"online AMP requests {frame_dim} features per frame, expert provides {source_width}")
         if not math.isfinite(frame_dt) or frame_dt <= 0:
             raise ValueError("FrameDuration must be positive and finite")
         if not stand:

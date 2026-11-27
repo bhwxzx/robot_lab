@@ -10,10 +10,24 @@ from isaaclab.assets import Articulation, RigidObject
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
 from isaaclab.managers import SceneEntityCfg
-from isaaclab.utils.math import quat_apply_inverse
+from isaaclab.utils.math import quat_apply_inverse, yaw_quat
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv, ManagerBasedRLEnv
+
+
+def base_link_velocity_heading(
+    env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"), linear_only: bool = False
+) -> torch.Tensor:
+    """Root link origin velocity in the heading frame, with angular velocity appended unless linear_only."""
+    asset: Articulation = env.scene[asset_cfg.name]
+    heading = yaw_quat(asset.data.root_link_quat_w)
+    linear = quat_apply_inverse(heading, asset.data.root_link_lin_vel_w)
+    if linear_only:
+        return linear
+    angular = quat_apply_inverse(heading, asset.data.root_link_ang_vel_w)
+    return torch.cat((linear, angular), dim=-1)
+
 
 def joint_pos_rel_without_wheel(
     env: ManagerBasedEnv,

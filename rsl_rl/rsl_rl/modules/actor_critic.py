@@ -38,14 +38,8 @@ class ActorCritic(nn.Module):
 
         # get the observation dimensions
         self.obs_groups = obs_groups
-        num_actor_obs = 0
-        for obs_group in obs_groups["policy"]:
-            assert len(obs[obs_group].shape) == 2, "The ActorCritic module only supports 1D observations."
-            num_actor_obs += obs[obs_group].shape[-1]
-        num_critic_obs = 0
-        for obs_group in obs_groups["critic"]:
-            assert len(obs[obs_group].shape) == 2, "The ActorCritic module only supports 1D observations."
-            num_critic_obs += obs[obs_group].shape[-1]
+        num_actor_obs = self.get_actor_obs(obs).shape[-1]
+        num_critic_obs = self.get_critic_obs(obs).shape[-1]
 
         # actor
         self.actor = MLP(num_actor_obs, num_actions, actor_hidden_dims, activation)
@@ -128,17 +122,20 @@ class ActorCritic(nn.Module):
         obs = self.critic_obs_normalizer(obs)
         return self.critic(obs)
 
+    @staticmethod
+    def _flat_obs(obs, groups):
+        # Concatenate features within each frame before flattening [batch, time, features].
+        values = obs[groups[0]] if len(groups) == 1 else torch.cat([obs[group] for group in groups], dim=-1)
+        batch_dims = getattr(obs, "batch_dims", 1)
+        if values.ndim - batch_dims not in (1, 2):
+            raise ValueError(f"ActorCritic expects a feature vector or a history of feature vectors, got {values.shape}")
+        return values.flatten(batch_dims)
+
     def get_actor_obs(self, obs):
-        obs_list = []
-        for obs_group in self.obs_groups["policy"]:
-            obs_list.append(obs[obs_group])
-        return torch.cat(obs_list, dim=-1)
+        return self._flat_obs(obs, self.obs_groups["policy"])
 
     def get_critic_obs(self, obs):
-        obs_list = []
-        for obs_group in self.obs_groups["critic"]:
-            obs_list.append(obs[obs_group])
-        return torch.cat(obs_list, dim=-1)
+        return self._flat_obs(obs, self.obs_groups["critic"])
 
     def get_actions_log_prob(self, actions):
         return self.distribution.log_prob(actions).sum(dim=-1)

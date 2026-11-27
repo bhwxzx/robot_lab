@@ -64,7 +64,7 @@ class LWFlatAmpRunnerCfg(LWRoughAmpRunnerCfg):
 
 @configclass
 class LWFlatCommandAmpRunnerCfg(LWFlatAmpRunnerCfg):
-    amp_dataset_version: str = "lw_grid153_125hz_tracking_001"
+    amp_dataset_version: str = "lw_grid153_125hz_tracking_002_heading_velocity"
     amp_stand_threshold: float = 0.1
     amp_reward_coef=2.0
     amp_task_reward_lerp=0.3

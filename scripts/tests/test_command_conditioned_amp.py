@@ -12,14 +12,14 @@ from unittest.mock import Mock, patch
 import torch
 from tensordict import TensorDict
 
-from rsl_rl.modules import Discriminator
+from rsl_rl.modules import ActorCritic, Discriminator
 from rsl_rl.runners import OnPolicyRunnerAmp
 from rsl_rl.storage import ReplayBuffer
 from rsl_rl.utils.command_amp_loader import CommandConditionedAMPLoader
 
 
 @contextmanager
-def expert_files(duplicate=False):
+def expert_files(duplicate=False, *, heading_velocity=False):
     points = list(product((-.4, 0., .3, .4), (-.25, 0., .15, .25)))
     if duplicate:
         points.append((.3, .15))
@@ -32,6 +32,16 @@ def expert_files(duplicate=False):
             "CruiseStart": .08, "BrakeStart": .36,
             "Frames": [[i * 100 + (0 if stand else frame)] * 22 for frame in range(24)],
         }
+        if heading_velocity:
+            motion.update(
+                RootVelocityFrame="heading", RootVelocityPoint="base_link",
+                FrameLayout=["base_linear_velocity_heading", "base_angular_velocity_heading",
+                             "joint_position_offset", "joint_velocity", "foot_position_base"],
+            )
+            motion["Frames"] = [
+                ([0.] * 6 if stand else [.9 * vx, t * .01, -.02, .03, -.04, .8 * wz]) + joints
+                for t, joints in enumerate(motion["Frames"])
+            ]
         data[f"clip_{i:02}.txt"] = json.dumps(motion).encode()
     with patch("rsl_rl.utils.command_amp_loader.resolve_motion_files", return_value=list(data)), patch.object(
         Path, "read_bytes", autospec=True, side_effect=lambda path: data[str(path)]
@@ -48,25 +58,52 @@ def expert_loader(history=3, dt=0.02, duplicate=False, stand_threshold=0.0):
 class SyntheticEnv:
     num_envs, num_actions, device, step_dt = 3, 2, "cpu", .02
 
-    def __init__(self):
+    def __init__(self, amp_frame_dim=22):
+        self.amp_frame_dim = amp_frame_dim
         self.commands = torch.tensor([[.34, 0, .17], [-.4, 0, 0], [0., 0, 0]])
 
     def get_observations(self):
         return TensorDict({
             "policy": torch.randn(3, 5), "critic": torch.randn(3, 5),
-            "amp": torch.randn(3, 3, 22), "amp_command": self.commands,
+            "amp": torch.randn(3, 3, self.amp_frame_dim), "amp_command": self.commands,
         }, batch_size=[3])
 
     def step(self, actions):
         return self.get_observations(), torch.ones(3), torch.zeros(3, dtype=torch.long), {}
 
 
-def make_runner(steps=6, *, plain=False, history_window=True):
-    env = SyntheticEnv()
+class HistoryEnv(SyntheticEnv):
+    widths = {"policy": (2, 3), "critic": (1, 4)}
+
+    def __init__(self, time_first):
+        super().__init__()
+        self.time_first = time_first
+        self.observation_manager = SimpleNamespace(
+            active_terms={key: ["a", "b"] for key in self.widths},
+            group_obs_term_dim={key: [(3, w) for w in widths] for key, widths in self.widths.items()},
+        )
+
+    @classmethod
+    def term_first(cls, obs):
+        obs = obs.clone()
+        for key, widths in cls.widths.items():
+            obs[key] = torch.cat([term.flatten(1) for term in obs[key].split(widths, dim=-1)], dim=1)
+        return obs
+
+    def get_observations(self):
+        obs = super().get_observations()
+        for key, widths in self.widths.items():
+            obs[key] = torch.randn(self.num_envs, 3, sum(widths))
+        return obs if self.time_first else self.term_first(obs)
+
+
+def make_runner(steps=6, *, plain=False, history_window=True, env=None, normalize=False, heading_velocity=False):
+    env = SyntheticEnv() if env is None else env
     cfg = {
         "num_steps_per_env": steps, "save_interval": 1000, "amp_history_length": 3,
         "obs_groups": {k: [k] for k in ("policy", "critic", "amp")},
-        "policy": {"class_name": "ActorCritic", "actor_hidden_dims": [8], "critic_hidden_dims": [8]},
+        "policy": {"class_name": "ActorCritic", "actor_hidden_dims": [8], "critic_hidden_dims": [8],
+                   "actor_obs_normalization": normalize, "critic_obs_normalization": normalize},
         "algorithm": {"class_name": "CommandConditionedAMPPPO", "num_learning_epochs": 1, "num_mini_batches": 1},
         "amp_motion_files": [], "amp_discriminator_history_window": history_window, "amp_discr_hidden_dims": [8],
         "amp_reward_coef": 1., "amp_task_reward_lerp": .7, "amp_replay_buffer_size": 32,
@@ -79,7 +116,7 @@ def make_runner(steps=6, *, plain=False, history_window=True):
             cfg["algorithm"]["class_name"] = "AMPPPO"
             return OnPolicyRunnerAmp(env, cfg)
         cfg["amp_stand_threshold"] = 0.1
-        with expert_files():
+        with expert_files(heading_velocity=heading_velocity):
             return OnPolicyRunnerAmp(env, cfg)
 
 
@@ -87,6 +124,25 @@ class CommandAmpTests(unittest.TestCase):
     def setUp(self):
         torch.set_num_threads(1)
         torch.manual_seed(153)
+
+    def test_heading_velocity_experts_and_legacy_online_layout(self):
+        runner = make_runner(env=SyntheticEnv(28), heading_velocity=True)
+        legacy = make_runner(heading_velocity=True)
+        data = runner.alg.amp_data
+        torch.testing.assert_close(data.frames[:, 6:], legacy.alg.amp_data.frames)
+        self.assertEqual(data.frame_dim, 28)
+        self.assertEqual(runner.alg.amp_normalizer.mean.shape, (28,))
+        self.assertEqual(runner.alg.discriminator.input_dim, 3 * 28 + 2)
+        self.assertEqual(legacy.alg.discriminator.input_dim, 3 * 22 + 2)
+
+        command = torch.tensor([[.3, .15]])
+        before, after = (window.reshape(3, 28) for window in data.sample_for_commands(command))
+        torch.testing.assert_close(before[1:], after[:-1])
+        expected = torch.tensor([.27, 0., -.02, .03, -.04, .12]).repeat(3, 1)
+        expected[:, 1] = after[:, 6].remainder(100) * .01  # Frame index within the chosen clip.
+        torch.testing.assert_close(after[:, :6], expected)
+        with self.assertRaisesRegex(ValueError, "online AMP requests 28.*expert provides 22"):
+            make_runner(env=SyntheticEnv(28))
 
     def test_grid_endpoints_local_probabilities_and_standing(self):
         loader, points = expert_loader(duplicate=True)
@@ -377,6 +433,77 @@ class CommandAmpTests(unittest.TestCase):
         invalid.seek(0)
         with self.assertRaisesRegex(ValueError, "layout"):
             other.load(invalid)
+
+    def test_mlp_joins_features_per_frame_and_preserves_batch_axes(self):
+        history = torch.arange(2 * 3 * 4 * 5, dtype=torch.float32).reshape(2, 3, 4, 5)
+        groups = {"policy": ["left", "right"], "critic": ["right", "left"]}
+        for values in (history, history[:, :, -1]):
+            left, right = values.split((2, 3), dim=-1)
+            obs = TensorDict({"left": left, "right": right}, batch_size=[2, 3])
+            with redirect_stdout(io.StringIO()):
+                policy = ActorCritic(obs[0], groups, num_actions=2, actor_hidden_dims=[8], critic_hidden_dims=[8])
+            torch.testing.assert_close(policy.get_actor_obs(obs), values.flatten(2))
+            torch.testing.assert_close(policy.get_critic_obs(obs), torch.cat((right, left), dim=-1).flatten(2))
+            self.assertEqual(policy.act_inference(obs).shape, (2, 3, 2))
+
+    def test_legacy_history_migrates_policy_value_normalizers_and_adam_once(self):
+        old_runner = make_runner(env=HistoryEnv(time_first=False), normalize=True)
+        old_runner.learn(1)
+        old_runner.logger_type = "tensorboard"
+        checkpoint = io.BytesIO()
+        old_runner.save(checkpoint)
+        checkpoint.seek(0)
+        saved = torch.load(checkpoint, weights_only=False)
+        del saved["amp_conditioning"]["actor_critic_history"]
+        legacy = io.BytesIO()
+        torch.save(saved, legacy)
+
+        env = HistoryEnv(time_first=True)
+        obs = env.get_observations()
+        flat = env.term_first(obs)
+        new_runner = make_runner(env=env, normalize=True)
+        old, new = old_runner.alg.policy, new_runner.alg.policy
+        for load_optimizer in (False, True):
+            legacy.seek(0)
+            new_runner.load(legacy, load_optimizer=load_optimizer)
+            self.assertTrue(new_runner.migrated_term_first_history)
+            torch.testing.assert_close(new.get_actor_obs(obs), obs["policy"].flatten(1))
+            torch.testing.assert_close(new.get_critic_obs(obs), obs["critic"].flatten(1))
+            torch.testing.assert_close(new.act_inference(obs), old.act_inference(flat))
+            torch.testing.assert_close(new.evaluate(obs), old.evaluate(flat))
+
+        for role, network in (("policy", "actor"), ("critic", "critic")):
+            old_weight, new_weight = getattr(old, network)[0].weight, getattr(new, network)[0].weight
+            old_state = old_runner.alg.optimizer.state[old_weight]
+            new_state = new_runner.alg.optimizer.state[new_weight]
+            for key in ("exp_avg", "exp_avg_sq"):
+                # Convert the new columns back to the old term blocks as an independent oracle.
+                frames = new_state[key].reshape(new_weight.shape[0], 3, -1)
+                blocks = frames.split(env.widths[role], dim=-1)
+                torch.testing.assert_close(torch.cat([x.flatten(1) for x in blocks], dim=1), old_state[key])
+            torch.testing.assert_close(old_state["step"], new_state["step"])
+
+        for runner, inputs in ((old_runner, flat), (new_runner, obs)):
+            policy, optimizer = runner.alg.policy, runner.alg.optimizer
+            optimizer.zero_grad()
+            (policy.act_inference(inputs).square().mean() + policy.evaluate(inputs).square().mean()).backward()
+            optimizer.step()
+        torch.testing.assert_close(new.act_inference(obs), old.act_inference(flat))
+        torch.testing.assert_close(new.evaluate(obs), old.evaluate(flat))
+
+        new_runner.logger_type = "tensorboard"
+        converted = io.BytesIO()
+        new_runner.save(converted)
+        converted.seek(0)
+        restored = make_runner(env=env, normalize=True)
+        restored.load(converted)
+        self.assertFalse(restored.migrated_term_first_history)
+        self.assertEqual(restored.amp_conditioning["actor_critic_history"]["policy"]["order"], "time_first")
+        torch.testing.assert_close(restored.alg.policy.actor[0].weight, new.actor[0].weight, rtol=0, atol=0)
+        torch.testing.assert_close(restored.alg.policy.critic[0].weight, new.critic[0].weight, rtol=0, atol=0)
+        converted.seek(0)
+        with self.assertRaisesRegex(ValueError, "history layout"):
+            old_runner.load(converted)
 
     def test_plain_amp_keeps_global_sampling_and_legacy_input_dimensions(self):
         for history_window in (True, False):

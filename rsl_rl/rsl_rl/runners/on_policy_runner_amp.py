@@ -367,14 +367,84 @@ class OnPolicyRunnerAmp:
         if self.logger_type in ["neptune", "wandb"] and not self.disable_logs:
             self.writer.save_model(path, self.current_learning_iteration)
 
+    def _command_amp_history_layout(self, obs):
+        """Record the groups and frame features used by each time-first MLP input."""
+        manager = getattr(getattr(self.env, "unwrapped", self.env), "observation_manager", None)
+        layout = {}
+        for role in ("policy", "critic"):
+            groups = self.cfg["obs_groups"][role]
+            if obs[groups[0]].ndim == 3:
+                entry = {
+                    "order": "time_first",
+                    "groups": [(group, tuple(obs[group].shape[1:])) for group in groups],
+                }
+                if manager is not None:
+                    entry["terms"] = [
+                        (group, name, tuple(dims))
+                        for group in groups
+                        for name, dims in zip(manager.active_terms[group], manager.group_obs_term_dim[group], strict=True)
+                    ]
+                layout[role] = entry
+        return layout
+
+    def _legacy_history_permutations(self, saved_condition):
+        current = self.amp_conditioning["actor_critic_history"]
+        # Checkpoints predating time-first support stored Isaac Lab's flat term histories.
+        previous = saved_condition.get("actor_critic_history", {})
+        if previous == current:
+            return {}
+        if previous != {}:
+            raise ValueError("Checkpoint actor/critic history layout differs from this task.")
+
+        permutations = {}
+        for role, entry in current.items():
+            history = entry["groups"][0][1][0]
+            if history == 1:
+                continue
+            term_shapes = [shape for _, _, shape in entry.get("terms", ())]
+            frame_width = sum(shape[-1] for _, shape in entry["groups"])
+            if (
+                not term_shapes
+                or any(len(shape) != 2 or shape[0] != history for shape in term_shapes)
+                or sum(shape[1] for shape in term_shapes) != frame_width
+            ):
+                raise ValueError(f"Cannot migrate legacy {role} weights without matching per-term history dimensions.")
+            time_first = torch.arange(history * frame_width, device=self.device).reshape(history, frame_width)
+            term_blocks = time_first.split([shape[1] for shape in term_shapes], dim=1)
+            # For each new column, find the corresponding column in the legacy network.
+            permutations[role] = torch.cat([block.reshape(-1) for block in term_blocks]).argsort()
+        return permutations
+
+    @torch.no_grad()
+    def _permute_loaded_history(self, permutations, *, optimizer_loaded):
+        for role, columns in permutations.items():
+            network = "actor" if role == "policy" else "critic"
+            weight = getattr(self.alg.policy, network)[0].weight
+            normalizer = getattr(self.alg.policy, f"{network}_obs_normalizer")
+            tensors = [weight]
+            tensors.extend(buf for buf in normalizer.buffers() if buf.ndim and buf.shape[-1] == columns.numel())
+            if optimizer_loaded:
+                # Adam keys its restored state by parameter; only the first weight's moments change.
+                moments = self.alg.optimizer.state.get(weight, {})
+                tensors.extend(v for v in moments.values() if isinstance(v, torch.Tensor) and v.shape == weight.shape)
+            for tensor in tensors:
+                tensor.copy_(tensor.index_select(-1, columns.to(tensor.device)))
+        print("[CommandAMP] Reordered legacy actor and critic input columns to time-first history.")
+
     def load(self, path: str, load_optimizer: bool = True, map_location: str | None = None):
         loaded_dict = torch.load(path, weights_only=False, map_location=map_location)
         saved_condition = loaded_dict.get("amp_conditioning")
+        history_permutations = {}
         if isinstance(self.alg, CommandConditionedAMPPPO):
             expected = self.amp_conditioning
             contract = ("command_axes", "command_scale", "history_length", "frame_dim", "step_dt")
             if saved_condition is None or any(saved_condition.get(k) != expected[k] for k in contract):
-                raise ValueError("Checkpoint AMP command or observation layout differs from this task.")
+                saved_dim = (saved_condition or {}).get("frame_dim")
+                raise ValueError(
+                    "Checkpoint AMP command or observation layout differs from this task "
+                    f"(checkpoint frame_dim={saved_dim}, task frame_dim={expected['frame_dim']})."
+                )
+            history_permutations = self._legacy_history_permutations(saved_condition)
             if saved_condition.get("dataset_sha256") != expected["dataset_sha256"]:
                 warnings.warn("Command-conditioned AMP expert files differ from those in the checkpoint.")
             saved_threshold = saved_condition.get("stand_threshold", 0.0)
@@ -421,6 +491,9 @@ class OnPolicyRunnerAmp:
                         "[Warning] 'hist_encoder_optimizer_state_dict' not found in checkpoint. "
                         "Using a fresh optimizer."
                     )
+        if history_permutations:
+            self._permute_loaded_history(history_permutations, optimizer_loaded=load_optimizer and resumed_training)
+        self.migrated_term_first_history = bool(history_permutations)
         # -- load current learning iteration
         if resumed_training:
             self.current_learning_iteration = loaded_dict["iter"]
@@ -572,11 +645,14 @@ class OnPolicyRunnerAmp:
             if not use_history_window:
                 raise ValueError("Command-conditioned AMP requires a post-step discriminator history window.")
             amp_data = CommandConditionedAMPLoader(
-                **loader_args, stand_threshold=self.cfg.get("amp_stand_threshold", 0.0)
+                **loader_args,
+                stand_threshold=self.cfg.get("amp_stand_threshold", 0.0),
+                frame_dim=obs["amp"].shape[-1],
             )
             command_scale = amp_data.command_scale
             self.amp_conditioning = {
                 "command_axes": ("vx", "wz"),
+                "actor_critic_history": self._command_amp_history_layout(obs),
                 "command_scale": command_scale,
                 "stand_threshold": amp_data.stand_threshold,
                 "frame_dim": amp_data.frame_dim,

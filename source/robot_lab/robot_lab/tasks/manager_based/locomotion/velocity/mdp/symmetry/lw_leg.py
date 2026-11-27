@@ -123,12 +123,14 @@ _FLAT_AMP_OBS_MIRROR = (
     ((0, 1), (-1, -1)),         # half-stride shift of the sine/cosine clock
 )
 _FLAT_AMP_FRAME_WIDTH = sum(len(order) for order, _ in _FLAT_AMP_OBS_MIRROR)
+_FLAT_AMP_CRITIC_MIRROR = (*_FLAT_AMP_OBS_MIRROR, ((0, 1, 2), (1, -1, 1)))  # heading-frame linear velocity
+_FLAT_AMP_CRITIC_WIDTH = _FLAT_AMP_FRAME_WIDTH + 3
 
 
 @lru_cache(maxsize=32)
 def _flat_amp_mirror_map(terms, history: int, device: torch.device, dtype: torch.dtype):
     columns, signs = [], []
-    # Isaac Lab stores the complete history of each term before the next term.
+    # A single map mirrors every frame of a time-first tensor. Legacy flat inputs pack all frames per term.
     for order, term_signs in terms:
         for _ in range(history):
             offset = len(columns)
@@ -145,16 +147,27 @@ def _append_flat_amp_mirror(values: torch.Tensor, terms, history: int) -> torch.
 
 @torch.no_grad()
 def compute_flat_amp_symmetric_states(env, obs: TensorDict | None = None, actions: torch.Tensor | None = None):
-    """Mirror the flat AMP actor and critic in Isaac Lab's flattened, term-major history layout."""
+    """Mirror each frame of Flat CommandAMP observations, including legacy flattened histories."""
     obs_aug = None
     if obs is not None:
         groups = {}
         for key in ("policy", "critic"):
-            flat = obs[key]
-            if flat.ndim != 2 or flat.shape[1] == 0 or flat.shape[1] % _FLAT_AMP_FRAME_WIDTH:
-                raise ValueError(f"Unexpected LW flat AMP {key} layout: {flat.shape}")
-            history = flat.shape[1] // _FLAT_AMP_FRAME_WIDTH
-            groups[key] = _append_flat_amp_mirror(flat, _FLAT_AMP_OBS_MIRROR, history)
+            values = obs[key]
+            terms, frame_width = _FLAT_AMP_OBS_MIRROR, _FLAT_AMP_FRAME_WIDTH
+            if key == "critic":
+                # Flat term-packed histories use the policy's history length to identify the extra velocity term.
+                packed_frames = policy_history if values.ndim == 2 else 1
+                if values.shape[-1] == packed_frames * _FLAT_AMP_CRITIC_WIDTH:
+                    terms, frame_width = _FLAT_AMP_CRITIC_MIRROR, _FLAT_AMP_CRITIC_WIDTH
+            if values.ndim == 3 and values.shape[1] > 0 and values.shape[2] == frame_width:
+                frames_per_term = 1
+            elif values.ndim == 2 and values.shape[1] > 0 and values.shape[1] % frame_width == 0:
+                frames_per_term = values.shape[1] // frame_width
+            else:
+                raise ValueError(f"Unexpected LW flat AMP {key} layout: {values.shape}")
+            if key == "policy":
+                policy_history = values.shape[1] if values.ndim == 3 else frames_per_term
+            groups[key] = _append_flat_amp_mirror(values, terms, frames_per_term)
         obs_aug = TensorDict(groups, batch_size=[2 * obs.batch_size[0]], device=obs.device, names=obs.names)
 
     actions_aug = None
