@@ -18,6 +18,23 @@ from rsl_rl.storage import ReplayBuffer
 from rsl_rl.utils.command_amp_loader import CommandConditionedAMPLoader
 
 
+def load_reward_terms(*names, **dependencies):
+    """Load the requested reward functions without starting Isaac Sim for the CPU tests."""
+    path = Path(__file__).resolve().parents[2] / (
+        "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py"
+    )
+    tree = ast.parse(path.read_text(), filename=str(path))
+    terms = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
+    namespace = {
+        "torch": torch,
+        "ManagerBasedRLEnv": SimpleNamespace,
+        "SceneEntityCfg": lambda name: SimpleNamespace(name=name),
+        **dependencies,
+    }
+    exec(compile(ast.Module(body=terms, type_ignores=[]), str(path), "exec"), namespace)
+    return namespace
+
+
 @contextmanager
 def expert_files(duplicate=False, *, heading_velocity=False):
     points = list(product((-.4, 0., .3, .4), (-.25, 0., .15, .25)))
@@ -191,30 +208,60 @@ class CommandAmpTests(unittest.TestCase):
                 expert_loader(stand_threshold=invalid)
 
     def test_standing_rewards_use_the_same_inclusive_command_radius(self):
-        # Load the production rewards in the CPU suite without launching Isaac Sim.
-        path = Path(__file__).resolve().parents[2] / (
-            "source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py"
+        rewards = load_reward_terms(
+            "stand_still", "stop_motion",
+            mdp=SimpleNamespace(joint_deviation_l1=lambda env, cfg: env.deviation.clone()),
         )
-        tree = ast.parse(path.read_text(), filename=str(path))
-        terms = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in ("stand_still", "stop_motion")]
-        namespace = {"torch": torch, "ManagerBasedRLEnv": SimpleNamespace,
-                     "SceneEntityCfg": lambda name: SimpleNamespace(name=name),
-                     "mdp": SimpleNamespace(joint_deviation_l1=lambda env, cfg: env.deviation.clone())}
-        exec(compile(ast.Module(body=terms, type_ignores=[]), str(path), "exec"), namespace)
         commands = torch.tensor([
             [0., 0., 0.], [-.1, 0., 0.], [0., 0., .1], [.06, 0., -.08],
             [0., -.1, 0.], [.03, .04, .02], [.08, 0., .08], [-.2, 0., 0.],
             [0., 0., -.2], [0., .2, 0.], [.06, .08, .001],
         ])
         data = SimpleNamespace(
-            root_lin_vel_w=torch.tensor([[1., -2., 0.]]).repeat(len(commands), 1),
+            root_lin_vel_w=torch.tensor([[5., 0., 0.]]).repeat(len(commands), 1),
             root_ang_vel_w=torch.tensor([[0., 0., -4.]]).repeat(len(commands), 1),
         )
+        data.root_lin_vel_w[1] = torch.tensor([3., 4., 1.])
+        data.root_lin_vel_w[2] = torch.tensor([0., -5., -1.])
         env = SimpleNamespace(scene={"robot": SimpleNamespace(data=data)}, deviation=torch.full((len(commands),), .25),
                               command_manager=SimpleNamespace(get_command=lambda name: commands))
         standing = torch.tensor([True] * 6 + [False] * 5)
-        torch.testing.assert_close(namespace["stop_motion"](env), 7. * standing)
-        torch.testing.assert_close(namespace["stand_still"](env, "base_velocity"), .25 * standing)
+        torch.testing.assert_close(rewards["stop_motion"](env), 9. * standing)
+        torch.testing.assert_close(rewards["stand_still"](env, "base_velocity"), .25 * standing)
+
+    def test_tracking_rewards_target_rest_within_the_command_radius(self):
+        linear_terms = ("track_lin_vel_xy_exp", "track_lin_vel_xy_yaw_frame_exp")
+        yaw_terms = ("track_ang_vel_z_exp", "track_ang_vel_z_world_exp")
+        # All base orientations in this test are the identity.
+        rewards = load_reward_terms(
+            "_velocity_tracking_target", *linear_terms, *yaw_terms,
+            yaw_quat=lambda quat: quat, quat_apply_inverse=lambda quat, vec: vec,
+        )
+        commands = torch.tensor([
+            [0., 0., 0.], [0., 0., .1], [-.1, 0., 0.], [.06, 0., -.08], [0., -.1, 0.],
+            [.03, .04, .02], [.08, 0., .08], [.06, .08, .001], [-.10001, 0., 0.], [0., 0., -.10001],
+        ])
+        original = commands.clone()
+        target = commands.clone()
+        target[:6] = 0.
+        measured = commands.clone()
+        measured[::2] = 0.
+        data = SimpleNamespace(
+            root_quat_w=torch.tensor([[1., 0., 0., 0.]]).repeat(len(commands), 1),
+            root_lin_vel_b=measured, root_lin_vel_w=measured,
+            root_ang_vel_b=measured, root_ang_vel_w=measured,
+        )
+        env = SimpleNamespace(scene={"robot": SimpleNamespace(data=data)},
+                              command_manager=SimpleNamespace(get_command=lambda name: commands))
+        std = .3
+        error = ((measured - target) / std).square()
+        for name in linear_terms:
+            torch.testing.assert_close(rewards[name](env, command_name="base_velocity", std=std),
+                                       torch.exp(-error[:, :2].sum(dim=1)))
+        for name in yaw_terms:
+            torch.testing.assert_close(rewards[name](env, command_name="base_velocity", std=std),
+                                       torch.exp(-error[:, 2]))
+        torch.testing.assert_close(commands, original)
 
     def test_replay_keeps_labels_when_wrapping_and_after_oversized_insert(self):
         buf = ReplayBuffer(1, 4, "cpu", command_dim=2)

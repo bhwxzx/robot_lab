@@ -23,6 +23,14 @@ if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
     from isaaclab.managers import RewardTermCfg
 
+
+def _velocity_tracking_target(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
+    """Use a zero tracking target when the commanded (vx, vy, wz) norm is at most 0.1."""
+    command = env.command_manager.get_command(command_name)[:, :3]
+    standing = torch.linalg.vector_norm(command, dim=-1, keepdim=True) <= 0.1
+    return command.masked_fill(standing, 0.0)
+
+
 def track_lin_vel_xy_exp(
     env: ManagerBasedRLEnv, std: float, command_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
 ) -> torch.Tensor:
@@ -31,7 +39,7 @@ def track_lin_vel_xy_exp(
     asset: RigidObject = env.scene[asset_cfg.name]
     # compute the error
     lin_vel_error = torch.sum(
-        torch.square(env.command_manager.get_command(command_name)[:, :2] - asset.data.root_lin_vel_b[:, :2]),
+        torch.square(_velocity_tracking_target(env, command_name)[:, :2] - asset.data.root_lin_vel_b[:, :2]),
         dim=1,
     )
     reward = torch.exp(-lin_vel_error / std**2)
@@ -46,7 +54,7 @@ def track_ang_vel_z_exp(
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
     # compute the error
-    ang_vel_error = torch.square(env.command_manager.get_command(command_name)[:, 2] - asset.data.root_ang_vel_b[:, 2])
+    ang_vel_error = torch.square(_velocity_tracking_target(env, command_name)[:, 2] - asset.data.root_ang_vel_b[:, 2])
     reward = torch.exp(-ang_vel_error / std**2)
     # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
@@ -60,7 +68,7 @@ def track_lin_vel_xy_yaw_frame_exp(
     asset = env.scene[asset_cfg.name]
     vel_yaw = quat_apply_inverse(yaw_quat(asset.data.root_quat_w), asset.data.root_lin_vel_w[:, :3])
     lin_vel_error = torch.sum(
-        torch.square(env.command_manager.get_command(command_name)[:, :2] - vel_yaw[:, :2]), dim=1
+        torch.square(_velocity_tracking_target(env, command_name)[:, :2] - vel_yaw[:, :2]), dim=1
     )
     reward = torch.exp(-lin_vel_error / std**2)
     # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
@@ -73,7 +81,7 @@ def track_ang_vel_z_world_exp(
     """Reward tracking of angular velocity commands (yaw) in world frame using exponential kernel."""
     # extract the used quantities (to enable type-hinting)
     asset = env.scene[asset_cfg.name]
-    ang_vel_error = torch.square(env.command_manager.get_command(command_name)[:, 2] - asset.data.root_ang_vel_w[:, 2])
+    ang_vel_error = torch.square(_velocity_tracking_target(env, command_name)[:, 2] - asset.data.root_ang_vel_w[:, 2])
     reward = torch.exp(-ang_vel_error / std**2)
     # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
@@ -120,12 +128,12 @@ def stand_still(
     return reward
 
 def stop_motion(env, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """Penalize planar and yaw drift when the base velocity command magnitude is at most 0.1."""
+    """Penalize horizontal speed and absolute yaw rate within the standing command radius."""
     commands = env.command_manager.get_command("base_velocity")
     command_norm = torch.linalg.vector_norm(commands, dim=1)
 
     asset = env.scene[asset_cfg.name]
-    planar_drift = asset.data.root_lin_vel_w[:, :2].abs().sum(dim=1)
+    planar_drift = torch.linalg.vector_norm(asset.data.root_lin_vel_w[:, :2], dim=1)
     yaw_drift = asset.data.root_ang_vel_w[:, 2].abs()
     return torch.where(command_norm <= 0.1, planar_drift + yaw_drift, 0.0)
 

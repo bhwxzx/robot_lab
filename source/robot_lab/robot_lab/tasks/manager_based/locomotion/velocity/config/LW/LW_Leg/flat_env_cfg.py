@@ -289,6 +289,7 @@ class LWLegFlatCommandAmpEnvCfg(LWLegRoughCommandAmpEnvCfg):
         # Rewards
         self.rewards.base_height_l2.weight = -10.0
         self.rewards.track_lin_vel_xy_exp.weight = 5.0
+        self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
         self.rewards.track_ang_vel_z_exp.weight = 4.0
         self.rewards.lin_vel_z_l2.weight = -2.0
         self.rewards.ang_vel_xy_l2.weight = -0.1

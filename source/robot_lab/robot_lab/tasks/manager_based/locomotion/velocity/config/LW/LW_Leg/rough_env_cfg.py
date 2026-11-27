@@ -2318,6 +2318,7 @@ class LWLegRoughCommandAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         self.rewards.stop_motion.weight = -3.0
         self.rewards.stand_still.weight = -3.0
+        self.rewards.stand_still.params["asset_cfg"].joint_names = self.joint_names_without_wheels
 
         self.rewards.joint_pos_penalty.weight = -0.5
         self.rewards.joint_pos_penalty.params["asset_cfg"].joint_names = self.joint_names_without_wheels
@@ -2336,8 +2337,10 @@ class LWLegRoughCommandAmpEnvCfg(LocomotionVelocityRoughEnvCfg):
         # Velocity-tracking rewards
         self.rewards.track_lin_vel_xy_exp.weight = 5.0
         self.rewards.track_lin_vel_xy_exp.func = mdp.track_lin_vel_xy_yaw_frame_exp
+        self.rewards.track_lin_vel_xy_exp.params["std"] = math.sqrt(0.25)
         self.rewards.track_ang_vel_z_exp.weight = 4.0
         self.rewards.track_ang_vel_z_exp.func = mdp.track_ang_vel_z_world_exp
+        self.rewards.track_ang_vel_z_exp.params["std"] = 0.3
         self.rewards.lazy_penalty.weight = -1.0
 
         self.rewards.feet_air_time.weight = 1.0
