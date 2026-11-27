@@ -1,0 +1,178 @@
+{
+  "batch_id": "commandamp-50000-stand-population-20261127-006",
+  "cases": [
+    {
+      "attempt_id": "stand-nominal-population-a06",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/raw/stand-nominal-population-a06/console.log",
+        "sha256": "83b9062b358f24e6172a9ed22804b9ec0a42ad265ead17bf987dee4ad649aa40"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/raw/stand-nominal-population-a06/result.json",
+        "sha256": "73072c26cf922208fb6e11fa10ba22e01ae40d2c7fb4fb487133dbc1d62cafdc"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 699,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 700,
+        "num_envs": 16,
+        "scenario_id": "stand-nominal-nopush",
+        "scenario_overrides": {
+          "commands.base_velocity.ranges.ang_vel_z": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_x": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_y": [
+            0.0,
+            0.0
+          ],
+          "events.add_joint_default_pos": null,
+          "events.push_robot_hard": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {},
+          "events.randomize_reset_base.params.velocity_range": {},
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material": null,
+          "observations.policy.enable_corruption": false,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane"
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    },
+    {
+      "attempt_id": "stand-randomized-population-a06",
+      "console": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/raw/stand-randomized-population-a06/console.log",
+        "sha256": "899882a5d3c91ab9686e2e59e41b989692331b5d7eb86295fcfd725d1678f155"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/raw/stand-randomized-population-a06/result.json",
+        "sha256": "12e0005393ac42099fa4ff97d2b7418748625dd539fa6cb23b9b025a63afe0a6"
+      },
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 699,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 700,
+        "num_envs": 16,
+        "scenario_id": "stand-randomized-nopush",
+        "scenario_overrides": {
+          "commands.base_velocity.ranges.ang_vel_z": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_x": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_y": [
+            0.0,
+            0.0
+          ],
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": true
+        },
+        "seed": 42
+      },
+      "status": "completed"
+    }
+  ],
+  "contract": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/contract.json",
+    "sha256": "a2fde0693e3b9618accd3fe79960a65b80ec9ea64142de3046a10a651402b71a"
+  },
+  "layout_version": 2,
+  "notes": [
+    "使用同一原生 model_50000.pt、确定性动作均值和 time-first 观测。两组各 16 个环境，seed 42，700 控制步（14 s），从重置起指令始终为零。两组都关闭周期推扰、强推及外力/力矩。标称组使用理想平面、标称模型、零初速、零驱动延时及无噪声观测。随机化组保留微起伏地形、训练观测噪声、驱动、质量/质心、摩擦和初态随机化。",
+    "全部 32 个环境均无终止或超时。按 0.02 s 采样，第 100–699 步覆盖舍弃前 2 s 后的 600 个样本。每个环境独立计算世界系机身净位移、累计水平路程和展开后的航向变化，速度 RMS 使用机体系水平速度模长。",
+    "同次全环境逐步记录在环境 0 与标准原生遥测一致，且重算的总体平面和偏航 RMSE 与标准评估一致。10 cm 是描述分布所用的距离刻度。",
+    "标称后 12 s 净位移中位数 0.004 m，P90 0.007 m，最大 0.008 m，超过 0.10 m 的环境 0/16。累计水平路程中位数 0.741 m，绝对航向变化中位数 0.39°，水平速度 RMS 0.068 m/s，最后 4 s 净位移中位数 0.005 m。",
+    "其余随机化后 12 s 净位移中位数 0.013 m，P90 0.110 m，最大 0.328 m，超过 0.10 m 的环境 2/16。累计水平路程中位数 0.383 m，绝对航向变化中位数 0.30°，水平速度 RMS 0.047 m/s，最后 4 s 净位移中位数 0.008 m。"
+  ],
+  "origin": "executed",
+  "recommendations": [
+    "按批次报告检查失败项和动作表现；复测使用新的 batch_id 与 attempt_id。"
+  ],
+  "report": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/report.md",
+    "sha256": "6c6e098f1e7c54543c12d8997d9e1bbef29cb9a974b10b61868b3537098e675a"
+  },
+  "repository_root": "/home/server/liufengrong/robot_lab",
+  "run_id": "2026-11-26_21-23-35",
+  "status": "sealed",
+  "supporting_evidence": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/population-recorder.json",
+      "sha256": "29cb412dabf663e809538cb6f5b57dd52f4f15f475ca0706fefcbd733de256ac"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/raw/stand-nominal-population-a06/standing-all-envs.npz",
+      "sha256": "c0de2d9922b6656f60a7697bcbf3380bcb2ad211d87fcf1cc69c434a7b744402"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/raw/stand-randomized-population-a06/standing-all-envs.npz",
+      "sha256": "2c64065b0d35f6912454472908fa719ef376e39ae1b4050e705e4753eb8fdc95"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/standing-per-env.csv",
+      "sha256": "341a837dfca7efef271d88707eba76c08de7d7ebe2cb7ee1e40b408d41acf638"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/standing-drift.png",
+      "sha256": "17a7bc73783414e7b939d0a4ace3777a6a80c6bbe7cf3ec91a11650389fe0396"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/standing-statistics.json",
+      "sha256": "c8d1cef34b9cd25f4cee7b246e9f65aaa7e1500e510f335fc89160865221f189"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-nopush-20261127-004/manifest.json",
+      "sha256": "dc658137e224f75af1213c3003f91191ca7fa322870e4489fb4981eea8bca7c6"
+    }
+  ],
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0",
+  "version": 1
+}

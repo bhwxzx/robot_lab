@@ -1,0 +1,262 @@
+{"argv": ["/home/server/miniconda3/envs/isaacsim-5.1/bin/python", "/home/server/liufengrong/robot_lab/scripts/reinforcement_learning/rsl_rl/evaluate_policy.py", "--task", "RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0", "--run_id", "2026-11-26_21-23-35", "--batch_id", "commandamp-50000-longitudinal-grid-20261127-007", "--evaluation_id", "reverse-12-a07", "--candidate_id", "model_50000", "--checkpoint", "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/model_50000.pt", "--checkpoint_sha256", "ee5d545435abc93210daf4cf4a58577c983748092f771870a1829086624f6ab6", "--artifact_kind", "native", "--artifact_path", "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/model_50000.pt", "--artifact_sha256", "ee5d545435abc93210daf4cf4a58577c983748092f771870a1829086624f6ab6", "--run_identity_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/provenance/context-b22e8c643f8c955047f7c23ab89f996282ef7dc5455869046c98606e95abfb91.json", "--run_identity_file_sha256", "b22e8c643f8c955047f7c23ab89f996282ef7dc5455869046c98606e95abfb91", "--effective_config_reference_json", "{\"path\": \"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/provenance/config-9e79991ae8b2a0be75322c5cfaf90f2e751bc82883ea82397dac2145c28b518f.json\", \"sha256\": \"9e79991ae8b2a0be75322c5cfaf90f2e751bc82883ea82397dac2145c28b518f\"}", "--scenario_evidence_reference_json", "{\"path\": \"/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/provenance/scenario-e158c9d15d0b36501135494a1a1dd199260342004c231e24043ba5503a895fdf.json\", \"sha256\": \"e158c9d15d0b36501135494a1a1dd199260342004c231e24043ba5503a895fdf\"}", "--scenario_id", "reverse-12", "--scenario_overrides_json", "{\"events.push_robot_hard\": null, \"events.randomize_apply_external_force_torque\": null, \"events.randomize_push_robot\": null, \"observations.policy.enable_corruption\": false, \"rewards.track_lin_vel_xy_exp.params.std\": 0.5, \"rewards.track_ang_vel_z_exp.params.std\": 0.5}", "--command_schedule_json", "[{\"start_step\": 0, \"end_step\": 99, \"command\": [0, 0, 0]}, {\"start_step\": 100, \"end_step\": 499, \"command\": [-0.12, 0, 0]}]", "--duration_steps", "500", "--num_envs", "16", "--seed", "42", "--result_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-longitudinal-grid-20261127-007/raw/reverse-12-a07/result.json", "--telemetry_path", "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-longitudinal-grid-20261127-007/raw/reverse-12-a07/telemetry.json.gz", "--telemetry_stride", "1", "--headless", "--device", "cuda:0", "--require_idle_gpu", "--no_video"]}
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/server/liufengrong/IsaacLab-2.3.2/apps/isaaclab.python.headless.kit
+Loading user config located at: '/home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/server/miniconda3/envs/isaacsim-5.1/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20261127_170007.log
+2026-11-27T09:00:07Z [50ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-11-27T09:00:07Z [305ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-11-27T09:00:07Z [311ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-11-27T09:00:10Z [2,880ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-11-27T09:00:10Z [2,881ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090 D        | Yes: 0 |     | 32607   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b87      | efbac165.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 71857   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 7.0.0-38-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101011 (1.21.1.11)
+| Processor: Intel(R) Core(TM) Ultra 7 265K
+| Cores: 20 | Logical Cores: 20
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 95810 | Free Memory: 85323
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-11-27T09:00:10Z [3,077ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-11-27T09:00:10Z [3,085ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-11-27T09:00:10Z [3,085ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1528.86 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   2.07 
+
+   CPU     0 
+     0   1.55 
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Leg.flat_env_cfg:LWLegFlatCommandAmpEnvCfg
+[INFO]: Parsing configuration from: robot_lab.tasks.manager_based.locomotion.velocity.config.LW.LW_Leg.agents.rsl_rl_amp_cfg:LWFlatCommandAmpRunnerCfg
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-11-27_17-00-12.log[0m
+[36m======================================================================================[0m
+
+[33m17:00:12 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[INFO] Generating terrains based on curriculum took : 0.445941 seconds
+[INFO]: Time taken for scene creation : 1.014082 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 16
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+2026-11-27T09:00:14Z [6,731ms] [Error] [omni.physx.plugin] Replication of this type is not supported: 589824, prim path: /World/envs/env_0/Robot/GroupBase
+2026-11-27T09:00:14Z [6,731ms] [Error] [omni.physx.plugin] Replication of this type is not supported: 589824, prim path: /World/envs/env_0/Robot/GroupFoot
+2026-11-27T09:00:14Z [6,731ms] [Error] [omni.physx.plugin] Replication of this type is not supported: 589824, prim path: /World/envs/env_0/Robot/GroupWheel
+2026-11-27T09:00:14Z [6,731ms] [Error] [omni.physx.plugin] Replication of this type is not supported: 589824, prim path: /World/envs/env_0/Robot/GroupOthers
+[INFO]: Time taken for simulation start : 1.012903 seconds
+[33m17:00:37 [velocity_command.py] WARNING: The velocity command has the 'ranges.heading' attribute set to '(-3.141592653589793, 3.141592653589793)' but the heading command is not active. Consider setting the flag for the heading command to True.[0m
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++------------------------------------------------+
+|              Active Command Terms              |
++-------+---------------+------------------------+
+| Index | Name          |          Type          |
++-------+---------------+------------------------+
+|   0   | base_velocity | UniformVelocityCommand |
++-------+---------------+------------------------+
+
+[INFO] Event Manager:  <EventManager> contains 2 active terms.
++------------------------------------------+
+|  Active Event Terms in Mode: 'startup'   |
++-------+----------------------------------+
+| Index | Name                             |
++-------+----------------------------------+
+|   0   | randomize_rigid_body_material    |
+|   1   | randomize_rigid_body_mass_base   |
+|   2   | randomize_rigid_body_mass_others |
+|   3   | randomize_com_positions          |
+|   4   | add_joint_default_pos            |
++-------+----------------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++--------+-----------------------------+
+| Index  | Name                        |
++--------+-----------------------------+
+|   0    | randomize_reset_joints      |
+|   1    | randomize_actuator_gains    |
+|   2    | randomize_reset_base        |
++--------+-----------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 2 active terms.
++------------------------------------+
+|  Active Action Terms (shape: 10)   |
++--------+-------------+-------------+
+| Index  | Name        |   Dimension |
++--------+-------------+-------------+
+|   0    | joint_pos   |           8 |
+|   1    | joint_vel   |           2 |
++--------+-------------+-------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 4 groups.
++-------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (10, 41)) |
++-----------+--------------------------------+----------------+
+|   Index   | Name                           |     Shape      |
++-----------+--------------------------------+----------------+
+|     0     | base_ang_vel                   |    (10, 3)     |
+|     1     | projected_gravity              |    (10, 3)     |
+|     2     | velocity_commands              |    (10, 3)     |
+|     3     | joint_pos                      |    (10, 10)    |
+|     4     | joint_vel                      |    (10, 10)    |
+|     5     | actions                        |    (10, 10)    |
+|     6     | gait_phase                     |    (10, 2)     |
++-----------+--------------------------------+----------------+
++-------------------------------------------------------------+
+| Active Observation Terms in Group: 'critic' (shape: (10, 41)) |
++-----------+--------------------------------+----------------+
+|   Index   | Name                           |     Shape      |
++-----------+--------------------------------+----------------+
+|     0     | base_ang_vel                   |    (10, 3)     |
+|     1     | projected_gravity              |    (10, 3)     |
+|     2     | velocity_commands              |    (10, 3)     |
+|     3     | joint_pos                      |    (10, 10)    |
+|     4     | joint_vel                      |    (10, 10)    |
+|     5     | actions                        |    (10, 10)    |
+|     6     | gait_phase                     |    (10, 2)     |
++-----------+--------------------------------+----------------+
++---------------------------------------------------------+
+| Active Observation Terms in Group: 'amp' (shape: (10, 22)) |
++------------+----------------------------+---------------+
+|   Index    | Name                       |     Shape     |
++------------+----------------------------+---------------+
+|     0      | joint_pos                  |    (10, 8)    |
+|     1      | joint_vel                  |    (10, 8)    |
+|     2      | end_effort_pos             |    (10, 6)    |
++------------+----------------------------+---------------+
++-------------------------------------------------------+
+| Active Observation Terms in Group: 'amp_command' (shape: (3,)) |
++---------------+-----------------------+---------------+
+|     Index     | Name                  |     Shape     |
++---------------+-----------------------+---------------+
+|       0       | velocity              |      (3,)     |
++---------------+-----------------------+---------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 3 active terms.
++------------------------------------------+
+|         Active Termination Terms         |
++-------+-----------------------+----------+
+| Index | Name                  | Time Out |
++-------+-----------------------+----------+
+|   0   | time_out              |   True   |
+|   1   | terrain_out_of_bounds |   True   |
+|   2   | illegal_contact       |  False   |
++-------+-----------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 27 active terms.
++-------------------------------------------+
+|            Active Reward Terms            |
++-------+------------------------+----------+
+| Index | Name                   |   Weight |
++-------+------------------------+----------+
+|   0   | lin_vel_z_l2           |     -2.0 |
+|   1   | ang_vel_xy_l2          |     -0.1 |
+|   2   | flat_orientation_l2    |     -5.0 |
+|   3   | base_height_l2         |    -10.0 |
+|   4   | joint_torques_l2       |   -8e-05 |
+|   5   | joint_vel_l2           |   -5e-05 |
+|   6   | joint_acc_l2           |   -1e-06 |
+|   7   | joint_pos_limits       |     -2.0 |
+|   8   | joint_power            |   -2e-05 |
+|   9   | stand_still            |     -3.0 |
+|   10  | action_rate_l2         |     -0.2 |
+|   11  | undesired_contacts     |     -5.0 |
+|   12  | track_lin_vel_xy_exp   |      5.0 |
+|   13  | track_ang_vel_z_exp    |      4.0 |
+|   14  | feet_air_time          |      1.0 |
+|   15  | feet_slide             |    -0.25 |
+|   16  | feet_clearance         |      1.0 |
+|   17  | feet_distance_y_exp    |      3.0 |
+|   18  | feet_landing_vel       |    -0.25 |
+|   19  | upward                 |      1.0 |
+|   20  | joint_vel_wheel_l2     |   -0.005 |
+|   21  | joint_acc_wheel_l2     | -1.5e-07 |
+|   22  | joint_torques_wheel_l2 | -0.00016 |
+|   23  | bipedal_gait_reward    |      2.0 |
+|   24  | stop_motion            |     -3.0 |
+|   25  | action_smoothness      |   -0.075 |
+|   26  | feet_impact_reduction  |  -0.0025 |
++-------+------------------------+----------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+2026-11-27T09:00:37Z [30,137ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_current.
+2026-11-27T09:00:37Z [30,137ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_goal.
+/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/utils.py:338: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'policy' key. As an observation group with the name 'policy' was found, this is assumed to be the observation set. Consider adding the 'policy' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/utils.py:376: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'critic' key. As an observation group with the name 'critic' was found, this is assumed to be the observation set. Consider adding the 'critic' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/utils.py:376: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'amp' key. As an observation group with the name 'amp' was found, this is assumed to be the observation set. Consider adding the 'amp' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 policy :  ['policy']
+	 critic :  ['critic']
+	 amp :  ['amp']
+--------------------------------------------------------------------------------
+ActorCritic.__init__ got unexpected arguments, which will be ignored: ['state_dependent_std']
+Actor MLP: MLP(
+  (0): Linear(in_features=410, out_features=512, bias=True)
+  (1): ELU(alpha=1.0)
+  (2): Linear(in_features=512, out_features=256, bias=True)
+  (3): ELU(alpha=1.0)
+  (4): Linear(in_features=256, out_features=128, bias=True)
+  (5): ELU(alpha=1.0)
+  (6): Linear(in_features=128, out_features=10, bias=True)
+)
+Critic MLP: MLP(
+  (0): Linear(in_features=410, out_features=512, bias=True)
+  (1): ELU(alpha=1.0)
+  (2): Linear(in_features=512, out_features=256, bias=True)
+  (3): ELU(alpha=1.0)
+  (4): Linear(in_features=256, out_features=128, bias=True)
+  (5): ELU(alpha=1.0)
+  (6): Linear(in_features=128, out_features=1, bias=True)
+)
+[AMP] Time between frames (step_dt) set to: 0.02s
+AMP Observation Dim: 220
+AMP Frame Dim for Normalizer: 22
+[AMPPPO] 忽略了多余的配置参数: ['rnd_cfg']
+[CommandAMP] Reordered legacy actor and critic input columns to time-first history.
+[INFO] Evaluation result: /home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-longitudinal-grid-20261127-007/raw/reverse-12-a07/result.json

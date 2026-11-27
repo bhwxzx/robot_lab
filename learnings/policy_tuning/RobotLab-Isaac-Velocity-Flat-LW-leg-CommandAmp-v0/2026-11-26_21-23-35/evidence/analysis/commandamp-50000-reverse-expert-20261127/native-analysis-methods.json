@@ -1,0 +1,46 @@
+{
+  "contact": "60 to 104 hundredths of a second between successive touchdown events of the same foot; ground-specific support >5 N, time-axis 5-frame median filter; mean within each environment and equal weight across environments. Signed travel is the integral of yaw-frame vx over each cycle. Slip is force-weighted horizontal surface contact point speed evaluated only on loaded feet (>5 N) using physics reward values.",
+  "dt": 0.02,
+  "foot_sweep": "Local frame x of the left/right foot link origins. P95 minus P05 over time per foot and per environment; then average over feet and environments. Units metres.",
+  "native_batch": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-reverse-expert-20261127-008/manifest.json",
+    "sha256": "011f81ed1c252248504de3f857624cdbdd614bb2683208a7fe277640cb69a087"
+  },
+  "native_grid_max_mean_speed_difference_mps": 2.6178580303515275e-08,
+  "outputs": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-reverse-expert-20261127/gait-and-reward-by-command.csv",
+      "sha256": "f44f066bce0adfdde0325954fc3a2d9bf77cdd3eaa1c3f37871a48a4d3b21496"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-reverse-expert-20261127/gait-per-environment.csv",
+      "sha256": "f2898fb503d5e9c4a7da46aa1e6d29227137efffa70ea83a967da251712f7283"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-reverse-expert-20261127/expert-style-cross-command.csv",
+      "sha256": "ec223106136cde959497defd4e244801a6ab2c5e99e86bc6990a586476fa709e"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-reverse-expert-20261127/motion-amplitude-by-command.csv",
+      "sha256": "16a9ad58c5c57a0974bb903918c617774b91ec92df306629119979ad7a951ed9"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-reverse-expert-20261127/task-reward-terms.csv",
+      "sha256": "0e03699c7efb418a2dc31b94a9f4b21f1c2dcf4e8e3e959fe7b62492d5e9b821"
+    }
+  ],
+  "reference": "Expert cycle travel estimated from exported reference mean vx times its annotated stride period. No contact forces or per-frame world root speeds in 22D TXT.",
+  "sampler_replay": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-reverse-expert-20261127/sampling-audit.json",
+    "sha256": "b106f3066cc1f919017bab39ced4104e7ae72be72d8f7fa588947d852b15756c"
+  },
+  "steady_control_steps": [
+    200,
+    499
+  ],
+  "style_coefficient": 2.0,
+  "task_mix": 0.3,
+  "tracking_weight": 5.0,
+  "training_std": 0.5,
+  "windows": "All stable policy histories, including 9 preceding states for t=200. All possible uniformly sampled post-windows from the exact selected cruise clip. Checkpoint normalizer and frozen discriminator, original command and reward formula. Unit style lies in [0,1]. Cross scoring keeps the velocity conditioning fixed and varies the expert clip."
+}

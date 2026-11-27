@@ -1,0 +1,876 @@
+{
+  "artifact": "native",
+  "artifact_path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/model_50000.pt",
+  "artifact_sha256": "ee5d545435abc93210daf4cf4a58577c983748092f771870a1829086624f6ab6",
+  "body_jitter_evidence": {
+    "command_segments": [
+      {
+        "command": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "end_step": 699,
+        "segment_index": 0,
+        "start_step": 0,
+        "statistics": {
+          "roll_pitch_angular_acceleration": {
+            "max": 128.48459828558785,
+            "p95": 5.248420727602616,
+            "peak_step": 3,
+            "rms": 7.903558919715425,
+            "sample_count": 11184
+          },
+          "roll_pitch_angular_velocity": {
+            "max": 2.896388056575394,
+            "p95": 0.11962495870894088,
+            "peak_step": 3,
+            "rms": 0.14475926675415202,
+            "sample_count": 11200
+          },
+          "vertical_acceleration": {
+            "max": 12.979347631335258,
+            "p95": 1.650223322212696,
+            "peak_step": 5,
+            "rms": 1.3827276670243902,
+            "sample_count": 11184
+          },
+          "vertical_velocity": {
+            "max": 0.6145274639129639,
+            "p95": 0.03499143198132515,
+            "peak_step": 2,
+            "rms": 0.04525756479918188,
+            "sample_count": 11200
+          }
+        }
+      }
+    ],
+    "definition": {
+      "acceleration": "First velocity difference divided by control step_dt.",
+      "roll_pitch": "Euclidean magnitude of body-frame x/y components.",
+      "transition_policy": "Acceleration pairs crossing a reset, command boundary, or nonconsecutive step are excluded.",
+      "vertical": "Absolute body-frame z component."
+    },
+    "excluded_transitions": {
+      "command_segment": 0,
+      "nonconsecutive_step": 0,
+      "reset": 0
+    },
+    "metrics": {
+      "body_roll_pitch_angular_acceleration_p95": 5.248420727602616,
+      "body_roll_pitch_angular_acceleration_rms": 7.903558919715425,
+      "body_roll_pitch_angular_velocity_p95": 0.11962495870894088,
+      "body_roll_pitch_angular_velocity_rms": 0.14475926675415202,
+      "body_vertical_acceleration_p95": 1.650223322212696,
+      "body_vertical_acceleration_rms": 1.3827276670243902,
+      "body_vertical_velocity_p95": 0.03499143198132515,
+      "body_vertical_velocity_rms": 0.04525756479918188
+    },
+    "peak_steps": {
+      "body_roll_pitch_angular_acceleration_max": 3,
+      "body_roll_pitch_angular_velocity_max": 3,
+      "body_vertical_acceleration_max": 5,
+      "body_vertical_velocity_max": 2
+    },
+    "step_dt_seconds": 0.02,
+    "units": {
+      "roll_pitch_angular_acceleration": "rad/s^2",
+      "roll_pitch_angular_velocity": "rad/s",
+      "vertical_acceleration": "m/s^2",
+      "vertical_velocity": "m/s"
+    },
+    "whole_run": {
+      "roll_pitch_angular_acceleration": {
+        "max": 128.48459828558785,
+        "p95": 5.248420727602616,
+        "peak_step": 3,
+        "rms": 7.903558919715425,
+        "sample_count": 11184
+      },
+      "roll_pitch_angular_velocity": {
+        "max": 2.896388056575394,
+        "p95": 0.11962495870894088,
+        "peak_step": 3,
+        "rms": 0.14475926675415202,
+        "sample_count": 11200
+      },
+      "vertical_acceleration": {
+        "max": 12.979347631335258,
+        "p95": 1.650223322212696,
+        "peak_step": 5,
+        "rms": 1.3827276670243902,
+        "sample_count": 11184
+      },
+      "vertical_velocity": {
+        "max": 0.6145274639129639,
+        "p95": 0.03499143198132515,
+        "peak_step": 2,
+        "rms": 0.04525756479918188,
+        "sample_count": 11200
+      }
+    }
+  },
+  "candidate_id": "model_50000",
+  "checkpoint_path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/model_50000.pt",
+  "checkpoint_sha256": "ee5d545435abc93210daf4cf4a58577c983748092f771870a1829086624f6ab6",
+  "duration_steps": 700,
+  "evaluation": {
+    "batch_id": "commandamp-50000-stand-nopush-20261127-004",
+    "candidate_id": "model_50000",
+    "evaluation_id": "stand-nominal-a04",
+    "run_id": "2026-11-26_21-23-35",
+    "runner": "OnPolicyRunnerAmp",
+    "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0"
+  },
+  "inputs": {
+    "artifact": {
+      "kind": "native",
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/model_50000.pt",
+      "sha256": "ee5d545435abc93210daf4cf4a58577c983748092f771870a1829086624f6ab6"
+    },
+    "checkpoint": {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/model_50000.pt",
+      "sha256": "ee5d545435abc93210daf4cf4a58577c983748092f771870a1829086624f6ab6"
+    },
+    "effective_config": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/provenance/config-9e79991ae8b2a0be75322c5cfaf90f2e751bc82883ea82397dac2145c28b518f.json",
+      "sha256": "9e79991ae8b2a0be75322c5cfaf90f2e751bc82883ea82397dac2145c28b518f"
+    },
+    "resource_mode": {
+      "device": "cuda:0",
+      "follow_robot_camera": false,
+      "idle_gpu_required": true,
+      "num_envs": 16,
+      "telemetry_env_index": 0,
+      "telemetry_requested": true,
+      "telemetry_stride": 1,
+      "training_overlap": false,
+      "video_requested": false
+    },
+    "run_identity": {
+      "file_sha256": "b22e8c643f8c955047f7c23ab89f996282ef7dc5455869046c98606e95abfb91",
+      "identity_sha256": "6570a266081a0fc277b78445d19addaf7b58be05be30b89ae095f9ff166ab2f1",
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/provenance/context-b22e8c643f8c955047f7c23ab89f996282ef7dc5455869046c98606e95abfb91.json"
+    },
+    "scenario": {
+      "contract": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 699,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 700,
+        "num_envs": 16,
+        "scenario_id": "stand-nominal-nopush",
+        "scenario_overrides": {
+          "commands.base_velocity.ranges.ang_vel_z": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_x": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_y": [
+            0.0,
+            0.0
+          ],
+          "events.add_joint_default_pos": null,
+          "events.push_robot_hard": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {},
+          "events.randomize_reset_base.params.velocity_range": {},
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material": null,
+          "observations.policy.enable_corruption": false,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane"
+        },
+        "seed": 42
+      },
+      "sha256": "66921e46e0a723147f46ea23f1cd1d945f9ef303de81ff09572494bc83cf8c80"
+    },
+    "scenario_evidence": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/provenance/scenario-723ae2981ab01f62485c74b3477ed2826294b1036b9e09af2a31b64b7b963f6f.json",
+      "sha256": "723ae2981ab01f62485c74b3477ed2826294b1036b9e09af2a31b64b7b963f6f"
+    }
+  },
+  "joint_limit_evidence": {
+    "joint_metrics": [
+      {
+        "effort_limit_max": 120.0,
+        "effort_limit_min": 120.0,
+        "effort_peak_step": 14,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "left_hip_joint",
+        "max_abs_applied_torque": 21.339250564575195,
+        "max_abs_joint_velocity": 0.8599178194999695,
+        "max_effort_utilization": 0.17782708803812664,
+        "max_velocity_utilization": 0.04299589097499847,
+        "sample_count": 11200,
+        "velocity_limit_max": 20.0,
+        "velocity_limit_min": 20.0,
+        "velocity_peak_step": 5,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 120.0,
+        "effort_limit_min": 120.0,
+        "effort_peak_step": 19,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "right_hip_joint",
+        "max_abs_applied_torque": 19.815048217773438,
+        "max_abs_joint_velocity": 0.9948291778564453,
+        "max_effort_utilization": 0.16512540181477864,
+        "max_velocity_utilization": 0.04974145889282226,
+        "sample_count": 11200,
+        "velocity_limit_max": 20.0,
+        "velocity_limit_min": 20.0,
+        "velocity_peak_step": 5,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 120.0,
+        "effort_limit_min": 120.0,
+        "effort_peak_step": 5,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "left_thigh_joint",
+        "max_abs_applied_torque": 24.830028533935547,
+        "max_abs_joint_velocity": 2.019047260284424,
+        "max_effort_utilization": 0.2069169044494629,
+        "max_velocity_utilization": 0.1009523630142212,
+        "sample_count": 11200,
+        "velocity_limit_max": 20.0,
+        "velocity_limit_min": 20.0,
+        "velocity_peak_step": 5,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 120.0,
+        "effort_limit_min": 120.0,
+        "effort_peak_step": 5,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "right_thigh_joint",
+        "max_abs_applied_torque": 23.411701202392578,
+        "max_abs_joint_velocity": 2.703561544418335,
+        "max_effort_utilization": 0.19509751001993816,
+        "max_velocity_utilization": 0.13517807722091674,
+        "sample_count": 11200,
+        "velocity_limit_max": 20.0,
+        "velocity_limit_min": 20.0,
+        "velocity_peak_step": 5,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 120.0,
+        "effort_limit_min": 120.0,
+        "effort_peak_step": 5,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "left_shank_joint",
+        "max_abs_applied_torque": 39.786041259765625,
+        "max_abs_joint_velocity": 2.368591785430908,
+        "max_effort_utilization": 0.3315503438313802,
+        "max_velocity_utilization": 0.11842958927154541,
+        "sample_count": 11200,
+        "velocity_limit_max": 20.0,
+        "velocity_limit_min": 20.0,
+        "velocity_peak_step": 4,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 120.0,
+        "effort_limit_min": 120.0,
+        "effort_peak_step": 5,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "right_shank_joint",
+        "max_abs_applied_torque": 63.843292236328125,
+        "max_abs_joint_velocity": 4.396851539611816,
+        "max_effort_utilization": 0.5320274353027343,
+        "max_velocity_utilization": 0.21984257698059081,
+        "sample_count": 11200,
+        "velocity_limit_max": 20.0,
+        "velocity_limit_min": 20.0,
+        "velocity_peak_step": 4,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 27.0,
+        "effort_limit_min": 27.0,
+        "effort_peak_step": 4,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "left_foot_joint",
+        "max_abs_applied_torque": 17.744550704956055,
+        "max_abs_joint_velocity": 1.069441318511963,
+        "max_effort_utilization": 0.6572055816650391,
+        "max_velocity_utilization": 0.10694413185119629,
+        "sample_count": 11200,
+        "velocity_limit_max": 10.0,
+        "velocity_limit_min": 10.0,
+        "velocity_peak_step": 4,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 40.0,
+        "effort_limit_min": 40.0,
+        "effort_peak_step": 5,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "left_wheel_joint",
+        "max_abs_applied_torque": 0.17934399843215942,
+        "max_abs_joint_velocity": 0.9760090708732605,
+        "max_effort_utilization": 0.004483599960803985,
+        "max_velocity_utilization": 0.029576032450704864,
+        "sample_count": 11200,
+        "velocity_limit_max": 33.0,
+        "velocity_limit_min": 33.0,
+        "velocity_peak_step": 12,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 27.0,
+        "effort_limit_min": 27.0,
+        "effort_peak_step": 5,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "right_foot_joint",
+        "max_abs_applied_torque": 20.610382080078125,
+        "max_abs_joint_velocity": 8.444225311279297,
+        "max_effort_utilization": 0.7633474844473379,
+        "max_velocity_utilization": 0.8444225311279296,
+        "sample_count": 11200,
+        "velocity_limit_max": 10.0,
+        "velocity_limit_min": 10.0,
+        "velocity_peak_step": 4,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      },
+      {
+        "effort_limit_max": 40.0,
+        "effort_limit_min": 40.0,
+        "effort_peak_step": 4,
+        "effort_violation_count": 0,
+        "effort_violation_rate": 0.0,
+        "joint_name": "right_wheel_joint",
+        "max_abs_applied_torque": 0.4148443341255188,
+        "max_abs_joint_velocity": 2.0337257385253906,
+        "max_effort_utilization": 0.01037110835313797,
+        "max_velocity_utilization": 0.06162805268258759,
+        "sample_count": 11200,
+        "velocity_limit_max": 33.0,
+        "velocity_limit_min": 33.0,
+        "velocity_peak_step": 4,
+        "velocity_violation_count": 0,
+        "velocity_violation_rate": 0.0
+      }
+    ],
+    "metrics": {
+      "joint_effort_limit_violation_rate": 0.0,
+      "joint_velocity_limit_violation_rate": 0.0,
+      "max_joint_effort_utilization": 0.7633474844473379,
+      "max_joint_velocity_utilization": 0.8444225311279296
+    },
+    "peak_joints": {
+      "max_joint_effort_utilization": "right_foot_joint",
+      "max_joint_velocity_utilization": "right_foot_joint"
+    },
+    "peak_steps": {
+      "max_joint_effort_utilization": 5,
+      "max_joint_velocity_utilization": 4
+    },
+    "sample_count": 112000
+  },
+  "layout_version": 2,
+  "metric_availability": {
+    "body_roll_pitch_angular_acceleration_p95": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "root_angular_velocity_b"
+      ]
+    },
+    "body_roll_pitch_angular_acceleration_rms": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "root_angular_velocity_b"
+      ]
+    },
+    "body_roll_pitch_angular_velocity_p95": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "root_angular_velocity_b"
+      ]
+    },
+    "body_roll_pitch_angular_velocity_rms": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "root_angular_velocity_b"
+      ]
+    },
+    "body_vertical_acceleration_p95": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "root_linear_velocity_b"
+      ]
+    },
+    "body_vertical_acceleration_rms": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "root_linear_velocity_b"
+      ]
+    },
+    "body_vertical_velocity_p95": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "root_linear_velocity_b"
+      ]
+    },
+    "body_vertical_velocity_rms": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "root_linear_velocity_b"
+      ]
+    },
+    "joint_effort_limit_violation_rate": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "joint_names",
+        "joint_effort_limits",
+        "applied_torque"
+      ]
+    },
+    "joint_velocity_limit_violation_rate": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "joint_names",
+        "joint_velocity_limits",
+        "joint_velocity"
+      ]
+    },
+    "max_abs_applied_torque": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "applied_torque"
+      ]
+    },
+    "max_abs_joint_velocity": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "joint_velocity"
+      ]
+    },
+    "max_joint_effort_utilization": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "joint_names",
+        "joint_effort_limits",
+        "applied_torque"
+      ]
+    },
+    "max_joint_velocity_utilization": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "joint_names",
+        "joint_velocity_limits",
+        "joint_velocity"
+      ]
+    },
+    "max_tilt": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "projected_gravity_b"
+      ]
+    },
+    "tilt_rms": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "projected_gravity_b"
+      ]
+    },
+    "tracking_xy_rmse": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "command",
+        "root_linear_velocity_b"
+      ]
+    },
+    "tracking_yaw_rmse": {
+      "available": true,
+      "complete": true,
+      "errors": {},
+      "partial": false,
+      "source_signals": [
+        "command",
+        "root_angular_velocity_b"
+      ]
+    }
+  },
+  "metrics": {
+    "action_rate_rms": 0.1554722624524704,
+    "body_roll_pitch_angular_acceleration_p95": 5.248420727602616,
+    "body_roll_pitch_angular_acceleration_rms": 7.903558919715425,
+    "body_roll_pitch_angular_velocity_p95": 0.11962495870894088,
+    "body_roll_pitch_angular_velocity_rms": 0.14475926675415202,
+    "body_vertical_acceleration_p95": 1.650223322212696,
+    "body_vertical_acceleration_rms": 1.3827276670243902,
+    "body_vertical_velocity_p95": 0.03499143198132515,
+    "body_vertical_velocity_rms": 0.04525756479918188,
+    "illegal_contact_rate": 0.0,
+    "joint_effort_limit_violation_rate": 0.0,
+    "joint_velocity_limit_violation_rate": 0.0,
+    "max_abs_action": 2.442319869995117,
+    "max_abs_action_error": 0.0,
+    "max_abs_applied_torque": 63.843292236328125,
+    "max_abs_joint_velocity": 8.444225311279297,
+    "max_joint_effort_utilization": 0.7633474844473379,
+    "max_joint_velocity_utilization": 0.8444225311279296,
+    "max_tilt": 0.0872391015291214,
+    "mean_reward": 0.29516344659030436,
+    "real_time_factor": 0.6733884047226286,
+    "termination_rate": 0.0,
+    "termination_term_illegal_contact_rate": 0.0,
+    "termination_term_terrain_out_of_bounds_rate": 0.0,
+    "termination_term_time_out_rate": 0.0,
+    "tilt_rms": 0.06122355640698186,
+    "timeout_rate": 0.0,
+    "tracking_xy_rmse": 0.04948371320194636,
+    "tracking_yaw_rmse": 0.02724548469481055
+  },
+  "missing_required_signals": [],
+  "motion_evidence": {
+    "peak_steps": {
+      "body_roll_pitch_angular_acceleration_max": 3,
+      "body_roll_pitch_angular_velocity_max": 3,
+      "body_vertical_acceleration_max": 5,
+      "body_vertical_velocity_max": 2,
+      "max_abs_action": 6,
+      "max_abs_action_error": null,
+      "max_abs_applied_torque": 5,
+      "max_abs_joint_velocity": 4,
+      "max_joint_effort_utilization": 5,
+      "max_joint_velocity_utilization": 4,
+      "max_tilt": 4
+    },
+    "review_windows": [
+      {
+        "end_seconds": 0.66,
+        "end_step": 32,
+        "evidence": [
+          "body_vertical_velocity_max"
+        ],
+        "start_seconds": 0.0,
+        "start_step": 0
+      },
+      {
+        "end_seconds": 0.68,
+        "end_step": 33,
+        "evidence": [
+          "body_roll_pitch_angular_acceleration_max",
+          "body_roll_pitch_angular_velocity_max"
+        ],
+        "start_seconds": 0.0,
+        "start_step": 0
+      },
+      {
+        "end_seconds": 0.7000000000000001,
+        "end_step": 34,
+        "evidence": [
+          "max_abs_joint_velocity",
+          "max_joint_velocity_utilization",
+          "max_tilt"
+        ],
+        "start_seconds": 0.0,
+        "start_step": 0
+      },
+      {
+        "end_seconds": 0.72,
+        "end_step": 35,
+        "evidence": [
+          "body_vertical_acceleration_max",
+          "max_abs_applied_torque",
+          "max_joint_effort_utilization"
+        ],
+        "start_seconds": 0.0,
+        "start_step": 0
+      },
+      {
+        "end_seconds": 0.74,
+        "end_step": 36,
+        "evidence": [
+          "max_abs_action"
+        ],
+        "start_seconds": 0.0,
+        "start_step": 0
+      }
+    ],
+    "step_dt_seconds": 0.02,
+    "termination_first_steps": {}
+  },
+  "outputs": {
+    "telemetry": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-nopush-20261127-004/raw/stand-nominal-a04/telemetry.json.gz",
+      "sha256": "453685bc36fed65d5bd7d54ad3a43e39cffa5392c913819e11edf9cb3c51577a"
+    },
+    "video": null
+  },
+  "result_path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-nopush-20261127-004/raw/stand-nominal-a04/result.json",
+  "run_id": "2026-11-26_21-23-35",
+  "run_identity_sha256": "6570a266081a0fc277b78445d19addaf7b58be05be30b89ae095f9ff166ab2f1",
+  "runner": "OnPolicyRunnerAmp",
+  "scenario_id": "stand-nominal-nopush",
+  "scenario_sha256": "66921e46e0a723147f46ea23f1cd1d945f9ef303de81ff09572494bc83cf8c80",
+  "seed": 42,
+  "status": "completed",
+  "telemetry": {
+    "missing_required_signals": [],
+    "required_signals": [
+      "action",
+      "command",
+      "done",
+      "reward",
+      "timeout"
+    ],
+    "signal_status": {
+      "action": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": true,
+        "sample_count": 700
+      },
+      "applied_torque": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": false,
+        "sample_count": 700
+      },
+      "command": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": true,
+        "sample_count": 700
+      },
+      "done": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": true,
+        "sample_count": 700
+      },
+      "joint_effort_limits": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 1,
+        "required": false,
+        "sample_count": 1
+      },
+      "joint_names": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 1,
+        "required": false,
+        "sample_count": 1
+      },
+      "joint_position": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": false,
+        "sample_count": 700
+      },
+      "joint_velocity": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": false,
+        "sample_count": 700
+      },
+      "joint_velocity_limits": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 1,
+        "required": false,
+        "sample_count": 1
+      },
+      "projected_gravity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": false,
+        "sample_count": 700
+      },
+      "reward": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": true,
+        "sample_count": 700
+      },
+      "root_angular_velocity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": false,
+        "sample_count": 700
+      },
+      "root_linear_velocity_b": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": false,
+        "sample_count": 700
+      },
+      "root_position_w": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": false,
+        "sample_count": 700
+      },
+      "root_quaternion_w": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": false,
+        "sample_count": 700
+      },
+      "timeout": {
+        "available": true,
+        "complete": true,
+        "error": null,
+        "error_count": 0,
+        "expected_sample_count": 700,
+        "required": true,
+        "sample_count": 700
+      }
+    },
+    "telemetry_required_for_complete_assessment": false,
+    "telemetry_status": "complete"
+  },
+  "telemetry_path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-nopush-20261127-004/raw/stand-nominal-a04/telemetry.json.gz",
+  "telemetry_required_for_complete_assessment": false,
+  "telemetry_status": "complete",
+  "training_overlap": false,
+  "version": 3,
+  "video_path": ""
+}

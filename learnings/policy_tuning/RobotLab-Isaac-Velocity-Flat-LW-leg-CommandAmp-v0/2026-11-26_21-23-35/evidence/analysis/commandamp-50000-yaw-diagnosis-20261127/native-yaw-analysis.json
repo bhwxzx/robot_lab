@@ -1,0 +1,56 @@
+{
+  "actor_counterfactual": "Exact 10-frame pre-action histories sampled every 10 steps. Compare saved checkpoint mean leg joint targets on identical inputs, changing only the signed command on every history frame. Physical output uses leg action scale 0.25 rad. Comparison to the native action must pass first. These are single forward passes, not closed-loop alternate trajectories.",
+  "control_dt": 0.02,
+  "cycles": "Same-foot rising support crossings from ground load above 5 N, using a 5-frame median filter, periods accepted 0.60 to 1.04 s. Mean of within-environment averages. Angle from actual unwrapped world heading at those contacts. Expert expected degrees/cycle from released reference cruise wz and its 0.8 s stride.",
+  "envs": 16,
+  "evaluation_method": "Each run starts with 2 s standing, followed by an 8 s constant command. Analyze final 6 s. World angular velocity Z uses the actual reward signal. Body gyro Z and unwrapped world-heading delta over exactly 6 s are also measured. All means equal-weight environments. Percentile bounds measure variation among the 16 environments, not seed confidence.",
+  "expert_evidence": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/expert-audit.json",
+    "sha256": "743af8a890fd35522e02e1ad084754c72f8dc22439389471c94ba96b6765033a"
+  },
+  "historical_yaw_std": 0.5,
+  "max_foot_world_to_AMP_reconstruction_error_m": 1.4901161193847656e-07,
+  "max_native_actor_replay_abs_err": 1.6689300537109375e-06,
+  "no_terminations": true,
+  "seed": 42,
+  "stable_steps_inclusive": [
+    200,
+    499
+  ],
+  "swing_metric": "For each foot, use fore-aft displacement between rising and falling crossings of the same middle body-frame foot height (midpoint of P10 and P90; z smoothed over 3 frames). Ignore height ranges <2.5 cm or swing intervals outside 0.12-0.55 s. Half of (right - left) removes common sagittal travel. This is a motion descriptor, not an independent root yaw measurement.",
+  "tables": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/turn-tracking.csv",
+      "sha256": "ec91e1f942bfac9cebfded6e5ee76abfe95dbf263076faab7830eab1fb848ea0"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/turn-per-environment.csv",
+      "sha256": "dafe9c584b00479f9b546fdd45af46ddf3d59e981c6e66e299e3d90290f8b0d5"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/turn-paired-gain.csv",
+      "sha256": "f6b9dd8144f9a5c3e90a8b7ee21744d2a2e707ac7dcfc96a6db6b88256b57913"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/swing-geometry.csv",
+      "sha256": "a2484dae8ff1921d4e2ec8c7a41c39260e742d14a1e40cab71eed120ccb2ce21"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/actor-command-sensitivity.csv",
+      "sha256": "ea588bdfe4718735eb3c741a7581dc7df41a3b0f160730e5d41095cbcabd38ab"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/turn-task-rewards.csv",
+      "sha256": "f9ae73576e572befa1320e87d1f4b91428c5b14e5afc69cdd382ed02e08dbe1e"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/swing-height-sensitivity.csv",
+      "sha256": "d38c765cdd78b9c47fdaacd2ea3ab2b6ceaad9430c57ebf1384e85a1f30017e2"
+    }
+  ],
+  "validated_native_batch": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-yaw-diagnosis-20261127-009/manifest.json",
+    "sha256": "6a61c038061efad436d4c2c257e676ce879cee9af8b3fda34a354aac2c01fc1e"
+  },
+  "ytrack_weight": 4.0
+}

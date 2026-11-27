@@ -1,0 +1,446 @@
+{
+  "algorithm": "CommandConditionedAMPPPO",
+  "archive_authorized": true,
+  "archive_path": "/home/server/liufengrong/policy_storage/LW/leg_loco/2026-11-26-21-23-35",
+  "artifacts": {
+    "jit": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/export/commandamp-50000-storage-20261127-001/policy.pt",
+      "sha256": "2a78cad30881c65e0f930d1048b8086ba8ad8ecfa7a4005550f574156309c869"
+    },
+    "onnx": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/export/commandamp-50000-storage-20261127-001/policy.onnx",
+      "sha256": "fb3656b9b00a2dd7f1591b63517d0c3a2092622c3c2b0786a3c1e640ad715714"
+    }
+  },
+  "collection": "LW/leg_loco",
+  "description_notes": "本策略取自 2026-11-26 21:23:35 启动的 LW 双足平地 CommandAMP 训练。最终检查点以 50 Hz 输出 10 维确定性动作。\n每个控制周期采集 41 维特征。按配置顺序逐项拼接，每项内部按最旧至最新排列 10 帧。回合重置时上一动作清零，各项分别用自己的首帧填满历史。换指令时延续历史和回合时钟。\n机身角速度和重力方向使用机体系。速度指令顺序为 vx、vy、wz。关节角减去默认位置，两轮角度特征在训练加噪前置零。相对关节速度保留两轮。上一动作为上次策略输出的原始值。原始三轴速度指令模长小于等于 0.1 时，步态相位的正弦和余弦均置零。\n前八维给出腿部关节位置偏置，乘 0.25 后加默认位置。后两维给出右、左轮速度偏置，乘 1.0 后加默认速度。动作项随后裁剪各自目标。观测索引、关节顺序及名义零位见参数。\n专家库共 153 条轨迹，文件采样率 50 Hz，步态频率 1.25 Hz。训练按原始 vx、wz 匹配专家，两轴指令模长小于等于 0.1 时只采静站轨迹。在线推理使用随档 Actor 和环境侧历史。\nIsaacLab 训练范围内 9 个工况各使用 16 个环境及同一种子 42，共 111,040 个控制步样本，提前终止 0 次。以下稳态速度和位移均取环境 0。\n纵向指令为 ±0.8 m/s 时，末 6 s 的实测均值分别为 +0.784、-0.534 m/s。原地偏航指令为 ±0.35 rad/s 时，末 10 s 的实测均值为 +0.033、-0.031 rad/s。全程零指令工况舍去头 2 s 后的 12 s 内，水平净漂移为 0.682 m。\n导出校验覆盖初始、重置前、重置后和末步，2 个环境共 64 组观测。TorchScript、ONNX 相对原生 CPU 策略的最大绝对动作误差分别为 0 和 1.1920929e-06。",
+  "evaluation": {
+    "batches": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-inrange-assessment-20261127/manifest.json",
+        "sha256": "45e02cf462876d920865e1cbcf28eff8a2369667665149291173b86c141e27da"
+      }
+    ],
+    "report": {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-inrange-assessment-20261127/report.md",
+      "sha256": "ffb7f60f89c8ab08a4f3a0aa923db0863f602b3989aa0261e30a2dc80ded7938"
+    },
+    "results": [
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-velocity-20261127-001/raw/straight-a01/result.json",
+        "sha256": "3b4ce4b2efd8b4b52d109f6579870318bc560378f78c8daae96b57ba05f843d6"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-velocity-20261127-001/raw/straight-training-a01/result.json",
+        "sha256": "d53f044442300e5426dcc7673d33b8594978886d4c1cc5e66b6b737ffee66d1d"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-velocity-20261127-001/raw/stand-boundary-a01/result.json",
+        "sha256": "bd2b56a789537e5a7afd2011a55eec0c14e864ffc224a117ecdaf160299af875"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-inrange-20261127-002/raw/turn-inrange-a02/result.json",
+        "sha256": "642daec1640bd7d401b2682220cc50b1635a97f8048119cffa57d63fe90e6b19"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-inrange-20261127-002/raw/hold-stand-a02/result.json",
+        "sha256": "e2277177d7583542ae2979620664fd45f986c71ead4a67e42c4bdbd93f49db3a"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-inrange-20261127-002/raw/hold-left-a02/result.json",
+        "sha256": "74b6397b6d8a06b6d91d0ef2710dca256e0827756c976cf898ed0210cc36d904"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-inrange-20261127-002/raw/hold-right-a02/result.json",
+        "sha256": "edf2630cf198e8aad83e19dc32ead9dbf16380ebc5b8382573746e881bbf2c3b"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-speed-holds-20261127-003/raw/hold-forward-a03/result.json",
+        "sha256": "0475fae696afd5d985caa9223d3c0e33b22d9bc990861485c8fb8c41593a140a"
+      },
+      {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-speed-holds-20261127-003/raw/hold-reverse-a03/result.json",
+        "sha256": "b877288a8f0253036a832d6da18c0b1266ee5198d56a46fe318c2cb807d76fe5"
+      }
+    ],
+    "summary": {
+      "case_count": 9,
+      "early_terminations": 0,
+      "environments_per_case": 16,
+      "final_1000_training_iterations": {
+        "illegal_contact_termination_fraction": 0.005961405556881801,
+        "mean_episode_length_steps": 997.3295501708984,
+        "mixed_return": 83.26517650604248,
+        "task_return": 245.75788563537597,
+        "weighted_style_return": 9.53780810546875
+      },
+      "longest_case_duration_s": 19.2,
+      "seed": 42,
+      "steady_environment_index": 0,
+      "steady_windows": {
+        "hold-forward": {
+          "cmd_vx": 0.8,
+          "cmd_wz": 0.0,
+          "command_yaw_over_span_deg": 0.0,
+          "mean_vx": 0.7838044136762619,
+          "mean_wz": -0.00472137529005219,
+          "window_seconds": 6.0,
+          "world_net_position_m": 4.697249480308488,
+          "world_yaw_delta_deg": -0.23329509404178775
+        },
+        "hold-left": {
+          "cmd_vx": 0.0,
+          "cmd_wz": 0.35,
+          "command_yaw_over_span_deg": 200.13415783919228,
+          "mean_vx": 0.06642842411622404,
+          "mean_wz": 0.03319278070452856,
+          "window_seconds": 10.0,
+          "world_net_position_m": 0.6604060133159873,
+          "world_yaw_delta_deg": 24.788144568500385
+        },
+        "hold-reverse": {
+          "cmd_vx": -0.8,
+          "cmd_wz": 0.0,
+          "command_yaw_over_span_deg": 0.0,
+          "mean_vx": -0.5342980534831683,
+          "mean_wz": 0.028237455535369615,
+          "window_seconds": 6.0,
+          "world_net_position_m": 3.158928452155164,
+          "world_yaw_delta_deg": 8.961220533928943
+        },
+        "hold-right": {
+          "cmd_vx": 0.0,
+          "cmd_wz": -0.35,
+          "command_yaw_over_span_deg": -200.13415783919228,
+          "mean_vx": 0.06673120139911771,
+          "mean_wz": -0.03140373060281854,
+          "window_seconds": 10.0,
+          "world_net_position_m": 0.6750540114845047,
+          "world_yaw_delta_deg": -23.416986586223334
+        },
+        "hold-stand": {
+          "cmd_vx": 0.0,
+          "cmd_wz": 0.0,
+          "command_yaw_over_span_deg": 0.0,
+          "mean_vx": 0.056358605688889535,
+          "mean_wz": 0.006091663333500037,
+          "window_seconds": 12.0,
+          "world_net_position_m": 0.68242794024638,
+          "world_yaw_delta_deg": 1.3923461718551697
+        }
+      },
+      "timeouts": 0,
+      "transitions": 111040
+    }
+  },
+  "export_receipt": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/export/commandamp-50000-storage-20261127-001/receipt.json",
+    "sha256": "3d7bbe366e41c199b690dcb5a66bb3e3b7e0f349458aa5e2aeeab405e9e745a6"
+  },
+  "parameters": {
+    "command_amp_expert": {
+      "amp_reward_coef": 2.0,
+      "clips": 153,
+      "command_axes": [
+        "vx",
+        "wz"
+      ],
+      "command_scale": [
+        0.8,
+        0.35
+      ],
+      "dataset_sha256": "a649d6f1cb6fcff62b6d7e4ebe8dbfa138a299841fa626ee6d7a95a6e957cc4f",
+      "dataset_version": "lw_grid153_125hz_tracking_001",
+      "discriminator_input_width": 222,
+      "frame_dim": 22,
+      "frames": 109353,
+      "history_length": 10,
+      "motion_file_rate_hz": 50,
+      "release_directory_in_training_repository": "source/robot_lab/robot_lab/datasets/LW/lw_grid153_125hz_tracking_001",
+      "release_sha256sums": "e5eb5ebc22abf21091256faf6bc1bb01997058342308ec1f35872ed7e2927ffc",
+      "stand_threshold": 0.1,
+      "step_dt": 0.02,
+      "task_reward_lerp": 0.3,
+      "walking_gait_hz": 1.25
+    },
+    "control": {
+      "actions_in_output_order": [
+        {
+          "joints": [
+            "right_hip_joint",
+            "left_hip_joint",
+            "right_thigh_joint",
+            "left_thigh_joint",
+            "right_shank_joint",
+            "left_shank_joint",
+            "right_foot_joint",
+            "left_foot_joint"
+          ],
+          "name": "joint_pos",
+          "scale": 0.25,
+          "target_clip": [
+            -100.0,
+            100.0
+          ],
+          "target_units": "rad",
+          "use_default_offset": true
+        },
+        {
+          "joints": [
+            "right_wheel_joint",
+            "left_wheel_joint"
+          ],
+          "name": "joint_vel",
+          "scale": 1.0,
+          "target_clip": [
+            -100.0,
+            100.0
+          ],
+          "target_units": "rad/s",
+          "use_default_offset": true
+        }
+      ],
+      "command_ranges": {
+        "ang_vel_z": [
+          -0.35,
+          0.35
+        ],
+        "lin_vel_x": [
+          -0.8,
+          0.8
+        ],
+        "lin_vel_y": [
+          0.0,
+          0.0
+        ]
+      },
+      "control_frequency_hz": 50.0,
+      "control_period_s": 0.02,
+      "decimation": 4,
+      "episode_length_s": 20.0,
+      "nominal_joint_positions_rad_in_policy_order": [
+        0.0,
+        0.0,
+        -0.4363,
+        0.4363,
+        -2.234,
+        2.234,
+        -0.4712,
+        0.4712,
+        0.0,
+        0.0
+      ],
+      "nominal_joint_velocity_rad_s": 0.0,
+      "physics_dt_s": 0.005,
+      "runner_clip_actions": null
+    },
+    "onnx": {
+      "contract": {
+        "batch_contract": "static_batch_1",
+        "input_dtype": "float32",
+        "input_name": "obs",
+        "opset_version": 17,
+        "output_dtype": "float32",
+        "output_name": "actions",
+        "profile": "static_batch_1_simplified",
+        "simplified": true
+      },
+      "input_shape": [
+        1,
+        410
+      ],
+      "output_shape": [
+        1,
+        10
+      ],
+      "post_simplify_node_count": 7,
+      "pre_simplify_node_count": 7,
+      "simplifier_check": true
+    },
+    "policy_input": {
+      "actor_obs_normalization": false,
+      "command_axes": [
+        "vx",
+        "vy",
+        "wz"
+      ],
+      "dtype": "float32",
+      "frame_width": 41,
+      "gait_phase": {
+        "encoding": [
+          "sin(2*pi*f*t)",
+          "cos(2*pi*f*t)"
+        ],
+        "frequency_hz": 1.25,
+        "stand_encoding": [
+          0,
+          0
+        ],
+        "stand_if_raw_command_norm_lte": 0.1,
+        "time_base": "t = episode_control_steps * control_period_s"
+      },
+      "history_length": 10,
+      "joint_order_position_velocity": [
+        "right_hip_joint",
+        "left_hip_joint",
+        "right_thigh_joint",
+        "left_thigh_joint",
+        "right_shank_joint",
+        "left_shank_joint",
+        "right_foot_joint",
+        "left_foot_joint",
+        "right_wheel_joint",
+        "left_wheel_joint"
+      ],
+      "joint_pos_zero_mask_before_training_noise": [
+        "right_wheel_joint",
+        "left_wheel_joint"
+      ],
+      "layout": "按观测项拼接，各项的十帧从最旧到最新。",
+      "reset": "回合重置时上一动作清零，各项首帧复制十次填满历史。",
+      "shape": [
+        1,
+        410
+      ],
+      "term_order_and_slices": [
+        {
+          "clip_before_scaling": [
+            -100.0,
+            100.0
+          ],
+          "end_index_exclusive": 30,
+          "name": "base_ang_vel",
+          "per_frame_width": 3,
+          "scale": 0.25,
+          "source": "isaaclab.envs.mdp.observations:base_ang_vel",
+          "start_index_inclusive": 0
+        },
+        {
+          "clip_before_scaling": [
+            -100.0,
+            100.0
+          ],
+          "end_index_exclusive": 60,
+          "name": "projected_gravity",
+          "per_frame_width": 3,
+          "scale": 1.0,
+          "source": "isaaclab.envs.mdp.observations:projected_gravity",
+          "start_index_inclusive": 30
+        },
+        {
+          "clip_before_scaling": [
+            -100.0,
+            100.0
+          ],
+          "end_index_exclusive": 90,
+          "name": "velocity_commands",
+          "per_frame_width": 3,
+          "scale": 1.0,
+          "source": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.observations:generated_commands",
+          "start_index_inclusive": 60
+        },
+        {
+          "clip_before_scaling": [
+            -100.0,
+            100.0
+          ],
+          "end_index_exclusive": 190,
+          "name": "joint_pos",
+          "per_frame_width": 10,
+          "scale": 1.0,
+          "source": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.observations:joint_pos_rel_without_wheel",
+          "start_index_inclusive": 90
+        },
+        {
+          "clip_before_scaling": [
+            -100.0,
+            100.0
+          ],
+          "end_index_exclusive": 290,
+          "name": "joint_vel",
+          "per_frame_width": 10,
+          "scale": 0.05,
+          "source": "isaaclab.envs.mdp.observations:joint_vel_rel",
+          "start_index_inclusive": 190
+        },
+        {
+          "clip_before_scaling": [
+            -100.0,
+            100.0
+          ],
+          "end_index_exclusive": 390,
+          "name": "actions",
+          "per_frame_width": 10,
+          "scale": 1.0,
+          "source": "isaaclab.envs.mdp.observations:last_action",
+          "start_index_inclusive": 290
+        },
+        {
+          "clip_before_scaling": null,
+          "end_index_exclusive": 410,
+          "name": "gait_phase",
+          "per_frame_width": 2,
+          "scale": 1.0,
+          "source": "robot_lab.tasks.manager_based.locomotion.velocity.mdp.observations:get_gait_phase_from_param_with_mask",
+          "start_index_inclusive": 390
+        }
+      ]
+    },
+    "training": {
+      "actor_activation": "elu",
+      "actor_hidden_dims": [
+        512,
+        256,
+        128
+      ],
+      "agent_yaml": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/params/agent.yaml",
+        "sha256": "bc9338ff44c6cf47d5a3be698bb293653f55e3298cc38f45aebfe8453a6cefaf"
+      },
+      "argv": [
+        "python",
+        "scripts/reinforcement_learning/rsl_rl/train.py",
+        "--task=RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0",
+        "--log_project_name=LW_leg_locomotion_command_amp",
+        "--logger=wandb",
+        "--num_envs=4096",
+        "--headless"
+      ],
+      "checkpoint_iteration_is_next": true,
+      "env_yaml": {
+        "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/params/env.yaml",
+        "sha256": "ee164f8fe9c3a239d77a990d133712212dfe8137029aade8f9c5320e13df0175"
+      },
+      "environment_transitions": 4915200000,
+      "hydra_overrides": [],
+      "launch_script": "bash scripts/start_command_amp.sh",
+      "max_iterations": 50000,
+      "num_envs": 4096,
+      "num_steps_per_env": 24,
+      "run_id": "2026-11-26_21-23-35",
+      "seed": 42,
+      "source_commit": "2a96821e4bdbde497b31a71ecb3534a54427404c",
+      "source_repository": "https://github.com/bhwxzx/robot_lab",
+      "started_local": "2026-11-26T21:23:35+08:00",
+      "terrain_generator_components": [
+        "flat_1",
+        "flat_2"
+      ]
+    }
+  },
+  "runner": "OnPolicyRunnerAmp",
+  "selected_checkpoint": {
+    "checkpoint_id": "model_50000",
+    "iteration": 50000,
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/model_50000.pt",
+    "sha256": "ee5d545435abc93210daf4cf4a58577c983748092f771870a1829086624f6ab6",
+    "size_bytes": 19658081
+  },
+  "source": {
+    "commit": "2a96821e4bdbde497b31a71ecb3534a54427404c",
+    "dirty": false
+  },
+  "storage_root": "/home/server/liufengrong/policy_storage",
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0",
+  "version": 2
+}

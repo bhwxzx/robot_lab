@@ -1,0 +1,59 @@
+{
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-26_21-23-35/model_50000.pt",
+    "sha256": "ee5d545435abc93210daf4cf4a58577c983748092f771870a1829086624f6ab6"
+  },
+  "cruise_only": 153,
+  "dataset_sha256": "a649d6f1cb6fcff62b6d7e4ebe8dbfa138a299841fa626ee6d7a95a6e957cc4f",
+  "distribution": {
+    "exact_moving_pure_yaw_command_probability": "zero measure in continuous vx distribution",
+    "mix_task": 0.3,
+    "near_pure_definition": "abs(vx)<=0.05 m/s and abs(wz)>=0.25 rad/s",
+    "near_pure_probability_from_training_distribution": 0.0175,
+    "raw_command_method": "Replay independent velocity range draws and 2% standing from saved UniformVelocityCommand. Sample the actual training loader from each raw query. Expected distribution at command resampling, not a log of episodes or replay transitions.",
+    "samples": 1048576,
+    "seed": 2026112709,
+    "totals": {
+      "exact_moving_pure_yaw_command": 0,
+      "moving_pure_yaw_expert": 47498,
+      "moving_pure_yaw_expert_outside_gate": 41394,
+      "near_pure_high_yaw_command": 18330,
+      "pure_endpoint_expert": 9086,
+      "stand_labels": 49944,
+      "standing_command": 21145
+    },
+    "training_std": 0.5,
+    "training_yaw_weight": 4.0,
+    "yaw_reward_fraction_if_zero_yaw_at_uniform_commands": 0.8609599353158418
+  },
+  "fixed_query_draws": 155648,
+  "frequency": 1.25,
+  "geometry": "Phase-binned means on the 40 native control frames per stride. Compare references after the cyclic shift minimizing checkpoint-normalized mean square distance across all 22 channels. Kinematic descriptors only.",
+  "reference_speed_source": {
+    "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/lw_grid153_125hz_tracking_001/tracking_by_command.csv",
+    "sha256": "afaec39ad5e248a9004a7af0967c02932298946f171be44f60a98a4946e92966"
+  },
+  "sampling_evidence": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/expert-sampling.csv",
+      "sha256": "3505e9ddfcc3d49a07a9cc0a41a4fba8924fd4af814ca760ae729165706facf7"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/expert-style-by-yaw.csv",
+      "sha256": "3a021fe53ce1809ac295d7978d8270056f773d1948d3ae70e34163ff49652ac2"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/expert-coverage.csv",
+      "sha256": "8ec0a495f12cee9be39a426cc61a4103f521de880847ed026e402b6532775fa1"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-yaw-diagnosis-20261127/expert-phase-geometry.csv",
+      "sha256": "e071d9b97742a10c5e765287ec42b121a57dcd11f1eb758e64fc65c2bbad6907"
+    }
+  ],
+  "sampling_provenance": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evidence/analysis/commandamp-50000-reverse-expert-20261127/sampling-audit.json",
+    "sha256": "b106f3066cc1f919017bab39ced4104e7ae72be72d8f7fa588947d852b15756c"
+  },
+  "yaw_scoring": "Exhaust all post-windows, use frozen discriminator, checkpoint normalizer and unmodified query. Unit style max(0,1-(D-1)^2/4). Reference speeds are released cruise means: 22D state does not store root angular velocity."
+}
