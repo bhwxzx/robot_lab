@@ -27,6 +27,8 @@ sys.path.insert(0, str(RSL_RL_DIR))
 
 from capture_effective_training_config import (  # noqa: E402
     EffectiveConfigError,
+    _optional_scalar,
+    _parse_yaml,
     load_and_validate_effective_config,
 )
 from capture_run_identity import RunIdentityError, validate_run_identity  # noqa: E402
@@ -243,7 +245,7 @@ def expected_export_paths(
     }
 
 
-def expected_tensor_contract(runner: str) -> dict[str, Any]:
+def expected_tensor_contract(runner: str, algorithm: str | None = None) -> dict[str, Any]:
     _identifier("runner", runner)
     if "ROA" in runner:
         return {
@@ -259,12 +261,38 @@ def expected_tensor_contract(runner: str) -> dict[str, Any]:
             "reset_contract": "environment_history_reset",
             "actor_input_order": ["encoded_velocity", "encoded_latent", "current_obs"],
         }
+    if runner == "OnPolicyRunnerAmp" and algorithm == "CommandConditionedAMPPPO":
+        return {
+            "history_contract": "flat_time_major_history",
+            "normalization_contract": "backend_export_helper",
+            "reset_contract": "environment_history_reset",
+            "actor_input_order": ["policy_history"],
+        }
     return {
         "history_contract": "current_observation",
         "normalization_contract": "backend_export_helper",
         "reset_contract": "stateless_environment_reset",
         "actor_input_order": ["current_obs"],
     }
+
+
+def _matches_tensor_contract(contract: Any, identity: dict, effective_config: dict) -> bool:
+    runner, algorithm = identity["runner"], identity["algorithm"]
+    if contract == expected_tensor_contract(runner, algorithm):
+        return True
+    if (
+        runner != "OnPolicyRunnerAmp"
+        or algorithm != "CommandConditionedAMPPPO"
+        or contract != expected_tensor_contract(runner)
+    ):
+        return False
+    # Archived term-first exports used the stateless runner contract. Check the
+    # hash-bound training YAML before accepting that representation.
+    env, _ = _parse_yaml(effective_config["source_files"]["environment"]["content_utf8"], label="env config")
+    return all(
+        _optional_scalar(env, ("observations", group, "flatten_history_dim"), label="env config") is True
+        for group in ("policy", "critic")
+    )
 
 
 def _load_run_identity_reference(
@@ -481,8 +509,7 @@ def record_checkpoint_selection(
         expected_sha256=effective_config_sha256,
         run_identity=identity,
     )
-    expected_contract = expected_tensor_contract(identity["runner"])
-    if tensor_contract != expected_contract:
+    if not _matches_tensor_contract(tensor_contract, identity, effective_config):
         raise PolicyExportEvidenceError("approved tensor contract does not match runner")
     evaluation_references = _evaluation_references(
         evaluation_result_paths,
@@ -603,7 +630,7 @@ def validate_checkpoint_selection(
         "fingerprints": effective_config["fingerprints"],
     }:
         raise PolicyExportEvidenceError("selection effective config summary mismatch")
-    if receipt.get("tensor_contract") != expected_tensor_contract(identity["runner"]):
+    if not _matches_tensor_contract(receipt.get("tensor_contract"), identity, effective_config):
         raise PolicyExportEvidenceError("selection tensor contract mismatch")
     evaluation_values = receipt.get("evaluation_results")
     if not isinstance(evaluation_values, list):

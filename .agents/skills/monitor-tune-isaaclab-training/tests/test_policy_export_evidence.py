@@ -346,6 +346,24 @@ class PolicyExportEvidenceTests(unittest.TestCase):
             },
         }
 
+    def test_command_amp_history_contract_and_legacy_exports(self) -> None:
+        identity = {"runner": "OnPolicyRunnerAmp", "algorithm": "CommandConditionedAMPPPO"}
+        legacy = EXPORT.expected_tensor_contract(identity["runner"])
+        current = EXPORT.expected_tensor_contract(identity["runner"], identity["algorithm"])
+        self.assertEqual(current, {
+            "history_contract": "flat_time_major_history",
+            "normalization_contract": "backend_export_helper",
+            "reset_contract": "environment_history_reset",
+            "actor_input_order": ["policy_history"],
+        })
+        for flatten, allow_legacy in (("true", True), ("false", False)):
+            content = "\n".join(("observations:", "  policy:", f"    flatten_history_dim: {flatten}",
+                                 "  critic:", f"    flatten_history_dim: {flatten}"))
+            config = {"source_files": {"environment": {"content_utf8": content}}}
+            self.assertTrue(EXPORT._matches_tensor_contract(current, identity, config))
+            self.assertEqual(EXPORT._matches_tensor_contract(legacy, identity, config), allow_legacy)
+            self.assertFalse(EXPORT._matches_tensor_contract(current, {**identity, "algorithm": "AMPPPO"}, config))
+
     def test_selection_export_publish_and_revalidate(self) -> None:
         plan = self.plan()
         with EXPORT.ExportPublisher(plan) as publisher:

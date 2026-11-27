@@ -271,8 +271,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         # version 2.2 and below
         policy_nn = runner.alg.actor_critic
 
-     # --- DWAQ 专用导出逻辑 ---
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+    if getattr(runner, "migrated_term_first_history", False):
+        export_model_dir = os.path.join(export_model_dir, "time_first")
+        print(f"[INFO] Exporting the migrated time-first policy to {export_model_dir}")
     os.makedirs(export_model_dir, exist_ok=True)
 
     if agent_cfg.class_name in ["OnPolicyRunnerDwaq", "OnPolicyRunnerAmpDwaq", "OnPolicyRunnerROA", "OnPolicyRunnerAmpROA"]:

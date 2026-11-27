@@ -51,6 +51,12 @@ The runner-specific tensor contracts are deterministic:
   environment history reset, actor input `[current_obs, code_vel, hist_latent]`;
 - DWAQ/AMP-DWAQ: flattened time-major history, combined actor-input
   normalization, environment history reset;
+- Flat LW CommandAMP: `flat_time_major_history`, `backend_export_helper`,
+  `environment_history_reset`, actor input `["policy_history"]`. Flatten the
+  ten complete 41-feature frames from oldest to newest. The original term-first
+  exports keep their recorded input order. Loading a legacy training checkpoint
+  in the time-first task converts its input weights in memory. Play writes that
+  checkpoint's converted pair to `exported/time_first/`.
 - supported stateless runners: current observation, backend export-helper
   normalization, stateless environment reset.
 
