@@ -67,7 +67,7 @@ class LWFlatCommandAmpRunnerCfg(LWFlatAmpRunnerCfg):
     amp_dataset_version: str = "lw_grid153_125hz_tracking_002_heading_velocity"
     amp_stand_threshold: float = 0.1
     amp_reward_coef=2.0
-    amp_task_reward_lerp=0.3
+    amp_task_reward_lerp=0.45
     amp_num_preload_transitions = 0  # Windows are gathered from the selected clip during each AMP update.
 
     def __post_init__(self):
