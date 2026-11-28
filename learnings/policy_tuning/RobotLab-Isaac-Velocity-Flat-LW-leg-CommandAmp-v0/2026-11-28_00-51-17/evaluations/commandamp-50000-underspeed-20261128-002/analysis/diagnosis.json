@@ -1,0 +1,280 @@
+{
+  "cases": 13,
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-28_00-51-17/model_50000.pt",
+    "sha256": "1b85e21ff519e3580af43016ed595955bc4afb9b03bf237a2ba8c6b625682737"
+  },
+  "control_period_s": 0.02,
+  "envs_per_case": 16,
+  "findings_zh": [
+    "在 −0.8 m/s 指令下，同脚触地周期频率为 1.254 Hz，每周期后移 0.501 m，专家巡航估计为 0.630 m。足端在机身坐标系下的前后范围（P95 减 P05）为 24.5 cm，专家为 28.7 cm。",
+    "同给 −0.8 m/s，最接近指令和偏差最大的各四个环境分别达到 -0.712 和 -0.545 m/s。前组每步加权任务回报多 0.00885，风格回报少 0.01324，混合后少 0.00439。−0.4 m/s 未出现同样的净反转。分组中同时存在物理参数差异，这个比较只能描述实测回报的取舍。",
+    "原地 ±0.35 rad/s 时，每个同脚触地周期的机身航向变化为 +7.5°、-8.5°。专家每周期竖直轴转量约 +15.8°、-15.8°。两侧实测步频约 1.25 Hz。摆动中段的左右足前后位移差显示，策略和专家的双脚协同方式不同。",
+    "固定 ±0.35 rad/s 指令，将对应专家与同向 ±0.15 rad/s 慢速专家的有效十帧窗配对。判别器把对应速度排在慢速前面的比例，左转为 52.9%，右转为 47.6%。用相同十帧的有符号偏航速度均值排序，两侧都超过 99.9%。−0.8 与 −0.6 m/s 倒退的判别器排序比例为 80.1%，对应加权风格回报每步只差 0.000226。",
+    "冻结判别器，在真实高速倒退窗口中换入相近专家的纵向速度序列，原始判别分平均增加 0.013；换入专家的关节和足端通道，平均增加 0.955。拼接窗口仅用于检查网络对输入的响应。",
+    "在原地 ±0.35 rad/s，跟踪较好的四个环境每步混合回报仍多 0.00269、0.00187，风格项缩小了这一优势。标称平面上倒退为 -0.695 m/s，原地两侧为 +0.101、-0.088 rad/s。移除随机化后仍有欠速。",
+    "训练指令的 vx 和 wz 分别独立均匀采样，另有 2% 显式静站。按此配置，|vx|≤0.05 m/s 且 |wz|≥0.30 rad/s 的理论概率为 0.875%（左右合计）。前进和后退的采样范围对称，单凭该分布难以解释前后跟踪差距。",
+    "按训练配置逐帧复算了实际速度跟踪奖励，线速度标准差 0.50，偏航 0.30。所有稳态移动用例中 stop_motion、stand_still 均为零。已复核专家网格命中、28 维 AMP 中的物理角速度、Actor 历史内的原始指令及原生动作重放。"
+  ],
+  "history_frames": 10,
+  "limitations": "One checkpoint and one seed. Nominal removes multiple randomizations together. Physical yaw torques and effects of changing the training objective require independent interventions.",
+  "method": {
+    "actor": "Recorded pre-action histories [10,41] every tenth tick from 205 through 495. Check TorchScript against Native actions, then probe fixed histories changing only a command channel at all ten time positions. Compare leg targets scaled by 0.25 rad and wheel angular speeds; these are instantaneous inferences.",
+    "contact": "Ground load >5 N, five-tick time median filter, successive same-foot touchdowns within ticks 200..499. Accept periods 0.6..1.04 s; raw/accepted counts included. Equal environment weighting. Cycle travel integrates heading-frame root COM vx. Both unwrapped world heading delta and integral of physical world omega_z reported. Reference per cycle uses cruise 10-frame expected speed × 0.8s. Foot x range is per-foot P95 minus P05 in body coordinates. Signed swing excursion measured between ascending and descending crossings of midpoint of foot z P10..P90; also checked at 35% and 65% of the range. This geometry does not independently measure ground yaw torque.",
+    "features": "100 stable ticks with stride 3 × 16 environments. Nearest genuine expert window chosen by 10-frame distance in normalized joint position and body-frame foot position. Swap exact channel subsets at a fixed command; hybrids measure network sensitivity only. Probe that removes mean speed bias is separate.",
+    "ranking": "All eligible post-windows at start indices 1..L−10 inclusive in each genuine cruise clip, or stand segment. AUC is fraction of all matched vs alternative pairs ranked in the right order (ties half). Speed-only readout uses the direction times mean measured vx or wz over the same 10 frames. Separate 40-frame results cover a full stride. Overlapping windows are not independent confidence samples.",
+    "reward": "All 300 steady ticks × 16 environments. Weighted task rate from live reward manager × 0.3 × 0.02; weighted style = 0.7 × 2 × 0.02 × max(0,1−(D−1)^2/4). Frozen checkpoint uses normalized next ten-frame window and actual scaled command. Raw tracked speed reward terms exactly cross-checked. Speed-bias probes shift the single velocity axis to match the mean target while preserving fluctuations. Closest/farthest groups defined by absolute mean speed error within each scenario. These are replayed per-step rewards on observed deterministic trajectories, rather than PPO training advantage estimates.",
+    "sampling": "Actual CPU CommandConditionedAMPLoader, 4096 draws per query, seed 42. Exact cells above deadband select their labeled clip. Raw command probabilities are theoretical under UniformVelocityCommand, not measured training visits."
+  },
+  "population_evidence": [
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/reverse-80-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "6a85dca06dcc1984b0905807a07658a13b5c28f5814d8d50f33069900941736b"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/reverse-80-d02/result.json",
+        "sha256": "0249a563eb53978c78b354905daee561fb44e50982c6bca278dfb7289d596740"
+      },
+      "scenario": "reverse-80"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/forward-80-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "e9f349277d5afda63faea261afb4815cbe92e003b271f6b5f93cde74b95c04ce"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/forward-80-d02/result.json",
+        "sha256": "09d0a18f3a9a88a1f204efb3d739949a31134e5bbf8fd83ca6b9f86d003e7be4"
+      },
+      "scenario": "forward-80"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/pure-left-35-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "e4b1655f8b7722429574f4e3ebf009114017af61f6c27c960dfe16865c829064"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/pure-left-35-d02/result.json",
+        "sha256": "fef16c94d6cc915c99ace7a0653410984591880260f03bed327491134e95d55f"
+      },
+      "scenario": "pure-left-35"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/pure-right-35-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "6d192bbb865715d744800ac13eced0bf30b41357dfc2a9011fd1ffcc2d13fa77"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/pure-right-35-d02/result.json",
+        "sha256": "bdf5efe63d24006dafa512c100d45ac377963bfc922481c5ec40a68ebeb498be"
+      },
+      "scenario": "pure-right-35"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/reverse-40-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "ca5507e4bb7d0489e48a67573fc8cf84f3c090bbf14f2ffbeeaa1177342f7d29"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/reverse-40-d02/result.json",
+        "sha256": "4958b003117a91de7297f3eed4e15408f1f7a9d5e435024594b183939a63bf51"
+      },
+      "scenario": "reverse-40"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/forward-40-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "84755da9ab01e13aabb182bfc8cede890a2586c2c90f77cf65703f5a37fd0591"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/forward-40-d02/result.json",
+        "sha256": "71233ebfa5332aeef2cd77c57c1b2c4cabfeb8c33b17102ddf1df3da0992f612"
+      },
+      "scenario": "forward-40"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/pure-left-15-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "7ae2e7488864a95cb884569f5f2a739830cb3f5a77242c540d90cc76199b9336"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/pure-left-15-d02/result.json",
+        "sha256": "405fa58204d47d37c0d3242bda7cd0f84a2fe4e17e38b33500265faa59793b1a"
+      },
+      "scenario": "pure-left-15"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/pure-right-15-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "4d13dda4d4f1bbf3c16080dc0ad8d3401430da17d51b2b436f119869e98b8105"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/pure-right-15-d02/result.json",
+        "sha256": "4c1223bde7c8786f78d38e29b4ecb61c13e61d1c37ac32b63a74dc110e5b1b4b"
+      },
+      "scenario": "pure-right-15"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/forward-left-35-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "4c27b5be52861bbf8ea062bfcd2e1de5c6e744e5580f6772163ce6a1f91156eb"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/forward-left-35-d02/result.json",
+        "sha256": "b97ad3f5074d2227d1d34f284ddefa36c51eff37c79690868f2eaa15497b2c93"
+      },
+      "scenario": "forward-left-35"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/reverse-left-35-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "bf80db736570e1a39862af530fa3f182a8065cf3dd04c5f55e8f870aa72f71a3"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/reverse-left-35-d02/result.json",
+        "sha256": "8517c81ae2846fcc03fa9cf62495d28a6e4fca5431bce2ab39cb257d98c285c5"
+      },
+      "scenario": "reverse-left-35"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/nominal-reverse-80-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "a2a3bc23b3c4d328254619f86907337657ca8800d384bcd6a189daaee2cf395e"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/nominal-reverse-80-d02/result.json",
+        "sha256": "a9b374f1a402ebd8a02b4babe6bf715f26e83103609c0cc8f082df42dddeaf5d"
+      },
+      "scenario": "nominal-reverse-80"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/nominal-pure-left-35-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "033e620f38513c95a01f827910bddc949248daee0239d5510384f3ea86448be6"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/nominal-pure-left-35-d02/result.json",
+        "sha256": "f52884a45b03032220b7a26d13dd9c34a52882a182988a41e179fa5f92f04f44"
+      },
+      "scenario": "nominal-pure-left-35"
+    },
+    {
+      "population": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/nominal-pure-right-35-d02/yaw-diagnostics-all-envs.npz",
+        "sha256": "bd88cf00ac1c23a65a80ce52585a52d1303985f0c5689b75165f49a1006fd337"
+      },
+      "result": {
+        "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/raw/nominal-pure-right-35-d02/result.json",
+        "sha256": "4445d5456435b71e15ccfa767fd024e8fce0cceab21ff36b124190f898752bf4"
+      },
+      "scenario": "nominal-pure-right-35"
+    }
+  ],
+  "products": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/actor-condition-response.csv",
+      "sha256": "112a663e55ea9d6e1d49ae6140de085d41ccbb4e7dbfe5842b16d514cf7ba541"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/expert-ranking.csv",
+      "sha256": "03144c6442ee526791536b78ac10b6dce3d251bf941b8f2bae2115254e669370"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/expert-sampling.csv",
+      "sha256": "963e1a17e340a755bcfab0cff59122a3ff59d942465ac8c7096a388290ac600f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/feature-replacement.csv",
+      "sha256": "d517d4e261eef9491d1b6e87cf22a57b76b1b45550a8de78a128ced87984d9d1"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/matched-env-rewards.csv",
+      "sha256": "1176b1a80f305e942e9e9df141a08195951978a6e072cfdf015b785d4707e3fd"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/motion-and-contact.csv",
+      "sha256": "32324f2c7187a68061933cb128fe2bc50eab0453fa39b737bd42adcc6f03694c"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/reward-by-term.csv",
+      "sha256": "b09838318b20da5c5815fd12c8a764b17c7395a5606104dae0fafd4e88a26d67"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/task-and-style.csv",
+      "sha256": "79da3171a36c511037c84a9d87fdff158dccc68a2f0f11eac245186c91e2b3f5"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/analysis/underspeed-diagnosis.png",
+      "sha256": "3398bbb890906684d28603cb93bbb2c9e15a414f0c214fdd564e3c0f61761a01"
+    }
+  ],
+  "run": "2026-11-28_00-51-17",
+  "seed": 42,
+  "source_files": [
+    {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-28_00-51-17/model_50000.pt",
+      "sha256": "1b85e21ff519e3580af43016ed595955bc4afb9b03bf237a2ba8c6b625682737"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-28_00-51-17/params/env.yaml",
+      "sha256": "5ccf23096070950a1139d45fe193b9d7dc0ee7235117fa5c46c6e9a9e81cb30d"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-28_00-51-17/params/agent.yaml",
+      "sha256": "4f03d0fd97f5c49c207c236226c8bc2fc20a133dfb77000ef1ee779a14e40aa2"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-paired-flat-20261128-001/manifest.json",
+      "sha256": "7e765e60245d6a9a273c88ae589a58676352fff61a3b899ec68ca1bf977a9ee7"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/held-speeds.csv",
+      "sha256": "85a2f5841d2e4154c05ea88c5b15b19bd8ff1a9d4f9710633d950aa6532c93d4"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-underspeed-20261128-002/contract.json",
+      "sha256": "2574c51b10654e6372b8021c19255214bf1e6f2306c7048b70783062aea499b2"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/datasets/LW/lw_grid153_125hz_tracking_002_heading_velocity/SHA256SUMS",
+      "sha256": "207112567fa5a31e862f3882205d6d45e4822570cfde09c81c12f16bf9d21f44"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/utils/command_amp_loader.py",
+      "sha256": "20f5da4c63d93434a70e7d472b02d6460650472fc4acdc3338a38bef6a9e4005"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/modules/discriminator.py",
+      "sha256": "4aacc03bc0b47563e4e579803b6e2b7dce0bf53599665a06d5c8529323ae3d19"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/algorithms/amp_ppo.py",
+      "sha256": "9027f95f0ce48a0b47790371bcd4632070d1d5d99fcaf81a61baaf8a497cb56f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/rsl_rl/rsl_rl/algorithms/command_conditioned_amp_ppo.py",
+      "sha256": "ee9c5a140bcf143397a6193d4e836033c1b847fc854ddd049b7615ef43a0c1fd"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/source/robot_lab/robot_lab/tasks/manager_based/locomotion/velocity/mdp/rewards.py",
+      "sha256": "072bfdd8b8c8a917784980059782487cff1c3ed98777695cc3c8600ce0ee552f"
+    },
+    {
+      "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-yaw-diagnosis-20261127-009/population-recorder.json",
+      "sha256": "d05576555b7b913f6e2a49ebad83864a0955924459a6b6927a781810bfa4bd94"
+    }
+  ],
+  "steady_steps_inclusive": [
+    200,
+    499
+  ],
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0",
+  "validation": {
+    "early_terminations": 0,
+    "max_actor_replay_action_error": 2.1457672119140625e-06,
+    "max_foot_reconstruction_error_m": 8.838697884705482e-08,
+    "max_held_speed_difference_to_prior_paired_evaluation": 4.298552347403728e-09,
+    "timeouts": 0
+  }
+}

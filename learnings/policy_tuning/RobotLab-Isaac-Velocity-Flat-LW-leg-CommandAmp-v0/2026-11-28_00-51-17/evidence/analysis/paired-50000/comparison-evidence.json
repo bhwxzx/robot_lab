@@ -1,0 +1,97 @@
+{
+  "task": "RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0",
+  "previous": "2026-11-26_21-23-35",
+  "latest": "2026-11-28_00-51-17",
+  "checkpoint_iteration": 50000,
+  "paired_scenarios": 22,
+  "envs_per_scenario": 16,
+  "seed": 42,
+  "control_dt_seconds": 0.02,
+  "provenance": "The training operator confirmed both runs used bash scripts/start_command_amp.sh with default arguments. Both checkpoints are from the final saved iteration. The four historical batches were reused; all 22 current scenario contracts equal their historical comparison.",
+  "definitions": {
+    "held_speed": "Steps 200..499. Time-average in each uninterrupted environment matched across rounds, then average environments. Forward and lateral velocities are measured at the root link COM in a gravity-aligned heading frame. Yaw is physical angular velocity projected onto world z. Independent link-origin velocity comes from link position increments projected onto midpoint heading.",
+    "stand": "Steps 100..699. Net horizontal displacement is the distance between root link origins at the ends of the interval. Population percentiles are environment quantiles. Planar speed RMS uses body-frame xy to reproduce the previous evaluation.",
+    "whole_scenario": "Full length, all 16 environments. Native tracking errors use body axes, XY RMS over both components. Terminations count control-step flags. Body angular and vertical movement and joint utilization cover the same full scenario. Scheduled commands are raw, including the stand band.",
+    "transitions": "Last 60 ticks (1.2 s) of each scheduled 160-step segment. Only env 0 was recorded historically for the two dynamic cases; the separate latest-only file reports all uninterrupted environments.",
+    "expert": "All 18 held commands lie on exact expert grid points. Expert reference uses all cruise-frame samples, individual 10-frame windows, and the next window at every valid pair start, the window actually presented to the discriminator. Link origin and heading frame match archive definitions."
+  },
+  "validation": "Old signed straight speeds and standing summaries reproduced from raw files. All population recorder arrays checked against official full-scenario tracking RMSE and termination counts where available. All official batch records contain complete native telemetry. Each result binds checkpoint, training identity, configuration and scenario hashes.",
+  "sources_and_products": [
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evaluations/commandamp-50000-paired-flat-20261128-001/manifest.json",
+      "sha256": "7e765e60245d6a9a273c88ae589a58676352fff61a3b899ec68ca1bf977a9ee7"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-longitudinal-grid-20261127-007/manifest.json",
+      "sha256": "6fd2719ec5db677cfcd5acde7f6e82389ef48b963628ee54558f66f4de910ae0"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-stand-population-20261127-006/manifest.json",
+      "sha256": "5506279d2679ec980a6b47427363c4680bb765756f0106d9237eaad293b225a8"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-velocity-20261127-001/manifest.json",
+      "sha256": "80078583797c8a8f3468c27c3755644e42ffe204eab6702042933f7f8ab85fd4"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-26_21-23-35/evaluations/commandamp-50000-yaw-diagnosis-20261127-009/manifest.json",
+      "sha256": "6a61c038061efad436d4c2c257e676ce879cee9af8b3fda34a354aac2c01fc1e"
+    },
+    {
+      "path": "source/robot_lab/robot_lab/datasets/LW/lw_grid153_125hz_tracking_002_heading_velocity/amp_tracking_by_command.csv",
+      "sha256": "65b6880351126bee1011564c96d96ded2bcde7978cb5ca2c023d8d82df092718"
+    },
+    {
+      "path": "rsl_rl/rsl_rl/utils/command_amp_loader.py",
+      "sha256": "20f5da4c63d93434a70e7d472b02d6460650472fc4acdc3338a38bef6a9e4005"
+    },
+    {
+      "path": "rsl_rl/rsl_rl/modules/discriminator.py",
+      "sha256": "4aacc03bc0b47563e4e579803b6e2b7dce0bf53599665a06d5c8529323ae3d19"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/training/round-comparison-500iter.csv",
+      "sha256": "d75aba5df018eedf34caf91d24d28d285d4a3a96a898ca9768ff61cc5217863c"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/training/round-comparison-curves.png",
+      "sha256": "3073014650f0e456db084e7f3cf1e20820970cb0d81ae8cf96e0bb27d82022bd"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/training/round-comparison-windows.json",
+      "sha256": "7567810df3cd436323758e8983da5c6329b7e4f18aac748f593beb961e692039"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/command-transitions-env0.csv",
+      "sha256": "87838fe24f82f15eeafc2cf20210566cb1036cafbf150dfd338955cc79a27731"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/held-speeds.csv",
+      "sha256": "85a2f5841d2e4154c05ea88c5b15b19bd8ff1a9d4f9710633d950aa6532c93d4"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/latest-command-transitions-population.csv",
+      "sha256": "653d795ea0f0ef90e384ae5eb562faafc706bc5cf25a8926df938cd3a6db33be"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/latest-expert-reference.csv",
+      "sha256": "77e4314d552728f157723711a525d3ca6f5b8aa89493ece0243dd8e7256cfcfc"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/matched-environment-changes.csv",
+      "sha256": "ae508c3ccc0e2e300aae1d4dd3268f1557789e4db964a6f7dd4b4deeb10a980a"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/standing.csv",
+      "sha256": "635958e390b273c082fa639afa32b6b3994a25d344af6a0251c56f9b16ed79f0"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/whole-scenario.csv",
+      "sha256": "9c68d569e7d256dad08c98c06dc1343144d14a90f7239f11d5ecb3f99784cf63"
+    },
+    {
+      "path": "learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/evidence/analysis/paired-50000/paired-policy-performance.png",
+      "sha256": "5ecaeeaea880e96e62b5b5c42dca2fda537f271b01277009f6dd19fa6efae53f"
+    }
+  ]
+}

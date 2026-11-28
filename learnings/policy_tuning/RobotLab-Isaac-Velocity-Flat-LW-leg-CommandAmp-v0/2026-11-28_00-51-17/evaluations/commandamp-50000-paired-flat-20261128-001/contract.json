@@ -1,0 +1,965 @@
+{
+  "batch_id": "commandamp-50000-paired-flat-20261128-001",
+  "cases": [
+    {
+      "attempt_id": "stand-nominal-nopush-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 699,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 700,
+        "num_envs": 16,
+        "scenario_id": "stand-nominal-nopush",
+        "scenario_overrides": {
+          "commands.base_velocity.ranges.ang_vel_z": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_x": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_y": [
+            0.0,
+            0.0
+          ],
+          "events.add_joint_default_pos": null,
+          "events.push_robot_hard": null,
+          "events.randomize_actuator_gains": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_com_positions": null,
+          "events.randomize_push_robot": null,
+          "events.randomize_reset_base.params.pose_range": {},
+          "events.randomize_reset_base.params.velocity_range": {},
+          "events.randomize_reset_joints.params.position_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_reset_joints.params.velocity_range": [
+            0.0,
+            0.0
+          ],
+          "events.randomize_rigid_body_mass_base": null,
+          "events.randomize_rigid_body_mass_others": null,
+          "events.randomize_rigid_body_material": null,
+          "observations.policy.enable_corruption": false,
+          "scene.robot.actuators.foots.max_delay": 0,
+          "scene.robot.actuators.foots.min_delay": 0,
+          "scene.robot.actuators.legs.max_delay": 0,
+          "scene.robot.actuators.legs.min_delay": 0,
+          "scene.robot.actuators.wheels.max_delay": 0,
+          "scene.robot.actuators.wheels.min_delay": 0,
+          "scene.terrain.terrain_generator": null,
+          "scene.terrain.terrain_type": "plane"
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "stand-randomized-nopush-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 699,
+            "start_step": 0
+          }
+        ],
+        "duration_steps": 700,
+        "num_envs": 16,
+        "scenario_id": "stand-randomized-nopush",
+        "scenario_overrides": {
+          "commands.base_velocity.ranges.ang_vel_z": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_x": [
+            0.0,
+            0.0
+          ],
+          "commands.base_velocity.ranges.lin_vel_y": [
+            0.0,
+            0.0
+          ],
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": true
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "forward-20-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.2,
+              0,
+              0
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "forward-20",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "reverse-20-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              -0.2,
+              0,
+              0
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "reverse-20",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "forward-40-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.4,
+              0,
+              0
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "forward-40",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "reverse-40-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              -0.4,
+              0,
+              0
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "reverse-40",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "forward-60-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.6,
+              0,
+              0
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "forward-60",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "reverse-60-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              -0.6,
+              0,
+              0
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "reverse-60",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "forward-80-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.8,
+              0,
+              0
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "forward-80",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "reverse-80-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              -0.8,
+              0,
+              0
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "reverse-80",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "pure-left-15-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0,
+              0,
+              0.15
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "pure-left-15",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "pure-right-15-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0,
+              0,
+              -0.15
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "pure-right-15",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "pure-left-25-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0,
+              0,
+              0.25
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "pure-left-25",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "pure-right-25-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0,
+              0,
+              -0.25
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "pure-right-25",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "pure-left-35-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0,
+              0,
+              0.35
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "pure-left-35",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "pure-right-35-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0,
+              0,
+              -0.35
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "pure-right-35",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "forward-left-35-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.4,
+              0,
+              0.35
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "forward-left-35",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "forward-right-35-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.4,
+              0,
+              -0.35
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "forward-right-35",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "reverse-left-35-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              -0.4,
+              0,
+              0.35
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "reverse-left-35",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "reverse-right-35-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 99,
+            "start_step": 0
+          },
+          {
+            "command": [
+              -0.4,
+              0,
+              -0.35
+            ],
+            "end_step": 499,
+            "start_step": 100
+          }
+        ],
+        "duration_steps": 500,
+        "num_envs": 16,
+        "scenario_id": "reverse-right-35",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false,
+          "rewards.track_ang_vel_z_exp.params.std": 0.5,
+          "rewards.track_lin_vel_xy_exp.params.std": 0.5
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "stand-boundary-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 159,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.1,
+              0,
+              0
+            ],
+            "end_step": 319,
+            "start_step": 160
+          },
+          {
+            "command": [
+              0.12,
+              0,
+              0
+            ],
+            "end_step": 479,
+            "start_step": 320
+          },
+          {
+            "command": [
+              0,
+              0,
+              0.1
+            ],
+            "end_step": 639,
+            "start_step": 480
+          },
+          {
+            "command": [
+              0,
+              0,
+              0.12
+            ],
+            "end_step": 799,
+            "start_step": 640
+          },
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 959,
+            "start_step": 800
+          }
+        ],
+        "duration_steps": 960,
+        "num_envs": 16,
+        "scenario_id": "stand-boundary",
+        "scenario_overrides": {
+          "events.push_robot_hard": null,
+          "events.randomize_apply_external_force_torque": null,
+          "events.randomize_push_robot": null,
+          "observations.policy.enable_corruption": false
+        },
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    },
+    {
+      "attempt_id": "straight-training-n01",
+      "scenario": {
+        "command_schedule": [
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 159,
+            "start_step": 0
+          },
+          {
+            "command": [
+              0.4,
+              0,
+              0
+            ],
+            "end_step": 319,
+            "start_step": 160
+          },
+          {
+            "command": [
+              0.8,
+              0,
+              0
+            ],
+            "end_step": 479,
+            "start_step": 320
+          },
+          {
+            "command": [
+              0,
+              0,
+              0
+            ],
+            "end_step": 639,
+            "start_step": 480
+          },
+          {
+            "command": [
+              -0.4,
+              0,
+              0
+            ],
+            "end_step": 799,
+            "start_step": 640
+          },
+          {
+            "command": [
+              -0.8,
+              0,
+              0
+            ],
+            "end_step": 959,
+            "start_step": 800
+          }
+        ],
+        "duration_steps": 960,
+        "num_envs": 16,
+        "scenario_id": "straight-training",
+        "scenario_overrides": {},
+        "seed": 42
+      },
+      "timeout_seconds": 360,
+      "video": false
+    }
+  ],
+  "checkpoint": {
+    "path": "/home/server/liufengrong/robot_lab/logs/rsl_rl/LW_leg_flat_command_amp/2026-11-28_00-51-17/model_50000.pt",
+    "sha256": "1b85e21ff519e3580af43016ed595955bc4afb9b03bf237a2ba8c6b625682737"
+  },
+  "effective_config": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/provenance/config-2b5d32152c9fb6782543e4a77bd75562ddd5f16b33c5b966a530f905b0df874c.json",
+    "sha256": "2b5d32152c9fb6782543e4a77bd75562ddd5f16b33c5b966a530f905b0df874c"
+  },
+  "run_identity": {
+    "path": "/home/server/liufengrong/robot_lab/learnings/policy_tuning/RobotLab-Isaac-Velocity-Flat-LW-leg-CommandAmp-v0/2026-11-28_00-51-17/provenance/context-29a20b11252b6ccb430fe5e084e35e5b9a68267288a599a06641187578c45807.json",
+    "sha256": "29a20b11252b6ccb430fe5e084e35e5b9a68267288a599a06641187578c45807"
+  },
+  "version": 1
+}
